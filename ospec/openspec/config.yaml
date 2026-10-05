@@ -1,0 +1,26 @@
+schema: spec-driven
+
+context: |
+  CLL Initiative Dashboard prototype for the Georgia Tech College of Lifetime Learning (CLL).
+  Audience: the Dean (Bill) and his direct reports (D-1). Used as the agenda for weekly
+  Wednesday leadership meetings. Owners update progress by Monday.
+  Two entry points into the same initiatives: 5 Strategy 2035 goals and 6 annual (2027) priorities.
+  Priorities are NOT children of goals. Initiatives tag to goals and priorities many-to-many.
+  Only two initiative levels: Dean and D-1. Nothing below D-1 (no tasks, no metrics).
+  Progress is self-reported (percent, status, note) and never rolls up automatically.
+  Say "initiative", never "KPI", in UI text.
+  Local dev stack: Python 3.11+, FastAPI, Jinja2 templates, HTMX, SQLite (stdlib sqlite3), openpyxl.
+  Target laptop: 2019 Intel MacBook Pro, 8GB RAM; no Docker required.
+  Database source of truth: db/schema.sql. Future migration target: Microsoft (Lists/Dataverse/Power BI),
+  so keep business rules in the schema and views, not only in Python.
+  Two environments: local dev on the MacBook (uvicorn, sample data, no Docker) and live on Kevin's
+  Hetzner VPS (Docker Compose, HTTPS reverse proxy, persistent volume). The VPS database is the only
+  source of truth for live data; never copy a local database up over it.
+  Prototype has passcode + person-picker access only, no SSO.
+
+rules:
+  proposal:
+    - Always state what is out of scope
+  tasks:
+    - Break tasks into chunks of 2 hours or less
+    - Each task group ends with a verifiable check
