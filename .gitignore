@@ -19,3 +19,10 @@ CLL_Strategy_Portfolio_Enterprise_Package_*.zip
 # put a stale copy of the database and the app in the tree. See ospec/docs/DEPLOY.md.
 ospec/deploy.zip
 deploy.zip
+
+# The cwd-relative default database is a runtime artefact. Config.DB_PATH defaults
+# to "./cll_initiatives.db", so anything that connects without an explicit path
+# while the working directory is the app's change folder leaves an empty database
+# there. The real sample database is ospec/cll_initiatives.db, which IS committed;
+# this covers only the stray the default creates.
+ospec/openspec/changes/add-initiative-dashboard-prototype/cll_initiatives.db

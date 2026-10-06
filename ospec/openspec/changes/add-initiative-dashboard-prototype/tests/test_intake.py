@@ -118,14 +118,38 @@ def _filled_workbook(fresh_db, tmp_path, rows):
     return str(out)
 
 
-def _row(code, name, level, owner, goals=(), priorities=(), feeds="", percent="", status=""):
-    # header: Code, Name, Description, Level, Owner, Feeds, Percent, Status,
-    #         then 5 goal X columns, then 6 priority X columns
+def _goal_columns(fresh_db):
+    """The goal X columns as the REAL template generates them.
+
+    This used to hardcode ("1 Academic", "2 Extension", "3 Research",
+    "4 Learner impact", "5 Operational") - the transposed numbering - while the
+    template had been corrected to 3 Learner / 4 Research. The fixture agreed with
+    itself and disagreed with production, so it passed while testing a shape no
+    workbook would contain. Reading the template's own output removes the seam.
+    """
+    import tempfile
+
+    from openpyxl import load_workbook
+
+    out = os.path.join(tempfile.mkdtemp(), "cols.xlsx")
+    make_template.build(fresh_db, out)
+    header = [c.value for c in load_workbook(out)["Initiatives"][1]]
+    return [h for h in header if h and str(h).startswith("Goal:")]
+
+
+def _row(code, name, level, owner, goals=(), priorities=(), feeds="",
+         percent="", status="", goal_cols=None):
+    """One Initiatives row.
+
+    The goal columns come from the template when given, so a fixture cannot
+    disagree with the workbook a leader would actually receive.
+    """
+    cols = goal_cols or ("1 Academic", "2 Extension", "3 Research",
+                         "4 Learner impact", "5 Operational")
     row = [code, name, f"{name} description", level, owner, feeds, percent, status]
-    row += ["X" if g in goals else "" for g in ("1 Academic", "2 Extension", "3 Research",
-                                                "4 Learner impact", "5 Operational")]
+    row += ["X" if g in goals else "" for g in cols]
     row += ["X" if p in priorities else "" for p in ("Culture", "Data", "Identity",
-                                                    "Innovation", "Pathways", "Scale")]
+                                                     "Innovation", "Pathways", "Scale")]
     return row
 
 
@@ -462,3 +486,27 @@ def test_imported_initiative_has_no_primary_but_a_second_is_still_refused(logged
                          (iid,)).fetchone()[0]
     conn.close()
     assert after == 0 or after == 1, "the refusal must not leave two primaries behind"
+
+
+
+# --- the fixture must agree with the template -----------------------------
+
+
+def test_the_row_helper_uses_the_templates_goal_columns(fresh_db):
+    """The fixture's goal columns must be the ones the template generates.
+
+    This is the seam that let a transposition hide: _row hardcoded the old goal
+    labels while the template had been corrected, and because the fixtures also
+    requested those same stale labels, everything agreed with itself and disagreed
+    with the workbook a leader would receive.
+    """
+    real = _goal_columns(fresh_db)
+    assert real, "the template produced no goal columns"
+    built = _row("X-1", "x", "Dean", "Bill", goals=(real[0],), goal_cols=real)
+    # The first goal column is marked, and the labels are prefix-compatible with
+    # the template's, so a row can be appended under the real header.
+    assert built[8] == "X", "the row does not line up with the template's first goal column"
+    for label in real:
+        assert label.startswith("Goal: "), label
+    assert "Learner" in " ".join(real), "the corrected Learner goal is missing"
+    assert "Research" in " ".join(real), "the corrected Research goal is missing"

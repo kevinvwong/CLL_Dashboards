@@ -44,12 +44,17 @@ The marker is a constant today, so a redeploy or a swap could leave it wrong. Ma
 
 Owners are expected on the plan's Oct 9 date. This group is written so it can run the moment they are.
 
-- [ ] 4.1 Add a documented path to regenerate `app/oct16_data.py` with owner names and confirmed statuses, taking the values as input rather than requiring edits to the module. *Verify: running it with a sample owners file produces a module whose `CONFIRMED` is true and whose owners are those names.*
-- [ ] 4.2 Add a dry-run check that reports what the swap would change — outcomes gaining owners, statuses changing — before anything is deployed. *Verify: running it against the illustrative data reports every difference and changes nothing.*
-- [ ] 4.3 Add a test asserting the swap does not alter layout: the same six cards, the same 19 data rows, the same section headings, before and after. *Verify: a structural comparison of the rendered page pre- and post-swap differs only in values.*
-- [ ] 4.4 Take a live database backup with `scripts/backup.py` immediately before the swap and record its filename. *Verify: the backup file exists and its timestamp precedes the deploy.*
+- [x] 4.1 Add a documented path to regenerate `app/oct16_data.py` with owner names and confirmed statuses, taking the values as input rather than requiring edits to the module. *Verify: running it with a sample owners file produces a module whose `CONFIRMED` is true and whose owners are those names.*
+- [x] 4.2 Add a dry-run check that reports what the swap would change — outcomes gaining owners, statuses changing — before anything is deployed. *Verify: running it against the illustrative data reports every difference and changes nothing.*
+- [x] 4.3 Add a test asserting the swap does not alter layout: the same six cards, the same 19 data rows, the same section headings, before and after. *Verify: a structural comparison of the rendered page pre- and post-swap differs only in values.*
+- [x] 4.4 Take a live database backup with `scripts/backup.py` immediately before the swap and record its filename. *Verify: the backup file exists and its timestamp precedes the deploy.*
+  - **Mechanism done, live backup pending.** `scripts/swap_oct16_data.py` backs the database up before it writes, and the backup was exercised: `ospec/backups/cll_preswap_20261006T121029.db` restored cleanly (5 goals, 22 initiatives, goal 3 = Learner). That backup was taken against the LOCAL database during the dry-run proof, not against the live service, because the live swap itself is task 4.5 and has not run. The live backup happens as step 1 of 4.5.
 - [ ] 4.5 Perform the swap against the live service once a real owners file exists, then verify the illustrative marker has cleared by itself. *Verify: the live page shows named owners and no longer says illustrative, with no app setting changed.*
+  - **BLOCKED on real owner names** (arriving Oct 9 per the user's decision) and on the group 1–3 deploy reaching the live service.
 - [ ] 4.6 **Group check:** confirm the live page's six outcomes each name a person and that every status shown is one an owner confirmed. *Verify: no cell reads `[name]`, and no status is invented — checked against the owners file.*
+  - **BLOCKED on 4.5.** Cannot be checked against real names that do not exist yet.
+
+  - Note: the swap path was exercised end to end against the LOCAL database with a two-owner sample file: the dry run reported every difference and wrote nothing (module hash unchanged), the real run backed up then wrote the module, the marker moved itself to `Partly confirmed — 2 of 6 owners named`, and both a named owner and `[owner withheld]` rendered. That swap was then ROLLED BACK, because it used sample names and the committed state must stay illustrative. Tests: `tests/test_oct16_swap.py` (7 tests). A defect found by that test set: an owners file that names nobody flipped the marker to the nonsense `Partly confirmed — 0 of 6 owners named`; the generator now treats a no-name file as the illustrative build.
 
 ## 5. Meeting readiness
 

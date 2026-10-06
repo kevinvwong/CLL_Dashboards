@@ -207,6 +207,19 @@ def build(owners_path: str | None, out_path: str = OUT) -> str:
     confirmed = bool(owners_path)
     requirements = read_requirements()
 
+    # An owners file that names nobody does not confirm anything. Treat it as the
+    # illustrative build rather than flipping CONFIRMED and producing the nonsense
+    # marker "Partly confirmed - 0 of 6 owners named". Caught by
+    # test_dry_run_reports_a_no_op_as_a_no_op.
+    if confirmed:
+        named = sum(1 for oid, *_ in OUTCOMES
+                    if owners.get(oid, {}).get("owner")
+                    and owners.get(oid, {}).get("owner") != "[owner withheld]")
+        if named == 0:
+            print("  NOTE: owners file names no owner; building the illustrative"
+                  " module rather than claiming partial confirmation", file=sys.stderr)
+            confirmed = False
+
     # Everything below this line is generated. Hand edits are lost on rebuild.
     L = []
     L.append('"""The October 16 deliverable: the Dean\'s dashboard, Option A.')

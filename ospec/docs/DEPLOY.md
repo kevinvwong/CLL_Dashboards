@@ -148,6 +148,43 @@ database. Rebuild with the script and redeploy.
 
 ---
 
+## The October 16 data swap
+
+The page's content lives in `app/oct16_data.py`, which is **generated**. Once real
+owners exist, the swap is two commands, and the module is never hand-edited.
+
+**Step 1 — see what the swap will do, without doing it.**
+
+```powershell
+cd C:\Users\kwong318\GitHub\CLL_Dashboards\ospec
+python scripts\swap_oct16_data.py --owners owners.json --dry-run
+```
+
+This prints every difference — owners gained, statuses changed, milestones moved —
+and **writes nothing**. The committed module is byte-identical afterwards; the
+suite asserts this (`test_dry_run_writes_nothing`). Read the report before step 2.
+
+**Step 2 — run it.** This backs the database up, then regenerates the module.
+
+```powershell
+python scripts\swap_oct16_data.py --owners owners.json
+```
+
+It prints the backup filename. **Record it**: that file is the data half of a
+rollback (step 5b). Then deploy per steps 1–4 above.
+
+**The marker clears itself.** The page's top line is derived from the module, not
+from an app setting, so nothing else has to be changed at swap time. An owners
+file that names nobody is refused as confirmation — it builds the illustrative
+module instead of claiming `Partly confirmed — 0 of 6`. See the `confirmed-data`
+spec for why the marker is derived rather than set.
+
+**Owners file format.** `{ "P01": {"owner": "Some Person", "updated": "2026-10-13"} }`.
+`"[owner withheld]"` means an owner exists but their name is not placed on this
+service: it renders as a marked placeholder and is never counted as confirmed.
+
+---
+
 ## 5. Rollback
 
 Rollback has two halves. A revision-only rollback is **not** sufficient once data
