@@ -79,3 +79,38 @@ Must land before any page migrates. Nothing here may introduce a status value th
 - [ ] 8.3 Contrast check (WCAG AA) on all text and status pills. *Verify: measured contrast ratios meet 4.5:1 for body text and 3:1 for large text and UI components.*
 - [ ] 8.4 Regression: saving updates, editing details, switching users, and the `/oct16` redirect all work. *Verify: the existing suite passes, plus the four named flows.*
 - [ ] 8.5 **Group check:** the whole verification pass is green and the suite is green. *Verify: `python -m pytest tests -q` passes and every item in groups 1–7 is checked.*
+
+
+---
+
+## Resolution, 2026-10-06
+
+This change is **closed, not completed.** Its supersession by `blueprint-redesign`
+is recorded at the top. What happened to each group:
+
+**Shipped by `blueprint-redesign` (the superseding change):**
+  group 2  design system      -> visual-system
+  group 3  nav + outcomes     -> app-navigation  (search was NOT in blueprint)
+  group 4  portfolio views    -> portfolio-dashboard + cascade-views
+  group 5  detail drawer      -> initiative-drawer
+  group 7  checks page        -> coverage-checks
+  group 8  verification       -> blueprint-redesign group 6
+
+**Shipped after this change was closed**, because blueprint-redesign did not
+cover them and dropping them would have lost real work:
+  3.5  global search (Cmd+K)  -> app/queries.search + /search + the palette
+  6.1  quick date ranges      -> /meeting?range=7d|14d
+  6.3  change deltas          -> app/queries.update_deltas ("20% -> 30%")
+  6.4  presenter mode         -> the presenter overlay
+  Tests: test_search_and_meeting.py (15)
+
+**Never built, and deliberately so** (superseded by the redesign's own choices):
+  6.5  print stylesheet        - print.css already hides the chrome and the
+       change list prints; no separate print view was needed
+  7.3  checks admin-only route - the page is open to signed-in people by the
+       existing data-intake requirement; only the NAV entry is admin-only
+
+The six spec deltas under `specs/` were **never archived** and must not be: the
+capabilities they describe are published by `blueprint-redesign` (app-navigation,
+portfolio-dashboard, ...). Publishing them here would collide. This folder is a
+record of what was planned.

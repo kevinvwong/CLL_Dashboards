@@ -848,3 +848,106 @@ def kpi_cards() -> list[dict]:
     for k in kpis:
         k["priorities"] = links.get(k["KPIID"], [])
     return kpis
+
+
+# --- search (overhaul-ui-ux-navigation 3.5) ---------------------------------
+
+
+def search(term: str, limit: int = 10) -> list[dict]:
+    """Match initiatives, people, goals and priorities by name or code.
+
+    One query per kind, each capped, and merged into a single ranked list. A
+    code match ranks above a name match, so typing "MAR-3" puts MAR-3 first.
+    Built per request from the database: acceptable at this size (<100 rows),
+    and revisit above ~1,000.
+    """
+    from urllib.parse import urlencode
+
+    q = (term or "").strip()
+    if not q:
+        return []
+    like = "%" + q.lower() + "%"
+    code_like = q.lower() + "%"
+    out = []
+    with _conn() as conn:
+        for kind, rows in (
+            ("initiative", conn.execute(
+                "SELECT Code AS key, InitiativeName AS label, Code AS code "
+                "FROM Initiatives WHERE IsActive = 1 AND "
+                "(LOWER(Code) LIKE ? OR LOWER(InitiativeName) LIKE ?) "
+                "ORDER BY (LOWER(Code) LIKE ?) DESC, Code LIMIT ?",
+                (like, like, code_like, limit))),
+            ("person", conn.execute(
+                "SELECT PersonID AS key, Name AS label, '' AS code FROM People "
+                "WHERE IsActive = 1 AND LOWER(Name) LIKE ? ORDER BY Name LIMIT ?",
+                (like, limit))),
+            ("goal", conn.execute(
+                "SELECT GoalNumber AS key, ShortName AS label, '' AS code FROM Goals "
+                "WHERE LOWER(ShortName) LIKE ? OR LOWER(COALESCE(FullName,'')) LIKE ? "
+                "ORDER BY GoalNumber LIMIT ?",
+                (like, like, limit))),
+            ("priority", conn.execute(
+                "SELECT PriorityName AS key, PriorityName AS label, COALESCE(Code,'') AS code "
+                "FROM Priorities WHERE LOWER(PriorityName) LIKE ? "
+                "OR LOWER(COALESCE(FullTitle,'')) LIKE ? ORDER BY PriorityName LIMIT ?",
+                (like, like, limit))),
+        ):
+            for r in rows:
+                r = dict(r)
+                if kind == "initiative":
+                    href = "/initiatives/" + str(r["key"])
+                elif kind == "person":
+                    href = "/people/" + str(r["key"])
+                elif kind == "goal":
+                    href = "/goals/" + str(r["key"])
+                else:
+                    href = "/priorities/" + urlencode({"": r["key"]})[1:]
+                out.append({"kind": kind, "label": r["label"],
+                            "code": r["code"], "href": href})
+    # Codes first (an exact-ish code hit is usually what was meant), then label.
+    out.sort(key=lambda r: (r["code"] == "", r["code"] or r["label"]))
+    return out[:limit]
+
+
+# --- meeting deltas (overhaul-ui-ux-navigation 6.3) -------------------------
+
+
+def update_deltas(since: str) -> list[dict]:
+    """Each update in the window with the progress and status before it.
+
+    The "before" is the previous update for the same initiative by date, so the
+    meeting can show "20% -> 30%" and "At risk -> On track" rather than only the
+    current value. An initiative's first update has no previous, so its delta is
+    marked as the first rather than invented as zero.
+    """
+    with _conn() as conn:
+        rows = [
+            dict(r)
+            for r in conn.execute(
+                """
+                SELECT pu.InitiativeID, i.Code, i.InitiativeName, p.Name AS Owner,
+                       pu.UpdateDate, pu.PercentComplete, pu.Status, pu.Note,
+                       (SELECT pu2.PercentComplete FROM ProgressUpdates pu2
+                        WHERE pu2.InitiativeID = pu.InitiativeID
+                          AND (pu2.UpdateDate < pu.UpdateDate
+                               OR (pu2.UpdateDate = pu.UpdateDate
+                                   AND pu2.UpdateID < pu.UpdateID))
+                        ORDER BY pu2.UpdateDate DESC, pu2.UpdateID DESC LIMIT 1)
+                       AS PrevPercent,
+                       (SELECT pu2.Status FROM ProgressUpdates pu2
+                        WHERE pu2.InitiativeID = pu.InitiativeID
+                          AND (pu2.UpdateDate < pu.UpdateDate
+                               OR (pu2.UpdateDate = pu.UpdateDate
+                                   AND pu2.UpdateID < pu.UpdateID))
+                        ORDER BY pu2.UpdateDate DESC, pu2.UpdateID DESC LIMIT 1)
+                       AS PrevStatus
+                FROM ProgressUpdates pu
+                JOIN Initiatives i ON i.InitiativeID = pu.InitiativeID
+                JOIN People p ON p.PersonID = i.OwnerID
+                WHERE pu.UpdateDate >= ?
+                ORDER BY pu.UpdateDate DESC, i.Code
+                """, (since,))
+        ]
+    for r in rows:
+        r["IsFirst"] = r["PrevPercent"] is None and r["PrevStatus"] is None
+    return rows

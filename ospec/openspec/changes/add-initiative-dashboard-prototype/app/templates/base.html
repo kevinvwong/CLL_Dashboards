@@ -22,6 +22,20 @@
   </p>
   <header class="site-header">
     <a class="brand" href="/">Initiative Dashboard</a>
+    {# Global search (overhaul 3.5): a dialog opened with Cmd/Ctrl+K. The input
+       hx-gets /search as you type, so results render server-side. #}
+    <button type="button" class="search-open" data-search-open aria-label="Search (Command K)">
+      <span aria-hidden="true">⌘K</span> Search
+    </button>
+    <dialog id="search-palette" class="search-palette" aria-label="Search">
+      <form method="get" action="/search" class="search-form">
+        <input type="search" name="q" id="search-input" placeholder="Search initiatives, people, goals, priorities…"
+               autocomplete="off" hx-get="/search" hx-trigger="input changed delay:150ms"
+               hx-target="#search-results" hx-swap="innerHTML" hx-include="this">
+        <button type="button" data-search-close aria-label="Close search">×</button>
+      </form>
+      <div id="search-results"><p class="search-hint">Type to search.</p></div>
+    </dialog>
     {# Collapsing nav (task 2.5): a checkbox and label toggle the list with no
        JavaScript, so the nav works before hydration and cannot break. #}
     <input type="checkbox" id="nav-toggle" class="nav-toggle" hidden>
@@ -176,6 +190,66 @@
         if (!evt.target.closest("[data-dismiss-banner]")) return;
         banner.hidden = true;
         document.cookie = "sample_banner_dismissed=1; path=/; samesite=lax";
+      });
+    })();
+
+    // Global search palette (overhaul 3.5). Cmd/Ctrl+K opens it, Esc closes it,
+    // and focus returns to whatever had it - the same contract the drawer keeps.
+    (function () {
+      const dlg = document.getElementById("search-palette");
+      if (!dlg) return;
+      let opener = null;
+      function open() {
+        opener = document.activeElement;
+        if (typeof dlg.showModal === "function") dlg.showModal();
+        else dlg.setAttribute("open", "open");
+        const input = dlg.querySelector("input[type=search]");
+        if (input) input.focus();
+      }
+      function close() {
+        if (typeof dlg.close === "function") dlg.close();
+        else dlg.removeAttribute("open");
+        if (opener && typeof opener.focus === "function") opener.focus();
+      }
+      document.body.addEventListener("click", function (evt) {
+        if (evt.target.closest("[data-search-open]")) { evt.preventDefault(); open(); }
+        if (evt.target.closest("[data-search-close]")) { evt.preventDefault(); close(); }
+      });
+      document.addEventListener("keydown", function (evt) {
+        if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === "k") {
+          evt.preventDefault(); open();
+        }
+        if (evt.key === "Escape" && dlg.hasAttribute("open")) close();
+      });
+    })();
+
+    // Presenter mode (overhaul 6.4): large type, one owner group at a time,
+    // arrow keys to move, Esc to exit. Pure presentation over the printed page.
+    (function () {
+      const stage = document.getElementById("meeting-presenter");
+      if (!stage) return;
+      const groups = Array.from(stage.querySelectorAll("[data-presenter-group]"));
+      if (!groups.length) return;
+      let i = 0;
+      const pos = document.getElementById("presenter-position");
+      function show(n) {
+        i = Math.max(0, Math.min(groups.length - 1, n));
+        groups.forEach(function (g, k) { g.hidden = k !== i; });
+        if (pos) pos.textContent = (i + 1) + " of " + groups.length;
+      }
+      document.addEventListener("keydown", function (evt) {
+        if (!document.body.classList.contains("presenting")) return;
+        if (evt.key === "ArrowRight") { evt.preventDefault(); show(i + 1); }
+        if (evt.key === "ArrowLeft") { evt.preventDefault(); show(i - 1); }
+        if (evt.key === "Escape") { document.body.classList.remove("presenting"); }
+      });
+      const start = document.querySelector("[data-presenter-start]");
+      if (start) start.addEventListener("click", function () {
+        document.body.classList.add("presenting"); show(0);
+      });
+      const stop = document.querySelector("[data-presenter-stop]");
+      if (stop) stop.addEventListener("click", function () {
+        document.body.classList.remove("presenting");
       });
     })();
   </script>

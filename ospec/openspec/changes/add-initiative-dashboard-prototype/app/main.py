@@ -419,18 +419,49 @@ async def meeting(request: Request, since: str | None = None):
     """The Wednesday agenda: an attention list plus changes in a window.
 
     Defaults to the last 7 days; `?since=YYYY-MM-DD` sets the window to the
-    previous meeting date.
+    previous meeting date. `?range=` offers the quick ranges the spec names
+    (7d, 14d), so the Dean does not have to pick a date by hand.
     """
-    window = since or queries.default_since()
+    # Quick ranges (overhaul 6.1): range=7d or 14d sets the window; otherwise
+    # `since` is used, and with neither the default window applies.
+    range_days = {"7d": 7, "14d": 14}.get(request.query_params.get("range", ""))
+    if range_days:
+        window = queries.default_since(range_days)
+        active_range = request.query_params.get("range")
+    else:
+        window = since or queries.default_since()
+        active_range = None
+
+    deltas = queries.update_deltas(window)
+    # Grouped by owner, so the change list keeps the per-owner headers the
+    # meeting-view requirement names.
+    by_owner: dict = {}
+    for d in deltas:
+        by_owner.setdefault(d["Owner"], []).append(d)
+
     return templates.TemplateResponse(
         request,
         "meeting.html",
         _ctx(
             request,
             since=window,
+            active_range=active_range,
             groups=queries.meeting_updates(window),
             attention=queries.attention_list(),
+            # The change deltas (overhaul 6.3): each update with its previous
+            # value, so the meeting shows "20% -> 30%", not just the current.
+            deltas=deltas,
+            deltas_by_owner=sorted(by_owner.items()),
         ),
+    )
+
+
+@app.get("/search")
+async def search(request: Request, q: str = ""):
+    """Global search (overhaul 3.5). Returns a fragment for the palette."""
+    results = queries.search(q) if q else []
+    return templates.TemplateResponse(
+        request, "_search_results.html", _ctx(request, q=q, results=results)
     )
 
 

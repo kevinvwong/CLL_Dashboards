@@ -2,14 +2,28 @@
 {% block title %}Meeting{% endblock %}
 {% block content %}
 {# The Wednesday agenda (config.yaml). Prints to just the attention list and
-   the change list - print.css drops the header, nav and this control. #}
+   the change list - print.css drops the header, nav and the controls.
+
+   Quick ranges, change deltas and presenter mode come from the superseded
+   overhaul-ui-ux-navigation change (6.1, 6.3, 6.4), built here so they are not
+   lost when that change was closed. #}
 <h1>Meeting</h1>
 
-<form method="get" action="/meeting" class="since-form no-print">
-  <label for="since">Updates since</label>
-  <input type="date" id="since" name="since" value="{{ since }}">
-  <button type="submit">Show</button>
-</form>
+<div class="meeting-controls no-print">
+  <form method="get" action="/meeting" class="since-form no-print">
+    <label for="since">Updates since</label>
+    <input type="date" id="since" name="since" value="{{ since }}">
+    <button type="submit">Show</button>
+  </form>
+  {# Quick ranges (6.1): no date to pick by hand. #}
+  <nav class="range-chips" aria-label="Quick date ranges">
+    <a class="chip{% if active_range == '7d' %} is-active{% endif %}" href="/meeting?range=7d">7 days</a>
+    <a class="chip{% if active_range == '14d' %} is-active{% endif %}" href="/meeting?range=14d">14 days</a>
+    <a class="chip{% if not active_range %} is-active{% endif %}" href="/meeting">Last meeting</a>
+  </nav>
+  <button type="button" class="text-button" data-presenter-start>Present</button>
+  <button type="button" class="text-button" data-presenter-stop hidden-inline>Stop</button>
+</div>
 
 <section class="attention">
   <h2>Needs attention</h2>
@@ -22,12 +36,7 @@
         <span class="code">{{ row.Code }}</span>
         <span class="name">{{ row.InitiativeName }}</span>
         {% include "_synthetic_label.html" %}
-        <span class="badge">{{ row.Status or "No update" }}</span>
-        {# Why this is on the agenda. When the reason is just the status again the
-           badge already said it, so only stale and no-update entries need the
-           extra text. Without a reason at all the Dean has to open the card to
-           find out why something is listed, which a one-page agenda cannot
-           afford. Amended 2026-10-06. #}
+        <span class="badge {{ row.Status | status_class if row.Status else 'status-not-started' }}">{{ row.Status or "No update" }}</span>
         {% if row.Reason != row.Status %}
         <span class="reason">{{ row.Reason }}</span>
         {% endif %}
@@ -52,30 +61,65 @@
 
 <section class="changes">
   <h2>Changes since {{ since }}</h2>
-  {% if groups %}
-    {% for group in groups %}
-    <div class="list-group">
-      <h3 class="list-group-label">{{ group.owner }}</h3>
-      <ul class="initiative-list">
-        {% for row in group.rows %}
-        <li class="initiative-row" hx-get="/initiatives/{{ row.Code }}"
-            hx-target="#card-modal" hx-swap="innerHTML" hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']" tabindex="0" role="link">
-          <div class="row-main">
-            <span class="code">{{ row.Code }}</span>
-            <span class="name">{{ row.InitiativeName }}</span>
-            {% include "_synthetic_label.html" %}
-          </div>
-          <div class="row-progress">
-            <span class="bar-label">{{ row.UpdateDate }} &middot; {{ row.PercentComplete }}% {{ row.Status }}</span>
-            {% if row.Note %}<span class="diary-note">{{ row.Note }}</span>{% endif %}
-          </div>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endfor %}
+  {# Change deltas (6.3): each update with its previous progress and status, so
+     the meeting shows "20% -> 30%" rather than only the current value. Grouped
+     by owner (the meeting-view requirement), so the change list keeps the
+     per-owner headers the spec names. #}
+  {% if deltas %}
+  {% for owner, owner_rows in deltas_by_owner %}
+  <div class="list-group">
+    <h3 class="list-group-label">{{ owner }}</h3>
+    <ul class="delta-list">
+      {% for d in owner_rows %}
+      <li class="delta-row" hx-get="/initiatives/{{ d.Code }}"
+          hx-target="#card-modal" hx-swap="innerHTML" hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']" tabindex="0" role="link">
+        <div class="row-main">
+          <span class="code">{{ d.Code }}</span>
+          <span class="name">{{ d.InitiativeName }}</span>
+        </div>
+        <div class="row-progress">
+          {% if d.IsFirst %}
+          <span class="bar-label">First update: {{ d.PercentComplete }}% {{ d.Status }}</span>
+          {% else %}
+          <span class="delta-change">
+            {{ d.PrevPercent }}% <span aria-hidden="true">→</span> {{ d.PercentComplete }}%
+          </span>
+          {% if d.PrevStatus != d.Status %}
+          <span class="delta-status">{{ d.PrevStatus }} <span aria-hidden="true">→</span> {{ d.Status }}</span>
+          {% endif %}
+          {% endif %}
+          {% if d.Note %}<span class="diary-note">{{ d.Note }}</span>{% endif %}
+        </div>
+        <span class="delta-date">{{ d.UpdateDate }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
   {% else %}
   <p class="empty">No updates in this window.</p>
   {% endif %}
+</section>
+
+{# Presenter mode (6.4): large type, one owner group at a time. The groups are
+   the changes above, regrouped by owner; the JS steps through them. #}
+<section id="meeting-presenter" class="presenter no-print" hidden>
+  <p class="presenter-position" id="presenter-position"></p>
+  {% for group in groups %}
+  <div data-presenter-group hidden>
+    <h2 class="presenter-owner">{{ group.owner }}</h2>
+    <ul class="presenter-list">
+      {% for row in group.rows %}
+      <li>
+        <strong>{{ row.Code }} {{ row.InitiativeName }}</strong>
+        <span>{{ row.PercentComplete }}% {{ row.Status }}</span>
+        {% if row.Note %}<p>{{ row.Note }}</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% else %}
+  <p class="empty">No groups to present.</p>
+  {% endfor %}
 </section>
 {% endblock %}

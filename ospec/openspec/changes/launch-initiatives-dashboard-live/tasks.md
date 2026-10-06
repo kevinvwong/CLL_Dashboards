@@ -70,8 +70,13 @@ The acceptance test for the whole change: the Dean reads a real meeting from the
 
 Cross-cutting checks only. Each earlier group landed its own tests and documentation.
 
-- [ ] 6.1 Run the whole suite and both validations. *Verify: all tests pass and `openspec validate --all --strict` exits 0.*
+- [x] 6.1 Run the whole suite and both validations. *Verify: all tests pass and `openspec validate --all --strict` exits 0.*
+  - 460 tests passed; `openspec validate --all --strict` → 15 passed, 0 failed.
 - [ ] 6.2 Verify the full gate on the live service: `/login` 200, `/` 303 to `/login` when unauthenticated, `/healthz` reports the current revision, `/robots.txt` disallows all. *Verify: each observed on the deployment, with the responses recorded.*
-- [ ] 6.3 Verify the data-policy position and record it. If Georgia Tech has not cleared personal-subscription hosting, state in the launch record that the service runs on sample data and is a labelled demonstration. *Verify: the launch record states which it is, with a date; it does not leave the reader to infer it.*
-- [ ] 6.4 Judge the launch against the go-live criteria in `live-launch/spec.md`, recording each as observed or unmet. *Verify: every criterion has an observed result, and any unmet one is named rather than averaged away.*
-- [ ] 6.5 Record the launch decision and its basis in the change's tasks or a launch note. *Verify: a reader can tell from the artefact whether the service is launched, on what evidence, and what remains unproven.*
+  - **BLOCKED, cannot run.** The app answers `403 This web app is stopped`: the F1 plan is `QuotaExceeded` (`WPStopRequests` 80/15, measured 2026-10-06T19:58Z). There is no gate to walk while the site is stopped. See `docs/LAUNCH_RECORD.md`.
+- [x] 6.3 Verify the data-policy position and record it. If Georgia Tech has not cleared personal-subscription hosting, state in the launch record that the service runs on sample data and is a labelled demonstration. *Verify: the launch record states which it is, with a date; it does not leave the reader to infer it.*
+  - Recorded in `docs/LAUNCH_RECORD.md`. Georgia Tech has **not** cleared personal-subscription hosting, so the service is stated to run on **sample data only** as a **labelled demonstration**, dated 2026-10-06.
+- [x] 6.4 Judge the launch against the go-live criteria in `live-launch/spec.md`, recording each as observed or unmet. *Verify: every criterion has an observed result, and any unmet one is named rather than averaged away.*
+  - All eight criteria judged in `docs/LAUNCH_RECORD.md`, each with evidence. **Three unmet**: the weekly meeting has not run from the service, there is no live data, and the goal-data match is unproven live. Met: illustrative marker, rollback, swap reversibility, marker honesty.
+- [x] 6.5 Record the launch decision and its basis in the change's tasks or a launch note. *Verify: a reader can tell from the artefact whether the service is launched, on what evidence, and what remains unproven.*
+  - `docs/LAUNCH_RECORD.md` records the decision: **NOT LAUNCHED** — a labelled demonstration on sample data. It names what is proven (suite, validations, goal data, rollback) and what is not (reachability, a real meeting, any confirmed figure), plus the ordered steps to launch.
