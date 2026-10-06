@@ -134,6 +134,24 @@ def status_counts(rows: list[dict]) -> list[dict]:
     return [{"Status": s, "Count": c} for s, c in known + sorted(counts.items())]
 
 
+def rollup_label(total: int, counts: list[dict]) -> str:
+    """The header rollup: the total, then a per-status breakdown.
+
+        "10 initiatives · 10 on track"
+        "12 initiatives · 9 on track · 3 at risk"
+
+    Not "On track 10", which reads as a status word glued to a number and
+    hides that the 10 is a total (the Accurate Rollup Labels requirement). A
+    count of zero is omitted so the header stays short.
+    """
+    parts = ["%d initiative%s" % (total, "" if total == 1 else "s")]
+    for c in counts:
+        if c["Count"] <= 0:
+            continue
+        parts.append("%d %s" % (c["Count"], c["Status"].lower()))
+    return " \u00b7 ".join(parts)
+
+
 # --- cards (task 5.2, 5.4) -----------------------------------------------
 
 # The person-card spec's requirement says 14 days; its scenario gives 20 as an
@@ -454,3 +472,85 @@ def link_edit_options(initiative_id: int) -> dict:
             )
         }
     return {"deans": deans, "chosen": chosen}
+
+
+# --- index screens (task 1.6; filters and sorting land in tasks 4.2, 4.3) ---
+
+
+def all_initiatives() -> list[dict]:
+    """Every active initiative, one row each, for the /initiatives index.
+
+    One row per initiative, not per tag, so the index does not repeat an
+    initiative that carries several goals or priorities. The goal and priority
+    names are collected per initiative rather than joined, for the same reason.
+    """
+    import datetime as _dt
+
+    with _conn() as conn:
+        rows = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT i.InitiativeID, i.Code, i.InitiativeName, i.Level, "
+                "       p.PersonID AS OwnerID, p.Name AS Owner, "
+                "       lp.PercentComplete, lp.Status, lp.UpdateDate AS LastUpdated "
+                "FROM Initiatives i "
+                "JOIN People p ON p.PersonID = i.OwnerID "
+                "LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID "
+                "WHERE i.IsActive = 1 "
+                "ORDER BY i.Level, i.Code"
+            )
+        ]
+        goals: dict = {}
+        for r in conn.execute(
+            "SELECT ig.InitiativeID, g.ShortName FROM InitiativeGoals ig "
+            "JOIN Goals g ON g.GoalID = ig.GoalID ORDER BY g.GoalNumber"
+        ):
+            goals.setdefault(r["InitiativeID"], []).append(r["ShortName"])
+        priorities: dict = {}
+        for r in conn.execute(
+            "SELECT ip.InitiativeID, pr.PriorityName FROM InitiativePriorities ip "
+            "JOIN Priorities pr ON pr.PriorityID = ip.PriorityID "
+            "ORDER BY pr.PriorityName"
+        ):
+            priorities.setdefault(r["InitiativeID"], []).append(r["PriorityName"])
+
+    today = _dt.date.today()
+    for row in rows:
+        row["Goals"] = goals.get(row["InitiativeID"], [])
+        row["Priorities"] = priorities.get(row["InitiativeID"], [])
+        row["HasUpdate"] = row["LastUpdated"] is not None
+        row["AgeDays"] = (
+            (today - _dt.date.fromisoformat(row["LastUpdated"])).days
+            if row["LastUpdated"] else None
+        )
+        row["NeedsUpdate"] = row["AgeDays"] is None or row["AgeDays"] > STALE_DAYS
+    return rows
+
+def all_people() -> list[dict]:
+    """Every active person with their active initiative count and breakdown.
+
+    Task 1.6 gives the list; task 4.3 adds the status breakdown and ordering by
+    attention.
+    """
+    with _conn() as conn:
+        people = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT PersonID, Name, Title, IsAdmin FROM People "
+                "WHERE IsActive = 1 ORDER BY Name"
+            )
+        ]
+        rows = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT PersonID, Status FROM vw_PersonInitiatives"
+            )
+        ]
+    by_person: dict = {}
+    for r in rows:
+        by_person.setdefault(r["PersonID"], []).append(r["Status"])
+    for person in people:
+        statuses = by_person.get(person["PersonID"], [])
+        person["InitiativeCount"] = len(statuses)
+        person["Counts"] = status_counts([{"Status": s} for s in statuses])
+    return people

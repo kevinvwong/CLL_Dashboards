@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Update {{ card.Code }}{% endblock %}
+{% block content %}
+{# Full-page fallback for a direct GET. The HTMX path renders update_form.html. #}
+<h1>Add an update &mdash; {{ card.Code }}</h1>
+{% include "update_form.html" %}
+{% endblock %}

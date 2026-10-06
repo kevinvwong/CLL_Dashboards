@@ -13,23 +13,33 @@
 <p class="entry-actions"><a href="/entries/{{ entry_kind }}/{{ entry_key }}/edit">Edit this description</a></p>
 {% endif %}
 
-{# Counts by status only. design.md decision: no aggregate percent anywhere,
-   because Bill expects rollups and we are deliberately not providing one. #}
-{% if counts %}
-<p class="status-counts">
-  {% for c in counts %}<span class="count count-{{ c.Status | status_class }}">{{ c.Status }} {{ c.Count }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
-</p>
+{# Rollup: total first, then a per-status breakdown. The old form read
+   "On track 10", a status word glued to a number that did not say it was the
+   total (the Accurate Rollup Labels requirement). #}
+{% if rollup %}
+<p class="status-counts">{{ rollup }}</p>
 {% endif %}
 
+{# Each side renders only when it has rows. Rendering the Dean <ul> and the
+   "D-1" divider unconditionally left an empty list and a divider pointing at
+   nothing on a Dean-only or D-1-only slice (the Grouped Initiative Lists
+   requirement: "No tier label SHALL appear without a group under it").
+   Today every seeded goal and priority happens to have both sides, which is
+   why the defect was invisible. #}
+{% if dean_rows %}
 <ul class="initiative-list dean-rows">
   {% for row in dean_rows %}
   {% include "_row.html" with context %}
   {% endfor %}
 </ul>
+{% endif %}
 
+{% if dean_rows and d1_groups %}
 <div class="divider">D-1</div>
+{% endif %}
 
 {% for group in d1_groups %}
+{% if group.rows %}
 <div class="list-group">
   <h2 class="list-group-label">{{ group.owner }}</h2>
   <ul class="initiative-list">
@@ -38,5 +48,6 @@
     {% endfor %}
   </ul>
 </div>
+{% endif %}
 {% endfor %}
 {% endblock %}

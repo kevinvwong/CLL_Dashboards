@@ -14,9 +14,10 @@ itself is never stored client-side.
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import auth, guards, queries, repo, status
 
@@ -61,6 +62,25 @@ def _edit_ctx(request: Request, code: str) -> dict:
         "may_edit_details": auth.can_edit_details(request, code),
         "may_admin": auth.is_admin_request(request),
     }
+
+
+def _wants_fragment(request: Request) -> bool:
+    """True when the response is being swapped into a page, not loaded directly.
+
+    HTMX sets HX-Request. The edit forms are opened with hx-get into
+    #card-modal, so their GET must return a fragment; a direct navigation must
+    return the full layout. Serving the full layout to the modal is what nested
+    the whole site inside the dialog (the Partial Responses requirement in
+    `initiative-detail`).
+    """
+    return bool(request.headers.get("HX-Request"))
+
+
+def _fragment_or_full(request: Request, fragment: str, full: str, context: dict):
+    """Render `fragment` for a partial request, `full` for a direct load."""
+    return templates.TemplateResponse(
+        request, fragment if _wants_fragment(request) else full, context
+    )
 
 
 def _edit_result(request: Request, code: str):
@@ -112,6 +132,40 @@ async def access_gate(request: Request, call_next):
 async def robots_txt():
     """Disallow all (task 9.2). Served outside the passcode gate."""
     return PlainTextResponse("User-agent: *\nDisallow: /\n")
+
+
+# --- styled error pages (the Styled Error Pages requirement) -----------------
+#
+# FastAPI's defaults answer with a JSON body, which reads as a broken API rather
+# than a wrong turn: /initiatives returned {"detail":"Method Not Allowed"} and
+# /people {"detail":"Not Found"}. A browser request gets a styled page; a
+# non-browser request (one that does not accept HTML) keeps the JSON, so a
+# script or a health probe is not handed a full HTML document.
+
+
+def _wants_html(request: Request) -> bool:
+    return "text/html" in (request.headers.get("accept") or "")
+
+
+def _error_page(request: Request, status_code: int, heading: str, message: str):
+    context = _ctx(request, status_code=status_code, heading=heading, message=message)
+    if _wants_html(request):
+        return templates.TemplateResponse(
+            request, "error.html", context, status_code=status_code
+        )
+    return JSONResponse(context, status_code=status_code)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    detail = exc.detail if isinstance(exc.detail, str) else "That request could not be served."
+    headings = {
+        403: "Not allowed",
+        404: "Page not found",
+        405: "Method not allowed",
+    }
+    heading = headings.get(exc.status_code, "Something went wrong")
+    return _error_page(request, exc.status_code, heading, detail)
 
 
 @app.get("/healthz", response_class=PlainTextResponse)
@@ -191,6 +245,7 @@ async def goal_list(request: Request, goal_number: int):
         raise HTTPException(status_code=404, detail="No such goal")
     rows = queries.goal_rows(goal_number)
     dean_rows, d1_groups = queries.split_for_list(rows)
+    counts = queries.status_counts(rows)
     return templates.TemplateResponse(
         request,
         "list.html",
@@ -202,7 +257,8 @@ async def goal_list(request: Request, goal_number: int):
             entry_key=goal["GoalNumber"],
             dean_rows=dean_rows,
             d1_groups=d1_groups,
-            counts=queries.status_counts(rows),
+            counts=counts,
+            rollup=queries.rollup_label(len(rows), counts),
         ),
     )
 
@@ -214,6 +270,7 @@ async def priority_list(request: Request, priority_name: str):
         raise HTTPException(status_code=404, detail="No such priority")
     rows = queries.priority_rows(priority_name)
     dean_rows, d1_groups = queries.split_for_list(rows)
+    counts = queries.status_counts(rows)
     return templates.TemplateResponse(
         request,
         "list.html",
@@ -225,7 +282,8 @@ async def priority_list(request: Request, priority_name: str):
             entry_key=priority["PriorityName"],
             dean_rows=dean_rows,
             d1_groups=d1_groups,
-            counts=queries.status_counts(rows),
+            counts=counts,
+            rollup=queries.rollup_label(len(rows), counts),
         ),
     )
 
@@ -264,10 +322,13 @@ async def initiative(request: Request, code: str,
 @app.get("/initiatives/{code}/update")
 async def update_form(request: Request, code: str,
                       target: guards.Target = Depends(guards.may_update)):
-    """The update form. 403 for anyone who may not update (task 6.4)."""
-    return templates.TemplateResponse(
-        request,
-        "update_form.html",
+    """The update form. 403 for anyone who may not update (task 6.4).
+
+    A fragment: it is opened with hx-get into #card-modal. Rendered through the
+    helper so a direct load still gets the full layout.
+    """
+    return _fragment_or_full(
+        request, "update_form.html", "update_form_full.html",
         _ctx(request, card=target.card, statuses=repo.STATUSES, note_max=repo.NOTE_MAX),
     )
 
@@ -365,8 +426,9 @@ async def oct16(request: Request):
 @app.get("/initiatives/{code}/edit/details")
 async def edit_details_form(request: Request, code: str,
                             target: guards.Target = Depends(guards.may_edit_details)):
-    return templates.TemplateResponse(
-        request, "edit_details.html", _ctx(request, card=target.card)
+    return _fragment_or_full(
+        request, "edit_details.html", "edit_details_full.html",
+        _ctx(request, card=target.card),
     )
 
 
@@ -395,9 +457,8 @@ async def edit_details_submit(request: Request, code: str,
 async def edit_tags_form(request: Request, code: str,
                          target: guards.Target = Depends(guards.admin_for)):
     options = queries.tag_edit_options(target.card["InitiativeID"])
-    return templates.TemplateResponse(
-        request,
-        "edit_tags.html",
+    return _fragment_or_full(
+        request, "edit_tags.html", "edit_tags_full.html",
         _ctx(request, card=target.card, error=None, **options),
     )
 
@@ -457,9 +518,8 @@ async def edit_tags_submit(request: Request, code: str,
 async def edit_links_form(request: Request, code: str,
                           target: guards.Target = Depends(guards.admin_for)):
     options = queries.link_edit_options(target.card["InitiativeID"])
-    return templates.TemplateResponse(
-        request,
-        "edit_links.html",
+    return _fragment_or_full(
+        request, "edit_links.html", "edit_links_full.html",
         _ctx(request, card=target.card, error=None, **options),
     )
 
@@ -569,6 +629,14 @@ async def edit_entry_submit(request: Request, kind: str, key: str,
     return RedirectResponse(url=back, status_code=303)
 
 
+@app.get("/people")
+async def people_index(request: Request):
+    """The people index (task 1.6). Filters and attention-ordering land in 4.3."""
+    return templates.TemplateResponse(
+        request, "people.html", _ctx(request, people=queries.all_people())
+    )
+
+
 @app.get("/people/{person_id}")
 async def person(request: Request, person_id: int):
     card = queries.person_card(person_id)
@@ -576,6 +644,18 @@ async def person(request: Request, person_id: int):
         raise HTTPException(status_code=404, detail="No such person")
     return templates.TemplateResponse(
         request, "person.html", _ctx(request, profile=card["person"], card=card)
+    )
+
+
+@app.get("/initiatives")
+async def initiatives_index(request: Request):
+    """The initiatives index (task 1.6).
+
+    Filters and sorting are task 4.2; this is the working table the spec's
+    "Initiatives Index" requirement builds on.
+    """
+    return templates.TemplateResponse(
+        request, "initiatives.html", _ctx(request, initiatives=queries.all_initiatives())
     )
 
 

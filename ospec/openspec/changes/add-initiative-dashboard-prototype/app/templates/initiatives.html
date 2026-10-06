@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Initiatives{% endblock %}
+{% block content %}
+{# The initiatives index (task 1.6). Filters and sorting are task 4.2; this is
+   the full list with the row facts the spec names: ID, name, owner, tier,
+   progress, status, last-update age. #}
+<h1>Initiatives</h1>
+
+{% if initiatives %}
+<p class="status-counts">{{ initiatives | length }} initiative{{ '' if initiatives | length == 1 else 's' }}</p>
+<div class="index-table-wrap">
+  <table class="index-table">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Name</th>
+        <th scope="col">Owner</th>
+        <th scope="col">Tier</th>
+        <th scope="col">Goals</th>
+        <th scope="col">Priorities</th>
+        <th scope="col">Progress</th>
+        <th scope="col">Status</th>
+        <th scope="col">Last update</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in initiatives %}
+      <tr class="index-row" tabindex="0" role="link"
+          hx-get="/initiatives/{{ row.Code }}"
+          hx-target="#card-modal" hx-swap="innerHTML"
+          hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
+          aria-label="Open {{ row.InitiativeName }}">
+        <td class="code">{{ row.Code }}</td>
+        <td>{{ row.InitiativeName }}{% if row.NeedsUpdate %} <span class="flag">Needs update</span>{% endif %}</td>
+        <td><a href="/people/{{ row.OwnerID }}" onclick="event.stopPropagation()">{{ row.Owner }}</a></td>
+        <td>{{ row.Level }}</td>
+        <td>{{ row.Goals | join(', ') if row.Goals else '—' }}</td>
+        <td>{{ row.Priorities | join(', ') if row.Priorities else '—' }}</td>
+        <td>
+          {% if row.HasUpdate %}
+          <span class="bar-label">{{ row.PercentComplete }}%</span>
+          {% else %}
+          <span class="bar-label muted">No update</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.Status %}
+          <span class="badge {{ row.Status | status_class }}">{{ row.Status }}</span>
+          {% else %}
+          <span class="badge status-not-started">Not started</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.AgeDays is none %}—
+          {% else %}{{ row.AgeDays }} day{{ '' if row.AgeDays == 1 else 's' }}{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">No active initiatives.</p>
+{% endif %}
+{% endblock %}

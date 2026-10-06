@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Edit links for {{ card.Code }}{% endblock %}
+{% block content %}
+{# Full-page fallback for a direct GET. The HTMX path renders edit_links.html. #}
+<h1>{{ card.Code }} feeds&hellip;</h1>
+{% include "edit_links.html" %}
+{% endblock %}

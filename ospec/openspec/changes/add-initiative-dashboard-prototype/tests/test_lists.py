@@ -82,16 +82,25 @@ def test_primary_tag_shows_a_badge(logged_in):
 
 
 def test_status_counts_in_header_sum_to_the_row_count(logged_in):
+    """The header rollup is a total followed by a per-status breakdown.
+
+    Updated for the Accurate Rollup Labels requirement: the label now reads
+    "5 initiatives · 4 on track · 1 at risk" rather than a status word glued to
+    a number ("On track 4").
+    """
     import re
 
     response = logged_in("Bill").get("/goals/%d" % _goal_number("Research"))
-    counts = {
-        status: int(n)
-        for status, n in re.findall(
-            r'count count-[a-z\-]+">([A-Za-z ]+?) (\d+)<', response.text
-        )
-    }
-    assert counts == {"On track": 4, "At risk": 1}
+    text = response.text
+    m = re.search(r'class="status-counts">([^<]+)<', text)
+    assert m, "no rollup line rendered"
+    label = m.group(1).strip()
+    assert label.startswith("5 initiatives"), label
+    # Drop the total, then read "N status" pairs from the breakdown.
+    breakdown = label.split("\u00b7", 1)[1] if "\u00b7" in label else ""
+    counts = {status.strip(): int(n)
+              for n, status in re.findall(r'(\d+) ([a-z][a-z ]*?)(?= \u00b7|$)', breakdown)}
+    assert counts == {"on track": 4, "at risk": 1}, (label, counts)
     assert sum(counts.values()) == len(_codes(response)) == 5
 
 

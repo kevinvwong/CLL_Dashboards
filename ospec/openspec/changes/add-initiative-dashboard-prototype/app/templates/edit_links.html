@@ -1,20 +1,20 @@
-{% extends "base.html" %}
-{% block title %}Edit links for {{ card.Code }}{% endblock %}
-{% block content %}
-<h1>{{ card.Code }} feeds&hellip;</h1>
-{% if card.Level != 'D-1' %}
-<p class="error">Only a D-1 initiative feeds a Dean initiative.</p>
-{% else %}
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-<form hx-post="/initiatives/{{ card.Code }}/edit/links" hx-target="#card-modal" hx-swap="innerHTML" class="card">
-  {% for de in deans %}
-  <label class="check">
-    <input type="checkbox" name="dean_initiative_id" value="{{ de.InitiativeID }}"
-           {% if de.InitiativeID in chosen %}checked{% endif %}>
-    <span>{{ de.Code }} {{ de.InitiativeName }}</span>
-  </label>
-  {% endfor %}
-  <button type="submit">Save links</button>
-</form>
-{% endif %}
-{% endblock %}
+{# Edit-links FRAGMENT (loaded into #card-modal by hx-get). Does not extend
+   base.html; a direct GET renders edit_links_full.html. #}
+<div class="card-body">
+  <h2>{{ card.Code }} feeds&hellip;</h2>
+  {% if card.Level != 'D-1' %}
+  <p class="error">Only a D-1 initiative feeds a Dean initiative.</p>
+  {% else %}
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <form hx-post="/initiatives/{{ card.Code }}/edit/links" hx-target="#card-modal" hx-swap="innerHTML" class="card">
+    {% for de in deans %}
+    <label class="check">
+      <input type="checkbox" name="dean_initiative_id" value="{{ de.InitiativeID }}"
+             {% if de.InitiativeID in chosen %}checked{% endif %}>
+      <span>{{ de.Code }} {{ de.InitiativeName }}</span>
+    </label>
+    {% endfor %}
+    <button type="submit">Save links</button>
+  </form>
+  {% endif %}
+</div>

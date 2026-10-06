@@ -2,9 +2,13 @@
 {% block title %}{{ card.Code }} {{ card.InitiativeName }}{% endblock %}
 {% block content %}
 {# Direct navigation to /initiatives/{code} renders the same card as a full
-   page (task 5.1). The fragment is the HTMX path; this is the fallback. #}
+   page (task 5.1). The fragment is the HTMX path; this is the fallback.
+   `modal=False` suppresses the dialog's close control, which has nothing to
+   close here - see _card_body.html. #}
 <div class="card-body card-fullpage">
   <p><a href="/">&larr; Back</a></p>
+  {% with modal=False %}
   {% include "_card_body.html" %}
+  {% endwith %}
 </div>
 {% endblock %}

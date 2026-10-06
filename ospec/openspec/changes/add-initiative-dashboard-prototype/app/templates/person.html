@@ -30,7 +30,8 @@
       <span class="bar-label">{{ row.PercentComplete }}% {{ row.Status }}</span>
       {% endif %}
       {% if row.AgeDays is defined %}
-      <span class="age">{{ row.AgeDays }} days since last update</span>
+      {# "1 days" reads wrong; a 1-day-old update is common enough to show. #}
+      <span class="age">{{ row.AgeDays }} day{{ "" if row.AgeDays == 1 else "s" }} since last update</span>
       {% endif %}
     </div>
   </li>

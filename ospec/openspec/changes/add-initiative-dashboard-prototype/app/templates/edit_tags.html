@@ -1,35 +1,35 @@
-{% extends "base.html" %}
-{% block title %}Edit tags for {{ card.Code }}{% endblock %}
-{% block content %}
-<h1>Tags for {{ card.Code }}</h1>
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-<form hx-post="/initiatives/{{ card.Code }}/edit/tags" hx-target="#card-modal" hx-swap="innerHTML" class="card">
-  <fieldset>
-    <legend>Goals</legend>
-    {% for g in goals %}
-    <label class="check">
-      <input type="checkbox" name="goal" value="{{ g.GoalID }}"
-             {% if g.GoalID in chosen_goals %}checked{% endif %}>
-      <span>{{ g.GoalNumber }} {{ g.ShortName }}</span>
-      <label class="primary">
-        <input type="radio" name="goal_primary" value="{{ g.GoalID }}"> primary
+{# Edit-tags FRAGMENT (loaded into #card-modal by hx-get). Does not extend
+   base.html; a direct GET renders edit_tags_full.html. #}
+<div class="card-body">
+  <h2>Tags for {{ card.Code }}</h2>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <form hx-post="/initiatives/{{ card.Code }}/edit/tags" hx-target="#card-modal" hx-swap="innerHTML" class="card">
+    <fieldset>
+      <legend>Goals</legend>
+      {% for g in goals %}
+      <label class="check">
+        <input type="checkbox" name="goal" value="{{ g.GoalID }}"
+               {% if g.GoalID in chosen_goals %}checked{% endif %}>
+        <span>{{ g.GoalNumber }} {{ g.ShortName }}</span>
+        <label class="primary">
+          <input type="radio" name="goal_primary" value="{{ g.GoalID }}"> primary
+        </label>
       </label>
-    </label>
-    {% endfor %}
-  </fieldset>
-  <fieldset>
-    <legend>Priorities</legend>
-    {% for p in priorities %}
-    <label class="check">
-      <input type="checkbox" name="priority" value="{{ p.PriorityID }}"
-             {% if p.PriorityID in chosen_priorities %}checked{% endif %}>
-      <span>{{ p.PriorityName }} ({{ p.PlanYear }})</span>
-      <label class="primary">
-        <input type="radio" name="priority_primary" value="{{ p.PriorityID }}"> primary
+      {% endfor %}
+    </fieldset>
+    <fieldset>
+      <legend>Priorities</legend>
+      {% for p in priorities %}
+      <label class="check">
+        <input type="checkbox" name="priority" value="{{ p.PriorityID }}"
+               {% if p.PriorityID in chosen_priorities %}checked{% endif %}>
+        <span>{{ p.PriorityName }} ({{ p.PlanYear }})</span>
+        <label class="primary">
+          <input type="radio" name="priority_primary" value="{{ p.PriorityID }}"> primary
+        </label>
       </label>
-    </label>
-    {% endfor %}
-  </fieldset>
-  <button type="submit">Save tags</button>
-</form>
-{% endblock %}
+      {% endfor %}
+    </fieldset>
+    <button type="submit">Save tags</button>
+  </form>
+</div>

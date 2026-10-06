@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+{# Styled error page (the Styled Error Pages requirement). Keeps the site layout
+   so a wrong turn still looks like the app, and offers a way back rather than a
+   raw JSON body. #}
+<section class="error-page">
+  <p class="error-code">{{ status_code }}</p>
+  <h1>{{ heading }}</h1>
+  <p class="error-message">{{ message }}</p>
+  <p><a class="button" href="/">Back to Overview</a></p>
+</section>
+{% endblock %}

@@ -1,5 +1,11 @@
 <div class="card-body">
+  {# The close control belongs to the modal only. On the standalone page
+     (card_full.html) there is nothing to close, and showing "×" beside the
+     "← Back" link gave the page two ways out of a dialog that was never open
+     (the Full-Page Detail requirement in `initiative-detail`). #}
+  {% if modal is not defined or modal %}
   <button class="card-close" data-close aria-label="Close">&times;</button>
+  {% endif %}
 
   <p class="card-code">{{ card.Code }} <span class="level">{{ card.Level }}</span></p>
   <h2 class="card-title">{{ card.InitiativeName }} {% include "_synthetic_label.html" %}</h2>

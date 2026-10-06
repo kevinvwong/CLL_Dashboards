@@ -1,13 +1,14 @@
-{% extends "base.html" %}
-{% block title %}Edit {{ card.Code }}{% endblock %}
-{% block content %}
-<h1>Edit {{ card.Code }}</h1>
-{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-<form hx-post="/initiatives/{{ card.Code }}/edit/details" hx-target="#card-modal" hx-swap="innerHTML" class="card">
-  <label for="name">Name</label>
-  <input id="name" name="name" value="{{ card.InitiativeName }}" required>
-  <label for="description">Description</label>
-  <textarea id="description" name="description" rows="4">{{ card.Description or "" }}</textarea>
-  <button type="submit">Save</button>
-</form>
-{% endblock %}
+{# Edit-details FRAGMENT, loaded into #card-modal by HTMX. Deliberately does not
+   extend base.html - the same nested-layout defect the card fragment avoids. A
+   direct GET renders edit_details_full.html instead. #}
+<div class="card-body">
+  <h2>Edit {{ card.Code }}</h2>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <form hx-post="/initiatives/{{ card.Code }}/edit/details" hx-target="#card-modal" hx-swap="innerHTML" class="card">
+    <label for="name">Name</label>
+    <input id="name" name="name" value="{{ card.InitiativeName }}" required>
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="4">{{ card.Description or "" }}</textarea>
+    <button type="submit">Save</button>
+  </form>
+</div>

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}People{% endblock %}
+{% block content %}
+{# The people index (task 1.6). Task 4.3 adds the attention ordering and the
+   richer status breakdown. #}
+<h1>People</h1>
+
+{% if people %}
+<ul class="people-list">
+  {% for p in people %}
+  <li class="person-card">
+    <a class="person-link" href="/people/{{ p.PersonID }}">
+      <span class="person-name">{{ p.Name }}</span>
+      {% if p.Title %}<span class="person-title">{{ p.Title }}</span>{% endif %}
+    </a>
+    <span class="person-counts">
+      {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}
+      {% for c in p.Counts %}{% if c.Count %}
+      <span class="badge {{ c.Status | status_class }}">{{ c.Count }} {{ c.Status }}</span>
+      {% endif %}{% endfor %}
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty">No active people.</p>
+{% endif %}
+{% endblock %}

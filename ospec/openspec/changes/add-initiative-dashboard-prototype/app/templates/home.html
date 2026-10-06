@@ -6,7 +6,12 @@
   <ul class="tiles goals">
     {% for g in goals %}
     <li>
-      <a class="tile" href="/goals/{{ g.GoalNumber }}">
+      {# The tile reads "1 Academic" then a bare count, which a screen reader
+         announces without saying what the number counts. The accessible name
+         states the goal and its count (the Accessibility Baseline
+         requirement). #}
+      <a class="tile" href="/goals/{{ g.GoalNumber }}"
+         aria-label="{{ g.ShortName }}, {{ g.InitiativeCount }} initiative{{ '' if g.InitiativeCount == 1 else 's' }}">
         <span class="tile-label">{{ g.GoalNumber }} {{ g.ShortName }}</span>
         <span class="tile-count">{{ g.InitiativeCount }}</span>
       </a>
@@ -21,7 +26,8 @@
   <ul class="tiles priorities">
     {% for p in priorities %}
     <li>
-      <a class="tile" href="/priorities/{{ p.PriorityName | urlencode }}">
+      <a class="tile" href="/priorities/{{ p.PriorityName | urlencode }}"
+         aria-label="{{ p.PriorityName }}, {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}">
         <span class="tile-label">{{ p.PriorityName }}</span>
         <span class="tile-count">{{ p.InitiativeCount }}</span>
       </a>
