@@ -1,0 +1,34 @@
+{# One initiative row, shared by the Dean block and every D-1 group.
+   Expects: row. OwnerID and InitiativeID come from the list views. #}
+<li class="initiative-row"
+    hx-get="/initiatives/{{ row.Code }}"
+    hx-target="#card-modal"
+    hx-swap="innerHTML"
+    tabindex="0"
+    role="link"
+    aria-label="Open {{ row.InitiativeName }}">
+  <div class="row-main">
+    <span class="code">{{ row.Code }}</span>
+    <span class="name">{{ row.InitiativeName }}</span>
+    {% if row.IsPrimary %}<span class="badge">Primary</span>{% endif %}
+  </div>
+  <div class="row-progress">
+    {% if row.PercentComplete is none %}
+    {# No progress update at all: an empty bar labelled, never a zero bar. #}
+    <div class="bar bar-empty" aria-label="No update yet">No update yet</div>
+    {% else %}
+    <div class="bar" role="img" aria-label="{{ row.Status }}, {{ row.PercentComplete }} percent">
+      <div class="bar-fill status-{{ row.Status | lower | replace(' ', '-') }}"
+           style="width: {{ row.PercentComplete }}%"></div>
+    </div>
+    <span class="bar-label">{{ row.PercentComplete }}% {{ row.Status }}</span>
+    {% endif %}
+  </div>
+  {% if row.OwnerID %}
+  <div class="row-owner">
+    <a href="/people/{{ row.OwnerID }}" onclick="event.stopPropagation()">{{ row.Owner }}</a>
+  </div>
+  {% else %}
+  <div class="row-owner">{{ row.Owner }}</div>
+  {% endif %}
+</li>

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Meeting{% endblock %}
+{% block content %}
+{# The Wednesday agenda (config.yaml). Prints to just the attention list and
+   the change list - print.css drops the header, nav and this control. #}
+<h1>Meeting</h1>
+
+<form method="get" action="/meeting" class="since-form no-print">
+  <label for="since">Updates since</label>
+  <input type="date" id="since" name="since" value="{{ since }}">
+  <button type="submit">Show</button>
+</form>
+
+<section class="attention">
+  <h2>Needs attention</h2>
+  {% if attention %}
+  <ul class="initiative-list attention-list">
+    {% for row in attention %}
+    <li class="initiative-row" hx-get="/initiatives/{{ row.Code }}"
+        hx-target="#card-modal" hx-swap="innerHTML">
+      <div class="row-main">
+        <span class="code">{{ row.Code }}</span>
+        <span class="name">{{ row.InitiativeName }}</span>
+        <span class="badge">{{ row.Status }}</span>
+      </div>
+      <div class="row-progress">
+        <span class="bar-label">{{ row.PercentComplete }}% &middot; last update {{ row.UpdateDate }}</span>
+      </div>
+      <div class="row-owner">
+        <a href="/people/{{ row.OwnerID }}">{{ row.Owner }}</a>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">Nothing is at risk.</p>
+  {% endif %}
+</section>
+
+<section class="changes">
+  <h2>Changes since {{ since }}</h2>
+  {% if groups %}
+    {% for group in groups %}
+    <div class="list-group">
+      <h3 class="list-group-label">{{ group.owner }}</h3>
+      <ul class="initiative-list">
+        {% for row in group.rows %}
+        <li class="initiative-row" hx-get="/initiatives/{{ row.Code }}"
+            hx-target="#card-modal" hx-swap="innerHTML">
+          <div class="row-main">
+            <span class="code">{{ row.Code }}</span>
+            <span class="name">{{ row.InitiativeName }}</span>
+          </div>
+          <div class="row-progress">
+            <span class="bar-label">{{ row.UpdateDate }} &middot; {{ row.PercentComplete }}% {{ row.Status }}</span>
+            {% if row.Note %}<span class="diary-note">{{ row.Note }}</span>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  {% else %}
+  <p class="empty">No updates in this window.</p>
+  {% endif %}
+</section>
+{% endblock %}

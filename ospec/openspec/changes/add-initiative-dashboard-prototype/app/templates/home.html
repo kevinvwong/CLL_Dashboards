@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Initiative Dashboard{% endblock %}
+{% block content %}
+<section class="entry-points">
+  <h1>Strategy 2035</h1>
+  <ul class="tiles goals">
+    {% for g in goals %}
+    <li>
+      <a class="tile" href="/goals/{{ g.GoalNumber }}">
+        <span class="tile-label">{{ g.GoalNumber }} {{ g.ShortName }}</span>
+        <span class="tile-count">{{ g.InitiativeCount }}</span>
+      </a>
+      {% if g.FullName %}<p class="tile-full">{{ g.FullName }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="entry-points">
+  <h1>{{ plan_year }} Priorities</h1>
+  <ul class="tiles priorities">
+    {% for p in priorities %}
+    <li>
+      <a class="tile" href="/priorities/{{ p.PriorityName | urlencode }}">
+        <span class="tile-label">{{ p.PriorityName }}</span>
+        <span class="tile-count">{{ p.InitiativeCount }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

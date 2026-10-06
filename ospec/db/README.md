@@ -29,7 +29,20 @@ Always run `PRAGMA foreign_keys = ON;` when connecting, or the links aren't enfo
 
 ## Migrating to Microsoft tools later
 
-Each table becomes a SharePoint List or Dataverse table; each REFERENCES column becomes a Lookup.
-Rules that SQLite enforces (one primary tag, D-1 -> Dean links, percent 0-100) need to be
-rebuilt as column validation or Power Automate checks, and vw_DataChecks becomes a Power BI page.
-For Azure SQL, the earlier T-SQL file (v2) is the starting point.
+Target is **Azure SQL (T-SQL)**. The T-SQL mirror of this schema is `schema.mssql.sql`, kept in this
+directory so the two can be diffed together. It has been verified against `schema.sql`
+table-for-table and view-for-view: 9 tables, 7 views, every column matched.
+
+- SQLite rules that SQLite enforced with pragmas and triggers become declarative in T-SQL: one
+  primary tag -> filtered unique index (`WHERE IsPrimary = 1`); D-1 -> Dean links ->
+  `trg_Links_LevelCheck`; percent 0-100 -> `CHECK (PercentComplete BETWEEN 0 AND 100)`.
+- Because the views are the contract (design.md decision 3), they survive the move unchanged. That
+  is the reason Azure SQL was chosen over a Dataverse/SharePoint target: Dataverse has no SQL
+  views, and every SQLite-enforced rule would have to be rebuilt as a Power Automate check.
+- Keep both schema files in sync. A change present in one and not the other is a build failure.
+- `vw_DataChecks` becomes the first Power BI page.
+
+Still missing: a T-SQL equivalent of `seed_sample.sql`, so the views cannot yet be verified
+against real rows.
+
+Superseded 2026-10-05: this section previously named SharePoint/Dataverse as the migration target.

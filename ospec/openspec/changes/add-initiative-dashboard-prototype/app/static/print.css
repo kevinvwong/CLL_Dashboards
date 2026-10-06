@@ -1,0 +1,38 @@
+/* Print stylesheet.
+   The meeting page is printed for the Wednesday agenda (design.md decision
+   on meeting-view), so chrome is dropped and only the agenda content is kept. */
+
+@page {
+  margin: 15mm;
+}
+
+.site-header,
+.site-nav,
+.whoami,
+.switch,
+.brand,
+.card-modal,
+.no-print {
+  display: none !important;
+}
+
+body {
+  font-size: 11pt;
+  color: #000;
+  background: #fff;
+}
+
+main {
+  max-width: none;
+  padding: 0;
+}
+
+/* Keep a printed row from splitting across pages. */
+.initiative-row,
+.list-group {
+  break-inside: avoid;
+}
+
+a[href]::after {
+  content: "";
+}

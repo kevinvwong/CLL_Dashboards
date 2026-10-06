@@ -13,9 +13,13 @@ context: |
   Target laptop: 2019 Intel MacBook Pro, 8GB RAM; no Docker required.
   Database source of truth: db/schema.sql. Future migration target: Microsoft (Lists/Dataverse/Power BI),
   so keep business rules in the schema and views, not only in Python.
-  Two environments: local dev on the MacBook (uvicorn, sample data, no Docker) and live on Kevin's
-  Hetzner VPS (Docker Compose, HTTPS reverse proxy, persistent volume). The VPS database is the only
-  source of truth for live data; never copy a local database up over it.
+  Two environments: local dev on the MacBook (uvicorn, sample data, no Docker) and live on Azure App
+  Service (Linux, Python 3.12, F1 free tier, region northcentralus). REVERSED 2026-10-05: this line
+  previously named Kevin's Hetzner VPS with Docker Compose, an HTTPS reverse proxy, and a named
+  volume. Reason: the project is being redesigned into the Microsoft ecosystem and Georgia Tech
+  provisioning takes longer than the prototype deadline, so the live environment moved first and
+  permanently. The App Service database is the only source of truth for live data; never copy a local
+  database up over it.
   Prototype has passcode + person-picker access only, no SSO.
 
 rules:

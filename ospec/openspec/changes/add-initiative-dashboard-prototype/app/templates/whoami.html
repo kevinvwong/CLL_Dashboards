@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Who are you?{% endblock %}
+{% block content %}
+<h1>Who are you?</h1>
+<form method="post" action="/whoami" class="card whoami">
+  <ul class="people">
+    {% for p in people %}
+    <li>
+      <button type="submit" name="person_id" value="{{ p.PersonID }}">
+        <span class="name">{{ p.Name }}</span>
+        {% if p.Title %}<span class="title">{{ p.Title }}</span>{% endif %}
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+</form>
+{% endblock %}

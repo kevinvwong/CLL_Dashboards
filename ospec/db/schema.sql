@@ -139,8 +139,8 @@ WHERE rn = 1;
 
 -- Goal list / goal card: Dean initiatives above the line, D-1 below
 CREATE VIEW vw_GoalInitiatives AS
-SELECT g.GoalNumber, g.ShortName AS Goal, i.Level, i.Code, i.InitiativeName,
-       p.Name AS Owner, ig.IsPrimary, lp.PercentComplete, lp.Status
+SELECT g.GoalNumber, g.ShortName AS Goal, i.InitiativeID, i.Level, i.Code, i.InitiativeName,
+       p.PersonID AS OwnerID, p.Name AS Owner, ig.IsPrimary, lp.PercentComplete, lp.Status
 FROM InitiativeGoals ig
 JOIN Goals g       ON g.GoalID = ig.GoalID
 JOIN Initiatives i ON i.InitiativeID = ig.InitiativeID AND i.IsActive = 1
@@ -149,8 +149,8 @@ LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID;
 
 -- Priority list / priority card: same shape, other entry point
 CREATE VIEW vw_PriorityInitiatives AS
-SELECT pr.PriorityName AS Priority, pr.PlanYear, i.Level, i.Code, i.InitiativeName,
-       p.Name AS Owner, ip.IsPrimary, lp.PercentComplete, lp.Status
+SELECT pr.PriorityName AS Priority, pr.PlanYear, i.InitiativeID, i.Level, i.Code, i.InitiativeName,
+       p.PersonID AS OwnerID, p.Name AS Owner, ip.IsPrimary, lp.PercentComplete, lp.Status
 FROM InitiativePriorities ip
 JOIN Priorities pr ON pr.PriorityID = ip.PriorityID
 JOIN Initiatives i ON i.InitiativeID = ip.InitiativeID AND i.IsActive = 1
@@ -160,19 +160,23 @@ LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID;
 -- Initiative card: what it feeds (up) and what feeds it (down)
 CREATE VIEW vw_InitiativeConnections AS
 SELECT l.DeanInitiativeID AS InitiativeID, 'Fed by' AS Direction,
-       c.Code, c.InitiativeName, pc.Name AS Owner
+       c.Code, c.InitiativeName, pc.PersonID AS OwnerID, pc.Name AS Owner,
+       lp.PercentComplete, lp.Status
 FROM InitiativeLinks l
 JOIN Initiatives c ON c.InitiativeID = l.InitiativeID
 JOIN People pc     ON pc.PersonID = c.OwnerID
+LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = c.InitiativeID
 UNION ALL
-SELECT l.InitiativeID, 'Feeds', d.Code, d.InitiativeName, pd.Name
+SELECT l.InitiativeID, 'Feeds', d.Code, d.InitiativeName, pd.PersonID, pd.Name,
+       lp.PercentComplete, lp.Status
 FROM InitiativeLinks l
 JOIN Initiatives d ON d.InitiativeID = l.DeanInitiativeID
-JOIN People pd     ON pd.PersonID = d.OwnerID;
+JOIN People pd     ON pd.PersonID = d.OwnerID
+LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = d.InitiativeID;
 
 -- Person card: everything a person owns, with latest progress
 CREATE VIEW vw_PersonInitiatives AS
-SELECT p.PersonID, p.Name AS Owner, i.Level, i.Code, i.InitiativeName,
+SELECT p.PersonID, p.Name AS Owner, i.InitiativeID, i.Level, i.Code, i.InitiativeName,
        lp.PercentComplete, lp.Status, lp.UpdateDate AS LastUpdated
 FROM People p
 JOIN Initiatives i ON i.OwnerID = p.PersonID AND i.IsActive = 1
@@ -213,9 +217,13 @@ WHERE c.Level = 'D-1' AND c.IsActive = 1
       WHERE l.InitiativeID = c.InitiativeID AND dg.GoalID = cg.GoalID);
 
 -- Meeting view: updates entered in a date range, newest first
+-- Updates in a date window, newest first.
+-- NOTE: the view deliberately carries no WHERE and no ORDER BY. The window
+-- and the ordering are the caller's job, so the same view serves /meeting
+-- for any window without the schema knowing about meeting dates.
 CREATE VIEW vw_RecentUpdates AS
-SELECT pu.UpdateDate, pu.CreatedAt, i.Code, i.InitiativeName, i.Level,
-       o.Name AS Owner, pu.PercentComplete, pu.Status, pu.Note,
+SELECT pu.UpdateDate, pu.CreatedAt, i.InitiativeID, i.Code, i.InitiativeName, i.Level,
+       o.PersonID AS OwnerID, o.Name AS Owner, pu.PercentComplete, pu.Status, pu.Note,
        e.Name AS EnteredBy
 FROM ProgressUpdates pu
 JOIN Initiatives i ON i.InitiativeID = pu.InitiativeID AND i.IsActive = 1

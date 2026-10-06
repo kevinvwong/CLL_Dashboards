@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Initiative Dashboard{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/print.css" media="print">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Initiative Dashboard</a>
+    <nav class="site-nav">
+      <a href="/">Home</a>
+      <a href="/meeting">Meeting</a>
+      <a href="/checks">Checks</a>
+    </nav>
+    <div class="whoami">
+      {% if person %}
+        <span class="person-name">{{ person.Name }}</span>
+        <a class="switch" href="/whoami">Switch</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  {# Initiative cards are loaded into this dialog over a list screen
+     (design.md decision 6). The same route renders as a full page when the
+     browser navigates directly, in which case this stays empty. #}
+  <dialog id="card-modal" class="card-modal"></dialog>
+
+  <script>
+    // Rows carry hx-get onto #card-modal (task 4.4). Show the dialog once
+    // htmx has swapped a card in, and close on Escape or a close button.
+    (function () {
+      const modal = document.getElementById("card-modal");
+      if (!modal) return;
+      document.body.addEventListener("htmx:afterSwap", function (evt) {
+        if (evt.detail && evt.detail.target === modal) {
+          if (typeof modal.showModal === "function") modal.showModal();
+          else modal.setAttribute("open", "open");
+        }
+      });
+      modal.addEventListener("click", function (evt) {
+        // Click on the backdrop (the dialog element itself) closes it.
+        if (evt.target === modal) modal.close();
+        const close = evt.target.closest("[data-close]");
+        if (close) modal.close();
+      });
+      // Saving an update tells us the list row behind the modal is stale
+      // (task 6.3), so re-fetch the list rather than patch one row and risk
+      // losing ordering, the divider, or the primary badge.
+      document.body.addEventListener("initiativeUpdated", function () {
+        if (location.pathname === "/" || location.pathname === "/whoami") return;
+        htmx.ajax("GET", location.pathname, { target: "main", select: "main" });
+      });
+    })();
+  </script>
+</body>
+</html>

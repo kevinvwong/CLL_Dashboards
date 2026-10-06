@@ -1,0 +1,39 @@
+{# Update form fragment (task 6.2): slider with a live percent readout,
+   a status select limited to the vocabulary the CHECK constraint enforces,
+   and a note capped at repo.NOTE_MAX characters. #}
+<div class="card-body update-form-body">
+  <h2>Add an update &mdash; {{ card.Code }}</h2>
+
+  {# A refused write comes back as this same form with the reason (task 6.2).
+     Without this the person sees their input vanish and learns nothing. #}
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+  <form hx-post="/initiatives/{{ card.Code }}/updates"
+        hx-target="#card-modal"
+        hx-swap="innerHTML"
+        class="update-form">
+
+    <label for="percent">Progress</label>
+    <div class="slider-row">
+      <input type="range" id="percent" name="percent" min="0" max="100" step="5"
+             value="{{ card.latest.PercentComplete if card.latest else 0 }}"
+             oninput="document.getElementById('percent-out').textContent = this.value + '%'">
+      <output id="percent-out">{{ card.latest.PercentComplete if card.latest else 0 }}%</output>
+    </div>
+
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      {% for s in statuses %}
+      <option value="{{ s }}"{% if card.latest and card.latest.Status == s %} selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="note">Note</label>
+    <textarea id="note" name="note" rows="3" maxlength="{{ note_max }}"
+              placeholder="What changed? One or two sentences."></textarea>
+    <p class="hint">Up to {{ note_max }} characters.</p>
+
+    <button type="submit">Save update</button>
+    <button type="button" data-close>Cancel</button>
+  </form>
+</div>

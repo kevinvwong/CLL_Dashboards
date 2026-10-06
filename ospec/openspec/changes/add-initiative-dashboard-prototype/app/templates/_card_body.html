@@ -1,0 +1,113 @@
+<div class="card-body">
+  <button class="card-close" data-close aria-label="Close">&times;</button>
+
+  <p class="card-code">{{ card.Code }} <span class="level">{{ card.Level }}</span></p>
+  <h2 class="card-title">{{ card.InitiativeName }}</h2>
+  <p class="card-owner">Owner:
+    <a href="/people/{{ card.OwnerID }}">{{ card.Owner }}</a>
+  </p>
+  {% if card.Description %}<p class="card-description">{{ card.Description }}</p>{% endif %}
+
+  {# 6.4: the button is hidden when the signed-in person may not update. This
+     is presentation only - the server refuses the POST either way. #}
+  {% if may_update %}
+  <p class="card-actions">
+    <button class="update-button"
+            hx-get="/initiatives/{{ card.Code }}/update"
+            hx-target="#card-modal"
+            hx-swap="innerHTML">Update</button>
+  </p>
+  {% endif %}
+
+  {# 6.4 hides Update from non-owners; 8.1-8.4 gate the edit controls on the
+     admin flag. Both are presentation - the server refuses either way. #}
+  {% if may_edit_details or may_admin %}
+  <p class="card-actions admin-actions">
+    {% if may_edit_details %}
+    <button hx-get="/initiatives/{{ card.Code }}/edit/details"
+            hx-target="#card-modal" hx-swap="innerHTML">Edit details</button>
+    {% endif %}
+    {% if may_admin %}
+    <button hx-get="/initiatives/{{ card.Code }}/edit/tags"
+            hx-target="#card-modal" hx-swap="innerHTML">Edit tags</button>
+    {% if card.Level == 'D-1' %}
+    <button hx-get="/initiatives/{{ card.Code }}/edit/links"
+            hx-target="#card-modal" hx-swap="innerHTML">Edit links</button>
+    {% endif %}
+    <form method="post" action="/initiatives/{{ card.Code }}/retire"
+          onsubmit="return confirm('Retire {{ card.Code }}? It will disappear from every list, but its progress history is kept.')">
+      <button type="submit" class="danger">Retire</button>
+    </form>
+    {% endif %}
+  </p>
+  {% endif %}
+
+  <div class="card-tags">
+    {% if card.goal_tags %}
+    <p class="tags"><span class="tags-label">Goals:</span>
+      {% for t in card.goal_tags %}
+      <a href="/goals/{{ t.GoalNumber }}">{{ t.ShortName }}</a>{% if t.IsPrimary %} <span class="badge">Primary</span>{% endif %}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    </p>
+    {% endif %}
+    {% if card.priority_tags %}
+    <p class="tags"><span class="tags-label">Priorities:</span>
+      {% for t in card.priority_tags %}
+      <a href="/priorities/{{ t.PriorityName | urlencode }}">{{ t.PriorityName }}</a>{% if t.IsPrimary %} <span class="badge">Primary</span>{% endif %}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    </p>
+    {% endif %}
+  </div>
+
+  {% if card.connections %}
+  <section class="card-connections">
+    {# A D-1 initiative lists what it Feeds; a Dean initiative lists what is
+       Fed by (design.md decision 6). Both come from vw_InitiativeConnections. #}
+    {% if card.Level == 'D-1' %}
+    <h3>Feeds</h3>
+    {% else %}
+    <h3>Fed by</h3>
+    {% endif %}
+    <ul class="connections">
+      {% for c in card.connections %}
+      <li>
+        {# Clicking a connected initiative swaps the modal content in place. #}
+        <a href="/initiatives/{{ c.Code }}"
+           hx-get="/initiatives/{{ c.Code }}"
+           hx-target="#card-modal"
+           hx-swap="innerHTML">{{ c.Code }} {{ c.InitiativeName }}</a>
+        <span class="connection-owner">
+          {% if c.OwnerID %}<a href="/people/{{ c.OwnerID }}">{{ c.Owner }}</a>{% else %}{{ c.Owner }}{% endif %}
+        </span>
+        {% if c.Direction == 'Fed by' and c.Status %}<span class="connection-status {{ c.Status | lower | replace(' ', '-') }}">{{ c.Status }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="card-latest">
+    <h3>Latest</h3>
+    {% if card.latest %}
+    <p class="bar-label">{{ card.latest.PercentComplete }}% {{ card.latest.Status }} &middot; {{ card.latest.UpdateDate }}</p>
+    {% else %}
+    <p class="bar-empty">No update yet</p>
+    {% endif %}
+  </section>
+
+  {% if card.diary %}
+  <section class="card-diary">
+    <h3>Diary</h3>
+    <ul class="diary">
+      {% for d in card.diary %}
+      <li><span class="diary-date">{{ d.UpdateDate }}</span>
+        <span class="diary-status">{{ d.Status }}</span>
+        <span class="diary-percent">{{ d.PercentComplete }}%</span>
+        {% if d.Note %}<span class="diary-note">{{ d.Note }}</span>{% endif %}
+        {% if d.EnteredBy %}<span class="diary-by">by {{ d.EnteredBy }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>

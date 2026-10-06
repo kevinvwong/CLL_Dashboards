@@ -23,7 +23,7 @@ The Dean tracks college initiatives in a vibe-coded prototype (CLL Blueprint 202
 | Date | Milestone |
 |---|---|
 | Thu Oct 8, 2026 | Clickable demo with sample data: navigation, cards, updates |
-| Fri Oct 9 | Admin editing and meeting page done; live on the VPS over HTTPS; template sent to leaders |
+| Fri Oct 9 | Admin editing and meeting page done; live on Azure App Service over HTTPS; template sent to leaders |
 | Mon Oct 12 | Live data imported; owners enter first updates |
 | Wed Oct 14 | First leadership meeting run from the meeting page |
 | Fri Oct 16 | First dashboard delivered to the Dean |
@@ -57,4 +57,4 @@ The Dean tracks college initiatives in a vibe-coded prototype (CLL Blueprint 202
 - New code: `app/` (routes, templates, static), `scripts/` (template generator, importer, backup), `tests/`.
 - Schema additions in `db/schema.sql`: `People.IsAdmin`, `ProgressUpdates.CreatedAt`, `AuditLog`, `vw_RecentUpdates`.
 - Python dependencies: fastapi, uvicorn, jinja2, python-multipart, itsdangerous, openpyxl, pytest, httpx.
-- Runs locally for development and on Kevin's Hetzner VPS for live use (Docker Compose, HTTPS). New `Dockerfile`, `compose.yaml`, `deploy/` scripts. No changes to any Georgia Tech production system.
+- Runs locally for development and on Azure App Service for live use (Linux, Python 3.12, F1, HTTPS at the platform). **Revised 2026-10-05** — was: "on Kevin's Hetzner VPS (Docker Compose, HTTPS). New `Dockerfile`, `compose.yaml`, `deploy/` scripts." The `Dockerfile` is retained for local dev; `compose.yaml` and `deploy/` scripts are dropped in favour of `az webapp deploy`. No changes to any Georgia Tech production system.

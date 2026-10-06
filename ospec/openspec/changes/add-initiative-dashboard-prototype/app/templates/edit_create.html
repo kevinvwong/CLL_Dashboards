@@ -1,0 +1,26 @@
+﻿{% extends "base.html" %}
+{% block title %}New initiative{% endblock %}
+{% block content %}
+<h1>New initiative</h1>
+<p class="hint">A new initiative starts with no tags and no links, so it will appear on
+   <a href="/checks">/checks</a> until both are set.</p>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="/initiatives" class="card">
+  <label for="code">Code</label>
+  <input id="code" name="code" placeholder="ELIZ-3" required>
+  <label for="name">Name</label>
+  <input id="name" name="name" required>
+  <label for="level">Level</label>
+  <select id="level" name="level">
+    <option value="D-1">D-1</option>
+    <option value="Dean">Dean</option>
+  </select>
+  <label for="owner_id">Owner</label>
+  <select id="owner_id" name="owner_id">
+    {% for p in people %}<option value="{{ p.PersonID }}">{{ p.Name }}</option>{% endfor %}
+  </select>
+  <label for="description">Description</label>
+  <textarea id="description" name="description" rows="3"></textarea>
+  <button type="submit">Create</button>
+</form>
+{% endblock %}

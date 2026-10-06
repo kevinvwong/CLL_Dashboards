@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<h1>Initiative Dashboard</h1>
+<form method="post" action="/login" class="card login">
+  <label for="passcode">Passcode</label>
+  <input id="passcode" name="passcode" type="password" autocomplete="current-password" autofocus>
+  <button type="submit">Continue</button>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+</form>
+{% endblock %}

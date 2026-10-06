@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Data checks{% endblock %}
+{% block content %}
+{# Fix these before the dashboard goes live (data-intake spec). Every row
+   comes straight from vw_DataChecks. #}
+<h1>Data checks</h1>
+
+{% if checks %}
+<p class="checks-summary">{{ checks | length }} issue{{ '' if checks | length == 1 else 's' }} to fix.</p>
+<table class="checks-table">
+  <thead>
+    <tr><th>Initiative</th><th>Issue</th></tr>
+  </thead>
+  <tbody>
+    {% for check in checks %}
+    <tr>
+      <td><a href="/initiatives/{{ check.Code }}"
+             hx-get="/initiatives/{{ check.Code }}"
+             hx-target="#card-modal"
+             hx-swap="innerHTML">{{ check.Code }}</a></td>
+      <td>{{ check.Issue }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty checks-clear">No issues. Every active D-1 initiative has a Dean link and every initiative is tagged.</p>
+{% endif %}
+{% endblock %}

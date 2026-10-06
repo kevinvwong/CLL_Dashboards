@@ -2,3 +2,9 @@
 __pycache__/
 *.pyc
 backup/
+backups/
+node_modules/
+# SQLite sidecar files: runtime artefacts, and a stray -wal hides
+# uncommitted transactions from anyone who opens the database read-only.
+*.db-shm
+*.db-wal

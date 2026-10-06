@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ card.Code }} {{ card.InitiativeName }}{% endblock %}
+{% block content %}
+{# Direct navigation to /initiatives/{code} renders the same card as a full
+   page (task 5.1). The fragment is the HTMX path; this is the fallback. #}
+<div class="card-body card-fullpage">
+  <p><a href="/">&larr; Back</a></p>
+  {% include "_card_body.html" %}
+</div>
+{% endblock %}

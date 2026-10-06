@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+{# One template serves both entry points (task 4.1). The caller supplies
+   heading, description, dean_rows, d1_groups, counts and owner_ids. #}
+
+<h1>{{ heading }}</h1>
+{% if description %}<p class="entry-description">{{ description }}</p>{% endif %}
+
+{# Counts by status only. design.md decision: no aggregate percent anywhere,
+   because Bill expects rollups and we are deliberately not providing one. #}
+{% if counts %}
+<p class="status-counts">
+  {% for c in counts %}<span class="count count-{{ c.Status | lower | replace(' ', '-') }}">{{ c.Status }} {{ c.Count }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+</p>
+{% endif %}
+
+<ul class="initiative-list dean-rows">
+  {% for row in dean_rows %}
+  {% include "_row.html" with context %}
+  {% endfor %}
+</ul>
+
+<div class="divider">D-1</div>
+
+{% for group in d1_groups %}
+<div class="list-group">
+  <h2 class="list-group-label">{{ group.owner }}</h2>
+  <ul class="initiative-list">
+    {% for row in group.rows %}
+    {% include "_row.html" with context %}
+    {% endfor %}
+  </ul>
+</div>
+{% endfor %}
+{% endblock %}

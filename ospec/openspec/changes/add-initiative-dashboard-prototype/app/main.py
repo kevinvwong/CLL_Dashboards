@@ -1,13 +1,591 @@
 """FastAPI entry point for the initiative dashboard prototype.
-Provides a minimal placeholder page so the server can start and be
-accessed by the test suite.
+
+Access is gated before any page renders (design.md decision 5): a shared
+passcode, then a person picker. Both live in signed cookies; the passcode
+itself is never stored client-side.
 """
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
+from app import auth, queries, repo
 
 app = FastAPI()
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return "<html><head><title>Initiative Dashboard</title></head><body><h1>Initiative Dashboard Prototype</h1><p>Placeholder page – implementation coming soon.</p></body></html>"
+templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+
+# htmx is vendored (design.md decision 1) so the app works with no CDN access.
+app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
+
+
+def _is_exempt(path: str) -> bool:
+    if path in auth.EXEMPT_PATHS:
+        return True
+    return path.startswith("/static/")
+
+
+def _ctx(request: Request, **extra) -> dict:
+    """Common template context. `person` is the signed-in person, or None
+    before the picker has been completed."""
+    return {"person": auth.current_person(request), **extra}
+
+
+def _edit_ctx(request: Request, code: str) -> dict:
+    """The capability flags every card render needs."""
+    return {
+        "may_update": auth.can_update(request, code),
+        "may_edit_details": auth.can_edit_details(request, code),
+        "may_admin": auth.is_admin_request(request),
+    }
+
+
+@app.middleware("http")
+async def access_gate(request: Request, call_next):
+    """Send anyone without a passcode to /login, and anyone without a person
+    to /whoami. Static files and /healthz stay outside the gate."""
+    path = request.url.path
+    if not _is_exempt(path):
+        if not auth.has_passcode(request):
+            return RedirectResponse(url="/login", status_code=303)
+        if auth.current_person(request) is None:
+            return RedirectResponse(url="/whoami", status_code=303)
+    response = await call_next(request)
+    # Task 9.2: noindex on every response, so nothing here reaches a search
+    # engine even before robots.txt is fetched.
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt():
+    """Disallow all (task 9.2). Served outside the passcode gate."""
+    return PlainTextResponse("User-agent: *\nDisallow: /\n")
+
+
+@app.get("/healthz", response_class=PlainTextResponse)
+async def healthz():
+    """Outside the passcode gate. Returns no initiative data."""
+    if not auth.database_reachable():
+        return PlainTextResponse("database unreachable", status_code=503)
+    return PlainTextResponse("ok")
+
+
+@app.get("/login")
+async def login_form(request: Request):
+    locked = auth.too_many_attempts(auth.client_ip(request))
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        _ctx(
+            request,
+            error="Too many attempts. Try again in 15 minutes." if locked else None,
+        ),
+    )
+
+
+@app.post("/login")
+async def login_submit(request: Request):
+    ip = auth.client_ip(request)
+    # Checked before verifying the passcode: the spec requires the 11th
+    # attempt to be refused *even if the passcode is correct*.
+    if auth.too_many_attempts(ip):
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            _ctx(request, error="Too many attempts. Try again in 15 minutes."),
+            status_code=429,
+        )
+    form = await request.form()
+    if auth.passcode_matches(str(form.get("passcode", ""))):
+        auth.clear_failures(ip)
+        response = RedirectResponse(url="/whoami", status_code=303)
+        return auth.set_passcode_cookie(response, request)
+    auth.record_failure(ip)
+    return templates.TemplateResponse(
+        request, "login.html", _ctx(request, error="That passcode is not right."), status_code=401
+    )
+
+
+@app.get("/whoami")
+async def whoami_form(request: Request):
+    if not auth.has_passcode(request):
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse(
+        request, "whoami.html", _ctx(request, people=auth.active_people(), error=None)
+    )
+
+
+@app.post("/whoami")
+async def whoami_submit(request: Request):
+    if not auth.has_passcode(request):
+        return RedirectResponse(url="/login", status_code=303)
+    form = await request.form()
+    person_id = str(form.get("person_id", ""))
+    if not auth.person_exists(person_id):
+        return templates.TemplateResponse(
+            request,
+            "whoami.html",
+            _ctx(request, people=auth.active_people(), error="Pick who you are."),
+            status_code=400,
+        )
+    response = RedirectResponse(url="/", status_code=303)
+    return auth.set_person_cookie(response, request, int(person_id))
+
+
+@app.get("/goals/{goal_number}")
+async def goal_list(request: Request, goal_number: int):
+    goal = queries.goal_by_number(goal_number)
+    if goal is None:
+        raise HTTPException(status_code=404, detail="No such goal")
+    rows = queries.goal_rows(goal_number)
+    dean_rows, d1_groups = queries.split_for_list(rows)
+    return templates.TemplateResponse(
+        request,
+        "list.html",
+        _ctx(
+            request,
+            heading=goal["ShortName"],
+            description=goal["FullName"] or goal["Description"],
+            dean_rows=dean_rows,
+            d1_groups=d1_groups,
+            counts=queries.status_counts(rows),
+        ),
+    )
+
+
+@app.get("/priorities/{priority_name}")
+async def priority_list(request: Request, priority_name: str):
+    priority = queries.priority_by_name(priority_name)
+    if priority is None:
+        raise HTTPException(status_code=404, detail="No such priority")
+    rows = queries.priority_rows(priority_name)
+    dean_rows, d1_groups = queries.split_for_list(rows)
+    return templates.TemplateResponse(
+        request,
+        "list.html",
+        _ctx(
+            request,
+            heading=f"{priority['PriorityName']} ({priority['PlanYear']})",
+            description=priority["Description"],
+            dean_rows=dean_rows,
+            d1_groups=d1_groups,
+            counts=queries.status_counts(rows),
+        ),
+    )
+
+
+# Declared before /initiatives/{code}: otherwise "new" is captured as a code
+# and the create form 404s.
+@app.get("/initiatives/new")
+async def create_form(request: Request):
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    return templates.TemplateResponse(
+        request,
+        "edit_create.html",
+        _ctx(request, people=auth.active_people(), error=None),
+    )
+
+
+@app.get("/initiatives/{code}")
+async def initiative(request: Request, code: str):
+    """Initiative card.
+
+    Task 5.1: an HTMX request gets the bare fragment to swap into the modal;
+    a direct navigation gets the same content wrapped in a full page.
+    """
+    card = queries.initiative_card(code)
+    if card is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+
+    context = _ctx(
+        request,
+        card=card,
+        may_update=auth.can_update(request, code),
+        may_edit_details=auth.can_edit_details(request, code),
+        may_admin=auth.is_admin_request(request),
+    )
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(request, "card.html", context)
+    return templates.TemplateResponse(request, "card_full.html", context)
+
+
+@app.get("/initiatives/{code}/update")
+async def update_form(request: Request, code: str):
+    """The update form. 403 for anyone who may not update (task 6.4)."""
+    card = queries.initiative_card(code)
+    if card is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.can_update(request, code):
+        raise HTTPException(status_code=403, detail="You cannot update this initiative")
+    return templates.TemplateResponse(
+        request,
+        "update_form.html",
+        _ctx(request, card=card, statuses=repo.STATUSES, note_max=repo.NOTE_MAX),
+    )
+
+
+@app.post("/initiatives/{code}/updates")
+async def submit_update(request: Request, code: str):
+    """Append a progress update, then re-render the card.
+
+    The permission check is here, on the server, and not only on the button:
+    the progress-updates spec requires a 403 for a non-owner posting directly.
+    """
+    # Existence before permission, so an unknown or retired code is a 404 and
+    # a known-but-forbidden one is a 403 -- consistent with GET
+    # /initiatives/{code}. Checking permission first would answer 403 for
+    # codes that do not exist at all.
+    if queries.initiative_card(code) is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.can_update(request, code):
+        raise HTTPException(status_code=403, detail="You cannot update this initiative")
+
+    form = await request.form()
+    person = auth.current_person(request)
+    try:
+        repo.add_progress_update(
+            code=code,
+            percent=str(form.get("percent", 0)),
+            status=str(form.get("status", "")),
+            note=str(form.get("note", "")),
+            entered_by_id=person["PersonID"],  # type: ignore[index]  # gate guarantees this
+        )
+    except repo.RuleError as exc:
+        # Refused by a rule: show the message rather than a 500.
+        return templates.TemplateResponse(
+            request,
+            "update_form.html",
+            _ctx(
+                request,
+                card=queries.initiative_card(code),
+                statuses=repo.STATUSES,
+                note_max=repo.NOTE_MAX,
+                error=exc.message,
+            ),
+            status_code=422,
+        )
+
+    card = queries.initiative_card(code)
+    response = templates.TemplateResponse(request, "card.html", _ctx(request, card=card))
+    # Tells a list screen behind the modal that its row is now stale (task 6.3).
+    response.headers["HX-Trigger"] = f'{{"initiativeUpdated": "{code}"}}'
+    return response
+
+
+@app.get("/meeting")
+async def meeting(request: Request, since: str | None = None):
+    """The Wednesday agenda: an attention list plus changes in a window.
+
+    Defaults to the last 7 days; `?since=YYYY-MM-DD` sets the window to the
+    previous meeting date.
+    """
+    window = since or queries.default_since()
+    return templates.TemplateResponse(
+        request,
+        "meeting.html",
+        _ctx(
+            request,
+            since=window,
+            groups=queries.meeting_updates(window),
+            attention=queries.attention_list(),
+        ),
+    )
+
+
+@app.get("/checks")
+async def checks(request: Request):
+    """Every row from vw_DataChecks, linked to the initiative it is about."""
+    return templates.TemplateResponse(
+        request, "checks.html", _ctx(request, checks=queries.data_checks())
+    )
+
+
+@app.get("/initiatives/{code}/edit/details")
+async def edit_details_form(request: Request, code: str):
+    card = queries.initiative_card(code)
+    if card is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.can_edit_details(request, code):
+        raise HTTPException(status_code=403, detail="You cannot edit this initiative")
+    return templates.TemplateResponse(
+        request, "edit_details.html", _ctx(request, card=card)
+    )
+
+
+@app.post("/initiatives/{code}/edit/details")
+async def edit_details_submit(request: Request, code: str):
+    if queries.initiative_card(code) is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.can_edit_details(request, code):
+        raise HTTPException(status_code=403, detail="You cannot edit this initiative")
+    form = await request.form()
+    person = auth.current_person(request)
+    try:
+        repo.update_initiative_details(
+            code=code,
+            name=str(form.get("name", "")),
+            description=str(form.get("description", "")),
+            person_id=person["PersonID"],  # type: ignore[index]
+        )
+    except repo.RuleError as exc:
+        return templates.TemplateResponse(
+            request,
+            "edit_details.html",
+            _ctx(request, card=queries.initiative_card(code), error=exc.message),
+            status_code=422,
+        )
+    return templates.TemplateResponse(
+        request, "card.html",
+        _ctx(request, card=queries.initiative_card(code), **_edit_ctx(request, code)),
+    )
+
+
+@app.get("/initiatives/{code}/edit/tags")
+async def edit_tags_form(request: Request, code: str):
+    if queries.initiative_card(code) is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    card = queries.initiative_card(code)
+    return templates.TemplateResponse(
+        request,
+        "edit_tags.html",
+        _ctx(
+            request,
+            card=card,
+            goals=queries.all_goals(),
+            priorities=queries.all_priorities(),
+            chosen_goals=set(queries.current_goal_tags(card["InitiativeID"])),
+            chosen_priorities=set(queries.current_priority_tags(card["InitiativeID"])),
+            error=None,
+        ),
+    )
+
+
+@app.post("/initiatives/{code}/edit/tags")
+async def edit_tags_submit(request: Request, code: str):
+    if queries.initiative_card(code) is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    form = await request.form()
+    person = auth.current_person(request)
+
+    def collect(primary_field):
+        """Build the tag list from the submitted form.
+
+        The form uses a radio per list, so a browser sends exactly one
+        primary. This still reads every `*_primary` value rather than just
+        the first: a hand-crafted POST carrying two primaries must be
+        rejected by repo.replace_tags with the spec's message, not silently
+        reduced to one.
+        """
+        chosen = form.getlist(primary_field.replace("_primary", ""))
+        primaries = {str(p) for p in form.getlist(primary_field)}
+        out = []
+        for raw in chosen:
+            try:
+                value = int(str(raw))
+            except (TypeError, ValueError):
+                continue
+            out.append({"id": value, "primary": str(raw) in primaries})
+        return out
+
+    try:
+        repo.replace_tags(
+            code=code,
+            goal_tags=collect("goal_primary"),
+            priority_tags=collect("priority_primary"),
+            person_id=person["PersonID"],  # type: ignore[index]
+        )
+    except repo.RuleError as exc:
+        card = queries.initiative_card(code)
+        return templates.TemplateResponse(
+            request,
+            "edit_tags.html",
+            _ctx(
+                request,
+                card=card,
+                goals=queries.all_goals(),
+                priorities=queries.all_priorities(),
+                chosen_goals=set(),
+                chosen_priorities=set(),
+                error=exc.message,
+            ),
+            status_code=422,
+        )
+    return templates.TemplateResponse(
+        request, "card.html",
+        _ctx(request, card=queries.initiative_card(code), **_edit_ctx(request, code)),
+    )
+
+
+@app.get("/initiatives/{code}/edit/links")
+async def edit_links_form(request: Request, code: str):
+    card = queries.initiative_card(code)
+    if card is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    return templates.TemplateResponse(
+        request,
+        "edit_links.html",
+        _ctx(
+            request,
+            card=card,
+            deans=queries.active_dean_initiatives(),
+            chosen=set(queries.current_links(card["InitiativeID"])),
+            error=None,
+        ),
+    )
+
+
+@app.post("/initiatives/{code}/edit/links")
+async def edit_links_submit(request: Request, code: str):
+    if queries.initiative_card(code) is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    form = await request.form()
+    person = auth.current_person(request)
+    ids = []
+    for raw in form.getlist("dean_initiative_id"):
+        try:
+            ids.append(int(str(raw)))
+        except (TypeError, ValueError):
+            continue
+    try:
+        repo.replace_links(code=code, dean_initiative_ids=ids, person_id=person["PersonID"])  # type: ignore[index]
+    except repo.RuleError as exc:
+        return templates.TemplateResponse(
+            request,
+            "edit_links.html",
+            _ctx(
+                request,
+                card=queries.initiative_card(code),
+                deans=queries.active_dean_initiatives(),
+                chosen=set(ids),
+                error=exc.message,
+            ),
+            status_code=422,
+        )
+    return templates.TemplateResponse(
+        request, "card.html",
+        _ctx(request, card=queries.initiative_card(code), **_edit_ctx(request, code)),
+    )
+
+
+
+@app.post("/initiatives")
+async def create_submit(request: Request):
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    form = await request.form()
+    person = auth.current_person(request)
+    try:
+        repo.create_initiative(
+            code=str(form.get("code", "")),
+            name=str(form.get("name", "")),
+            level=str(form.get("level", "")),
+            owner_id=int(str(form.get("owner_id") or 0)),
+            description=str(form.get("description", "")),
+            person_id=person["PersonID"],  # type: ignore[index]
+        )
+    except (repo.RuleError, ValueError) as exc:
+        message = exc.message if isinstance(exc, repo.RuleError) else "Pick an owner."
+        return templates.TemplateResponse(
+            request,
+            "edit_create.html",
+            _ctx(request, people=auth.active_people(), error=message),
+            status_code=422,
+        )
+    return RedirectResponse(url="/checks", status_code=303)
+
+
+@app.post("/initiatives/{code}/retire")
+async def retire_submit(request: Request, code: str):
+    if queries.initiative_card(code) is None:
+        raise HTTPException(status_code=404, detail="No such initiative")
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    person = auth.current_person(request)
+    try:
+        repo.retire_initiative(code=code, person_id=person["PersonID"])  # type: ignore[index]
+    except repo.RuleError as exc:
+        raise HTTPException(status_code=422, detail=exc.message)
+    return RedirectResponse(url="/checks", status_code=303)
+
+
+@app.get("/entries/{kind}/{key}/edit")
+async def edit_entry_form(request: Request, kind: str, key: str):
+    """Edit a goal or priority description (task 8.4)."""
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    goal = queries.goal_by_number(int(key)) if kind == "goal" else queries.priority_by_name(key)
+    if goal is None:
+        raise HTTPException(status_code=404, detail="No such entry")
+    return templates.TemplateResponse(
+        request,
+        "edit_entry.html",
+        _ctx(request, kind=kind, entry=goal, error=None),
+    )
+
+
+@app.post("/entries/{kind}/{key}/edit")
+async def edit_entry_submit(request: Request, kind: str, key: str):
+    if not auth.is_admin_request(request):
+        raise HTTPException(status_code=403, detail="Admins only")
+    form = await request.form()
+    person = auth.current_person(request)
+    try:
+        repo.update_entry_description(
+            kind=kind,
+            key=int(key) if kind == "goal" else key,
+            description=str(form.get("description", "")),
+            person_id=person["PersonID"],  # type: ignore[index]
+        )
+    except (repo.RuleError, ValueError) as exc:
+        message = exc.message if isinstance(exc, repo.RuleError) else "Unknown entry."
+        goal = queries.goal_by_number(int(key)) if kind == "goal" else queries.priority_by_name(key)
+        return templates.TemplateResponse(
+            request, "edit_entry.html",
+            _ctx(request, kind=kind, entry=goal, error=message),
+            status_code=422,
+        )
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.get("/people/{person_id}")
+async def person(request: Request, person_id: int):
+    card = queries.person_card(person_id)
+    if card is None:
+        raise HTTPException(status_code=404, detail="No such person")
+    return templates.TemplateResponse(
+        request, "person.html", _ctx(request, profile=card["person"], card=card)
+    )
+
+
+@app.get("/")
+async def root(request: Request):
+    """Home: the two entry points, each with its active initiative count.
+
+    An initiative tagged to several goals counts once per goal it carries,
+    so the tile counts sum to more than the total number of initiatives.
+    """
+    priorities = queries.priority_tiles()
+    plan_year = max((p["PlanYear"] for p in priorities), default=None)
+    return templates.TemplateResponse(
+        request,
+        "home.html",
+        _ctx(
+            request,
+            goals=queries.goal_tiles(),
+            priorities=priorities,
+            plan_year=plan_year,
+        ),
+    )
