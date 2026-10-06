@@ -90,3 +90,55 @@ def test_the_archive_contains_the_files_the_site_needs(tmp_path, stray):
     for required in ("app/main.py", "app/oct16_data.py", "app/templates/base.html",
                      "requirements.txt", "cll_initiatives.db"):
         assert required in names, "missing from the archive: %s" % required
+
+
+# --- no credentials ship ----------------------------------------------------
+
+
+def test_the_archive_excludes_the_local_env(tmp_path, stray):
+    """The archive must not carry `.env`.
+
+    Found 2026-10-06: the builder walks the application folder, and `.env` sits
+    there with APP_PASSCODE, APP_SECRET and DB_PATH. It was being packaged into
+    every deploy archive. Same class of bug as the stray database - the walk
+    ships whatever happens to be in the folder.
+    """
+    out = tmp_path / "deploy.zip"
+    p = _build(out)
+    assert p.returncode == 0, p.stderr
+    names = zipfile.ZipFile(out).namelist()
+    assert ".env" not in names, "the archive shipped the local .env"
+
+
+def test_the_archive_keeps_env_example(tmp_path, stray):
+    """.env.example is the documented shape and holds no secret; it may ship."""
+    out = tmp_path / "deploy.zip"
+    p = _build(out)
+    assert p.returncode == 0, p.stderr
+    names = zipfile.ZipFile(out).namelist()
+    assert ".env.example" in names, (
+        ".env.example is documentation, not a secret, and should ship")
+
+
+def test_a_new_secret_file_is_refused_or_packaged_only_once(tmp_path, stray):
+    """A secret file with a name the builder does not know must not ship.
+
+    Plants a `.env.live` into the app folder; the builder must either refuse the
+    build or, if it builds, leave the file out. Either way the file is not shipped.
+    """
+    planted = os.path.join(APP, ".env.live")
+    open(planted, "w", encoding="utf-8").write("APP_SECRET=planted\n")
+    try:
+        out = tmp_path / "deploy.zip"
+        p = _build(out)
+        if p.returncode == 0:
+            names = zipfile.ZipFile(out).namelist()
+            assert ".env.live" not in names, "the archive shipped .env.live"
+        else:
+            assert "credential" in (p.stdout + p.stderr).lower(), (
+                "the build refused for some other reason: %s" % p.stderr)
+    finally:
+        try:
+            os.remove(planted)
+        except OSError:
+            pass

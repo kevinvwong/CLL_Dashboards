@@ -19,6 +19,7 @@ See docs/DEPLOY.md for the procedure that uses this.
 """
 
 import os
+import re
 import sys
 import zipfile
 
@@ -32,6 +33,19 @@ DEFAULT_OUT = os.path.join(SPEC, "deploy.zip")
 # the build for no benefit.
 SKIP_DIRS = {"__pycache__", ".pytest_cache", ".git", "tests"}
 SKIP_EXT = {".pyc", ".pyo"}
+
+# Secrets, never shipped. The walk visits the application folder, and a local
+# `.env` sits there (it holds APP_PASSCODE, APP_SECRET and DB_PATH). It was
+# packaged into the archive until 2026-10-06; `.env.example` is the documented
+# shape and is fine to ship, but any other `.env*` is a credential file.
+SKIP_NAMES = {".env", ".env.local", ".env.production", ".env.live", ".env.development"}
+
+# A shipped file whose name matches this fails the build, so a future secret file
+# with a new name is caught rather than packaged. `.env.example` is the documented
+# shape and is explicitly allowed (it is the one `.env*` name that holds no secret).
+SECRET_NAME_RE = re.compile(r"(^|/)\.env(\.[a-z0-9]+)?$|\.(pem|key|pfx|p12)$",
+                            re.IGNORECASE)
+ALLOWED_NAMES = {".env.example"}
 
 # The database and the files needed to recreate it. App Service serves
 # DB_PATH=./cll_initiatives.db relative to wwwroot, so the db ships at the archive
@@ -69,9 +83,13 @@ def build(out_path: str = DEFAULT_OUT) -> str:
             for fn in files:
                 if os.path.splitext(fn)[1] in SKIP_EXT:
                     continue
+                if fn in SKIP_NAMES:
+                    continue
                 full = os.path.join(root, fn)
                 arc = os.path.relpath(full, APP).replace(os.sep, "/")
                 if arc in reserved:
+                    continue
+                if SECRET_NAME_RE.search(arc) and arc not in ALLOWED_NAMES:
                     continue
                 z.write(full, arc)
                 added.append(arc)
@@ -85,6 +103,16 @@ def build(out_path: str = DEFAULT_OUT) -> str:
     # Verify, rather than trust the loop above.
     with zipfile.ZipFile(out_path) as z:
         names = z.namelist()
+
+    # A credential file in a deploy archive is a leak. `.env.example` is the
+    # documented shape and holds no secret; anything else that looks like one is a
+    # failure, not a warning - this archive was shipping a local `.env` until
+    # 2026-10-06.
+    leaked = sorted(n for n in names
+                    if SECRET_NAME_RE.search(n) and n not in ALLOWED_NAMES)
+    if leaked:
+        raise SystemExit(
+            "archive would ship a credential file, refusing to build: %s" % leaked)
 
     duplicates = sorted({n for n in names if names.count(n) > 1})
     if duplicates:
