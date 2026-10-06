@@ -35,13 +35,13 @@
 
 ## 5. Navigation, coverage, meeting and outcomes
 
-- [ ] 5.1 Build the hybrid navigation, active state, `aria-current`, and the narrow-viewport collapse. *Verify: the active section is marked; at a narrow width the nav collapses behind a control.*
-- [ ] 5.2 Add the stable `/outcomes` route with a permanent redirect from `/oct16`; add breadcrumbs below the top level. *Verify: the old route redirects permanently; an initiative detail shows its breadcrumb trail with linked ancestors.*
-- [ ] 5.3 Add the user menu holding switch-user; keep meeting and outcomes first-class. *Verify: switch-user is in the menu and not in the nav; the meeting and outcomes are each one step from any page.*
-- [ ] 5.4 Merge coverage into the admin page as a second section, distinct from checks. *Verify: both sections render with their own headings; coverage reports counts and completeness only, checks report pass/fail with records.*
-- [ ] 5.5 Restyle `/meeting` on the new system and confirm print. *Verify: the meeting page renders on the components; printing contains the date range and all sections, with no nav, buttons, or banner.*
-- [ ] 5.6 Restyle `/oct16` (now `/outcomes`) on the new system. *Verify: the outcomes page renders on the components with no visual regression to its content.*
-- [ ] 5.7 **Group check:** every destination in the nav is reachable and correct. *Verify: walk each nav destination and the outcomes redirect.*
+- [x] 5.1 Build the hybrid navigation, active state, `aria-current`, and the narrow-viewport collapse. *Verify: the active section is marked; at a narrow width the nav collapses behind a control.*
+- [x] 5.2 Add the stable `/outcomes` route with a permanent redirect from `/oct16`; add breadcrumbs below the top level. *Verify: the old route redirects permanently; an initiative detail shows its breadcrumb trail with linked ancestors.*
+- [x] 5.3 Add the user menu holding switch-user; keep meeting and outcomes first-class. *Verify: switch-user is in the menu and not in the nav; the meeting and outcomes are each one step from any page.*
+- [x] 5.4 Merge coverage into the admin page as a second section, distinct from checks. *Verify: both sections render with their own headings; coverage reports counts and completeness only, checks report pass/fail with records.*
+- [x] 5.5 Restyle `/meeting` on the new system and confirm print. *Verify: the meeting page renders on the components; printing contains the date range and all sections, with no nav, buttons, or banner.*
+- [x] 5.6 Restyle `/oct16` (now `/outcomes`) on the new system. *Verify: the outcomes page renders on the components with no visual regression to its content.*
+- [x] 5.7 **Group check:** every destination in the nav is reachable and correct. *Verify: walk each nav destination and the outcomes redirect.*
 
 ## 6. Verification
 

@@ -1,31 +1,85 @@
 {% extends "base.html" %}
-{% block title %}Data checks{% endblock %}
+{% block title %}Data checks and coverage{% endblock %}
 {% block content %}
-{# Fix these before the dashboard goes live (data-intake spec). Every row
-   comes straight from vw_DataChecks. #}
-<h1>Data checks</h1>
+{#
+  Two sections, two questions (blueprint-redesign 5.4):
+    1. Data checks  - is the data valid?  (from vw_DataChecks)
+    2. Coverage     - is the target covered? (counts and completeness only)
+  They are deliberately not merged into one figure: "is this covered" and "is
+  this going well" are different, and the design forbids an aggregate score.
+#}
 
-{% if checks %}
-<p class="checks-summary">{{ checks | length }} issue{{ '' if checks | length == 1 else 's' }} to fix.</p>
-<table class="checks-table">
-  <thead>
-    <tr><th>Initiative</th><th>Issue</th></tr>
-  </thead>
-  <tbody>
-    {% for check in checks %}
-    <tr>
-      <td><a href="/initiatives/{{ check.Code }}"
-             hx-get="/initiatives/{{ check.Code }}"
-             hx-target="#card-modal"
-             hx-swap="innerHTML"
-             hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
-             tabindex="0" role="link">{{ check.Code }}</a></td>
-      <td>{{ check.Issue }}</td>
-    </tr>
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>Data checks &amp; coverage</h1>
+  </div>
+</div>
+
+{# --- 1. data checks ------------------------------------------------------- #}
+<section class="panel" aria-labelledby="checks-heading">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Data quality</p>
+      <h2 id="checks-heading">Checks</h2>
+    </div>
+    <p class="section-note">
+      {% if checks %}{{ checks | length }} failing{% else %}all passing{% endif %}
+    </p>
+  </div>
+
+  {% if checks %}
+  <table class="index-table">
+    <thead>
+      <tr><th scope="col">Initiative</th><th scope="col">Issue</th></tr>
+    </thead>
+    <tbody>
+      {% for check in checks %}
+      <tr class="index-row" tabindex="0" role="link"
+          hx-get="/initiatives/{{ check.Code }}"
+          hx-target="#card-modal" hx-swap="innerHTML"
+          hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
+          aria-label="Open {{ check.Code }}">
+        <td class="code">{{ check.Code }}</td>
+        <td>{{ check.Issue }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty checks-clear">No issues. Every active D-1 initiative has a Dean link and every initiative is tagged.</p>
+  {% endif %}
+</section>
+
+{# --- 2. coverage ---------------------------------------------------------- #}
+<section class="panel coverage-panel" aria-labelledby="coverage-heading">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Design readiness</p>
+      <h2 id="coverage-heading">Coverage</h2>
+    </div>
+    <p class="section-note">
+      {{ coverage.covered }} of {{ coverage.total }} covered
+    </p>
+  </div>
+  {# Stated plainly: this is target completeness, not performance. #}
+  <p class="section-note">Target completeness, not performance.</p>
+
+  {% for group_name, rows in (("Goals", coverage.goals), ("Priorities", coverage.priorities)) %}
+  <h3 class="coverage-subhead">{{ group_name }}</h3>
+  <ul class="coverage-list">
+    {% for r in rows %}
+    <li class="coverage-row">
+      <span class="coverage-label">{{ r.label }}</span>
+      <span class="coverage-bar" role="img"
+            aria-label="{{ r.count }} initiative{{ '' if r.count == 1 else 's' }}">
+        <span class="coverage-fill{% if not r.covered %} is-empty{% endif %}"
+              style="width: {{ 100 if r.covered else 0 }}%"></span>
+      </span>
+      <em>{% if r.covered %}{{ r.count }} initiative{{ '' if r.count == 1 else 's' }}{% else %}none{% endif %}</em>
+    </li>
     {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p class="empty checks-clear">No issues. Every active D-1 initiative has a Dean link and every initiative is tagged.</p>
-{% endif %}
+  </ul>
+  {% endfor %}
+</section>
 {% endblock %}

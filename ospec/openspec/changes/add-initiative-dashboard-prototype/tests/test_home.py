@@ -148,8 +148,14 @@ def test_home_requires_a_signed_in_person(anon):
 
 
 def test_nav_and_print_assets_are_present(logged_in):
+    """The primary nav (blueprint-redesign 5.1) plus print and dialog assets.
+
+    Checks is now an ADMIN entry, not primary nav (5.4), and Bill is not an
+    admin - so the primary destinations are asserted here and the admin entry
+    is asserted in the coverage-checks test.
+    """
     body = logged_in("Bill").get("/").text
-    assert 'href="/meeting"' in body
-    assert 'href="/checks"' in body
+    for dest in ("/", "/initiatives", "/people", "/meeting", "/outcomes"):
+        assert ('href="%s"' % dest) in body, "missing nav destination %s" % dest
     assert 'media="print"' in body
     assert "<dialog" in body

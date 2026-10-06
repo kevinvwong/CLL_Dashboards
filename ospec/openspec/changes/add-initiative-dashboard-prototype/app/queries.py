@@ -720,3 +720,41 @@ def relationships_for(codes: list) -> dict:
         if subject:
             out.setdefault(subject, []).append(r)
     return out
+
+
+# --- coverage (blueprint-redesign 5.4) --------------------------------------
+
+
+def coverage_summary() -> dict:
+    """How complete the taxonomy is: which goals and priorities carry work.
+
+    Counts and completeness only. No performance figure and no average is
+    computed - the design forbids an aggregate rollup, and "is this covered" is
+    a different question from "is this going well".
+    """
+    goals = goal_tiles()
+    priorities = priority_tiles()
+
+    def row(entries, label_key):
+        out = []
+        for e in entries:
+            total = e["InitiativeCount"]
+            out.append({
+                "label": str(e[label_key]),
+                "count": total,
+                # "Covered" means at least one active initiative is tagged.
+                "covered": total > 0,
+            })
+        return out
+
+    goal_rows = row(goals, "ShortName")
+    priority_rows = row(priorities, "PriorityName")
+    covered = sum(1 for r in goal_rows + priority_rows if r["covered"])
+    total = len(goal_rows) + len(priority_rows)
+    return {
+        "goals": goal_rows,
+        "priorities": priority_rows,
+        "covered": covered,
+        "total": total,
+        "percent": round(100 * covered / total) if total else 0,
+    }

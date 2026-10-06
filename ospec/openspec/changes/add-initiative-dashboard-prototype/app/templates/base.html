@@ -26,26 +26,49 @@
        JavaScript, so the nav works before hydration and cannot break. #}
     <input type="checkbox" id="nav-toggle" class="nav-toggle" hidden>
     <label for="nav-toggle" class="nav-toggle-label">Menu</label>
-    <nav class="site-nav">
-      <a href="/">Home</a>
-      <a href="/meeting">Meeting</a>
-      <a href="/checks">Checks</a>
-      {# The October 16 deliverable. Visible to anyone signed in: the wireframes
-         say its audience is "the Dean and senior leadership". #}
-      <a href="/oct16">Outcomes</a>
+    <nav class="site-nav" aria-label="Primary">
+      {# The hybrid nav (blueprint-redesign 5.1): the blueprint home, the two
+         indexes, the meeting, and the outcomes. Active derived from the path. #}
+      <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>Overview</a>
+      <a href="/initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>Initiatives</a>
+      <a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>People</a>
+      <a href="/meeting"{% if section == "meeting" %} aria-current="page"{% endif %}>Meeting</a>
+      <a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>Outcomes</a>
+      {# Data checks is an ADMIN entry now, not primary nav (5.4/3.4), with the
+         count of failing checks as a badge. It never appears for a non-admin. #}
       {% if may_admin %}
-      {# 8.4 built this route; without a link an admin can only reach it by
-         typing the URL. #}
-      <a href="/initiatives/new">New initiative</a>
+      <a class="nav-admin" href="/checks">Checks{% if failing_checks %} <span class="badge badge-warn">{{ failing_checks }}</span>{% endif %}</a>
       {% endif %}
     </nav>
     <div class="whoami">
       {% if person %}
-        <span class="person-name">{{ person.Name }}</span>
-        <a class="switch" href="/whoami">Switch</a>
+      {# The user menu (5.3). Switch user lives here, not in the primary nav. #}
+      <details class="user-menu">
+        <summary class="person-name" aria-label="User menu for {{ person.Name }}">{{ person.Name }}</summary>
+        <div class="user-menu-panel">
+          <p class="user-menu-name">{{ person.Name }}</p>
+          {# Admin actions live in the menu, not the primary nav (5.1/5.4). #}
+          {% if may_admin %}
+          <a href="/initiatives/new">New initiative</a>
+          {% endif %}
+          <a href="/whoami">Switch user</a>
+        </div>
+      </details>
       {% endif %}
     </div>
   </header>
+
+  {# Breadcrumbs below the top level (5.2). Pages that want them pass `crumbs`,
+     a list of (label, href|None); the last is the current page. #}
+  {% if crumbs %}
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/">Overview</a>
+    {% for label, href in crumbs %}
+    <span class="sep" aria-hidden="true">›</span>
+    {% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}<span aria-current="page">{{ label }}</span>{% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
 
   <main>
     {% block content %}{% endblock %}

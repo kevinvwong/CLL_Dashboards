@@ -66,6 +66,8 @@ def test_the_edit_forms_actually_submit_over_htmx(logged_in):
 
 
 def test_admin_sees_a_link_to_the_create_form(logged_in):
+    # The admin create link moved into the user menu (blueprint-redesign 5.1);
+    # the primary nav no longer carries admin actions.
     assert 'href="/initiatives/new"' in logged_in(ADMIN).get("/").text
 
 

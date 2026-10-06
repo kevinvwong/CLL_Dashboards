@@ -48,6 +48,16 @@ def _is_exempt(path: str) -> bool:
 def _ctx(request: Request, **extra) -> dict:
     """Common template context. `person` is the signed-in person, or None
     before the picker has been completed."""
+    path = request.url.path
+    # The nav's active section (blueprint-redesign 5.1). Derived from the path
+    # so every page gets it without each route remembering to pass it.
+    section = "home"
+    for prefix, name in (("/initiatives", "initiatives"), ("/people", "people"),
+                         ("/goals", "initiatives"), ("/priorities", "initiatives"),
+                         ("/meeting", "meeting"), ("/outcomes", "outcomes")):
+        if path == prefix or path.startswith(prefix + "/"):
+            section = name
+            break
     return {
         "person": auth.current_person(request),
         "app_env": auth.settings().APP_ENV,
@@ -59,8 +69,20 @@ def _ctx(request: Request, **extra) -> dict:
         # session scope is the cookie the dismiss handler sets; the footer
         # marker is rendered regardless, so dismissal never hides the state.
         "banner_dismissed": bool(request.cookies.get("sample_banner_dismissed")),
+        "section": section,
+        # The failing-check count for the admin nav badge (5.4). Zero renders
+        # no badge. Wrapped because a broken read must not break every page.
+        "failing_checks": _failing_check_count(),
         **extra,
     }
+
+
+def _failing_check_count() -> int:
+    """How many data checks are currently failing. 0 when the read fails."""
+    try:
+        return len(queries.data_checks())
+    except Exception:
+        return 0
 
 
 def _edit_ctx(request: Request, code: str) -> dict:
@@ -325,6 +347,9 @@ async def initiative(request: Request, code: str,
     context = _ctx(
         request,
         card=target.card,
+        # Breadcrumbs on the full page only (5.2); the fragment goes into a
+        # drawer over the page that already shows them.
+        crumbs=[("Initiatives", "/initiatives"), (code, None)],
         may_update=auth.can_update(request, code),
         may_edit_details=auth.can_edit_details(request, code),
         may_admin=auth.is_admin_request(request),
@@ -411,21 +436,45 @@ async def meeting(request: Request, since: str | None = None):
 
 @app.get("/checks")
 async def checks(request: Request):
-    """Every row from vw_DataChecks, linked to the initiative it is about."""
+    """Data quality AND coverage, as two distinct sections (5.4).
+
+    "Is the data valid" (checks, from vw_DataChecks) and "is the target
+    covered" (coverage, from the taxonomy) are different questions, so they
+    render as two sections and are never conflated.
+
+    Reachable by any signed-in person: the existing `data-intake` requirement
+    says the page "SHALL show" every failing row, with no role restriction, and
+    the weekly meeting links to it. What blueprint-redesign 5.4 changes is the
+    NAV - the entry is admin-only so it is not cluttering the primary nav - not
+    who may open the page.
+    """
     return templates.TemplateResponse(
-        request, "checks.html", _ctx(request, checks=queries.data_checks())
+        request,
+        "checks.html",
+        _ctx(request, checks=queries.data_checks(), coverage=queries.coverage_summary()),
     )
 
 
 @app.get("/oct16")
 async def oct16(request: Request):
-    """The October 16 deliverable: the six Dean outcomes by milestones reached.
+    """Legacy route: permanently redirect to /outcomes (blueprint-redesign 5.2).
 
-    Option A of the wireframes. Its own definition says "Static, clickable pages;
-    no live data feeds", so this renders a fixed data module rather than reading
-    the prototype's tables. That is deliberate, not a shortcut: the outcome and
-    team model does not exist in the prototype schema, and inventing tables for a
-    ten-day deliverable would have been the expensive way to get this wrong.
+    The outcomes page used to be tied to a date. The route is kept so old links
+    and bookmarks still work, but it never renders - it redirects.
+    """
+    return RedirectResponse(url="/outcomes", status_code=301)
+
+
+@app.get("/outcomes")
+async def outcomes(request: Request):
+    """The October 16 deliverable, under a stable route.
+
+    Option A of the wireframes. Its own definition says "Static, clickable
+    pages; no live data feeds", so this renders a fixed data module rather than
+    reading the prototype's tables. That is deliberate, not a shortcut: the
+    outcome and team model does not exist in the prototype schema, and
+    inventing tables for a ten-day deliverable would have been the expensive
+    way to get this wrong.
 
     It also sidesteps the one open question. Option A shows the Dean's own six
     outcomes, which the wireframes note "does not match the 2026 priorities
