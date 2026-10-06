@@ -16,7 +16,7 @@ rem ---------------------------------------------------------------------------
 setlocal
 
 set "HERE=%~dp0"
-set "APP=%HERE%ospec\openspec\changes\add-initiative-dashboard-prototype"
+set "APP=%HERE%ospec"
 
 if not exist "%APP%\app\main.py" (
   echo [run-dashboard] Cannot find the app at:

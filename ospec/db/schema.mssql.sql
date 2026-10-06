@@ -9,7 +9,7 @@
 -- Revision 2 supersedes it: 27 tables plus one addition, effective-dated
 -- multi-role ownership, ten-or-five typed relationships, a traceability tier
 -- between goals and initiatives, and reusable priority definitions.
--- See openspec/changes/adopt-rev2-strategy-portfolio-schema/design.md.
+-- See db/rev2/PROVENANCE.md for the package this was transcribed from.
 --
 -- Table mapping, prototype -> Revision 2:
 --

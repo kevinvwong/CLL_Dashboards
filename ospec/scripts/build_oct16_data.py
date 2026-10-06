@@ -37,8 +37,8 @@ import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPEC = os.path.dirname(HERE)  # ospec/
-APP = os.path.join(SPEC, "openspec", "changes", "add-initiative-dashboard-prototype")
-OUT = os.path.join(APP, "app", "oct16_data.py")
+APP = os.path.join(SPEC, "app")
+OUT = os.path.join(APP, "oct16_data.py")
 
 # The wireframe's own workbook, which the page cites as the source of its
 # data-requirements table. Read rather than retyped, so the page and the workbook

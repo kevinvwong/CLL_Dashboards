@@ -25,7 +25,10 @@ import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPEC = os.path.dirname(HERE)  # ospec/
-APP = os.path.join(SPEC, "openspec", "changes", "add-initiative-dashboard-prototype")
+# The application package. App Service serves it as the `app` package, so the
+# walk below prefixes every entry with "app/" - the site imports `app.main:app`.
+APP = os.path.join(SPEC, "app")
+APP_PREFIX = "app"
 
 DEFAULT_OUT = os.path.join(SPEC, "deploy.zip")
 
@@ -61,6 +64,10 @@ REQUIRED = [
     (os.path.join(SPEC, "db", "schema.sql"), "db/schema.sql"),
     (os.path.join(SPEC, "db", "seed_sample.sql"), "db/seed_sample.sql"),
     (os.path.join(SPEC, "db", "seed_team_layer.sql"), "db/seed_team_layer.sql"),
+    (os.path.join(SPEC, "requirements.txt"), "requirements.txt"),
+    # `.env.example` is documentation, not a secret: it ships so a deployed copy
+    # has the shape of the settings to set. The real `.env` never does.
+    (os.path.join(SPEC, ".env.example"), ".env.example"),
 ]
 
 # Asserted present after building. A missing one means a broken deploy, so the
@@ -85,6 +92,10 @@ def build(out_path: str = DEFAULT_OUT) -> str:
 
     added = []
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
+        # The walk visits the `app` package and prefixes each entry with `app/`,
+        # so the site's `app.main:app` import resolves. `.env.example` and
+        # `requirements.txt` are siblings of `app/`, not inside it, so they come
+        # from REQUIRED below rather than this walk.
         for root, dirs, files in os.walk(APP):
             dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
             for fn in files:
@@ -93,7 +104,8 @@ def build(out_path: str = DEFAULT_OUT) -> str:
                 if fn in SKIP_NAMES:
                     continue
                 full = os.path.join(root, fn)
-                arc = os.path.relpath(full, APP).replace(os.sep, "/")
+                arc = os.path.join(APP_PREFIX,
+                                   os.path.relpath(full, APP)).replace(os.sep, "/")
                 if arc in reserved:
                     continue
                 if SECRET_NAME_RE.search(arc) and arc not in ALLOWED_NAMES:

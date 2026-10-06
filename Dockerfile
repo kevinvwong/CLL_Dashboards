@@ -9,19 +9,20 @@ RUN useradd --create-home --uid 10001 appuser \
  && mkdir -p /app/data \
  && chown -R appuser:appuser /app
 
-# The application source lives in the OpenSpec change directory, not at the
-# repository root. APP_DIR is the single place that has to change if the
-# change is archived out of openspec/changes/ and promoted to the root.
-ARG APP_DIR=ospec/openspec/changes/add-initiative-dashboard-prototype
+# The application source lives under ospec/: the `app` package, its
+# requirements, and the sample database. APP_DIR is the one place that has to
+# change if the app is relocated.
+ARG APP_DIR=ospec/app
 
 # Copy requirements and install them
-COPY ${APP_DIR}/requirements.txt ./requirements.txt
+COPY ospec/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application source and sample DB
+# Copy the application package (static/ and templates/ are inside it) and the
+# sample database, which DB_PATH points at relative to WORKDIR.
 COPY ospec/cll_initiatives.db ./ospec/cll_initiatives.db
-COPY ${APP_DIR}/app ./app
-COPY ospec ./ospec
+COPY ${APP_DIR} ./app
+COPY ospec/db ./ospec/db
 
 # Non-root from here on. Task 9.4 asked for this explicitly.
 #

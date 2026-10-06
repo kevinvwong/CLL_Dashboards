@@ -2,10 +2,9 @@
 FROM python:3.12-slim
 WORKDIR /app
 
-# The application source lives in the OpenSpec change directory, not at the
-# repository root. APP_DIR is the single place that has to change if the
-# change is archived out of openspec/changes/ and promoted to the root.
-ARG APP_DIR=ospec/openspec/changes/add-initiative-dashboard-prototype
+# The application source lives under ospec/app. APP_DIR is the single place
+# that has to change if the app is relocated.
+ARG APP_DIR=ospec/app
 
 # Copy requirements and install them
 COPY ${APP_DIR}/requirements.txt ./requirements.txt

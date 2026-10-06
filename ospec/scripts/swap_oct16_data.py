@@ -25,8 +25,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPEC = os.path.dirname(HERE)
-APP = os.path.join(SPEC, "openspec", "changes", "add-initiative-dashboard-prototype")
-MODULE = os.path.join(APP, "app", "oct16_data.py")
+APP = os.path.join(SPEC, "app")
+MODULE = os.path.join(APP, "oct16_data.py")
 GENERATOR = os.path.join(HERE, "build_oct16_data.py")
 BACKUP = os.path.join(HERE, "backup.py")
 DB = os.path.join(SPEC, "cll_initiatives.db")
