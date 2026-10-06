@@ -11,6 +11,51 @@ here is a suggestion — the guard tests in section 7 will run against your outp
 
 ---
 
+## The goal — read this first
+
+> **A reimagining of the Georgia Tech brand: ultra modern, but a clear evolution
+> with clear lineage.**
+
+This one sentence governs every decision below. Unpack it, because the two halves
+pull against each other and the tension is the point:
+
+- **Ultra modern** is the *execution*: current spacing, a real type hierarchy,
+  restrained elevation, a calm dense-data layout. It should feel like software
+  made in 2026, not a university site from 2015.
+- **Clear lineage** is the *substance*: it must still, unmistakably, be Georgia
+  Tech. Someone who knows the Institute should look at a screen and recognise it
+  **with no logo present**.
+
+So the failure modes are equal and opposite. A **dated, generic university
+dashboard** fails the first half. A **generic modern SaaS dashboard with GT
+colours sprinkled on** fails the second — and it is the more tempting mistake,
+because it is easy to reach for Polaris or Material wholesale. Do not. Borrow
+their *craft* (token discipline, elevation logic, spacing) and none of their
+*identity*.
+
+**The GT cues that must survive and be legible** — these are the lineage, and they
+should read at a glance without a wordmark:
+
+- **White and gold lead; navy is the counterweight.** The Institute's own rule,
+  and the single strongest GT signal. A GT screen should feel *warm and bright*,
+  punctuated by navy — not navy-dominant.
+- **Gold as a rule and a mark, not a wash.** Hairlines, active states, small
+  emphases. The gold-gradient heritage is a material to reference, not a
+  background to flood.
+- **The slab heading voice.** Roboto Slab is GT's sanctioned digital display face;
+  its slab terminals are a direct line to the Institute's print and signage
+  heritage. It is what makes the type feel *Georgia Tech* rather than *any app*.
+- **The technical-institute character.** GT is an engineering school: precise
+  alignment, measured proportions, honest data presentation. The design should
+  read as *engineered* — exact, unhurried, trustworthy.
+
+**The test to hold yourself to:** open the style guide and ask *"could this be any
+university, or any SaaS product?"* If yes, it has lost the lineage — go back and
+let the GT cues lead. Then ask *"does this look current?"* If no, it has lost the
+modernity. The brief is satisfied only when both answers hold at once.
+
+---
+
 ## 1. What you are building
 
 Four things, delivered as files:
@@ -30,24 +75,31 @@ class names those templates already emit.
 
 ## 2. The visual direction (already decided — build this)
 
-**Light-first, modern SaaS.** Not dark chrome. The look of Polaris, Carbon-light,
-Fluent 2's light theme. Concretely:
+**Light-first, modern SaaS — executed with GT lineage.** Not dark chrome. The
+craft of Polaris, Carbon-light and Fluent 2's light theme, carrying Georgia Tech's
+identity (see "The goal" above). Concretely:
 
 - **Chrome (header, nav, footer): white**, not dark. A strong bottom border or
-  hairline in GT gold, not a filled navy bar.
-- **Content: near-white paper.** Cards are white with a subtle border and a soft
-  low shadow. Surface hierarchy is expressed with **colour alternation and
-  borders before shadows** (the Carbon approach), so dense tables stay calm.
+  hairline in GT gold, not a filled navy bar. This is the clearest expression of
+  "white and gold lead".
+- **Content: near-white paper**, warmed slightly toward the GT Diploma tint
+  rather than a cold grey. Cards are white with a subtle border and a soft low
+  shadow. Surface hierarchy is expressed with **colour alternation and borders
+  before shadows** (the Carbon approach), so dense tables stay calm.
 - **Navy is the strong accent, not the dominant field.** Per the GT brand guide:
   "White and Gold should lead the visual palette... Navy can be used to add
   contrast and balance, without becoming the dominant color."
 - **Elevation** is a small token set (Atlassian-style): a `sunken` level below the
   default surface (for table headers, code, inset areas), plus `raised` and
   `overlay`. Each has a matching shadow token.
-- **Type: Roboto for all UI text, Roboto Slab for headings** (see §5).
+- **Type: Roboto for all UI text, Roboto Slab for headings** (see §5). The slab is
+  the lineage — let it carry the GT voice rather than reaching for ornament.
 - **Generous, consistent spacing.** The app is projected in a leadership meeting
   and printed, so it must read at a distance and on paper. Prefer space and a
   clear type hierarchy over density tricks.
+- **The instinct to avoid:** a generic modern dashboard wearing GT colours. Every
+  surface should read as *engineered and warm* — precise, unhurried, clearly the
+  Institute — not as a stock component library with a navy accent.
 
 ---
 
@@ -254,6 +306,17 @@ These run unchanged against your `style.css`. Each is a hard pass/fail.
 - [ ] Roboto + Roboto Slab used; Georgia gone; `#003057` gone.
 - [ ] The six priority tokens use the hybrid set in §3.
 - [ ] `style-guide.html` renders every token and component on one reviewable page.
+
+**The goal check — do this last, and be honest:**
+
+- [ ] Looking at the style guide, **could a GT person recognise it as Georgia
+      Tech with no logo present?** (lineage)
+- [ ] Does it **look like software made in 2026**, not a dated university site?
+      (modernity)
+- [ ] Is it **white-and-gold-led**, with navy as a counterweight rather than the
+      dominant field?
+- [ ] Does it read as **engineered and warm** — the Institute — and not as a
+      stock component library with a navy accent?
 
 When you hand back, note any place you **deviated** from this brief and why. A
 recorded deviation is fine; an unrecorded one is a defect.
