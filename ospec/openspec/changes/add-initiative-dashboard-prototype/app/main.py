@@ -54,6 +54,7 @@ def _ctx(request: Request, **extra) -> dict:
     section = "home"
     for prefix, name in (("/initiatives", "initiatives"), ("/people", "people"),
                          ("/goals", "initiatives"), ("/priorities", "initiatives"),
+                         ("/teams", "initiatives"), ("/kpis", "initiatives"),
                          ("/meeting", "meeting"), ("/outcomes", "outcomes")):
         if path == prefix or path.startswith(prefix + "/"):
             section = name
@@ -61,6 +62,10 @@ def _ctx(request: Request, **extra) -> dict:
     return {
         "person": auth.current_person(request),
         "app_env": auth.settings().APP_ENV,
+        # The meeting surface is ICED (2026-10-06): the nav hides it and the
+        # route 404s unless MEETING_ENABLED is set. Read here so every page
+        # agrees with the route.
+        "meeting_enabled": auth.settings().MEETING_ENABLED,
         # Every page needs to know whether to offer admin-only entry points
         # (new initiative, edit description). Task 8.4 built the routes but
         # nothing linked to them.
@@ -292,13 +297,16 @@ async def goal_list(request: Request, goal_number: int, group: str | None = None
             groupings={k: v.capitalize() for k, v in queries.GROUPINGS.items()},
             counts=counts,
             rollup=queries.rollup_label(len(rows), counts),
+            # The team KPIs aligned to this goal (interconnection-redesign
+            # 3.1): the new edge, shown from the goal side.
+            team_kpis=queries.goal_team_kpis(goal_number),
         ),
     )
 
 
 @app.get("/priorities/{priority_name}")
 async def priority_list(request: Request, priority_name: str, group: str | None = None):
-    priority = queries.priority_by_name(priority_name)
+    priority = queries.priority_detail(priority_name)
     if priority is None:
         raise HTTPException(status_code=404, detail="No such priority")
     rows = queries.priority_rows(priority_name)
@@ -314,6 +322,9 @@ async def priority_list(request: Request, priority_name: str, group: str | None 
             entry_kind="priority",
             entry_key=priority["PriorityName"],
             plan_year=priority["PlanYear"],
+            # The governed fields live on the priority page (interconnection-
+            # redesign 5: the overview card is compact and links here).
+            governed=priority,
             dean_rows=dean_rows,
             d1_groups=d1_groups,
             grouped=queries.group_rows(rows, group) if group else [],
@@ -322,6 +333,40 @@ async def priority_list(request: Request, priority_name: str, group: str | None 
             counts=counts,
             rollup=queries.rollup_label(len(rows), counts),
         ),
+    )
+
+
+@app.get("/teams/{team_id}")
+async def team_page(request: Request, team_id: int):
+    """One team, with its KPIs (interconnection-redesign 3.2).
+
+    Closes the dead end: the four teams existed only inside the home table.
+    """
+    team = queries.team_detail(team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="No such team")
+    return templates.TemplateResponse(
+        request,
+        "team.html",
+        _ctx(request, team=team,
+             crumbs=[("Teams", None), (team["Name"], None)]),
+    )
+
+
+@app.get("/kpis/{mi_id}")
+async def kpi_page(request: Request, mi_id: str):
+    """One team KPI by its canon key, with every edge (interconnection 3.3).
+
+    Reachable by `MI-###` or by the code we held before the canon arrived.
+    """
+    kpi = queries.kpi_detail(mi_id)
+    if kpi is None:
+        raise HTTPException(status_code=404, detail="No such KPI")
+    return templates.TemplateResponse(
+        request,
+        "kpi.html",
+        _ctx(request, kpi=kpi,
+             crumbs=[("Priorities", None), (kpi["MIId"] or kpi["Code"], None)]),
     )
 
 
@@ -421,7 +466,14 @@ async def meeting(request: Request, since: str | None = None):
     Defaults to the last 7 days; `?since=YYYY-MM-DD` sets the window to the
     previous meeting date. `?range=` offers the quick ranges the spec names
     (7d, 14d), so the Dean does not have to pick a date by hand.
+
+    ICED (2026-10-06): the surface is hidden and the route returns 404 while
+    MEETING_ENABLED is unset. The page, its queries and its tests remain, so
+    re-enabling is one environment variable. A visitor who bookmarked the URL
+    gets a clean 404, not a stale agenda.
     """
+    if not auth.settings().MEETING_ENABLED:
+        raise HTTPException(status_code=404, detail="Not found")
     # Quick ranges (overhaul 6.1): range=7d or 14d sets the window; otherwise
     # `since` is used, and with neither the default window applies.
     range_days = {"7d": 7, "14d": 14}.get(request.query_params.get("range", ""))
@@ -782,24 +834,29 @@ async def initiatives_index(request: Request):
 
 @app.get("/")
 async def root(request: Request):
-    """Home: a portfolio dashboard in our own design.
+    """Home: the portfolio OVERVIEW.
 
-    Deliberately NOT the Dean's prototype's layout (hero stage + Dean node).
-    This is a dashboard: a stat band, then the six priorities as cards carrying
-    every governed field, then the four teams, then the team-KPI table. It shows
-    all the prototype's content without copying its shape.
+    An overview, not four full catalogs (interconnection-redesign group 5).
+    Measured before the cut: 56 KB, 67% of it the 29-row KPI table, and every
+    KPI rendered twice. The table now has its own page, /kpis; the sections
+    here are compact entry points that state a count and link to detail.
     """
     priorities = queries.blueprint_priorities()
     teams = queries.team_overview()
-    kpis = queries.kpi_cards()
+    all_kpis = queries.kpi_cards()
+    # The five goals, with their team-KPI reach (interconnection-redesign 4.1).
+    goals = queries.goal_tiles()
+    for g in goals:
+        g["TeamKPICount"] = len(queries.goal_team_kpis(g["GoalNumber"]))
 
-    # The stat band: counts, not a performance score.
+    # The stat band: counts, not a performance score. The team KPI and
+    # needs-review tiles link into the /kpis index.
     stats = {
         "priorities": len(priorities),
-        "goals": len(queries.goal_tiles()),
+        "goals": len(goals),
         "teams": len(teams),
-        "kpis": len(kpis),
-        "needs_review": sum(1 for k in kpis if k["TargetStatus"] == "needs_review"),
+        "kpis": len(all_kpis),
+        "needs_review": sum(1 for k in all_kpis if k["TargetStatus"] == "needs_review"),
         "initiatives": len(queries.all_initiatives()),
     }
 
@@ -811,8 +868,49 @@ async def root(request: Request):
             request,
             priorities=priorities,
             teams=teams,
-            kpis=kpis,
+            goals=goals,
             stats=stats,
             plan_year=plan_year,
         ),
+    )
+
+
+def _kpi_index_ctx(request: Request, target: str | None, group: str | None) -> dict:
+    """Context for the /kpis index (and shared with the home when linked).
+
+    The counts in the controls describe the whole set, not the filtered view,
+    so "All 29" stays 29 under any filter.
+    """
+    all_kpis = queries.kpi_cards()
+    kpi_filter = target if target in ("needs_review",) else None
+    kpi_group = group if group in ("team", "source_area") else None
+    kpis = queries.filter_and_group_kpis(all_kpis, kpi_filter, kpi_group)
+    params = []
+    if kpi_filter:
+        params.append("target=" + kpi_filter)
+    if kpi_group:
+        params.append("group=" + kpi_group)
+    kpi_base = "/kpis" + ("?" + "&".join(params) if params else "")
+    return _ctx(
+        request,
+        kpis=kpis,
+        all_kpis=all_kpis,
+        needs_review_count=sum(1 for k in all_kpis if k["TargetStatus"] == "needs_review"),
+        kpi_filter=kpi_filter,
+        kpi_group=kpi_group,
+        kpi_groupings={"team": "Team", "source_area": "Source area"},
+        kpi_base=kpi_base,
+    )
+
+
+@app.get("/kpis")
+async def kpi_index(request: Request, target: str | None = None, group: str | None = None):
+    """The team-KPI index: all 29, filterable and groupable.
+
+    Moved here from the overview, which measured 56 KB with this table as
+    two-thirds of it (interconnection-redesign 5).
+    """
+    return templates.TemplateResponse(
+        request, "kpis.html",
+        _kpi_index_ctx(request, target, group),
     )

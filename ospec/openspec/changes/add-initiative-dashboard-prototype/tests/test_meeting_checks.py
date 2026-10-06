@@ -12,6 +12,12 @@ import pytest
 from app import queries
 
 
+@pytest.fixture(autouse=True)
+def _enable_meeting(meeting_on):
+    """The meeting is iced by default; these cases verify it is intact."""
+    return meeting_on
+
+
 # --- 8.5 meeting window ---------------------------------------------------
 
 

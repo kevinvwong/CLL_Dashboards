@@ -22,6 +22,55 @@
 
 {% if description %}<p class="entry-description">{{ description }}</p>{% endif %}
 
+{# The six priorities' governed fields (interconnection-redesign 5: the
+   overview card is compact, and these live here). Only a priority view passes
+   `governed`. #}
+{% if governed is defined and governed %}
+<dl class="field-list priority-fields">
+  {% if governed.Measure %}<dt>Measure</dt><dd>{{ governed.Measure }}</dd>{% endif %}
+  {% if governed.Target %}<dt>Target</dt><dd>{{ governed.Target }}</dd>{% endif %}
+  {% if governed.Cadence %}<dt>Cadence</dt><dd>{{ governed.Cadence }}</dd>{% endif %}
+  {% if governed.OwnerLabel %}<dt>Owner</dt><dd>{{ governed.OwnerLabel }}</dd>{% endif %}
+</dl>
+{% endif %}
+
+{# The team KPIs that feed this priority (priority_detail's team_kpis). #}
+{% if governed is defined and governed.team_kpis %}
+<section class="goal-kpis" aria-labelledby="priority-kpis-heading">
+  <h2 id="priority-kpis-heading" class="list-group-label">Team KPIs feeding this priority</h2>
+  <ul class="kpi-chip-list">
+    {% for k in governed.team_kpis %}
+    <li class="kpi-chip">
+      <a href="/kpis/{{ k.MIId or k.Code }}">
+        <span class="kpi-code">{{ k.MIId or k.Code }}</span>
+        <span class="kpi-chip-title">{{ k.Title }}</span>
+      </a>
+      <span class="kpi-chip-team">{{ k.Team or "—" }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{# The team KPIs aligned to this goal (interconnection-redesign 3.1). The new
+   edge, shown from the goal side. Only a goal view passes team_kpis. #}
+{% if team_kpis is defined and team_kpis %}
+<section class="goal-kpis" aria-labelledby="goal-kpis-heading">
+  <h2 id="goal-kpis-heading" class="list-group-label">Team KPIs aligned to this goal</h2>
+  <ul class="kpi-chip-list">
+    {% for k in team_kpis %}
+    <li class="kpi-chip">
+      <a href="/kpis/{{ k.MIId or k.Code }}">
+        <span class="kpi-code">{{ k.MIId or k.Code }}</span>
+        <span class="kpi-chip-title">{{ k.Title }}</span>
+      </a>
+      <span class="kpi-chip-team">{{ k.Team or "—" }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 {% if may_admin and entry_kind %}
 <p class="entry-actions"><a class="text-button" href="/entries/{{ entry_kind }}/{{ entry_key }}/edit">Edit this description →</a></p>
 {% endif %}

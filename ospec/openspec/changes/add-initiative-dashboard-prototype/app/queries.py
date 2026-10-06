@@ -793,7 +793,7 @@ def priority_detail(name: str) -> dict | None:
         out = dict(row)
         out["team_kpis"] = [
             dict(r) for r in conn.execute(
-                "SELECT k.KPIID, k.Code, k.Title, k.StrategyAlign, k.Status, "
+                "SELECT k.KPIID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Status, "
                 "       k.TargetStatus, k.ProposedTarget, t.Name AS Team "
                 "FROM TeamKPIPriorities tp "
                 "JOIN TeamKPIs k ON k.KPIID = tp.KPIID "
@@ -813,7 +813,7 @@ def team_overview() -> list[dict]:
         teams = [dict(r) for r in conn.execute(
             "SELECT TeamID, Name, Description FROM Teams ORDER BY Name")]
         kpis = [dict(r) for r in conn.execute(
-            "SELECT KPIID, Code, Title, TeamID, SourceAreaID, StrategyAlign, "
+            "SELECT KPIID, Code, MIId, Title, TeamID, SourceAreaID, StrategyAlign, "
             "       Initiatives, SourceTarget, ProposedTarget, TargetStatus, "
             "       SlideRef, Status, Note FROM TeamKPIs ORDER BY Code")]
         areas = {r["SourceAreaID"]: r["Name"]
@@ -833,9 +833,10 @@ def kpi_cards() -> list[dict]:
     """
     with _conn() as conn:
         kpis = [dict(r) for r in conn.execute(
-            "SELECT k.KPIID, k.Code, k.Title, k.StrategyAlign, k.Initiatives, "
+            "SELECT k.KPIID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Initiatives, "
             "       k.SourceTarget, k.ProposedTarget, k.TargetStatus, k.SlideRef, "
-            "       k.Status, k.Note, t.Name AS Team, sa.Name AS SourceArea "
+            "       k.Status, k.Note, k.TeamID, t.Name AS Team, "
+            "       sa.Name AS SourceArea "
             "FROM TeamKPIs k LEFT JOIN Teams t ON t.TeamID = k.TeamID "
             "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
             "ORDER BY k.Code")]
@@ -845,9 +846,127 @@ def kpi_cards() -> list[dict]:
                 "FROM TeamKPIPriorities tp JOIN Priorities p ON p.PriorityID = tp.PriorityID "
                 "ORDER BY p.Code"):
             links.setdefault(r["KPIID"], []).append(dict(r))
+        # The goal edge, so the home table can show and link each KPI's goals.
+        goals: dict = {}
+        for r in conn.execute(
+                "SELECT kg.KPIID, g.GoalNumber, g.ShortName "
+                "FROM TeamKPIGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
+                "ORDER BY g.GoalNumber"):
+            goals.setdefault(r["KPIID"], []).append(dict(r))
     for k in kpis:
         k["priorities"] = links.get(k["KPIID"], [])
+        k["goals"] = goals.get(k["KPIID"], [])
+        k["_GroupLabel"] = None
     return kpis
+
+
+def filter_and_group_kpis(kpis: list, filter_: str | None, group: str | None) -> list:
+    """Apply the home KPI table's filter and grouping (4.2), returning rows in
+    display order with a `_GroupLabel` on the first row of each group.
+
+    A filter, not a search: `needs_review` is the state leadership must decide,
+    and grouping is by team or source area, the two axes the register uses.
+    """
+    rows = kpis
+    if filter_ == "needs_review":
+        rows = [k for k in rows if k["TargetStatus"] == "needs_review"]
+    if group not in ("team", "source_area"):
+        return rows
+    field = "Team" if group == "team" else "SourceArea"
+    rows = sorted(rows, key=lambda k: (k.get(field) or "~", k["Code"]))
+    last = None
+    for k in rows:
+        label = k.get(field) or "Unassigned"
+        if label != last:
+            k["_GroupLabel"] = label
+            last = label
+    return rows
+
+
+def goal_team_kpis(goal_number: int) -> list[dict]:
+    """The team KPIs aligned to one goal (interconnection-redesign 3.1).
+
+    The edge the canon states and the schema now holds. One row per KPI, with
+    the team, the source area, the target status and the MI-id, so the goal
+    page can render it without a query per row.
+    """
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT k.KPIID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
+            "       k.ProposedTarget, k.TargetStatus, t.Name AS Team, "
+            "       sa.Name AS SourceArea "
+            "FROM TeamKPIGoals kg "
+            "JOIN TeamKPIs k ON k.KPIID = kg.KPIID "
+            "JOIN Goals g ON g.GoalID = kg.GoalID "
+            "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
+            "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
+            "WHERE g.GoalNumber = ? ORDER BY k.Code",
+            (goal_number,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def team_detail(team_id: int):
+    """One team with its KPIs (interconnection-redesign 3.2).
+
+    Returns the team and its KPI rows, or None when no such team exists, so the
+    route can 404 rather than render an empty page.
+    """
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT TeamID, Name, Description FROM Teams WHERE TeamID = ?",
+            (team_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        out = dict(row)
+        out["kpis"] = [dict(r) for r in conn.execute(
+            "SELECT k.KPIID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
+            "       k.ProposedTarget, k.TargetStatus, sa.Name AS SourceArea "
+            "FROM TeamKPIs k LEFT JOIN SourceAreas sa "
+            "       ON sa.SourceAreaID = k.SourceAreaID "
+            "WHERE k.TeamID = ? ORDER BY k.Code", (team_id,))]
+        # The source areas this team's KPIs came from. A team is a different
+        # axis from a source area, so the page names both.
+    areas = []
+    for k in out["kpis"]:
+        if k["SourceArea"] and k["SourceArea"] not in areas:
+            areas.append(k["SourceArea"])
+    out["source_areas"] = areas
+    return out
+
+
+def kpi_detail(mi_id: str):
+    """One team KPI by its canon key, with every edge (interconnection 3.3).
+
+    The KPI itself, its team, its source area, the goals it aligns to, and the
+    priorities it feeds. Found by `MIId` because that is the canon's stable key;
+    a KPI without one is reachable by code instead.
+    """
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT k.KPIID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
+            "       k.Initiatives, k.SourceTarget, k.ProposedTarget, "
+            "       k.TargetStatus, k.SlideRef, k.Status, k.Note, "
+            "       t.TeamID, t.Name AS Team, sa.Name AS SourceArea "
+            "FROM TeamKPIs k "
+            "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
+            "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
+            "WHERE k.MIId = ? OR k.Code = ?",
+            (mi_id, mi_id),
+        ).fetchone()
+        if row is None:
+            return None
+        out = dict(row)
+        out["goals"] = [dict(r) for r in conn.execute(
+            "SELECT g.GoalNumber, g.ShortName, g.FullName "
+            "FROM TeamKPIGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
+            "WHERE kg.KPIID = ? ORDER BY g.GoalNumber", (out["KPIID"],))]
+        out["priorities"] = [dict(r) for r in conn.execute(
+            "SELECT p.PriorityName, p.Code, p.Colour "
+            "FROM TeamKPIPriorities tp JOIN Priorities p ON p.PriorityID = tp.PriorityID "
+            "WHERE tp.KPIID = ? ORDER BY p.Code", (out["KPIID"],))]
+    return out
 
 
 # --- search (overhaul-ui-ux-navigation 3.5) ---------------------------------

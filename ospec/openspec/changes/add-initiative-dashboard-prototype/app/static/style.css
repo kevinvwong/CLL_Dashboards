@@ -1125,8 +1125,119 @@ body.overlay-open { overflow: hidden; }
 .kpi-table .target-cell { max-width: 34ch; }
 .note-mark { color: var(--accent); cursor: help; }
 
+/* ---- Interconnection: goals, teams, KPIs (interconnection-redesign) ------- */
+
+/* 2. the five Strategy 2035 goals */
+.goal-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-3);
+}
+.goal-card {
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.goal-link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--ink);
+}
+.goal-link:hover .goal-name { text-decoration: underline; }
+.goal-number {
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-2);
+}
+.goal-name { font-family: var(--font-serif); font-size: var(--text-lg); font-weight: 500; }
+.goal-counts { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink-muted); }
+.goal-counts a { color: var(--ink-muted); }
+
+/* The KPI controls (filter + group), a row of chips over the table. */
+.kpi-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+.kpi-controls .toggle-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-subtle);
+  margin-left: var(--space-2);
+}
+.kpi-controls .toggle-label:first-child { margin-left: 0; }
+.kpi-controls .chip { text-decoration: none; }
+.kpi-controls .chip.is-active { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.kpi-controls .chip-warn.is-active { border-color: var(--status-at-risk); color: var(--status-at-risk); }
+
+/* A group label row inside the KPI table. */
+.kpi-table .group-row th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-top: 1px solid var(--line);
+}
+.chip-goal {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: transparent;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* The goal-side list of aligned team KPIs, and the KPI-side chip lists. */
+.kpi-chip-list {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: var(--space-2);
+}
+.kpi-chip {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.kpi-chip a {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex: 1 1 auto;
+  text-decoration: none;
+  color: var(--ink);
+}
+.kpi-chip a:hover .kpi-chip-title { text-decoration: underline; }
+.kpi-chip-title { font-size: var(--text-sm); }
+.kpi-chip-team { color: var(--ink-muted); font-size: var(--text-xs); white-space: nowrap; }
+
+/* The team page's source-area row and the KPI page's field list. */
+.team-areas { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-4); }
+.kpi-fields { margin-bottom: var(--space-4); }
+.kpi-note { color: var(--ink-muted); font-size: var(--text-sm); }
+
 @media (max-width: 900px) {
-  .priority-grid, .team-grid { grid-template-columns: 1fr; }
+  .priority-grid, .team-grid, .goal-grid, .kpi-chip-list { grid-template-columns: 1fr; }
 }
 
 

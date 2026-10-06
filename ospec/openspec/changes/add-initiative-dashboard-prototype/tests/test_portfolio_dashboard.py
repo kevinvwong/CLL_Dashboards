@@ -16,16 +16,23 @@ def _home(logged_in):
     return _html.unescape(logged_in("Bill").get("/").text)
 
 
+def _page(logged_in, path):
+    return _html.unescape(logged_in("Bill").get(path).text)
+
+
 # --- the dashboard, not the prototype's stage -------------------------------
 
 
 def test_the_home_is_a_dashboard_not_a_stage(logged_in):
     body = _home(logged_in)
-    # The dashboard's parts.
+    # The overview's parts: the stat band and three compact entry-point grids.
     assert "stat-band" in body
+    assert "goal-grid" in body
     assert "priority-grid" in body
     assert "team-grid" in body
-    assert "kpi-table" in body
+    # The 29-row table has its own page now (interconnection-redesign 5).
+    assert "kpi-table" not in body, "the overview still renders the KPI table"
+    assert "kpi-table" in _page(logged_in, "/kpis")
     # The prototype's stage is gone.
     assert "dean-node" not in body, "the Dean node stage still renders"
     assert "priority-map" not in body, "the prototype's priority map still renders"
@@ -49,17 +56,23 @@ def test_all_six_priorities_render(logged_in):
 
 
 def test_priority_cards_carry_the_governed_fields(logged_in):
-    """Measure, target, cadence and owner - the four we did not hold before."""
-    body = _home(logged_in)
+    """Measure, target, cadence and owner - the four we did not hold before.
+
+    They live on the priority page now, not inline on the overview card
+    (interconnection-redesign 5: the overview is compact and links out).
+    """
+    from app import queries
+    p = queries.blueprint_priorities()[0]
+    body = _page(logged_in, "/priorities/" + p["Name"])
     for label in ("Measure", "Target", "Cadence", "Owner"):
-        assert label in body, "priority card missing %s" % label
+        assert label in body, "priority page missing %s" % label
 
 
 def test_a_priorities_measure_target_and_cadence_actually_render(logged_in):
     """Not just the label: the prototype's own values."""
     from app import queries
-    body = _home(logged_in)
     p = next(x for x in queries.blueprint_priorities() if x["Code"] == "P01")
+    body = _page(logged_in, "/priorities/" + p["Name"])
     assert p["Measure"] in body
     assert p["Target"][:40] in body
     assert p["Cadence"] in body
@@ -75,19 +88,21 @@ def test_the_four_teams_render_with_descriptions(logged_in):
 
 def test_all_29_team_kpis_render_with_their_fields(logged_in):
     from app import queries
-    body = _home(logged_in)
+    body = _page(logged_in, "/kpis")
     rows = queries.kpi_cards()
     assert len(rows) == 29
     assert body.count('class="kpi-row"') == 29
-    # The table's columns cover the prototype's fields.
-    for col in ("Code", "Team KPI", "Team", "Source area", "Strategy alignment",
+    # The table's columns cover the prototype's fields. The first column is the
+    # canon's stable key (MI-###) as of interconnection-redesign 4.2: the row
+    # key is now the identifier the source register uses, not our internal code.
+    for col in ("ID", "Team KPI", "Team", "Source area", "Strategy alignment",
                 "Initiatives", "Target", "Target status", "Feeds"):
         assert col in body, "missing column %s" % col
 
 
 def test_a_team_kpi_shows_its_team_source_area_and_priorities(logged_in):
     from app import queries
-    body = _home(logged_in)
+    body = _page(logged_in, "/kpis")
     k = queries.kpi_cards()[0]
     assert k["Team"] in body
     assert k["SourceArea"] in body
@@ -98,7 +113,7 @@ def test_a_team_kpi_shows_its_team_source_area_and_priorities(logged_in):
 
 def test_the_needs_review_marker_is_shown(logged_in):
     from app import queries
-    body = _home(logged_in)
+    body = _page(logged_in, "/kpis")
     needs = [k for k in queries.kpi_cards() if k["TargetStatus"] == "needs_review"]
     assert needs, "expected some KPIs needing review"
     assert "needs review" in body

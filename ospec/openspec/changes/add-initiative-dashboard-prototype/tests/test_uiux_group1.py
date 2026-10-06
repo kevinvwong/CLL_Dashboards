@@ -255,7 +255,7 @@ def test_unknown_route_still_answers_json_for_a_non_browser(logged_in):
 def test_home_has_accessible_names(logged_in):
     body = _html.unescape(logged_in("Bill").get("/").text)
     # The nav destinations are named by their visible text.
-    for dest in ("/initiatives", "/people", "/meeting", "/outcomes"):
+    for dest in ("/initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body
     # The priority cards carry their full title as text, not a bare code.
     assert "One Shared Identity" in body

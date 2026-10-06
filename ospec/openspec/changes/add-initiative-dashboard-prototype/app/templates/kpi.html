@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ kpi.MIId or kpi.Code }} — {{ kpi.Title }}{% endblock %}
+{% block content %}
+{#
+  One team KPI, with every edge (interconnection-redesign 3.3): its team, its
+  source area, the goals it aligns to, and the priorities it feeds. Found by
+  the canon's stable key, MI-###, or by the code we held before it arrived.
+#}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">{{ kpi.MIId or kpi.Code }} · Team KPI</p>
+    <h1>{{ kpi.Title }}</h1>
+  </div>
+  <p class="section-note">
+    {% if kpi.TargetStatus == 'needs_review' %}
+    <span class="chip chip-warn">needs review</span>
+    {% else %}
+    <span class="chip">source target</span>
+    {% endif %}
+  </p>
+</div>
+
+<dl class="field-list kpi-fields">
+  {% if kpi.Team %}<dt>Team</dt><dd><a href="/teams/{{ kpi.TeamID }}">{{ kpi.Team }}</a></dd>{% endif %}
+  {% if kpi.SourceArea %}<dt>Source area</dt><dd>{{ kpi.SourceArea }}</dd>{% endif %}
+  {% if kpi.SlideRef %}<dt>Slide</dt><dd>{{ kpi.SlideRef }}</dd>{% endif %}
+  <dt>Status</dt><dd>{{ kpi.Status }}</dd>
+  {% if kpi.SourceTarget %}<dt>Source target</dt><dd>{{ kpi.SourceTarget }}</dd>{% endif %}
+  {% if kpi.ProposedTarget %}<dt>Proposed target</dt><dd>{{ kpi.ProposedTarget }}</dd>{% endif %}
+</dl>
+
+{# The goals this KPI aligns to (the new edge, from the KPI side). #}
+<section aria-labelledby="kpi-goals-heading">
+  <h2 id="kpi-goals-heading" class="list-group-label">Strategy goals</h2>
+  {% if kpi.goals %}
+  <ul class="kpi-chip-list">
+    {% for g in kpi.goals %}
+    <li class="kpi-chip">
+      <a href="/goals/{{ g.GoalNumber }}">
+        <span class="goal-number">G{{ g.GoalNumber }}</span>
+        <span class="kpi-chip-title">{{ g.ShortName }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">No goal alignment is recorded for this KPI.</p>
+  {% endif %}
+</section>
+
+{# The annual priorities this KPI feeds. #}
+<section aria-labelledby="kpi-priorities-heading">
+  <h2 id="kpi-priorities-heading" class="list-group-label">Feeds priorities</h2>
+  {% if kpi.priorities %}
+  <ul class="kpi-chip-list">
+    {% for pr in kpi.priorities %}
+    <li class="kpi-chip">
+      <a href="/priorities/{{ pr.PriorityName | urlencode }}"
+         style="--priority: var({{ pr.Colour | priority_colour }});">
+        <span class="kpi-code">{{ pr.Code or "—" }}</span>
+        <span class="kpi-chip-title">{{ pr.PriorityName }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">This KPI feeds no priority in the register.</p>
+  {% endif %}
+</section>
+
+{% if kpi.Initiatives %}
+<section aria-labelledby="kpi-initiatives-heading">
+  <h2 id="kpi-initiatives-heading" class="list-group-label">Initiatives named in the source register</h2>
+  <p class="entry-description">{{ kpi.Initiatives }}</p>
+</section>
+{% endif %}
+
+{% if kpi.Note %}
+<p class="kpi-note"><span class="note-mark">ⓘ</span> {{ kpi.Note }}</p>
+{% endif %}
+{% endblock %}

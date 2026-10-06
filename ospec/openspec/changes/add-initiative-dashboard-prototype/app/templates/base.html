@@ -46,7 +46,10 @@
       <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>Overview</a>
       <a href="/initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>Initiatives</a>
       <a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>People</a>
+      {# Meeting is ICED (2026-10-06): hidden unless MEETING_ENABLED is set. #}
+      {% if meeting_enabled %}
       <a href="/meeting"{% if section == "meeting" %} aria-current="page"{% endif %}>Meeting</a>
+      {% endif %}
       <a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>Outcomes</a>
       {# Data checks is an ADMIN entry now, not primary nav (5.4/3.4), with the
          count of failing checks as a badge. It never appears for a non-admin. #}

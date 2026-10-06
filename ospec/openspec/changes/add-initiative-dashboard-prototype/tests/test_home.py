@@ -156,7 +156,7 @@ def test_nav_and_print_assets_are_present(logged_in):
     is asserted in the coverage-checks test.
     """
     body = logged_in("Bill").get("/").text
-    for dest in ("/", "/initiatives", "/people", "/meeting", "/outcomes"):
+    for dest in ("/", "/initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body, "missing nav destination %s" % dest
     assert 'media="print"' in body
     assert "<dialog" in body

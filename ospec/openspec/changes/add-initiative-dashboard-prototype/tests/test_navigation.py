@@ -16,18 +16,21 @@ APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def test_the_primary_nav_has_the_five_destinations(logged_in):
+    """The nav's live destinations. Meeting is ICED (2026-10-06), so it is not
+    among them while MEETING_ENABLED is unset."""
     body = logged_in("Bill").get("/").text
-    for dest in ("/", "/initiatives", "/people", "/meeting", "/outcomes"):
+    for dest in ("/", "/initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body, "missing %s" % dest
 
 
+def test_the_meeting_nav_item_is_hidden_when_iced(logged_in):
+    body = logged_in("Bill").get("/").text
+    assert 'href="/meeting"' not in body, "the meeting nav item is still shown"
+
+
 def test_the_active_destination_is_marked(logged_in):
-    body = logged_in("Bill").get("/meeting").text
+    body = logged_in("Bill").get("/outcomes").text
     assert 'aria-current="page"' in body
-    # The Meeting item carries it.
-    import re
-    m = re.search(r'href="/meeting"[^>]*aria-current="page"', body)
-    assert m, "Meeting did not carry aria-current"
 
 
 def test_the_nav_collapses_at_a_narrow_width():
@@ -81,11 +84,12 @@ def test_switch_user_is_not_in_the_primary_nav(logged_in):
     assert "Switch" not in nav
 
 
-def test_meeting_and_outcomes_are_one_step_from_any_page(logged_in):
+def test_outcomes_and_checks_are_one_step_from_any_page(logged_in):
     for page in ("/", "/initiatives", "/people"):
         body = logged_in("Bill").get(page).text
-        assert 'href="/meeting"' in body
         assert 'href="/outcomes"' in body
+    # Meeting is iced, so it is not linked from anywhere.
+    assert 'href="/meeting"' not in logged_in("Bill").get("/").text
 
 
 def test_an_admin_sees_the_checks_entry_with_a_count(logged_in):
@@ -133,16 +137,15 @@ def test_checks_lists_each_rule_with_its_records(logged_in):
         assert c["Code"] in body
 
 
-# --- 5.5/5.6 meeting and outcomes restyle -----------------------------------
+# --- 5.5/5.6 meeting (iced) and outcomes restyle ----------------------------
 
 
-def test_the_meeting_renders(logged_in):
-    r = logged_in("Bill").get("/meeting")
-    assert r.status_code == 200
-    assert "meeting" in r.text
+def test_the_meeting_route_is_iced(logged_in):
+    """Hidden and disabled (2026-10-06): a bookmarked URL gets a clean 404."""
+    assert logged_in("Bill").get("/meeting").status_code == 404
 
 
-def test_the_meeting_prints_without_chrome():
+def test_the_outcomes_page_prints_without_chrome():
     css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
     assert "@media print" in css
     assert ".site-nav, .nav-toggle-label { display: none; }" in css

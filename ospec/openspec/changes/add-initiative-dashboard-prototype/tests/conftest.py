@@ -55,6 +55,19 @@ def anon(fresh_db):
 
 
 @pytest.fixture
+def meeting_on(fresh_db, monkeypatch):
+    """Enable the iced meeting surface for the cases that verify it is intact.
+
+    The meeting is hidden from the nav and its route 404s by default
+    (MEETING_ENABLED unset, 2026-10-06). These tests prove the page, its
+    queries and its rendering still work, so re-enabling it is one environment
+    variable rather than a rebuild.
+    """
+    monkeypatch.setenv("MEETING_ENABLED", "1")
+    return True
+
+
+@pytest.fixture
 def request_for(fresh_db):
     """Build a Starlette Request carrying a client's cookies.
 

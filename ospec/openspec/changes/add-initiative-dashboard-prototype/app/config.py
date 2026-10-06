@@ -25,3 +25,8 @@ class Config:
         self.DB_PATH = os.getenv("DB_PATH", "./cll_initiatives.db")
         self.BACKUP_DIR = os.getenv("BACKUP_DIR", "./backups")
         self.PORT = int(os.getenv("PORT", "8000"))
+        # The meeting surface is ICED (2026-10-06): hidden from the nav and its
+        # route returns 404, while the page, its queries and its tests stay in
+        # the tree so re-enabling is one environment variable, not a rebuild.
+        # Off by default; set MEETING_ENABLED=1 to bring it back.
+        self.MEETING_ENABLED = os.getenv("MEETING_ENABLED", "0") == "1"

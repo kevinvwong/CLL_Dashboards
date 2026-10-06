@@ -38,8 +38,10 @@ def test_a_person_page_is_labelled(logged_in):
     assert "synthetic-label" in body
 
 
-def test_the_meeting_page_is_labelled(logged_in):
-    body = logged_in("Bill").get("/meeting").text
+def test_a_goal_page_is_labelled(logged_in):
+    """Meeting was the other labelled page; it is iced (2026-10-06), so a live
+    cascade page (its rows carry the marker) stands in for it."""
+    body = logged_in("Bill").get("/goals/3").text
     assert "synthetic-label" in body
 
 

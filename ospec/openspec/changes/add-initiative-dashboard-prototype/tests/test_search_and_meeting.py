@@ -9,7 +9,15 @@ import html as _html
 import os
 import re
 
+import pytest
+
 APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+@pytest.fixture(autouse=True)
+def _enable_meeting(meeting_on):
+    """The meeting is iced by default; these cases verify it is intact."""
+    return meeting_on
 
 
 # --- search (overhaul 3.5) ---------------------------------------------------

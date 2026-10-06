@@ -107,6 +107,29 @@ a team lists its KPIs; each KPI links to its team.
 reusing the cascade pattern), the MI-id as the row key, and a `needs review`
 filter — 21 of 29 need review, the number leadership cares about.
 
+## Scope added during review (2026-10-06)
+
+Two changes the user asked for after seeing the first build, both recorded
+here rather than folded in silently:
+
+**Group 5 — the overview was too long.** Measured before the cut: the overview
+rendered **55,693 bytes**, of which **67% was the 29-row KPI table**, and every
+KPI rendered **twice** (once inside the four team cards, once in the table).
+The fix: the table moved to its own page **`/kpis`** (with the filter and
+grouping intact), and the overview's sections became compact entry points —
+stat band, five goal tiles, six priority cards (code/title/count), four team
+cards (name/description/count) — each linking to detail. The governed fields
+(measure/target/cadence/owner) now live on the priority page, where the compact
+overview card links. Result: **7,999 bytes, an 86% cut, duplication gone.**
+
+**Group 6 — the meeting surface is iced.** Hidden from the primary nav and its
+route returns **404**, while the page, its queries (`attention_list`,
+`meeting_updates`, `update_deltas`) and its tests remain in the tree. Re-
+enabling is **one environment variable** (`MEETING_ENABLED=1`), not a rebuild.
+A visitor with a bookmarked URL gets a clean 404, not a stale agenda. The
+meeting's own tests now run under the enabled flag so the feature is proven
+intact and not merely parked.
+
 ## Risks / Trade-offs
 
 - [Renaming 5 titles changes displayed names] → verified nothing pins them and
@@ -123,7 +146,11 @@ filter — 21 of 29 need review, the number leadership cares about.
   MI-ids, and a goal link for each of the 29.
 - Every edge traversable both ways; no dead-end route.
 - The goal regression closed (home links to `/goals/n`).
-- Suite green (475 before this change).
+- The overview no longer carries the table or a duplicated KPI list; `/kpis`
+  carries all 29 and the needs-review filter returns 21.
+- The meeting route 404s and its nav item is absent; with `MEETING_ENABLED=1`
+  its page and tests still pass.
+- Suite green (475 before this change; 507 after).
 
 ## Open Questions
 

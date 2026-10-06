@@ -1,0 +1,82 @@
+{#
+  The team-KPI table with its filter and grouping (interconnection-redesign 5).
+  A shared partial so the overview need not carry the table: only /kpis renders
+  it. The caller supplies `kpis` (the rows to show), `all_kpis` (the full set,
+  for counts), `kpi_base`, `kpi_filter`, `kpi_group`, `kpi_groupings`, and
+  `needs_review_count`.
+
+  Links, not script, so the filter and grouping are shareable in the URL and
+  work before hydration.
+#}
+<nav class="kpi-controls" aria-label="Filter and group team KPIs">
+  <span class="toggle-label">Filter</span>
+  <a class="chip{% if not kpi_filter %} is-active{% endif %}"
+     href="{{ kpi_base }}">All {{ all_kpis | length }}</a>
+  <a class="chip chip-warn{% if kpi_filter == 'needs_review' %} is-active{% endif %}"
+     href="{{ kpi_base }}{{ '&' if '?' in kpi_base else '?' }}target=needs_review"
+     {% if kpi_filter == 'needs_review' %}aria-current="true"{% endif %}>
+    Needs review {{ needs_review_count }}</a>
+  <span class="toggle-label">Group by</span>
+  <a class="chip{% if not kpi_group %} is-active{% endif %}"
+     href="{{ kpi_base }}{{ '&' if '?' in kpi_base else '?' }}">Default</a>
+  {% for key, label in kpi_groupings.items() %}
+  <a class="chip{% if kpi_group == key %} is-active{% endif %}"
+     href="{{ kpi_base }}{{ '&' if '?' in kpi_base else '?' }}group={{ key }}"
+     {% if kpi_group == key %}aria-current="true"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<div class="index-table-wrap">
+  <table class="index-table kpi-table">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Team KPI</th>
+        <th scope="col">Team</th>
+        <th scope="col">Source area</th>
+        <th scope="col">Strategy alignment</th>
+        <th scope="col">Initiatives</th>
+        <th scope="col">Target</th>
+        <th scope="col">Target status</th>
+        <th scope="col">Feeds</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for k in kpis %}
+      {% if kpi_group and k._GroupLabel %}
+      <tr class="group-row"><th colspan="9" scope="colgroup">{{ k._GroupLabel }}</th></tr>
+      {% endif %}
+      <tr class="kpi-row">
+        <td class="code"><a href="/kpis/{{ k.MIId or k.Code }}">{{ k.MIId or k.Code }}</a></td>
+        <td><a href="/kpis/{{ k.MIId or k.Code }}">{{ k.Title }}</a>{% if k.Note %} <span class="note-mark" title="{{ k.Note }}">ⓘ</span>{% endif %}</td>
+        <td>{% if k.Team %}<a href="/teams/{{ k.TeamID }}">{{ k.Team }}</a>{% else %}—{% endif %}</td>
+        <td>{{ k.SourceArea or "—" }}</td>
+        <td class="muted-cell">
+          {% for g in k.goals %}
+          <a class="chip chip-goal" href="/goals/{{ g.GoalNumber }}">G{{ g.GoalNumber }}</a>
+          {% endfor %}
+          {% if not k.goals %}{{ k.StrategyAlign or "—" }}{% endif %}
+        </td>
+        <td class="muted-cell">{{ k.Initiatives or "—" }}</td>
+        <td class="target-cell">{{ k.ProposedTarget or "—" }}</td>
+        <td>
+          {% if k.TargetStatus == 'needs_review' %}
+          <span class="chip chip-warn">needs review</span>
+          {% else %}
+          <span class="chip">source</span>
+          {% endif %}
+        </td>
+        <td>
+          {% for pr in k.priorities %}
+          <a class="chip chip-priority" href="/priorities/{{ pr.PriorityName | urlencode }}"
+             style="--priority: var({{ pr.Colour | priority_colour }});">{{ pr.Code }}</a>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if not kpis %}
+<p class="empty">No team KPIs match this filter.</p>
+{% endif %}
