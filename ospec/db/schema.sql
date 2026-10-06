@@ -97,6 +97,9 @@ CREATE TABLE SourceAreas (
 CREATE TABLE TeamKPIs (
     KPIID          INTEGER PRIMARY KEY,
     Code           TEXT    NOT NULL UNIQUE,   -- e.g. '3-02'
+    -- The canon workbook's own stable key (MI-001..MI-029), so a KPI can be
+    -- cited by the identifier the source register uses.
+    MIId           TEXT    UNIQUE,
     Title          TEXT    NOT NULL,
     TeamID         INTEGER REFERENCES Teams(TeamID),
     SourceAreaID   INTEGER REFERENCES SourceAreas(SourceAreaID),
@@ -116,6 +119,15 @@ CREATE TABLE TeamKPIPriorities (
     KPIID      INTEGER NOT NULL REFERENCES TeamKPIs(KPIID),
     PriorityID INTEGER NOT NULL REFERENCES Priorities(PriorityID),
     PRIMARY KEY (KPIID, PriorityID)
+);
+
+-- Which Strategy 2035 goals a team KPI aligns to, parsed from the canon
+-- workbook's `Strategy Alignment` column. This is the KPI -> Goal edge the
+-- register states and the schema did not hold.
+CREATE TABLE TeamKPIGoals (
+    KPIID  INTEGER NOT NULL REFERENCES TeamKPIs(KPIID),
+    GoalID INTEGER NOT NULL REFERENCES Goals(GoalID),
+    PRIMARY KEY (KPIID, GoalID)
 );
 
 
@@ -355,3 +367,12 @@ SELECT t.TeamID, t.Name AS Team, t.Description,
 FROM Teams t
 LEFT JOIN TeamKPIs k ON k.TeamID = t.TeamID
 GROUP BY t.TeamID, t.Name, t.Description;
+
+
+-- The KPI -> Goal edge, one row per link, for the goal page and KPI page.
+CREATE VIEW vw_TeamKPIGoals AS
+SELECT kg.KPIID, k.Code AS KPICode, k.MIId, k.Title AS KPITitle,
+       g.GoalID, g.GoalNumber, g.ShortName AS GoalShort
+FROM TeamKPIGoals kg
+JOIN TeamKPIs k ON k.KPIID = kg.KPIID
+JOIN Goals g    ON g.GoalID = kg.GoalID;
