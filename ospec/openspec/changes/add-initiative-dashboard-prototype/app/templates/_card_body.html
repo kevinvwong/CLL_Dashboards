@@ -1,4 +1,4 @@
-<div class="card-body">
+<div class="card-body" role="document">
   {# The close control belongs to the modal only. On the standalone page
      (card_full.html) there is nothing to close, and showing "×" beside the
      "← Back" link gave the page two ways out of a dialog that was never open
@@ -13,6 +13,23 @@
     <a href="/people/{{ card.OwnerID }}">{{ card.Owner }}</a>
   </p>
   {% if card.Description %}<p class="card-description">{{ card.Description }}</p>{% endif %}
+
+  {# The header band: status pill and progress, so the drawer opens with the
+     facts the reader came for (blueprint-redesign 4.3). #}
+  <div class="detail-header">
+    {% if card.latest %}
+    <span class="badge {{ card.latest.Status | status_class }}">{{ card.latest.Status }}</span>
+    <div class="progress-track" role="progressbar"
+         aria-valuenow="{{ card.latest.PercentComplete }}" aria-valuemin="0" aria-valuemax="100"
+         aria-label="{{ card.latest.Status }}, {{ card.latest.PercentComplete }} percent">
+      <span class="progress-fill" style="width: {{ card.latest.PercentComplete }}%"></span>
+    </div>
+    <span class="bar-label">{{ card.latest.PercentComplete }}%</span>
+    {% else %}
+    <span class="badge status-not-started">Not started</span>
+    <span class="bar-empty">No update yet</span>
+    {% endif %}
+  </div>
 
   {# 6.4: the button is hidden when the signed-in person may not update. This
      is presentation only - the server refuses the POST either way. #}
@@ -85,7 +102,14 @@
         <span class="connection-owner">
           {% if c.OwnerID %}<a href="/people/{{ c.OwnerID }}">{{ c.Owner }}</a>{% else %}{{ c.Owner }}{% endif %}
         </span>
-        {% if c.Direction == 'Fed by' and c.Status %}<span class="connection-status {{ c.Status | status_class }}">{{ c.Status }}</span>{% endif %}
+        {# Both directions show status and progress, so a health read does not
+           depend on which way the relationship runs (blueprint-redesign 3.3). #}
+        {% if c.Status %}
+        <span class="connection-status {{ c.Status | status_class }}">{{ c.Status }}</span>
+        {% endif %}
+        {% if c.PercentComplete is not none %}
+        <span class="bar-label">{{ c.PercentComplete }}%</span>
+        {% endif %}
       </li>
       {% endfor %}
     </ul>

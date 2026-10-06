@@ -289,13 +289,17 @@ h2 { font-family: var(--font-serif); font-size: var(--text-xl);
 /* --- initiative card modal ----------------------------------------------- */
 
 .card-modal {
-  width: min(46rem, 92vw);
-  max-height: 86vh;
+  width: min(38rem, 94vw);
+  max-height: 100vh;
+  height: 100vh;
+  margin: 0 0 0 auto;      /* pin to the right edge */
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
   background: var(--surface-raised);
   box-shadow: var(--shadow-md);
+  overflow-y: auto;
 }
 
 .card-modal::backdrop { background: var(--backdrop); }

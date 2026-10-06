@@ -26,12 +26,12 @@
 
 ## 4. Initiative detail drawer
 
-- [ ] 4.1 Move detail into a right-side drawer that opens over the list and updates the URL; a direct load renders the full page with no close control. *Verify: opening from a list opens the drawer and sets the URL; a direct load is a full page; Esc closes and returns focus to the opener.*
-- [ ] 4.2 Apply the partial-response rule to every detail and edit endpoint. *Verify: a partial request carries no document element and no nav; a direct request carries both.*
-- [ ] 4.3 Build the drawer layout: header with status, progress, owner and actions; facts; latest-update callout; relationships; diary newest-first. *Verify: the diary marks status changes; the relationships block shows status and progress.*
-- [ ] 4.4 Build the in-drawer update form: progress control plus number input, status control limited to the schema's values, previous value shown, note with character count. *Verify: opening it on an initiative with a previous update shows that value and sets the controls; the status options equal the schema's values.*
-- [ ] 4.5 Inline save into the drawer with a toast; a refused save keeps the input and explains inline. *Verify: a save updates the diary and the row and shows a toast without reloading; a refused save keeps the values.*
-- [ ] 4.6 **Group check:** the update loop works without leaving the page. *Verify: open a list, open the drawer, save an update, see the row and diary change, close back to the same scroll position.*
+- [x] 4.1 Move detail into a right-side drawer that opens over the list and updates the URL; a direct load renders the full page with no close control. *Verify: opening from a list opens the drawer and sets the URL; a direct load is a full page; Esc closes and returns focus to the opener.*
+- [x] 4.2 Apply the partial-response rule to every detail and edit endpoint. *Verify: a partial request carries no document element and no nav; a direct request carries both.*
+- [x] 4.3 Build the drawer layout: header with status, progress, owner and actions; facts; latest-update callout; relationships; diary newest-first. *Verify: the diary marks status changes; the relationships block shows status and progress.*
+- [x] 4.4 Build the in-drawer update form: progress control plus number input, status control limited to the schema's values, previous value shown, note with character count. *Verify: opening it on an initiative with a previous update shows that value and sets the controls; the status options equal the schema's values.*
+- [x] 4.5 Inline save into the drawer with a toast; a refused save keeps the input and explains inline. *Verify: a save updates the diary and the row and shows a toast without reloading; a refused save keeps the values.*
+- [x] 4.6 **Group check:** the update loop works without leaving the page. *Verify: open a list, open the drawer, save an update, see the row and diary change, close back to the same scroll position.*
 
 ## 5. Navigation, coverage, meeting and outcomes
 

@@ -58,10 +58,15 @@
     <span class="footer-note">CLL Initiative Dashboard prototype</span>
   </footer>
 
-  {# Initiative cards are loaded into this dialog over a list screen
-     (design.md decision 6). The same route renders as a full page when the
-     browser navigates directly, in which case this stays empty. #}
-  <dialog id="card-modal" class="card-modal"></dialog>
+  {# Initiative detail opens in a right-side drawer over the list
+     (blueprint-redesign 4.1). The same route renders a full page on direct
+     load. `role="dialog"` + aria-modal makes it a dialog to assistive tech;
+     the .drawer class positions it at the right edge. #}
+  <dialog id="card-modal" class="card-modal drawer" role="dialog" aria-modal="true"
+          aria-label="Initiative detail"></dialog>
+
+  {# A toast slot for the inline save (blueprint-redesign 4.5). #}
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script>
     // Rows carry hx-get onto #card-modal (task 4.4). Show the dialog once

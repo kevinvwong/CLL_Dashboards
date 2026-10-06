@@ -302,7 +302,13 @@ def initiative_card(code: str):
         card["connections"] = [
             dict(r)
             for r in conn.execute(
-                "SELECT Direction, Code, InitiativeName, OwnerID, Owner "
+                # Status and PercentComplete are carried too, so the detail's
+                # relationship list can show each connected initiative's health
+                # in BOTH directions (blueprint-redesign 3.3) rather than only
+                # the Fed-by direction, which happened to be the only one the
+                # old template rendered a status for.
+                "SELECT Direction, Code, InitiativeName, OwnerID, Owner, "
+                "       PercentComplete, Status "
                 "FROM vw_InitiativeConnections WHERE InitiativeID = ? "
                 "ORDER BY Direction, Code",
                 (card["InitiativeID"],),
