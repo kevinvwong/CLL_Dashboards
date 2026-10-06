@@ -214,8 +214,19 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
             if feeds_col is not None and feeds_col < len(values):
                 feeds = [f.strip() for f in values[feeds_col].split(",") if f.strip()]
                 if level == "Dean" and feeds:
+                    # A Dean initiative is fed BY D-1 initiatives; it feeds
+                    # nothing itself, so a value here is a mistake in the row.
+                    # The message used to read "a Dean initiative feeds nothing",
+                    # which described the opposite of what was found and would
+                    # have sent the reader looking for a missing value in a row
+                    # that had one. Fixed 2026-10-06.
                     problems.append(
-                        Problem("Initiatives", excel_row, f"{code}: a Dean initiative feeds nothing")
+                        Problem(
+                            "Initiatives",
+                            excel_row,
+                            f"{code}: a Dean initiative cannot feed another "
+                            f"initiative, but Feeds is set to {values}",
+                        )
                     )
                 elif feeds:
                     for dean_code in feeds:

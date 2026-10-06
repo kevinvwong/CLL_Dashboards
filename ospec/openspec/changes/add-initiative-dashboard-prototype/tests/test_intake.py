@@ -23,6 +23,7 @@ sys.path.insert(0, SCRIPTS)
 
 import import_xlsx  # noqa: E402
 import make_template  # noqa: E402
+from app import queries  # noqa: E402
 
 
 def _counts(db):
@@ -248,3 +249,202 @@ def test_workbook_without_an_initiatives_sheet_is_refused(logged_in, fresh_db, t
     ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
     assert ok is False
     assert "Initiatives" in str(problems[0])
+
+
+# --- amended 2026-10-06: the columns the spec had not described -----------
+
+
+def test_the_generated_template_carries_the_import_columns(logged_in, fresh_db, tmp_path):
+    """Feeds, Percent and Status were added so a new initiative can import at
+    all - vw_DataChecks flags both "no Dean link" and "no progress update yet",
+    and the importer refuses any file that leaves a check outstanding. They were
+    in the generator but in no spec, so nothing would have caught their removal
+    except indirectly, through the round-trip test.
+
+    Amended 2026-10-06.
+    """
+    out = tmp_path / "intake.xlsx"
+    path, _, _, _ = make_template.build(fresh_db, str(out))
+    wb = load_workbook(path)
+    header = [c.value for c in wb["Initiatives"][1]]
+
+    for column in ("Feeds", "Percent", "Status"):
+        assert column in header, "the template lost its %s column" % column
+
+    # Feeds and Status carry dropdowns; Percent is a free number and correctly
+    # has none. Asserting a dropdown on Percent was wrong the first time this
+    # test was written - a number has nothing to pick from.
+    validations = {
+        str(dv.sqref).split(":")[0][0]: dv
+        for dv in wb["Initiatives"].data_validations.dataValidation
+    }
+    for column in ("Feeds", "Status"):
+        idx = header.index(column) + 1
+        letter = wb["Initiatives"].cell(row=1, column=idx).column_letter
+        assert letter in validations, "%s has no dropdown" % column
+
+    percent_idx = header.index("Percent") + 1
+    percent_letter = wb["Initiatives"].cell(row=1, column=percent_idx).column_letter
+    assert percent_letter not in validations, (
+        "Percent acquired a dropdown; it is a free number, so check whether "
+        "that was deliberate before updating this test"
+    )
+
+    # the Feeds dropdown must hold the active Dean codes, because it drives links
+    feeds_idx = header.index("Feeds") + 1
+    feeds_letter = wb["Initiatives"].cell(row=1, column=feeds_idx).column_letter
+    formula = validations[feeds_letter].formula1
+    conn = sqlite3.connect(fresh_db)
+    deans = [r[0] for r in conn.execute(
+        "SELECT Code FROM Initiatives WHERE Level='Dean' AND IsActive=1")]
+    conn.close()
+    for code in deans:
+        assert code in formula, "Feeds dropdown is missing Dean code %s" % code
+
+
+def test_a_dean_row_with_feeds_is_refused_and_says_why(logged_in, fresh_db, tmp_path):
+    """A Dean initiative is fed BY D-1 initiatives; it feeds nothing, so a value
+    in Feeds on a Dean row is a mistake.
+
+    The message used to read "a Dean initiative feeds nothing" while rejecting a
+    row that had just supplied one, which described the opposite of what was
+    found. Amended 2026-10-06.
+    """
+    from openpyxl import Workbook
+
+    out = tmp_path / "dean_with_feeds.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Initiatives"
+    ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
+               "Status", "Goal: 3 Research", "Priority: Data"])
+    ws.append(["D-Z", "A dean row", "d", "Dean", "Bill", "D-A", "", "", "X", "X"])
+    wb.save(out)
+
+    ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
+    assert ok is False
+    text = " ".join(str(p) for p in problems)
+    assert "cannot feed another initiative" in text, text
+    assert "D-A" in text, "the report should quote what the row actually said"
+    assert "feeds nothing" not in text, (
+        "the old wording claimed the value was missing while rejecting a row that had one"
+    )
+
+
+def test_a_d1_row_with_no_feeds_is_refused_by_the_data_check(logged_in, fresh_db, tmp_path):
+    from openpyxl import Workbook
+
+    out = tmp_path / "d1_no_feeds.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Initiatives"
+    ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
+               "Status", "Goal: 3 Research", "Priority: Data"])
+    ws.append(["ELIZ-9", "No link", "d", "D-1", "Elizabeth", "", "20", "On track", "X", "X"])
+    wb.save(out)
+
+    ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
+    assert ok is False
+    text = " ".join(str(p) for p in problems)
+    assert "not linked to any Dean initiative" in text, text
+
+
+def test_the_template_cannot_mark_a_primary_and_import_leaves_none(logged_in, fresh_db, tmp_path):
+    """Documents a gap rather than fixing it.
+
+    The requirement once promised primary goal and primary priority dropdowns.
+    There are none, and the importer inserts every tag with IsPrimary = 0, so an
+    imported initiative carries no primary even though the schema permits one and
+    the cards render a badge for it. Changing the workbook format is a decision
+    for whoever owns the intake round, so this test records the behaviour instead
+    of silently choosing for them.
+    """
+    from openpyxl import Workbook
+
+    probe = tmp_path / "probe.xlsx"
+    path, _, _, _ = make_template.build(fresh_db, str(probe))
+    header = [c.value for c in load_workbook(path)["Initiatives"][1]]
+    assert not any("primary" in str(h).lower() for h in header), (
+        "a primary column appeared; the gap this test documents may be closed, "
+        "in which case update the data-intake spec and remove this test"
+    )
+
+    out = tmp_path / "new.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Initiatives"
+    ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
+               "Status", "Goal: 3 Research", "Priority: Data"])
+    ws.append(["ELIZ-9", "Fresh", "d", "D-1", "Elizabeth", "D-A", "20", "On track", "X", "X"])
+    wb.save(out)
+    ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
+    assert ok, problems
+
+    conn = sqlite3.connect(fresh_db)
+    n = conn.execute(
+        "SELECT COUNT(*) FROM InitiativeGoals ig JOIN Initiatives i "
+        "ON i.InitiativeID = ig.InitiativeID WHERE i.Code = 'ELIZ-9' AND ig.IsPrimary = 1"
+    ).fetchone()[0]
+    conn.close()
+    assert n == 0, "an imported initiative has no primary goal, by design of the template"
+
+
+def test_primacy_can_be_set_after_import_through_the_edit_screen(logged_in, fresh_db):
+    """The gap above is recoverable per initiative without a second import.
+
+    Resolves the goal the way the edit-tags screen does - by number - rather than
+    assuming the card hands back an internal id it does not carry.
+    """
+    from app import repo
+
+    goal_number = queries.initiative_card("ELIZ-1")["goal_tags"][0]["GoalNumber"]
+    conn = sqlite3.connect(fresh_db)
+    goal_id = conn.execute("SELECT GoalID FROM Goals WHERE GoalNumber = ?",
+                           (goal_number,)).fetchone()[0]
+    conn.close()
+
+    repo.replace_tags(
+        "ELIZ-1",
+        goal_tags=[{"id": goal_id, "primary": True}],
+        priority_tags=[],
+        person_id=1,
+    )
+
+    conn = sqlite3.connect(fresh_db)
+    iid = conn.execute("SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1'").fetchone()[0]
+    n = conn.execute("SELECT COUNT(*) FROM InitiativeGoals WHERE InitiativeID=? AND IsPrimary=1",
+                     (iid,)).fetchone()[0]
+    conn.close()
+    assert n == 1, "primacy set through the edit screen must persist"
+
+
+def test_imported_initiative_has_no_primary_but_a_second_is_still_refused(logged_in, fresh_db):
+    """The other half of the primacy gap: imported tags carry none, and setting
+    two is refused by the same rule that governs the sample data."""
+    from app import repo
+
+    conn = sqlite3.connect(fresh_db)
+    goal_ids = [r[0] for r in conn.execute(
+        "SELECT GoalID FROM Goals ORDER BY GoalNumber LIMIT 2")]
+    iid = conn.execute("SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1'").fetchone()[0]
+    imported_none = conn.execute(
+        "SELECT COUNT(*) FROM InitiativeGoals WHERE InitiativeID=? AND IsPrimary=1",
+        (iid,)).fetchone()[0]
+    conn.close()
+
+    # the edit screen offers both goals, so a second primary is reachable
+    with pytest.raises(repo.RuleError) as exc:
+        repo.replace_tags(
+            "ELIZ-1",
+            goal_tags=[{"id": goal_ids[0], "primary": True},
+                       {"id": goal_ids[1], "primary": True}],
+            priority_tags=[],
+            person_id=1,
+        )
+    assert "Only one primary goal is allowed" in str(exc.value)
+
+    conn = sqlite3.connect(fresh_db)
+    after = conn.execute("SELECT COUNT(*) FROM InitiativeGoals WHERE InitiativeID=? AND IsPrimary=1",
+                         (iid,)).fetchone()[0]
+    conn.close()
+    assert after == 0 or after == 1, "the refusal must not leave two primaries behind"
