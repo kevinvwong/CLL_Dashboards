@@ -60,8 +60,64 @@ CREATE TABLE Priorities (
     PriorityName TEXT    NOT NULL,
     PlanYear     INTEGER NOT NULL,
     Description  TEXT,
+    -- The prototype's governed definition, per priority (blueprint-redesign
+    -- scope correction). These four are its fields we did not hold.
+    Code         TEXT,      -- 'P01'..'P06'
+    FullTitle    TEXT,      -- 'One Shared Identity'
+    Measure      TEXT,      -- how the priority is measured
+    Target       TEXT,      -- its stated target
+    Cadence      TEXT,      -- review rhythm
+    OwnerLabel   TEXT,      -- e.g. 'Dean + Learning Infrastructure'
+    Colour       TEXT,      -- its key colour
     UNIQUE (PriorityName, PlanYear)
 );
+
+-- ---------- Organizational layer (blueprint-redesign scope correction) -------
+-- The Dean's prototype carries a layer beneath the six priorities: four
+-- organizational TEAMS, and 29 team KPIs grouped by FIVE source areas. Our
+-- schema held none of it.
+--
+-- NOTE: this deliberately contradicts config.yaml's "Nothing below D-1 (no
+-- tasks, no metrics)". The user directed that every prototype field be
+-- included, and the contradiction is recorded rather than left silent.
+
+CREATE TABLE Teams (
+    TeamID       INTEGER PRIMARY KEY,
+    Name         TEXT    NOT NULL UNIQUE,
+    Description  TEXT
+);
+
+CREATE TABLE SourceAreas (
+    SourceAreaID INTEGER PRIMARY KEY,
+    Name         TEXT    NOT NULL UNIQUE
+);
+
+-- The 29 team KPIs. `AreaID` is the team accountable; `SourceAreaID` is the
+-- workbook area they came from; the two are different axes.
+CREATE TABLE TeamKPIs (
+    KPIID          INTEGER PRIMARY KEY,
+    Code           TEXT    NOT NULL UNIQUE,   -- e.g. '3-02'
+    Title          TEXT    NOT NULL,
+    TeamID         INTEGER REFERENCES Teams(TeamID),
+    SourceAreaID   INTEGER REFERENCES SourceAreas(SourceAreaID),
+    StrategyAlign  TEXT,        -- 'Goals 1 + 3: Credentials & pathways'
+    Initiatives    TEXT,        -- the initiatives named in the prototype
+    SourceTarget   TEXT,        -- target carried from the source workbook
+    ProposedTarget TEXT,        -- the blueprint's proposed target
+    TargetStatus   TEXT NOT NULL DEFAULT 'needs_review'
+                   CHECK (TargetStatus IN ('source','needs_review')),
+    SlideRef       INTEGER,
+    Status         TEXT NOT NULL DEFAULT 'Not started',
+    Note           TEXT
+);
+
+-- Which priorities a team KPI feeds (its `priorities` array).
+CREATE TABLE TeamKPIPriorities (
+    KPIID      INTEGER NOT NULL REFERENCES TeamKPIs(KPIID),
+    PriorityID INTEGER NOT NULL REFERENCES Priorities(PriorityID),
+    PRIMARY KEY (KPIID, PriorityID)
+);
+
 
 CREATE TABLE People (
     PersonID     INTEGER PRIMARY KEY,
@@ -266,3 +322,36 @@ FROM ProgressUpdates pu
 JOIN Initiatives i ON i.InitiativeID = pu.InitiativeID AND i.IsActive = 1
 JOIN People o      ON o.PersonID = i.OwnerID
 LEFT JOIN People e ON e.PersonID = pu.EnteredByID;
+
+
+-- ---------- Read models for the organizational layer -------------------------
+-- One view per screen, matching the existing convention. These expose the
+-- 29 team KPIs with their team, source area, and the priorities they feed.
+
+CREATE VIEW vw_TeamKPIs AS
+SELECT k.KPIID, k.Code, k.Title, k.StrategyAlign, k.Initiatives,
+       k.SourceTarget, k.ProposedTarget, k.TargetStatus, k.SlideRef,
+       k.Status, k.Note,
+       t.TeamID, t.Name AS Team,
+       sa.SourceAreaID, sa.Name AS SourceArea
+FROM TeamKPIs k
+LEFT JOIN Teams t       ON t.TeamID = k.TeamID
+LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID;
+
+-- Which priorities each team KPI feeds, one row per link.
+CREATE VIEW vw_TeamKPIPriorities AS
+SELECT kp.KPIID, k.Code AS KPICode, k.Title AS KPITitle,
+       p.PriorityID, p.PriorityName, p.Code AS PriorityCode,
+       p.FullTitle AS PriorityTitle, p.Colour AS PriorityColour
+FROM TeamKPIPriorities kp
+JOIN TeamKPIs k       ON k.KPIID = kp.KPIID
+JOIN Priorities p     ON p.PriorityID = kp.PriorityID;
+
+-- Team rollup: how many KPIs each team carries, and how many need review.
+CREATE VIEW vw_TeamSummary AS
+SELECT t.TeamID, t.Name AS Team, t.Description,
+       COUNT(k.KPIID) AS KPICount,
+       SUM(CASE WHEN k.TargetStatus = 'needs_review' THEN 1 ELSE 0 END) AS NeedsReview
+FROM Teams t
+LEFT JOIN TeamKPIs k ON k.TeamID = t.TeamID
+GROUP BY t.TeamID, t.Name, t.Description;

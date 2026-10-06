@@ -37,6 +37,36 @@ Full design: `docs/superpowers/specs/2026-10-06-blueprint-redesign-design.md`.
 **No data-model change.** The status vocabulary stays the schema's; the app
 still reads SQLite.
 
+---
+
+> **SCOPE CORRECTION, 2026-10-06 (after groups 1–5 were built).** The user
+> corrected two things, and they dominate the design above:
+>
+> 1. **Do not replicate the Dean's prototype.** Its *look* is not the goal;
+>    excellent design of our own is. The **blueprint home's hero stage — which
+>    is the prototype's structure — is replaced**, not restyled.
+> 2. **Include every field the prototype holds.** All of them, not the subset
+>    we currently show.
+>
+> (2) is a **DATA-MODEL CHANGE**, and it is in scope. The prototype carries a
+> layer our schema does not:
+>
+> | Layer | Fields | We hold |
+> |---|---|---|
+> | Priority (6) | code, title, short, description, **measure, target, cadence, owner**, colour | code, title, description, colour — **4 fields missing** |
+> | Team KPI / goal (29) | id, area, sourceArea, number, title, strategy, initiatives, sourceTarget, proposedTarget, targetStatus, slide, priorities, status, note | **nothing** |
+> | Team (4) | name, description | **nothing** |
+> | Source area (5) | name | **nothing** |
+> | Initiative (11) | name, progress | held |
+>
+> This **contradicts `config.yaml`'s "Nothing below D-1 (no tasks, no metrics)"**
+> — recorded here deliberately, because the user has directed otherwise and the
+> contradiction should not be silent.
+>
+> **Sequencing:** the data layer is built FIRST (it is the redesign's
+> dependency), then the UI/UX is redesigned against it. The hero stage is
+> removed as part of that.
+
 ## Capabilities
 
 Every capability here is a new path: `openspec/specs/` holds no archived specs,
