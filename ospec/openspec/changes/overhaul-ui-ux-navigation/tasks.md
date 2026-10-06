@@ -1,5 +1,9 @@
 # Tasks
 
+> **SUPERSEDED 2026-10-06 by lueprint-redesign.** This change is closed, not deleted. Its 8 completed group-1 bug fixes are carried into the superseding change (tasks 1.x and 4.x), and its six spec deltas are rewritten there under the new navigation. See docs/superpowers/specs/2026-10-06-blueprint-redesign-design.md and openspec/changes/blueprint-redesign/proposal.md.
+
+The remaining groups below were never implemented and are retained only as a record of what was planned.
+
 ## 1. Bug fixes
 
 Ship these first: they are verified defects, independent of the design system.
