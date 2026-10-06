@@ -51,6 +51,10 @@ def _ctx(request: Request, **extra) -> dict:
         # (new initiative, edit description). Task 8.4 built the routes but
         # nothing linked to them.
         "may_admin": auth.is_admin_request(request),
+        # The sample-data banner is dismissible for the session (task 2.4). The
+        # session scope is the cookie the dismiss handler sets; the footer
+        # marker is rendered regardless, so dismissal never hides the state.
+        "banner_dismissed": bool(request.cookies.get("sample_banner_dismissed")),
         **extra,
     }
 

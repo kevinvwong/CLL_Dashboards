@@ -9,10 +9,18 @@ an approved portfolio.
 
 
 def test_the_banner_shows_in_every_environment(logged_in):
-    """Not gated on APP_ENV: the data is invented in production too."""
+    """Not gated on APP_ENV: the data is invented in production too.
+
+    Task 2.4 merged the synthetic-data banner and the LOCAL banner into one
+    thin bar, and added a footer marker that survives dismissal. Both the bar
+    and the marker carry the meaning, so the state cannot be hidden by
+    dismissing the bar.
+    """
     body = logged_in("Bill").get("/").text
-    assert "synthetic-banner" in body
+    assert "sample-banner" in body
     assert "invented for this prototype" in body
+    assert "sample-marker" in body, "the footer marker must persist"
+    assert "Sample data" in body
 
 
 def test_a_list_row_is_labelled(logged_in):

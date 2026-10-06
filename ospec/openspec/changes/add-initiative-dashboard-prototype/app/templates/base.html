@@ -9,22 +9,23 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
-  {# 9.1: a visible banner whenever APP_ENV is local, so the dev server is
-     never mistaken for the live site in a meeting. #}
-  {% if app_env == "local" %}
-  <p class="local-banner" role="status">LOCAL — sample data only</p>
-  {% endif %}
-  {#  adopt-rev2-strategy-portfolio-schema 8.2: shown in EVERY environment,
-      including live. The initiatives in this database were invented for the
-      demo - the source package contains canonical strategy and zero
-      operational rows, and no approved initiative inventory exists. A
-      visitor must not be able to read this as an approved portfolio. #}
-  <p class="synthetic-banner" role="status">
-    Sample data — these initiatives are invented for this prototype and are
-    not governance-approved portfolio records.
+  {# One thin sample-data bar (task 2.4). It replaces two stacked banners: the
+     LOCAL banner (9.1) and the synthetic-data banner
+     (adopt-rev2-strategy-portfolio-schema 8.2). Both meanings survive as one
+     line, and the bar is dismissible for the session. The footer keeps a
+     "Sample data" marker after dismissal, so the state is never lost - a
+     visitor must not be able to read invented initiatives as an approved
+     portfolio just because they dismissed a banner. #}
+  <p class="sample-banner" role="status" id="sample-banner"{% if banner_dismissed %} hidden{% endif %}>
+    <span class="sample-banner-text">Sample data{% if app_env == "local" %} · LOCAL{% endif %} — these initiatives are invented for this prototype, not governance-approved records.</span>
+    <button type="button" class="sample-banner-dismiss" data-dismiss-banner aria-label="Dismiss sample-data notice">&times;</button>
   </p>
   <header class="site-header">
     <a class="brand" href="/">Initiative Dashboard</a>
+    {# Collapsing nav (task 2.5): a checkbox and label toggle the list with no
+       JavaScript, so the nav works before hydration and cannot break. #}
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" hidden>
+    <label for="nav-toggle" class="nav-toggle-label">Menu</label>
     <nav class="site-nav">
       <a href="/">Home</a>
       <a href="/meeting">Meeting</a>
@@ -50,6 +51,13 @@
     {% block content %}{% endblock %}
   </main>
 
+  {# The permanent marker: it stays after the banner is dismissed, so the
+     sample-data state is visible on every page. #}
+  <footer class="site-footer">
+    <span class="sample-marker">Sample data</span>
+    <span class="footer-note">CLL Initiative Dashboard prototype</span>
+  </footer>
+
   {# Initiative cards are loaded into this dialog over a list screen
      (design.md decision 6). The same route renders as a full page when the
      browser navigates directly, in which case this stays empty. #}
@@ -73,12 +81,73 @@
         const close = evt.target.closest("[data-close]");
         if (close) modal.close();
       });
+
+      // Focus management (task 2.6). A dialog opened over a list must move
+      // focus into the dialog, keep Tab inside it, and return focus to the row
+      // that opened it when it closes - otherwise a keyboard user is left at
+      // the top of the page with no idea where they were.
+      let opener = null;
+      const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+      document.body.addEventListener("htmx:beforeRequest", function (evt) {
+        // Remember what opened the dialog, before htmx swaps the content in.
+        const target = evt.target;
+        if (target && target.closest && target.closest("[hx-target='#card-modal']")) {
+          opener = target;
+        }
+      });
+
+      function focusFirst() {
+        const first = modal.querySelector(FOCUSABLE);
+        if (first) first.focus();
+      }
+
+      modal.addEventListener("keydown", function (evt) {
+        if (evt.key !== "Tab") return;
+        const items = Array.from(modal.querySelectorAll(FOCUSABLE))
+          .filter(function (el) { return el.offsetParent !== null; });
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (evt.shiftKey && document.activeElement === first) {
+          evt.preventDefault(); last.focus();
+        } else if (!evt.shiftKey && document.activeElement === last) {
+          evt.preventDefault(); first.focus();
+        }
+      });
+
+      modal.addEventListener("close", function () {
+        document.body.classList.remove("overlay-open");
+        if (opener && typeof opener.focus === "function") opener.focus();
+        opener = null;
+      });
+
+      document.body.addEventListener("htmx:afterSwap", function (evt) {
+        if (evt.detail && evt.detail.target === modal) {
+          document.body.classList.add("overlay-open");
+          focusFirst();
+        }
+      });
+
       // Saving an update tells us the list row behind the modal is stale
       // (task 6.3), so re-fetch the list rather than patch one row and risk
       // losing ordering, the divider, or the primary badge.
       document.body.addEventListener("initiativeUpdated", function () {
         if (location.pathname === "/" || location.pathname === "/whoami") return;
         htmx.ajax("GET", location.pathname, { target: "main", select: "main" });
+      });
+    })();
+
+    // Dismiss the sample-data banner for the session (task 2.4). The cookie is
+    // the session scope: no server round-trip, and it survives navigation
+    // without a store. The footer marker is rendered server-side regardless.
+    (function () {
+      const banner = document.getElementById("sample-banner");
+      if (!banner) return;
+      banner.addEventListener("click", function (evt) {
+        if (!evt.target.closest("[data-dismiss-banner]")) return;
+        banner.hidden = true;
+        document.cookie = "sample_banner_dismissed=1; path=/; samesite=lax";
       });
     })();
   </script>

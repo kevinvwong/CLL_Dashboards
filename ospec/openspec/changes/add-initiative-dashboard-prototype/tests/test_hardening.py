@@ -173,24 +173,27 @@ def test_healthz_reports_an_unreachable_database(anon, monkeypatch):
     assert anon.get("/healthz").status_code == 503
 
 
-# --- local banner (task 9.9) ----------------------------------------------
+# --- the sample-data banner (task 9.9, reshaped by task 2.4) ---------------
 # Task 9.9 names four things to test: lockout, noindex, /healthz outside the
-# gate, and the local banner. The first three already had tests here; the
-# banner had none, so a regression that dropped it would have shipped silently.
-# The banner exists so a dev server is never mistaken for the live site in a
-# meeting, which is exactly the kind of thing nobody notices until it matters.
+# gate, and the local banner. Task 2.4 replaced the two stacked banners (the
+# LOCAL one and the synthetic-data one) with a single thin bar, so these assert
+# the LOCAL marker survives inside it - the point of the original test is the
+# announcement, not the class name.
 
 
-def test_local_banner_shows_when_app_env_is_local(anon, monkeypatch):
+def test_local_marker_shows_in_the_sample_banner_when_local(anon, monkeypatch):
     monkeypatch.setenv("APP_ENV", "local")
     body = anon.get("/login").text
-    assert "local-banner" in body, "a local dev server must announce itself"
-    assert "LOCAL" in body
+    assert "sample-banner" in body, "there must be a sample-data banner"
+    assert "LOCAL" in body, "a local dev server must announce itself"
 
 
-def test_local_banner_is_absent_when_app_env_is_not_local(anon, monkeypatch):
-    """The other half of the assertion. A banner that showed everywhere would
-    be noise on the live site and would stop meaning anything."""
+def test_local_marker_is_absent_when_app_env_is_not_local(anon, monkeypatch):
+    """The other half of the assertion. A LOCAL marker that showed everywhere
+    would be noise on the live site and would stop meaning anything."""
     monkeypatch.setenv("APP_ENV", "live")
     body = anon.get("/login").text
-    assert "local-banner" not in body
+    assert "LOCAL" not in body
+    # The sample-data bar itself is still present: it is shown in every
+    # environment, because the initiatives are invented.
+    assert "sample-banner" in body
