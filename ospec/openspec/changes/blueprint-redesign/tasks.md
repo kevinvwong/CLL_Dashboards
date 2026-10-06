@@ -10,6 +10,13 @@
 
 ## 2. Blueprint home
 
+> **SUPERSEDED IN PLACE, 2026-10-06.** These five tasks built a hero stage
+> (a Dean node fanning into priority cards). That WAS the prototype's
+> structure, and the scope correction directed us not to replicate it. The
+> tasks were completed as specified and then replaced by the portfolio
+> dashboard (`test_portfolio_dashboard.py`). The boxes stay checked as a
+> record that the work was done; the stage itself is gone.
+
 - [x] 2.1 Build the hero stage: a Dean node fanning into six colour-keyed priority cards, with the priority scale applied. *Verify: the home renders the node and six cards; each card carries a distinct priority colour, its code, name, and count.*
 - [x] 2.2 Add the selected-priority panel: selecting a card shows that priority's definition and linked initiatives, with no page reload. *Verify: selecting a card updates the panel; it shows the priority's name, description, and initiatives.*
 - [x] 2.3 Add the initiative-signals strip with per-initiative progress and an explicit no-update state. *Verify: each signal shows name and progress; an initiative with no update reads as no-update, not zero; no aggregate figure appears.*
@@ -45,8 +52,8 @@
 
 ## 6. Verification
 
-- [ ] 6.1 Visual check of every page at 375, 726, and 1280px, light content and dark chrome. *Verify: no page scrolls horizontally; the chrome and content palettes both render.*
-- [ ] 6.2 Keyboard-only pass: nav, filters, the drawer, and the update form. *Verify: every interactive element is reachable and operable by keyboard, with visible focus and correct focus return.*
-- [ ] 6.3 Print check on the meeting and the outcomes pages. *Verify: the printed output has no chrome and no interactive controls, and the content is complete.*
-- [ ] 6.4 Run the whole suite and both validations. *Verify: the suite passes and `openspec validate --all --strict` exits 0.*
-- [ ] 6.5 **Group check:** the redesign is complete and the superseded change is recorded. *Verify: `overhaul-ui-ux-navigation` is closed with its work carried into this change, and every item in groups 1–5 is checked.*
+- [x] 6.1 Visual check of every page at 375, 726, and 1280px, light content and dark chrome. *Verify: no page scrolls horizontally; the chrome and content palettes both render.*
+- [x] 6.2 Keyboard-only pass: nav, filters, the drawer, and the update form. *Verify: every interactive element is reachable and operable by keyboard, with visible focus and correct focus return.*
+- [x] 6.3 Print check on the meeting and the outcomes pages. *Verify: the printed output has no chrome and no interactive controls, and the content is complete.*
+- [x] 6.4 Run the whole suite and both validations. *Verify: the suite passes and `openspec validate --all --strict` exits 0.*
+- [x] 6.5 **Group check:** the redesign is complete and the superseded change is recorded. *Verify: `overhaul-ui-ux-navigation` is closed with its work carried into this change, and every item in groups 1–5 is checked.*
