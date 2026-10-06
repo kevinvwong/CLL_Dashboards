@@ -1,3 +1,9 @@
+﻿import os
+
+# Stamped by the deploy step as an app setting, and echoed by /healthz, so
+# "is the code I just deployed the code being served?" is answerable over
+# plain HTTP without shell access to the instance.
+DEPLOY_MARKER = os.getenv("DEPLOY_MARKER", "dev")
 """FastAPI entry point for the initiative dashboard prototype.
 
 Access is gated before any page renders (design.md decision 5): a shared
@@ -31,7 +37,7 @@ def _is_exempt(path: str) -> bool:
 def _ctx(request: Request, **extra) -> dict:
     """Common template context. `person` is the signed-in person, or None
     before the picker has been completed."""
-    return {"person": auth.current_person(request), **extra}
+    return {"person": auth.current_person(request), "app_env": auth.settings().APP_ENV, **extra}
 
 
 def _edit_ctx(request: Request, code: str) -> dict:
@@ -71,7 +77,7 @@ async def healthz():
     """Outside the passcode gate. Returns no initiative data."""
     if not auth.database_reachable():
         return PlainTextResponse("database unreachable", status_code=503)
-    return PlainTextResponse("ok")
+    return PlainTextResponse(f"ok DEPLOY_MARKER={DEPLOY_MARKER}")
 
 
 @app.get("/login")

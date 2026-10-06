@@ -75,7 +75,7 @@ def set_passcode_cookie(response, request: Request):
         max_age=COOKIE_MAX_AGE,
         httponly=True,
         samesite="lax",
-        secure=request.url.scheme == "https",
+        secure=_cookie_secure(request),
     )
     return response
 
@@ -87,9 +87,19 @@ def set_person_cookie(response, request: Request, person_id: int):
         max_age=COOKIE_MAX_AGE,
         httponly=True,
         samesite="lax",
-        secure=request.url.scheme == "https",
+        secure=_cookie_secure(request),
     )
     return response
+
+
+def _cookie_secure(request: Request) -> bool:
+    """Secure whenever the request is HTTPS, and always when APP_ENV is live.
+
+    Task 9.1 asks for Secure cookies on the live site. Keying off the request
+    scheme alone would let a live deployment that arrived over plain HTTP set
+    a non-Secure cookie, which is the case worth being strict about.
+    """
+    return request.url.scheme == "https" or settings().APP_ENV == "live"
 
 
 def person_id_from_cookie(request: Request):

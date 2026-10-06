@@ -84,7 +84,7 @@ def test_tampered_person_cookie_is_ignored(anon):
 def test_healthz_is_outside_the_passcode_gate(anon):
     response = anon.get("/healthz")
     assert response.status_code == 200
-    assert response.text.strip() == "ok"
+    assert response.text.strip().startswith("ok")
 
 
 def test_healthz_returns_no_initiative_data(anon):

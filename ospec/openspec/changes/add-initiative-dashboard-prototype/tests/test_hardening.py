@@ -135,7 +135,7 @@ def test_robots_txt_carries_no_data(anon):
 def test_healthz_is_outside_the_gate_and_data_free(anon):
     response = anon.get("/healthz")
     assert response.status_code == 200
-    assert response.text.strip() == "ok"
+    assert response.text.strip().startswith("ok")
     assert "ELIZ-" not in response.text
 
 

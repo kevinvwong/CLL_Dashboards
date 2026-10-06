@@ -30,6 +30,19 @@ body {
 
 a { color: var(--accent); }
 
+/* --- local banner (task 9.1) -------------------------------------------- */
+
+.local-banner {
+  margin: 0;
+  padding: 0.35rem 1.25rem;
+  background: #b26a00;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 /* --- header, nav, whoami ------------------------------------------------ */
 
 .site-header {

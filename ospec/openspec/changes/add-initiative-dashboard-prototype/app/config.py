@@ -17,14 +17,21 @@ class Config:
         # Retrieve values – they may be empty strings if not set.
         self.APP_PASSCODE = os.getenv("APP_PASSCODE", "")
         self.APP_SECRET = os.getenv("APP_SECRET", "")
-        self.DB_PATH = os.getenv("DB_PATH", "./data/db.sqlite3")
+        # `local` or `live`. Drives the LOCAL banner and Secure cookies (9.1).
+        self.APP_ENV = os.getenv("APP_ENV", "local")
+        self.DB_PATH = os.getenv("DB_PATH", "./cll_initiatives.db")
         self.BACKUP_DIR = os.getenv("BACKUP_DIR", "./backups")
         self.PORT = int(os.getenv("PORT", "8000"))
+
+    @property
+    def is_local(self) -> bool:
+        return self.APP_ENV == "local"
 
     def as_dict(self):
         return {
             "APP_PASSCODE": self.APP_PASSCODE,
             "APP_SECRET": self.APP_SECRET,
+            "APP_ENV": self.APP_ENV,
             "DB_PATH": self.DB_PATH,
             "BACKUP_DIR": self.BACKUP_DIR,
             "PORT": self.PORT,

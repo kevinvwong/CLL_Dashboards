@@ -93,11 +93,11 @@ Open questions in design.md do not block groups 1-8; sample data stands in. Grou
 
 *Group 9 was "Hardening and VPS deploy" and was replanned 2026-10-05. Only the tasks whose content was VPS-specific were replaced; every platform-independent hardening task was carried over unchanged. `deploy/`, `scripts/`, and `compose.yaml` were never created, so nothing was deleted.*
 
-- [ ] 9.1 `APP_ENV` setting; "LOCAL" banner; Secure cookies when live; **enable `httpsOnly` on the live web app (currently `false` — see design.md decision 14)**
+- [x] 9.1 `APP_ENV` setting; "LOCAL" banner; Secure cookies when live; **enable `httpsOnly` on the live web app (currently `false` — see design.md decision 14)**
 - [x] 9.2 Login lockout (in-memory counter per IP), `X-Robots-Tag` header, `robots.txt`, `/healthz` — *carried over unchanged*
-- [ ] 9.3 `scripts/backup.py` with 14-copy retention; run at startup and daily in a background task; also callable before imports — *carried over, but note Azure SQL (Track 1) supplies its own backup/PITR and this task is then deleted rather than ported*
+- [x] 9.3 `scripts/backup.py` with 14-copy retention; run at startup and daily in a background task; also callable before imports — *carried over, but note Azure SQL (Track 1) supplies its own backup/PITR and this task is then deleted rather than ported*
 - [ ] 9.4 `Dockerfile` (python:3.12-slim, non-root user) retained for local dev only; **drop** `compose.yaml` and its `127.0.0.1:8085` port mapping, named volume, and `/healthz` compose healthcheck — replaced by 9.4a
-- [ ] 9.4a Live deploy via `az webapp deploy` (zip with forward-slash entries; Oryx builds deps when `SCM_DO_BUILD_DURING_DEPLOYMENT=true`), then restart; assert `/healthz` returns 200 — *replaces the old `deploy/deploy.sh` ssh path*
+- [ ] 9.4a **BLOCKED 2026-10-06** Live deploy via `az webapp deploy` (zip with forward-slash entries; Oryx builds deps when `SCM_DO_BUILD_DURING_DEPLOYMENT=true`), then restart; assert `/healthz` returns 200 — *replaces the old `deploy/deploy.sh` ssh path*
 - [ ] 9.5 ~~Reverse proxy: add a site block for the subdomain to the existing proxy, or add a Caddy service with automatic HTTPS~~ **CANCELLED 2026-10-05** — TLS terminates at the platform; no proxy to configure
 - [ ] 9.6 ~~`deploy/deploy.sh`: ssh, `git pull`, `docker compose up -d --build`, curl `/healthz`, print result~~ **REPLACED by 9.4a** — no SSH host
 - [ ] 9.7 ~~`scripts/pull_live.sh`: copy newest VPS backup to `./cll_live_copy.db`~~ **CANCELLED 2026-10-05** — retrieving a copy is now a Kudu/SCM download of the backup file; no script needed for a prototype
@@ -126,3 +126,38 @@ chicken-and-egg deadlocks that made the intake feature unusable as specified:*
 Neither column is in the task text or the `data-intake` spec, which describes the
 template only as "dropdowns and X columns". **The `data-intake` spec should be
 amended to describe them.**
+
+---
+
+## Deploy state, 2026-10-06 (honest record)
+
+`wrangler`-free Azure deploy of the full app was attempted against
+`cll-dash-proto-kwong27`. **The deploy reports success but the new code is
+not being served, and the cause is not yet established.**
+
+What is known:
+
+- The zip is correct: 30 entries, forward slashes only, no `__pycache__`,
+  and its `app/main.py` contains both `access_gate` and `robots_txt`.
+- `az webapp log deployment show` reports **Deployment successful**, with no
+  rsync errors and no "failed to stat" in any of the 23 logged deployments.
+- The site nevertheless serves the **old** placeholder HTML - a string that
+  exists only in the earlier abandoned `fastapi-container/app/main.py`.
+- `/healthz` and `/robots.txt` return **404**, which the new code defines, so
+  the new code is definitively not live. An explicit `az webapp restart`
+  did not change this.
+- A `/healthz` marker (`DEPLOY_MARKER`, echoed as `ok <marker>`) was added so
+  this question is answerable over plain HTTP without shell access.
+- The Kudu VFS API returns **401**: the credentials
+  `az webapp deployment list-publishing-credentials` returns are 8 characters
+  long, which is not a real App Service publishing credential. So the
+  instance's filesystem cannot be read to diagnose this, and `az webapp ssh`
+  is unavailable on the free tier.
+
+Leading hypothesis, **not verified**: App Service's incremental OneDeploy is
+not replacing the already-present `app/` files, so the previous deployment's
+copy survives. Clearing it needs either filesystem access (blocked) or a new
+web app.
+
+**Not claimed as done.** 9.4a and 9.8 stay open until a probe of the live
+site shows `ok <marker>` and a 303 from `/` to `/login`.

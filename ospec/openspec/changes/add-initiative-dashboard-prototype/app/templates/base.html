@@ -9,6 +9,11 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
+  {# 9.1: a visible banner whenever APP_ENV is local, so the dev server is
+     never mistaken for the live site in a meeting. #}
+  {% if app_env == "local" %}
+  <p class="local-banner" role="status">LOCAL — sample data only</p>
+  {% endif %}
   <header class="site-header">
     <a class="brand" href="/">Initiative Dashboard</a>
     <nav class="site-nav">
