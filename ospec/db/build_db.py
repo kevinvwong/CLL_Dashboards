@@ -9,9 +9,17 @@ if os.path.exists(DB):
     os.remove(DB)
 con = sqlite3.connect(DB)
 con.execute("PRAGMA foreign_keys = ON")
-con.executescript(open(os.path.join(HERE, "schema.sql")).read())
+# encoding="utf-8" is REQUIRED, not cosmetic. Without it Python decodes the files
+# as the platform default (cp1252 on Windows), so a UTF-8 curly apostrophe in the
+# canonical goal wording is misread and re-encoded into the database as mojibake:
+#   expected  world's
+#   stored    worldâ€™s
+# The goal wording comes from the Strategy 2035 deck and contains U+2019 and
+# U+2013, so this corrupted the canonical text the goal-data-correctness tests
+# exist to protect. Fixed 2026-10-07.
+con.executescript(open(os.path.join(HERE, "schema.sql"), encoding="utf-8").read())
 if "--empty" not in sys.argv:
-    con.executescript(open(os.path.join(HERE, "seed_sample.sql")).read())
+    con.executescript(open(os.path.join(HERE, "seed_sample.sql"), encoding="utf-8").read())
 con.commit()
 for t in ["Goals","Priorities","People","Initiatives","InitiativeGoals",
           "InitiativePriorities","InitiativeLinks","ProgressUpdates"]:

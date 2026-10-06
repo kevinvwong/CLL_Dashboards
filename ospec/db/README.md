@@ -15,6 +15,51 @@ Always run `PRAGMA foreign_keys = ON;` when connecting, or the links aren't enfo
 - `schema.sql` – tables, rules, and the views behind each card
 - `seed_sample.sql` – FAKE data for testing; replace with live intake data
 - `build_db.py` – rebuilds the database from the two SQL files
+- `canonical_goals.py` – the five Strategy 2035 goals, generated from the deck
+
+## The five goals are canonical, and were corrected
+
+**What was wrong.** The seed carried goals 3 and 4 transposed against the
+canonical Strategy 2035 deck, goal 1 as a truncated paraphrase, and no title at all
+for goals 2 to 5. The prototype's `/goals/3` therefore served the Research goal
+where the deck has Learner at 3.
+
+**The source.** `CLL-strategy-2035-presentation.pptx`, slide 7, "College Goals: How
+We Will Advance Our Vision". Both the enterprise package and the wireframes name
+this deck as the authority, and the package matches it word for word.
+
+**Corrected by re-seeding, not by editing.** A goal's number is its identity:
+`InitiativeGoals` references `GoalID`, and the seed joins tags by `ShortName`. So
+editing a goal's number in place would have left the initiatives attached to a
+record whose meaning had changed, and renaming a tag would have moved those
+initiatives to a different goal. The correction instead:
+
+1. generates `canonical_goals.py` from the deck (`scripts/extract_canonical_goals.py`)
+2. rewrites the `Goals` rows from it
+3. renames only the tag references that name a goal which no longer exists
+   (`'Learner impact'` → `'Learner'`; the Research tags needed no change, because
+   the Research goal is still called Research and simply moved to number 4)
+4. rebuilds the database
+
+The verification is that **every initiative stayed attached to the same goal
+entity**. Eight tag rows changed *number*; none changed *goal*.
+
+**Two latent bugs this surfaced**, both now fixed and both worth knowing:
+
+- `build_db.py` read the SQL with no `encoding`, so on Windows Python decoded it
+  as cp1252. The canonical wording contains a curly apostrophe (goal 1) and an en
+  dash (goal 3), and both were written into the database as mojibake — `worldâ€™s`.
+  The file was right and the database was wrong.
+- A comment line in `seed_sample.sql` had lost its `--` prefix, so the seed failed
+  to load at all with `near "no": syntax error`.
+
+**Regenerating if the deck changes:**
+
+    python scripts/extract_canonical_goals.py    # rewrites db/canonical_goals.py
+
+Then reconcile `seed_sample.sql` against it and rebuild. The goal tests read their
+expectations from `canonical_goals.py` rather than duplicating the wording, so a
+drift between the source and the data fails them.
 
 ## Views (one per screen)
 

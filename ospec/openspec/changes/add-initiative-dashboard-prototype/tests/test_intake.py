@@ -26,6 +26,20 @@ import make_template  # noqa: E402
 from app import queries  # noqa: E402
 
 
+def _goal_header(short_name: str) -> str:
+    """The goal column header, built the way make_template builds it.
+
+    These fixtures previously hardcoded "Goal: 3 Research". That went stale when
+    the goal numbering was corrected - the number is now 4 - and the import then
+    refused the workbook because the label named a goal that did not exist. Build
+    the label from the goal list so the fixture cannot disagree with the template.
+    """
+    for goal in queries.goal_tiles():
+        if goal["ShortName"] == short_name:
+            return "Goal: %d %s" % (goal["GoalNumber"], goal["ShortName"])
+    raise AssertionError("no goal named %r in the sample data" % short_name)
+
+
 def _counts(db):
     conn = sqlite3.connect(db)
     out = {
@@ -317,7 +331,7 @@ def test_a_dean_row_with_feeds_is_refused_and_says_why(logged_in, fresh_db, tmp_
     ws = wb.active
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
-               "Status", "Goal: 3 Research", "Priority: Data"])
+               "Status", _goal_header("Research"), "Priority: Data"])
     ws.append(["D-Z", "A dean row", "d", "Dean", "Bill", "D-A", "", "", "X", "X"])
     wb.save(out)
 
@@ -339,7 +353,7 @@ def test_a_d1_row_with_no_feeds_is_refused_by_the_data_check(logged_in, fresh_db
     ws = wb.active
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
-               "Status", "Goal: 3 Research", "Priority: Data"])
+               "Status", _goal_header("Research"), "Priority: Data"])
     ws.append(["ELIZ-9", "No link", "d", "D-1", "Elizabeth", "", "20", "On track", "X", "X"])
     wb.save(out)
 
@@ -374,7 +388,7 @@ def test_the_template_cannot_mark_a_primary_and_import_leaves_none(logged_in, fr
     ws = wb.active
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
-               "Status", "Goal: 3 Research", "Priority: Data"])
+               "Status", _goal_header("Research"), "Priority: Data"])
     ws.append(["ELIZ-9", "Fresh", "d", "D-1", "Elizabeth", "D-A", "20", "On track", "X", "X"])
     wb.save(out)
     ok, problems = import_xlsx.import_workbook(fresh_db, str(out))

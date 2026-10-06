@@ -6,10 +6,15 @@ a broken join cannot pass as "some number appeared".
 """
 
 EXPECTED_GOALS = {
+    # Corrected 2026-10-07. This table previously read 3:("Research",5) and
+    # 4:("Learner impact",3) - it pinned the transposed numbering, so it passed
+    # while the goals were wrong. The counts follow the goal ENTITY: the Research
+    # goal keeps its 5 tagged initiatives and is now number 4; the Learner goal
+    # keeps its 3 and is now number 3.
     1: ("Academic", 10),
     2: ("Extension", 3),
-    3: ("Research", 5),
-    4: ("Learner impact", 3),
+    3: ("Learner", 3),
+    4: ("Research", 5),
     5: ("Operational", 8),
 }
 

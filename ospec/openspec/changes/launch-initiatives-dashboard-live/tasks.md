@@ -19,13 +19,13 @@ first, because every later group deploys with it.
 
 Goals 3 and 4 are transposed and goal 1 is truncated. Correct from the canonical source, by re-seeding rather than editing, because a goal's number is its identity.
 
-- [ ] 2.1 Extract the five goals and their canonical wording from `CLL-strategy-2035-presentation.pptx` slide 7 into a source file under `ospec/db/`, recording the slide as provenance. *Verify: the file holds five goals numbered 1–5, and its text matches the deck character for character including non-ASCII.*
-- [ ] 2.2 Rewrite the goal rows in `ospec/db/seed_sample.sql` from that source, leaving initiative and tag rows untouched. *Verify: a diff shows only goal rows changed; `grep` finds no goal title that is a paraphrase or blank.*
-- [ ] 2.3 Rebuild the sample database from the corrected seed and confirm the tagged initiatives are still attached to the same goals. *Verify: the count of `InitiativeGoals` rows is unchanged, and each initiative's goal set is identical before and after.*
-- [ ] 2.4 Add a test asserting goal number and canonical wording agree for all five, reading the expected text from the source file rather than duplicating it. *Verify: the test fails if any goal's number is changed; proven by changing one number and watching it go red.*
-- [ ] 2.5 Add a test asserting no two goals are transposed, by checking that each number's stored title matches the source's title for that number. *Verify: the test fails against the pre-correction seed and passes after, and both runs are recorded.*
-- [ ] 2.6 Document the change in `ospec/db/README.md` or equivalent, stating what was wrong, what the correct source is, and that goals are re-seeded rather than edited. *Verify: the document names the transposition explicitly.*
-- [ ] 2.7 **Group check:** walk `/goals/3` and `/goals/4` on a locally served build and confirm each names the goal the canonical source assigns that number. *Verify: the two pages are not transposed, checked against the source file rather than from memory.*
+- [x] 2.1 Extract the five goals and their canonical wording from `CLL-strategy-2035-presentation.pptx` slide 7 into a source file under `ospec/db/`, recording the slide as provenance. *Verify: the file holds five goals numbered 1–5, and its text matches the deck character for character including non-ASCII.*
+- [x] 2.2 Rewrite the goal rows in `ospec/db/seed_sample.sql` from that source, leaving initiative and tag rows untouched. *Verify: a diff shows only goal rows changed; `grep` finds no goal title that is a paraphrase or blank.*
+- [x] 2.3 Rebuild the sample database from the corrected seed and confirm the tagged initiatives are still attached to the same goals. *Verify: the count of `InitiativeGoals` rows is unchanged, and each initiative's goal set is identical before and after.*
+- [x] 2.4 Add a test asserting goal number and canonical wording agree for all five, reading the expected text from the source file rather than duplicating it. *Verify: the test fails if any goal's number is changed; proven by changing one number and watching it go red.*
+- [x] 2.5 Add a test asserting no two goals are transposed, by checking that each number's stored title matches the source's title for that number. *Verify: the test fails against the pre-correction seed and passes after, and both runs are recorded.*
+- [x] 2.6 Document the change in `ospec/db/README.md` or equivalent, stating what was wrong, what the correct source is, and that goals are re-seeded rather than edited. *Verify: the document names the transposition explicitly.*
+- [x] 2.7 **Group check:** walk `/goals/3` and `/goals/4` on a locally served build and confirm each names the goal the canonical source assigns that number. *Verify: the two pages are not transposed, checked against the source file rather than from memory.*
 
 ## 3. The illustrative marker, derived from the data
 
