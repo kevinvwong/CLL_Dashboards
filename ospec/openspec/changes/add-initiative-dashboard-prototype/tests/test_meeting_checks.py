@@ -68,20 +68,44 @@ def test_changes_are_grouped_by_owner(logged_in, fresh_db):
 # --- 8.5 attention list ---------------------------------------------------
 
 
-def test_attention_list_holds_initiatives_that_are_at_risk(logged_in, fresh_db):
-    """The spec names At risk and only At risk."""
-    conn = sqlite3.connect(fresh_db)
-    conn.execute(
-        "UPDATE ProgressUpdates SET Status = 'At risk', UpdateDate = date('now') "
-        "WHERE InitiativeID = (SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1')"
-    )
+def _set_progress(db, code, status, days_ago=None):
+    """Point one initiative's latest update at a status and age.
+
+    days_ago=None leaves the existing date, which in the sample data is recent.
+    """
+    conn = sqlite3.connect(db)
+    if days_ago is None:
+        conn.execute(
+            "UPDATE ProgressUpdates SET Status = ? "
+            "WHERE InitiativeID = (SELECT InitiativeID FROM Initiatives WHERE Code = ?)",
+            (status, code),
+        )
+    else:
+        conn.execute(
+            "UPDATE ProgressUpdates SET Status = ?, UpdateDate = date('now', ?) "
+            "WHERE InitiativeID = (SELECT InitiativeID FROM Initiatives WHERE Code = ?)",
+            (status, "-%d days" % days_ago, code),
+        )
     conn.commit()
     conn.close()
 
+
+def _quiet(db):
+    """Make the sample data a clean slate: nothing at risk, nothing stale."""
+    conn = sqlite3.connect(db)
+    conn.execute("UPDATE ProgressUpdates SET Status = 'On track', UpdateDate = date('now')")
+    conn.commit()
+    conn.close()
+
+
+def test_attention_list_holds_initiatives_that_are_at_risk(logged_in, fresh_db):
+    """At risk is still listed. The spec now also names Off track and staleness,
+    which are covered separately below."""
+    _quiet(fresh_db)
+    _set_progress(fresh_db, "ELIZ-1", "At risk")
+
     attention = queries.attention_list()
-    assert "ELIZ-1" in [r["Code"] for r in attention]
-    # Every entry is at risk, and nothing else is.
-    assert all(r["Status"] == "At risk" for r in attention)
+    assert [r["Code"] for r in attention] == ["ELIZ-1"], "only ELIZ-1 should qualify"
     assert "ELIZ-1" in logged_in("Bill").get("/meeting").text
 
 
@@ -96,25 +120,132 @@ def test_attention_entries_link_to_their_card(logged_in, fresh_db):
     assert 'hx-target="#card-modal"' in body
 
 
-def test_off_track_is_not_in_the_attention_list(logged_in, fresh_db):
-    """Documented consequence of following the spec literally: Off track,
-    which is arguably more urgent, is excluded. Pinned so a future change is
-    deliberate."""
+def test_off_track_leads_the_attention_list(logged_in, fresh_db):
+    """Replaces test_off_track_is_not_in_the_attention_list, which pinned the
+    wrong behaviour.
+
+    That test asserted Off track was excluded and claimed that was "following
+    the spec literally". It was not: the requirement names "At risk or Off
+    track", and the earlier session read the scenario underneath - which
+    demonstrates only At risk - instead of the requirement above it. Amended
+    2026-10-06. A stalled initiative is the thing a leadership meeting most
+    needs to see, so Off track leads the list rather than disappearing from it.
+    """
+    _quiet(fresh_db)
+    _set_progress(fresh_db, "TIM-4", "Off track")
+    _set_progress(fresh_db, "ELIZ-1", "At risk")
+
+    codes = [r["Code"] for r in queries.attention_list()]
+    assert "TIM-4" in codes, "Off track must be listed"
+    assert codes[0] == "TIM-4", "Off track must outrank At risk"
+    assert "TIM-4" in logged_in("Bill").get("/meeting").text
+
+
+def test_a_stale_initiative_is_listed_with_its_age(logged_in, fresh_db):
+    _quiet(fresh_db)
+    _set_progress(fresh_db, "D-A", "On track", days_ago=30)
+
+    rows = {r["Code"]: r for r in queries.attention_list()}
+    assert "D-A" in rows, "an update 30 days old is stale"
+    assert rows["D-A"]["Reason"] == "No update in 30 days"
+    assert "30 days" in logged_in("Bill").get("/meeting").text
+
+
+def test_an_update_inside_the_window_is_not_stale(logged_in, fresh_db):
+    """The boundary. The spec says *older than* 14, so 14 itself is inside."""
+    _quiet(fresh_db)
+    _set_progress(fresh_db, "D-A", "On track", days_ago=14)
+    assert "D-A" not in [r["Code"] for r in queries.attention_list()], "14 is not older than 14"
+
+    _set_progress(fresh_db, "D-A", "On track", days_ago=15)
+    assert "D-A" in [r["Code"] for r in queries.attention_list()], "15 is older than 14"
+
+
+def test_an_initiative_with_no_update_says_so_rather_than_a_number(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE ProgressUpdates SET Status = 'Off track', UpdateDate = date('now')")
+    conn.execute("DELETE FROM ProgressUpdates")
     conn.commit()
     conn.close()
 
-    assert queries.attention_list() == []
+    rows = {r["Code"]: r for r in queries.attention_list()}
+    assert rows, "initiatives with no update at all must be listed"
+    assert all(r["Reason"] == "No update yet" for r in rows.values())
+    assert all(r["AgeDays"] is None for r in rows.values()), "no date means no age to report"
+
+
+def test_one_initiative_with_two_reasons_appears_once(logged_in, fresh_db):
+    _quiet(fresh_db)
+    _set_progress(fresh_db, "ELIZ-1", "At risk", days_ago=30)   # both reasons at once
+
+    codes = [r["Code"] for r in queries.attention_list()]
+    assert codes.count("ELIZ-1") == 1, "a one-page agenda cannot afford a duplicate"
+    rows = {r["Code"]: r for r in queries.attention_list()}
+    assert rows["ELIZ-1"]["Reason"] == "At risk", "the more severe reason wins"
+
+
+def test_the_order_is_severity_then_oldest_first(logged_in, fresh_db):
+    _quiet(fresh_db)
+    _set_progress(fresh_db, "D-A", "On track", days_ago=40)     # stale, oldest
+    _set_progress(fresh_db, "D-B", "On track", days_ago=20)     # stale
+    _set_progress(fresh_db, "ELIZ-1", "At risk", days_ago=5)    # at risk
+    _set_progress(fresh_db, "TIM-4", "Off track", days_ago=9)   # off track
+
+    codes = [r["Code"] for r in queries.attention_list()]
+    assert codes == ["TIM-4", "ELIZ-1", "D-A", "D-B"], (
+        "severity first (Off track, At risk, stale), then oldest first: got %s" % codes
+    )
+
+
+def test_the_order_is_stable_when_ages_tie(logged_in, fresh_db):
+    """A tie on age must fall back to code, or the agenda reorders between
+    renders and is harder to follow in a meeting.
+
+    The codes matter. An earlier version of this test used D-A, D-B, D-C, which
+    happen to be in the same order by insertion as alphabetically - so removing
+    the code tie-break could not change the result and the test passed without
+    testing anything. TIM-* and MAR-* sit the other way round: TIM-* is inserted
+    first but MAR-* sorts first alphabetically, so only a real tie-break produces
+    MAR-1, MAR-2, TIM-1.
+    """
+    _quiet(fresh_db)
+    for code in ("TIM-1", "MAR-1", "MAR-2"):
+        _set_progress(fresh_db, code, "At risk", days_ago=3)
+
+    first = [r["Code"] for r in queries.attention_list()]
+    second = [r["Code"] for r in queries.attention_list()]
+    assert first == second, "the order must not vary between renders"
+    assert first == ["MAR-1", "MAR-2", "TIM-1"], (
+        "equal ages must fall back to code order, not insertion order: got %s" % first
+    )
+
+
+def test_the_reason_is_shown_only_when_it_adds_something(logged_in, fresh_db):
+    """A reason that just repeats the badge is noise on a one-page agenda.
+
+    An At risk row shows the badge "At risk" and nothing more; a stale row has no
+    badge that says why, so it states its age. Both must still carry a Reason, so
+    that the query does not depend on how the template chooses to render it.
+    """
+    _quiet(fresh_db)
+    _set_progress(fresh_db, "ELIZ-1", "At risk", days_ago=2)      # status only
+    _set_progress(fresh_db, "D-A", "On track", days_ago=40)       # stale only
+
+    rows = {r["Code"]: r for r in queries.attention_list()}
+    assert rows["ELIZ-1"]["Reason"] == "At risk"
+    assert rows["D-A"]["Reason"] == "No update in 40 days"
+
+    body = logged_in("Bill").get("/meeting").text
+    section = body[body.index("Needs attention"):body.index("Changes since")]
+    assert "At risk" in section, "the status badge still shows"
+    assert "No update in 40 days" in section, "a stale row must say why it is listed"
+    assert ">At risk<" in section, "the status is the badge, not a repeated reason span"
 
 
 def test_empty_attention_says_so(logged_in, fresh_db):
-    conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE ProgressUpdates SET Status = 'On track', UpdateDate = date('now')")
-    conn.commit()
-    conn.close()
+    _quiet(fresh_db)
 
-    assert "Nothing is at risk" in logged_in("Bill").get("/meeting").text
+    body = logged_in("Bill").get("/meeting").text
+    assert "Nothing is off track, at risk, or stale" in body
 
 
 # --- 8.5 print ------------------------------------------------------------

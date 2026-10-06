@@ -259,3 +259,16 @@ h2 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
   border-bottom: 1px solid #d9c48a;
   color: #4a3c14;
 }
+
+/* The reason an initiative is on the meeting agenda (meeting-view spec,
+   amended 2026-10-06). Deliberately plain text, not a second coloured badge:
+   the status badge beside it already carries the colour, and the reason has to
+   stay readable in print, where the meeting page is used. */
+.reason {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+@media print {
+  .reason { color: #000; }
+}

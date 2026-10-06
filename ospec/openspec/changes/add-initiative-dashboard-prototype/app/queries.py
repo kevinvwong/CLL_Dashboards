@@ -137,10 +137,17 @@ def status_counts(rows: list[dict]) -> list[dict]:
 
 # --- cards (task 5.2, 5.4) -----------------------------------------------
 
-# The person-card spec says 20 days; task 5.4 said 14. The spec wins, because
-# it is the requirement the task derives from. Recorded in tasks.md so the
-# choice is visible rather than silent.
-STALE_DAYS = 20
+# The person-card spec's requirement says 14 days; its scenario gives 20 as an
+# example. 14 is the threshold, because it satisfies the requirement and the
+# scenario too (a 20-day-old update is still older than 14). The earlier comment
+# here claimed "the spec says 20 days" - true of the scenario, false of the
+# requirement. Amended 2026-10-06.
+STALE_DAYS = 14
+
+# How long without an update puts an initiative on the meeting agenda
+# (meeting-view spec). Same number today, but a separate decision: this one is
+# about the leadership meeting, the other about a person's one-to-one card.
+ATTENTION_STALE_DAYS = 14
 
 
 def initiative_card(code: str):
@@ -277,25 +284,91 @@ def meeting_updates(since: str):
 
 
 def attention_list() -> list[dict]:
-    """Active initiatives whose latest status is At risk.
+    """Active initiatives needing the Dean's attention, most severe first.
 
-    The meeting-view spec names At risk and only At risk. Off track is
-    arguably more urgent and is *not* included here; flagged as an open
-    question rather than assumed.
+    The meeting-view spec lists three reasons, in this order: Off track, then
+    At risk, then an update older than ATTENTION_STALE_DAYS or missing. A
+    stalled initiative outranks a shaky one, which is why Off track leads.
+
+    Each entry carries a Reason string. A list of bare codes tells the Dean
+    *that* something is wrong but not *what*, and the one-page agenda has no
+    room for him to open every card to find out.
+
+    An initiative matching more than one reason appears once, with the most
+    severe reason, because seeing the same initiative twice on a one-page
+    agenda wastes the page.
+
+    Amended 2026-10-06. This function previously selected only `At risk` and
+    carried a docstring asserting the spec "names At risk and only At risk",
+    which the requirement text does not say. Both clauses of the requirement -
+    Off track, and the staleness window - were missing. The requirement is the
+    contract; the scenario below it was one example of it.
     """
+    import datetime as _dt
+
     with _conn() as conn:
-        return [
+        rows = [
             dict(r)
             for r in conn.execute(
                 "SELECT i.Code, i.InitiativeName, i.Level, i.OwnerID, "
                 "       p.Name AS Owner, lp.PercentComplete, lp.Status, lp.UpdateDate "
                 "FROM Initiatives i "
                 "JOIN People p ON p.PersonID = i.OwnerID "
-                "JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID "
-                "WHERE i.IsActive = 1 AND lp.Status = 'At risk' "
-                "ORDER BY lp.UpdateDate, i.Code"
+                "LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID "
+                "WHERE i.IsActive = 1"
             )
         ]
+
+    today = _dt.date.today()
+
+    # Lower rank sorts first. Off track outranks At risk outranks stale.
+    SEVERITY = {"Off track": 0, "At risk": 1}
+
+    attention = []
+    for row in rows:
+        rank = None
+        reason = None
+
+        if row["Status"] in SEVERITY:
+            rank = SEVERITY[row["Status"]]
+            # The row shows the status as a badge, so the Reason would repeat it
+            # verbatim for these two. The reason is still populated - the spec
+            # requires every entry to carry one - and the template decides whether
+            # to render it, rather than the query guessing at presentation.
+            reason = row["Status"]
+
+        age = None
+        if row["UpdateDate"]:
+            age = (today - _dt.date.fromisoformat(row["UpdateDate"])).days
+            if age > ATTENTION_STALE_DAYS and rank is None:
+                rank = 2
+                reason = "No update in %d days" % age
+        elif rank is None:
+            rank = 2
+            reason = "No update yet"
+
+        if rank is None:
+            continue
+
+        row["AgeDays"] = age
+        row["Reason"] = reason
+        row["_rank"] = rank
+        attention.append(row)
+
+    # Severity first; then oldest update first, so the most stalled leads. A
+    # missing update sorts as oldest, and a tie falls back to code so the order
+    # is stable between renders - an agenda that reorders itself week to week
+    # is harder to follow in a meeting.
+    attention.sort(
+        key=lambda r: (
+            r["_rank"],
+            r["UpdateDate"] or "",          # "" sorts before any date = oldest
+            r["Code"],
+        )
+    )
+    for row in attention:
+        del row["_rank"]
+    return attention
 
 
 def data_checks() -> list[dict]:

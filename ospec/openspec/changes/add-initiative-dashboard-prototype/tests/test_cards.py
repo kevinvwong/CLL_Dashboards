@@ -124,17 +124,23 @@ def test_person_card_omits_retired_initiatives(logged_in):
         assert row["Code"]
 
 
-def test_stale_flag_uses_the_spec_threshold_of_twenty_days(logged_in, fresh_db):
-    """The person-card spec says 20 days. Task 5.4 said 14; the spec wins.
+def test_stale_flag_uses_the_fourteen_day_threshold(logged_in, fresh_db):
+    """The person-card requirement says "older than 14 days"; its scenario gives
+    20 days as an example.
 
-    Verified by ageing one update rather than by reading the constant, so the
-    threshold is pinned to observable behaviour.
+    14 is the threshold, because it satisfies the requirement *and* the scenario
+    - a 20-day-old update is still older than 14. The earlier version of this
+    test asserted 20 and said "the spec says 20 days", which was true of the
+    scenario and false of the requirement. Amended 2026-10-06; see the spec.
+
+    Pinned to observable behaviour by ageing an update, not just by reading the
+    constant, and the boundary is asserted in both directions.
     """
     import sqlite3
 
     from app import queries
 
-    assert queries.STALE_DAYS == 20
+    assert queries.STALE_DAYS == 14
 
     conn = sqlite3.connect(fresh_db)
     conn.execute("UPDATE ProgressUpdates SET UpdateDate = date('now', '-25 days')")
@@ -152,6 +158,29 @@ def test_stale_flag_uses_the_spec_threshold_of_twenty_days(logged_in, fresh_db):
 
     card = queries.person_card(ELIZABETH)
     assert not any(r["NeedsUpdate"] for r in card["initiatives"]), "10 days old must not flag"
+
+
+def test_stale_flag_boundary_is_fourteen_not_fifteen(logged_in, fresh_db):
+    """"Older than 14" means 14 itself is inside the window and 15 is outside.
+    Without this the threshold would only be pinned at 10 and 25, which many
+    values between would satisfy."""
+    import sqlite3
+
+    from app import queries
+
+    conn = sqlite3.connect(fresh_db)
+    conn.execute("UPDATE ProgressUpdates SET UpdateDate = date('now', '-14 days')")
+    conn.commit()
+    conn.close()
+    card = queries.person_card(ELIZABETH)
+    assert not any(r["NeedsUpdate"] for r in card["initiatives"]), "14 is not older than 14"
+
+    conn = sqlite3.connect(fresh_db)
+    conn.execute("UPDATE ProgressUpdates SET UpdateDate = date('now', '-15 days')")
+    conn.commit()
+    conn.close()
+    card = queries.person_card(ELIZABETH)
+    assert all(r["NeedsUpdate"] for r in card["initiatives"]), "15 is older than 14"
 
 
 def test_stale_flag_fires_when_there_is_no_update_at_all(logged_in, fresh_db):

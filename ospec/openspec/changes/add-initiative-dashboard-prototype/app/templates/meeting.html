@@ -22,10 +22,22 @@
         <span class="code">{{ row.Code }}</span>
         <span class="name">{{ row.InitiativeName }}</span>
         {% include "_synthetic_label.html" %}
-        <span class="badge">{{ row.Status }}</span>
+        <span class="badge">{{ row.Status or "No update" }}</span>
+        {# Why this is on the agenda. When the reason is just the status again the
+           badge already said it, so only stale and no-update entries need the
+           extra text. Without a reason at all the Dean has to open the card to
+           find out why something is listed, which a one-page agenda cannot
+           afford. Amended 2026-10-06. #}
+        {% if row.Reason != row.Status %}
+        <span class="reason">{{ row.Reason }}</span>
+        {% endif %}
       </div>
       <div class="row-progress">
+        {% if row.UpdateDate %}
         <span class="bar-label">{{ row.PercentComplete }}% &middot; last update {{ row.UpdateDate }}</span>
+        {% else %}
+        <span class="bar-label">No update yet</span>
+        {% endif %}
       </div>
       <div class="row-owner">
         <a href="/people/{{ row.OwnerID }}">{{ row.Owner }}</a>
@@ -34,7 +46,7 @@
     {% endfor %}
   </ul>
   {% else %}
-  <p class="empty">Nothing is at risk.</p>
+  <p class="empty">Nothing is off track, at risk, or stale.</p>
   {% endif %}
 </section>
 
