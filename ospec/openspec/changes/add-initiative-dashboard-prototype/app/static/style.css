@@ -391,3 +391,53 @@ h2 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
   .oct16-owner.unconfirmed .owner-value { color: #000; }
   .oct16-owner .owner-none { color: #000; }
 }
+
+
+/* ---- Status appearance: one colour per status, wherever it is shown --------
+   The colour was previously defined only as .bar-fill.status-*, so a status
+   badge outside a bar rendered uncoloured, and the oct16 milestone classes
+   (m-met, m-in-progress, ...) had no rule at all. These give every class the app
+   emits an appearance. A test (test_status_presentation.py) collects the classes
+   from the templates and asserts each one appears here, so a new status class
+   cannot be emitted unstyled. */
+
+/* A standalone status badge: colour follows the status, same values as the bar. */
+.badge.status-on-track    { background: var(--status-on-track);    color: #fff; }
+.badge.status-at-risk     { background: var(--status-at-risk);     color: #fff; }
+.badge.status-off-track   { background: var(--status-off-track);   color: #fff; }
+.badge.status-not-started { background: var(--status-not-started); color: #fff; }
+.badge.status-paused      { background: var(--status-paused);      color: #fff; }
+.badge.status-complete    { background: var(--status-complete);    color: #fff; }
+
+/* The connection-status chip on a card, and the count chips on a list header. */
+.connection-status.status-on-track    { color: var(--status-on-track); }
+.connection-status.status-at-risk     { color: var(--status-at-risk); }
+.connection-status.status-off-track   { color: var(--status-off-track); }
+.connection-status.status-not-started { color: var(--status-not-started); }
+.connection-status.status-paused      { color: var(--status-paused); }
+.connection-status.status-complete    { color: var(--status-complete); }
+
+.count.status-on-track    { color: var(--status-on-track); }
+.count.status-at-risk     { color: var(--status-at-risk); }
+.count.status-off-track   { color: var(--status-off-track); }
+.count.status-not-started { color: var(--status-not-started); }
+.count.status-paused      { color: var(--status-paused); }
+.count.status-complete    { color: var(--status-complete); }
+
+/* Milestone statuses on the October 16 page. These classes were emitted with no
+   rule before; a milestone vocabulary separate from the initiative statuses. */
+.oct16-mstatus.m-met         { color: var(--status-on-track); font-weight: 600; }
+.oct16-mstatus.m-in-progress { color: var(--status-at-risk); font-weight: 600; }
+.oct16-mstatus.m-not-started { color: var(--status-not-started); }
+.oct16-mstatus.m-due-dec     { color: var(--muted); font-weight: 600; }
+.oct16-mstatus.m-confirm     { color: var(--accent); font-weight: 600; }
+
+/* The data-requirements availability cells. Text carries the meaning ("Have
+   it", "Build", ...), so the class is a secondary cue, not the sole signal. Each
+   value the data uses gets a colour; a test derives the values from oct16_data
+   and asserts every one has a rule here. */
+.availability-have-it   { color: var(--status-on-track); }
+.availability-partial   { color: var(--status-at-risk); }
+.availability-build     { color: var(--accent); }
+.availability-derived   { color: var(--accent); }
+.availability-no        { color: var(--status-off-track); }

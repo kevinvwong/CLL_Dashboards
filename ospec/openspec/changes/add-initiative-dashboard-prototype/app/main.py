@@ -13,16 +13,22 @@ itself is never stored client-side.
 
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app import auth, queries, repo
+from app import auth, guards, queries, repo, status
 
 app = FastAPI()
 
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+
+# One status presentation (design D4, the `status-presentation` spec). Templates
+# call these instead of re-implementing `| lower | replace(' ', '-')` six times.
+templates.env.filters["status_class"] = status.status_class
+templates.env.filters["milestone_class"] = status.milestone_class
+templates.env.filters["availability_class"] = status.availability_class
 
 # htmx is vendored (design.md decision 1) so the app works with no CDN access.
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
@@ -227,9 +233,7 @@ async def priority_list(request: Request, priority_name: str):
 # Declared before /initiatives/{code}: otherwise "new" is captured as a code
 # and the create form 404s.
 @app.get("/initiatives/new")
-async def create_form(request: Request):
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
+async def create_form(request: Request, _: guards.Target = Depends(guards.admin_only)):
     return templates.TemplateResponse(
         request,
         "edit_create.html",
@@ -238,19 +242,16 @@ async def create_form(request: Request):
 
 
 @app.get("/initiatives/{code}")
-async def initiative(request: Request, code: str):
+async def initiative(request: Request, code: str,
+                     target: guards.Target = Depends(guards.known_target)):
     """Initiative card.
 
     Task 5.1: an HTMX request gets the bare fragment to swap into the modal;
     a direct navigation gets the same content wrapped in a full page.
     """
-    card = queries.initiative_card(code)
-    if card is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-
     context = _ctx(
         request,
-        card=card,
+        card=target.card,
         may_update=auth.can_update(request, code),
         may_edit_details=auth.can_edit_details(request, code),
         may_admin=auth.is_admin_request(request),
@@ -261,45 +262,34 @@ async def initiative(request: Request, code: str):
 
 
 @app.get("/initiatives/{code}/update")
-async def update_form(request: Request, code: str):
+async def update_form(request: Request, code: str,
+                      target: guards.Target = Depends(guards.may_update)):
     """The update form. 403 for anyone who may not update (task 6.4)."""
-    card = queries.initiative_card(code)
-    if card is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.can_update(request, code):
-        raise HTTPException(status_code=403, detail="You cannot update this initiative")
     return templates.TemplateResponse(
         request,
         "update_form.html",
-        _ctx(request, card=card, statuses=repo.STATUSES, note_max=repo.NOTE_MAX),
+        _ctx(request, card=target.card, statuses=repo.STATUSES, note_max=repo.NOTE_MAX),
     )
 
 
 @app.post("/initiatives/{code}/updates")
-async def submit_update(request: Request, code: str):
+async def submit_update(request: Request, code: str,
+                        target: guards.Target = Depends(guards.may_update)):
     """Append a progress update, then re-render the card.
 
-    The permission check is here, on the server, and not only on the button:
-    the progress-updates spec requires a 403 for a non-owner posting directly.
+    The permission check is in the guard, on the server, and not only on the
+    button: the progress-updates spec requires a 403 for a non-owner posting
+    directly. The guard also enforces existence before permission, so an
+    unknown code is a 404 and a known-but-forbidden one a 403.
     """
-    # Existence before permission, so an unknown or retired code is a 404 and
-    # a known-but-forbidden one is a 403 -- consistent with GET
-    # /initiatives/{code}. Checking permission first would answer 403 for
-    # codes that do not exist at all.
-    if queries.initiative_card(code) is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.can_update(request, code):
-        raise HTTPException(status_code=403, detail="You cannot update this initiative")
-
     form = await request.form()
-    person = auth.current_person(request)
     try:
         repo.add_progress_update(
             code=code,
             percent=str(form.get("percent", 0)),
             status=str(form.get("status", "")),
             note=str(form.get("note", "")),
-            entered_by_id=person["PersonID"],  # type: ignore[index]  # gate guarantees this
+            entered_by_id=target.person_id,
         )
     except repo.RuleError as exc:
         # Refused by a rule: show the message rather than a 500.
@@ -373,31 +363,23 @@ async def oct16(request: Request):
 
 
 @app.get("/initiatives/{code}/edit/details")
-async def edit_details_form(request: Request, code: str):
-    card = queries.initiative_card(code)
-    if card is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.can_edit_details(request, code):
-        raise HTTPException(status_code=403, detail="You cannot edit this initiative")
+async def edit_details_form(request: Request, code: str,
+                            target: guards.Target = Depends(guards.may_edit_details)):
     return templates.TemplateResponse(
-        request, "edit_details.html", _ctx(request, card=card)
+        request, "edit_details.html", _ctx(request, card=target.card)
     )
 
 
 @app.post("/initiatives/{code}/edit/details")
-async def edit_details_submit(request: Request, code: str):
-    if queries.initiative_card(code) is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.can_edit_details(request, code):
-        raise HTTPException(status_code=403, detail="You cannot edit this initiative")
+async def edit_details_submit(request: Request, code: str,
+                              target: guards.Target = Depends(guards.may_edit_details)):
     form = await request.form()
-    person = auth.current_person(request)
     try:
         repo.update_initiative_details(
             code=code,
             name=str(form.get("name", "")),
             description=str(form.get("description", "")),
-            person_id=person["PersonID"],  # type: ignore[index]
+            person_id=target.person_id,
         )
     except repo.RuleError as exc:
         return templates.TemplateResponse(
@@ -410,35 +392,20 @@ async def edit_details_submit(request: Request, code: str):
 
 
 @app.get("/initiatives/{code}/edit/tags")
-async def edit_tags_form(request: Request, code: str):
-    if queries.initiative_card(code) is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
-    card = queries.initiative_card(code)
+async def edit_tags_form(request: Request, code: str,
+                         target: guards.Target = Depends(guards.admin_for)):
+    options = queries.tag_edit_options(target.card["InitiativeID"])
     return templates.TemplateResponse(
         request,
         "edit_tags.html",
-        _ctx(
-            request,
-            card=card,
-            goals=queries.all_goals(),
-            priorities=queries.all_priorities(),
-            chosen_goals=set(queries.current_goal_tags(card["InitiativeID"])),
-            chosen_priorities=set(queries.current_priority_tags(card["InitiativeID"])),
-            error=None,
-        ),
+        _ctx(request, card=target.card, error=None, **options),
     )
 
 
 @app.post("/initiatives/{code}/edit/tags")
-async def edit_tags_submit(request: Request, code: str):
-    if queries.initiative_card(code) is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
+async def edit_tags_submit(request: Request, code: str,
+                           target: guards.Target = Depends(guards.admin_for)):
     form = await request.form()
-    person = auth.current_person(request)
 
     def collect(primary_field):
         """Build the tag list from the submitted form.
@@ -465,7 +432,7 @@ async def edit_tags_submit(request: Request, code: str):
             code=code,
             goal_tags=collect("goal_primary"),
             priority_tags=collect("priority_primary"),
-            person_id=person["PersonID"],  # type: ignore[index]
+            person_id=target.person_id,
         )
     except repo.RuleError as exc:
         card = queries.initiative_card(code)
@@ -475,8 +442,8 @@ async def edit_tags_submit(request: Request, code: str):
             _ctx(
                 request,
                 card=card,
-                goals=queries.all_goals(),
-                priorities=queries.all_priorities(),
+                goals=[],
+                priorities=[],
                 chosen_goals=set(),
                 chosen_priorities=set(),
                 error=exc.message,
@@ -487,33 +454,20 @@ async def edit_tags_submit(request: Request, code: str):
 
 
 @app.get("/initiatives/{code}/edit/links")
-async def edit_links_form(request: Request, code: str):
-    card = queries.initiative_card(code)
-    if card is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
+async def edit_links_form(request: Request, code: str,
+                          target: guards.Target = Depends(guards.admin_for)):
+    options = queries.link_edit_options(target.card["InitiativeID"])
     return templates.TemplateResponse(
         request,
         "edit_links.html",
-        _ctx(
-            request,
-            card=card,
-            deans=queries.active_dean_initiatives(),
-            chosen=set(queries.current_links(card["InitiativeID"])),
-            error=None,
-        ),
+        _ctx(request, card=target.card, error=None, **options),
     )
 
 
 @app.post("/initiatives/{code}/edit/links")
-async def edit_links_submit(request: Request, code: str):
-    if queries.initiative_card(code) is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
+async def edit_links_submit(request: Request, code: str,
+                            target: guards.Target = Depends(guards.admin_for)):
     form = await request.form()
-    person = auth.current_person(request)
     ids = []
     for raw in form.getlist("dean_initiative_id"):
         try:
@@ -521,7 +475,7 @@ async def edit_links_submit(request: Request, code: str):
         except (TypeError, ValueError):
             continue
     try:
-        repo.replace_links(code=code, dean_initiative_ids=ids, person_id=person["PersonID"])  # type: ignore[index]
+        repo.replace_links(code=code, dean_initiative_ids=ids, person_id=target.person_id)
     except repo.RuleError as exc:
         return templates.TemplateResponse(
             request,
@@ -529,7 +483,7 @@ async def edit_links_submit(request: Request, code: str):
             _ctx(
                 request,
                 card=queries.initiative_card(code),
-                deans=queries.active_dean_initiatives(),
+                deans=queries.link_edit_options(target.card["InitiativeID"])["deans"],
                 chosen=set(ids),
                 error=exc.message,
             ),
@@ -540,11 +494,9 @@ async def edit_links_submit(request: Request, code: str):
 
 
 @app.post("/initiatives")
-async def create_submit(request: Request):
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
+async def create_submit(request: Request,
+                        target: guards.Target = Depends(guards.admin_only)):
     form = await request.form()
-    person = auth.current_person(request)
     try:
         repo.create_initiative(
             code=str(form.get("code", "")),
@@ -552,7 +504,7 @@ async def create_submit(request: Request):
             level=str(form.get("level", "")),
             owner_id=int(str(form.get("owner_id") or 0)),
             description=str(form.get("description", "")),
-            person_id=person["PersonID"],  # type: ignore[index]
+            person_id=target.person_id,
         )
     except (repo.RuleError, ValueError) as exc:
         message = exc.message if isinstance(exc, repo.RuleError) else "Pick an owner."
@@ -566,24 +518,23 @@ async def create_submit(request: Request):
 
 
 @app.post("/initiatives/{code}/retire")
-async def retire_submit(request: Request, code: str):
-    if queries.initiative_card(code) is None:
-        raise HTTPException(status_code=404, detail="No such initiative")
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
-    person = auth.current_person(request)
+async def retire_submit(request: Request, code: str,
+                        target: guards.Target = Depends(guards.admin_for)):
     try:
-        repo.retire_initiative(code=code, person_id=person["PersonID"])  # type: ignore[index]
+        repo.retire_initiative(code=code, person_id=target.person_id)
     except repo.RuleError as exc:
         raise HTTPException(status_code=422, detail=exc.message)
     return RedirectResponse(url="/checks", status_code=303)
 
 
 @app.get("/entries/{kind}/{key}/edit")
-async def edit_entry_form(request: Request, kind: str, key: str):
-    """Edit a goal or priority description (task 8.4)."""
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
+async def edit_entry_form(request: Request, kind: str, key: str,
+                          target: guards.Target = Depends(guards.admin_only)):
+    """Edit a goal or priority description (task 8.4).
+
+    The admin gate is the guard; the 404 here is about a goal or priority, not
+    an initiative, so it stays local.
+    """
     goal = queries.goal_by_number(int(key)) if kind == "goal" else queries.priority_by_name(key)
     if goal is None:
         raise HTTPException(status_code=404, detail="No such entry")
@@ -595,17 +546,15 @@ async def edit_entry_form(request: Request, kind: str, key: str):
 
 
 @app.post("/entries/{kind}/{key}/edit")
-async def edit_entry_submit(request: Request, kind: str, key: str):
-    if not auth.is_admin_request(request):
-        raise HTTPException(status_code=403, detail="Admins only")
+async def edit_entry_submit(request: Request, kind: str, key: str,
+                            target: guards.Target = Depends(guards.admin_only)):
     form = await request.form()
-    person = auth.current_person(request)
     try:
         repo.update_entry_description(
             kind=kind,
             key=int(key) if kind == "goal" else key,
             description=str(form.get("description", "")),
-            person_id=person["PersonID"],  # type: ignore[index]
+            person_id=target.person_id,
         )
     except (repo.RuleError, ValueError) as exc:
         message = exc.message if isinstance(exc, repo.RuleError) else "Unknown entry."

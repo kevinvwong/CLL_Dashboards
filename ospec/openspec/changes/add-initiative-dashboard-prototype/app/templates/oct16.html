@@ -23,7 +23,7 @@
   <li class="oct16-card oct16-{{ o.id|lower }}">
     <div class="oct16-head">
       <span class="oct16-id">{{ o.id }}</span>
-      <span class="oct16-outcome-status badge status-{{ o.status | lower | replace(' ', '-') }}">{{ o.status }}</span>
+      <span class="oct16-outcome-status badge {{ o.status | status_class }}">{{ o.status }}</span>
     </div>
     <h2 class="oct16-name">{{ o.name }}</h2>
     <p class="oct16-target">{{ o.summary }}</p>
@@ -32,13 +32,13 @@
     <div class="oct16-bar" role="img"
          aria-label="{{ o.reached }} of {{ o.planned }} milestones reached">
       <span class="oct16-fill"
-            style="width: {{ (100 * o.reached / o.planned) | round(0, 'floor') }}%"></span>
+            style="width: {{ d.percent(o) }}%"></span>
     </div>
     <ul class="oct16-milestones">
       {% for name, status in o.milestones %}
       <li class="oct16-milestone">
         <span class="oct16-mname">{{ name }}</span>
-        <span class="oct16-mstatus m-{{ status | lower | replace(' ', '-') }}">{{ status }}</span>
+        <span class="oct16-mstatus {{ status | milestone_class }}">{{ status }}</span>
       </li>
       {% endfor %}
     </ul>
@@ -53,7 +53,7 @@
     <p class="oct16-owner{% if not d.owner_is_confirmed(o.owner) %} unconfirmed{% endif %}">
       Owner:
       {% if o.owner %}<span class="owner-value">{{ d.owner_label(o.owner) }}</span>
-      {% else %}<span class="owner-none">no owner named</span>{% endif %}
+      {% else %}<span class="owner-none">{{ d.owner_label(o.owner) }}</span>{% endif %}
       &middot; updated {{ o.updated or "[date]" }}
     </p>
   </li>
@@ -97,7 +97,7 @@
       </thead>
       <tbody>
         {% for r in d.DATA_REQUIREMENTS %}
-        <tr class="availability-{{ r.available | lower | replace(' ', '-') }}">
+        <tr class="{{ r.available | availability_class }}">
           <td>{{ r.id }}</td>
           <td>{{ r.section }}</td>
           <td>{{ r.element }}</td>

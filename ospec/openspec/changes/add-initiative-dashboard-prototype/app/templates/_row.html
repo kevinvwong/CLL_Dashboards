@@ -21,7 +21,7 @@
     <div class="bar bar-empty" aria-label="No update yet">No update yet</div>
     {% else %}
     <div class="bar" role="img" aria-label="{{ row.Status }}, {{ row.PercentComplete }} percent">
-      <div class="bar-fill status-{{ row.Status | lower | replace(' ', '-') }}"
+      <div class="bar-fill {{ row.Status | status_class }}"
            style="width: {{ row.PercentComplete }}%"></div>
     </div>
     <span class="bar-label">{{ row.PercentComplete }}% {{ row.Status }}</span>

@@ -5,12 +5,11 @@ screen needs an initiative count per goal and per priority, which no view
 provides, so it lives here. Writes go through app/repo.py instead.
 """
 
-from app.config import Config
-from app.db import get_connection
+from app.db import connect
 
 
 def _conn():
-    return get_connection(Config().DB_PATH)
+    return connect()
 
 
 def goal_tiles() -> list[dict]:
@@ -387,70 +386,71 @@ def data_checks() -> list[dict]:
         ]
 
 
-# --- edit form options (tasks 8.2, 8.3, 8.4) ------------------------------
+# --- edit-form reads (tasks 8.2, 8.3, 8.4; deepened per `screen-reads`) -----
+#
+# Each edit screen gets ONE read shaped to it, returning the options a caller
+# may choose from and the values currently chosen. The card read
+# (initiative_card) is the model: a screen names one read, not a pile of
+# single-table readers it combines. The six single-table readers these replace
+# (all_goals, all_priorities, active_dean_initiatives, current_goal_tags,
+# current_priority_tags, current_links) are deleted - their only callers moved
+# here, and the tag reads already lived inside initiative_card.
 
 
-def all_goals() -> list[dict]:
+def tag_edit_options(initiative_id: int) -> dict:
+    """What the tags edit screen needs: both lists and what is chosen."""
     with _conn() as conn:
-        return [
+        goals = [
             dict(r)
             for r in conn.execute(
                 "SELECT GoalID, GoalNumber, ShortName, FullName, Description "
                 "FROM Goals ORDER BY GoalNumber"
             )
         ]
-
-
-def all_priorities() -> list[dict]:
-    with _conn() as conn:
-        return [
+        priorities = [
             dict(r)
             for r in conn.execute(
                 "SELECT PriorityID, PriorityName, PlanYear, Description "
                 "FROM Priorities ORDER BY PlanYear, PriorityName"
             )
         ]
+        chosen_goals = {
+            r["GoalID"]
+            for r in conn.execute(
+                "SELECT GoalID FROM InitiativeGoals WHERE InitiativeID = ?",
+                (initiative_id,),
+            )
+        }
+        chosen_priorities = {
+            r["PriorityID"]
+            for r in conn.execute(
+                "SELECT PriorityID FROM InitiativePriorities WHERE InitiativeID = ?",
+                (initiative_id,),
+            )
+        }
+    return {
+        "goals": goals,
+        "priorities": priorities,
+        "chosen_goals": chosen_goals,
+        "chosen_priorities": chosen_priorities,
+    }
 
 
-def active_dean_initiatives() -> list[dict]:
-    """Link targets for a D-1 initiative: active Dean-level ones only."""
+def link_edit_options(initiative_id: int) -> dict:
+    """What the links edit screen needs: the Dean targets and what is chosen."""
     with _conn() as conn:
-        return [
+        deans = [
             dict(r)
             for r in conn.execute(
                 "SELECT InitiativeID, Code, InitiativeName FROM Initiatives "
                 "WHERE Level = 'Dean' AND IsActive = 1 ORDER BY Code"
             )
         ]
-
-
-def current_goal_tags(initiative_id: int) -> list[int]:
-    with _conn() as conn:
-        return [
-            r["GoalID"]
-            for r in conn.execute(
-                "SELECT GoalID FROM InitiativeGoals WHERE InitiativeID = ?", (initiative_id,)
-            )
-        ]
-
-
-def current_priority_tags(initiative_id: int) -> list[int]:
-    with _conn() as conn:
-        return [
-            r["PriorityID"]
-            for r in conn.execute(
-                "SELECT PriorityID FROM InitiativePriorities WHERE InitiativeID = ?",
-                (initiative_id,),
-            )
-        ]
-
-
-def current_links(initiative_id: int) -> list[int]:
-    with _conn() as conn:
-        return [
+        chosen = {
             r["DeanInitiativeID"]
             for r in conn.execute(
                 "SELECT DeanInitiativeID FROM InitiativeLinks WHERE InitiativeID = ?",
                 (initiative_id,),
             )
-        ]
+        }
+    return {"deans": deans, "chosen": chosen}

@@ -11,8 +11,7 @@ only way to guarantee it.
 
 import sqlite3
 
-from app.config import Config
-from app.db import get_connection
+from app.db import connect
 
 # The vocabulary the ProgressUpdates CHECK constraint enforces.
 STATUSES = (
@@ -38,9 +37,10 @@ class RuleError(Exception):
 
 
 def _conn():
-    conn = get_connection(Config().DB_PATH)
-    conn.execute("BEGIN IMMEDIATE")
-    return conn
+    # Kept for callers that need a bare write connection outside `write()`.
+    # write=True takes BEGIN IMMEDIATE, so the write lock is taken in exactly
+    # one place -- db.connect.
+    return connect(write=True)
 
 
 def _friendly(exc: sqlite3.IntegrityError) -> RuleError:
@@ -57,6 +57,40 @@ def _friendly(exc: sqlite3.IntegrityError) -> RuleError:
     return RuleError("That change does not follow the initiative rules.")
 
 
+def write(body, on_integrity=None):
+    """Run ``body(conn)`` as one atomic write. Returns what the body returns.
+
+    This is the one write seam (design D1). It owns the whole transaction
+    discipline so that each write below states only its own rules:
+
+    * opens a write connection (``BEGIN IMMEDIATE``, from db.connect);
+    * commits when the body returns;
+    * rolls back on any failure and closes the connection;
+    * maps a constraint failure to an actionable RuleError, never letting a
+      driver error escape -- callers are routes and templates, not tests.
+
+    ``on_integrity`` lets a write supply its own mapping when the shared one
+    cannot tell its cases apart (for example, a duplicate code versus an
+    unknown owner, which both arrive as a bare UNIQUE or FOREIGN KEY failure).
+    A body may raise RuleError for a rule it checks itself; that propagates
+    unchanged, and the transaction still rolls back.
+    """
+    conn = _conn()
+    try:
+        result = body(conn)
+        conn.commit()
+        return result
+    except sqlite3.IntegrityError as exc:
+        conn.rollback()
+        mapper = on_integrity or _friendly
+        raise mapper(exc) from exc
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def add_progress_update(
     code: str,
     percent: int | str,
@@ -68,9 +102,6 @@ def add_progress_update(
 
     `percent` accepts a string because form data arrives as one; anything
     uncoercible is refused with a RuleError rather than raising.
-
-    Raises RuleError when a rule refuses the write. `sqlite3.IntegrityError`
-    never escapes, because the callers are routes and templates, not tests.
     """
     note = (note or "").strip()
     if len(note) > NOTE_MAX:
@@ -84,8 +115,7 @@ def add_progress_update(
     if not 0 <= percent <= 100:
         raise RuleError("Percent must be between 0 and 100.")
 
-    conn = _conn()
-    try:
+    def body(conn):
         row = conn.execute(
             "SELECT InitiativeID FROM Initiatives WHERE Code = ? AND IsActive = 1",
             (code,),
@@ -98,16 +128,9 @@ def add_progress_update(
             "VALUES (?, ?, ?, ?, ?)",
             (row["InitiativeID"], percent, status, note or None, entered_by_id),
         )
-        conn.commit()
         return cur.lastrowid
-    except sqlite3.IntegrityError as exc:
-        conn.rollback()
-        raise _friendly(exc) from exc
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+
+    return write(body)
 
 
 def update_initiative_details(code: str, name: str, description: str, person_id: int):
@@ -116,8 +139,7 @@ def update_initiative_details(code: str, name: str, description: str, person_id:
     if not name:
         raise RuleError("An initiative needs a name.")
 
-    conn = _conn()
-    try:
+    def body(conn):
         row = conn.execute(
             "SELECT InitiativeID, InitiativeName, Description FROM Initiatives "
             "WHERE Code = ? AND IsActive = 1",
@@ -145,15 +167,8 @@ def update_initiative_details(code: str, name: str, description: str, person_id:
                 ),
             ),
         )
-        conn.commit()
-    except sqlite3.IntegrityError as exc:
-        conn.rollback()
-        raise _friendly(exc) from exc
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+
+    write(body)
 
 
 def _json_str(value) -> str:
@@ -178,8 +193,7 @@ def replace_tags(code: str, goal_tags: list, priority_tags: list, person_id: int
         if len(primaries) > 1:
             raise RuleError(f"Only one primary {label} is allowed.")
 
-    conn = _conn()
-    try:
+    def body(conn):
         row = conn.execute(
             "SELECT InitiativeID FROM Initiatives WHERE Code = ? AND IsActive = 1",
             (code,),
@@ -211,15 +225,8 @@ def replace_tags(code: str, goal_tags: list, priority_tags: list, person_id: int
             code,
             {"goals": goal_tags, "priorities": priority_tags},
         )
-        conn.commit()
-    except sqlite3.IntegrityError as exc:
-        conn.rollback()
-        raise _friendly(exc) from exc
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+
+    write(body)
 
 
 def replace_links(code: str, dean_initiative_ids: list, person_id: int):
@@ -229,8 +236,7 @@ def replace_links(code: str, dean_initiative_ids: list, person_id: int):
     initiative. `trg_Links_LevelCheck` enforces the second rule in the
     database; this rejects it first with a readable message.
     """
-    conn = _conn()
-    try:
+    def body(conn):
         row = conn.execute(
             "SELECT InitiativeID, Level FROM Initiatives WHERE Code = ? AND IsActive = 1",
             (code,),
@@ -260,15 +266,8 @@ def replace_links(code: str, dean_initiative_ids: list, person_id: int):
                 [(iid, dean_id) for dean_id in dean_initiative_ids],
             )
         _audit(conn, person_id, "replace_links", code, {"dean_initiative_ids": dean_initiative_ids})
-        conn.commit()
-    except sqlite3.IntegrityError as exc:
-        conn.rollback()
-        raise _friendly(exc) from exc
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+
+    write(body)
 
 
 def create_initiative(
@@ -285,35 +284,37 @@ def create_initiative(
     if level not in ("Dean", "D-1"):
         raise RuleError("Level must be Dean or D-1.")
 
-    conn = _conn()
-    try:
+    def body(conn):
         conn.execute(
             "INSERT INTO Initiatives (Code, InitiativeName, Description, Level, OwnerID) "
             "VALUES (?, ?, ?, ?, ?)",
             (code, name, (description or "").strip() or None, level, owner_id),
         )
         _audit(conn, person_id, "create_initiative", code, {"name": name, "level": level})
-        conn.commit()
-    except sqlite3.IntegrityError as exc:
-        conn.rollback()
+
+    def on_integrity(exc):
+        # A duplicate code arrives as UNIQUE; an unknown owner arrives as a bare
+        # "FOREIGN KEY constraint failed" -- SQLite does not name the column.
+        # Initiatives has exactly one foreign key on this INSERT (OwnerID ->
+        # People), so a foreign-key failure here is unambiguously the owner.
+        # This branch previously tested for the literal text "OwnerID", which
+        # SQLite never emits, so the unknown-owner case fell through to the
+        # generic message and did not name what to change (found by
+        # test_unknown_owner_is_a_message_not_a_driver_error).
         text = str(exc)
         if "Initiatives.Code" in text or "UNIQUE" in text.upper():
-            raise RuleError(f"There is already an initiative with the code {code}.") from exc
-        if "OwnerID" in text:
-            raise RuleError("That person is not in the directory.") from exc
-        raise _friendly(exc) from exc
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+            return RuleError(f"There is already an initiative with the code {code}.")
+        if "FOREIGN KEY" in text.upper():
+            return RuleError("That person is not in the directory.")
+        return _friendly(exc)
+
+    write(body, on_integrity=on_integrity)
 
 
 def retire_initiative(code: str, person_id: int):
     """Retire rather than delete (task 8.4). Progress history is kept, and a
     retired initiative disappears from every list and card."""
-    conn = _conn()
-    try:
+    def body(conn):
         row = conn.execute(
             "SELECT InitiativeID, IsActive FROM Initiatives WHERE Code = ?", (code,)
         ).fetchone()
@@ -323,12 +324,8 @@ def retire_initiative(code: str, person_id: int):
             raise RuleError(f"{code} is already retired.")
         conn.execute("UPDATE Initiatives SET IsActive = 0 WHERE InitiativeID = ?", (row["InitiativeID"],))
         _audit(conn, person_id, "retire_initiative", code, {})
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+
+    write(body)
 
 
 def update_entry_description(
@@ -339,8 +336,8 @@ def update_entry_description(
     if table is None:
         raise RuleError("Unknown entry type.")
     column = "GoalNumber" if kind == "goal" else "PriorityName"
-    conn = _conn()
-    try:
+
+    def body(conn):
         row = conn.execute(
             f"SELECT Description FROM {table} WHERE {column} = ?", (key,)
         ).fetchone()
@@ -357,12 +354,9 @@ def update_entry_description(
             str(key),
             {"before": row["Description"], "after": (description or "").strip() or None},
         )
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+
+    write(body)
+
 
 
 def _audit(conn, person_id: int, action: str, entity_key: str, details: dict):

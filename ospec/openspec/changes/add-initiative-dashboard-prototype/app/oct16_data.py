@@ -51,6 +51,23 @@ def owner_is_confirmed(owner) -> bool:
     return bool(owner) and owner != OWNER_WITHHELD
 
 
+# How an outcome's progress is shown. The page previously computed this in
+# its template, so the bar's meaning lived in the view while this module
+# documented it as derived. It lives here now, and the template renders
+# the value it is handed (the oct16-deliverable spec, design D5).
+def percent(outcome) -> int:
+    """Milestones reached as a whole percent of those planned, floored.
+
+    Floored, not rounded: a bar that reads 50% when fewer than half the
+    milestones are reached would overstate progress, and this page exists
+    to not do that.
+    """
+    planned = outcome["planned"] or 0
+    if planned <= 0:
+        return 0
+    return (100 * outcome["reached"]) // planned
+
+
 # Page furniture, from the wireframes.
 EYEBROW = "OCTOBER 16 \u00b7 THE DEAN'S DASHBOARD"
 TITLE = "The Dean's six Blueprint outcomes"

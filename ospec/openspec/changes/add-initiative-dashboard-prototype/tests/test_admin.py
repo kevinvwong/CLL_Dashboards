@@ -23,6 +23,17 @@ def _rows(fresh_db, sql, params=()):
     return out
 
 
+def _initiative_id(fresh_db, code):
+    """The InitiativeID for a code, so a screen-read test can call the read.
+
+    The screen-shaped reads (link_edit_options, tag_edit_options) take an
+    initiative id; the tests know codes. Rather than re-implementing the read's
+    own lookup, this resolves the id from the seeded database.
+    """
+    return _rows(fresh_db, "SELECT InitiativeID FROM Initiatives WHERE Code = ?",
+                 (code,))[0]["InitiativeID"]
+
+
 ADMIN_ROUTES = [
     ("get", "/initiatives/ELIZ-1/edit/tags"),
     ("get", "/initiatives/ELIZ-1/edit/links"),
@@ -168,10 +179,10 @@ def test_empty_name_is_refused(logged_in, fresh_db):
 # --- 8.3 links ------------------------------------------------------------
 
 
-def test_links_only_list_dean_initiatives(logged_in):
+def test_links_only_list_dean_initiatives(logged_in, fresh_db):
     from app import queries
 
-    options = queries.active_dean_initiatives()
+    options = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"]
     assert options
     assert all(o["Code"].startswith("D-") for o in options)
 
@@ -179,7 +190,7 @@ def test_links_only_list_dean_initiatives(logged_in):
 def test_link_edit_saves_the_selection(logged_in, fresh_db):
     from app import queries
 
-    dean_id = queries.active_dean_initiatives()[0]["InitiativeID"]
+    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["InitiativeID"]
     response = logged_in(ADMIN).post(f"/initiatives/{D1}/edit/links",
                                      data={"dean_initiative_id": str(dean_id)})
     assert response.status_code == 200
@@ -192,7 +203,7 @@ def test_links_are_refused_on_a_dean_initiative(logged_in, fresh_db):
     """Only a D-1 initiative feeds a Dean one."""
     from app import queries
 
-    dean_id = queries.active_dean_initiatives()[0]["InitiativeID"]
+    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["InitiativeID"]
     response = logged_in(ADMIN).post(f"/initiatives/{DEAN}/edit/links",
                                      data={"dean_initiative_id": str(dean_id)})
     assert response.status_code == 422

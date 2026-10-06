@@ -19,20 +19,9 @@ class Config:
         self.APP_SECRET = os.getenv("APP_SECRET", "")
         # `local` or `live`. Drives the LOCAL banner and Secure cookies (9.1).
         self.APP_ENV = os.getenv("APP_ENV", "local")
+        # The one configured database path. This is the only place a path is
+        # named; db.get_connection() has no default of its own, so nothing can
+        # open a different file by accident (see the `data-connection` spec).
         self.DB_PATH = os.getenv("DB_PATH", "./cll_initiatives.db")
         self.BACKUP_DIR = os.getenv("BACKUP_DIR", "./backups")
         self.PORT = int(os.getenv("PORT", "8000"))
-
-    @property
-    def is_local(self) -> bool:
-        return self.APP_ENV == "local"
-
-    def as_dict(self):
-        return {
-            "APP_PASSCODE": self.APP_PASSCODE,
-            "APP_SECRET": self.APP_SECRET,
-            "APP_ENV": self.APP_ENV,
-            "DB_PATH": self.DB_PATH,
-            "BACKUP_DIR": self.BACKUP_DIR,
-            "PORT": self.PORT,
-        }

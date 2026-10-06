@@ -17,7 +17,7 @@
    because Bill expects rollups and we are deliberately not providing one. #}
 {% if counts %}
 <p class="status-counts">
-  {% for c in counts %}<span class="count count-{{ c.Status | lower | replace(' ', '-') }}">{{ c.Status }} {{ c.Count }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+  {% for c in counts %}<span class="count count-{{ c.Status | status_class }}">{{ c.Status }} {{ c.Count }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
 </p>
 {% endif %}
 

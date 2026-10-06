@@ -12,22 +12,19 @@ import pytest
 D1 = "ELIZ-1"
 DEAN = "D-A"
 ELIZABETH = 2
+ELIZABETH_NAME = "Elizabeth"
 
 
 def _diary(fresh_db, code):
-    conn = sqlite3.connect(fresh_db)
-    conn.row_factory = sqlite3.Row
-    rows = [
-        dict(r)
-        for r in conn.execute(
-            "SELECT pu.PercentComplete, pu.Status, pu.Note, pu.EnteredByID "
-            "FROM ProgressUpdates pu JOIN Initiatives i ON i.InitiativeID = pu.InitiativeID "
-            "WHERE i.Code = ? ORDER BY pu.UpdateDate DESC, pu.UpdateID DESC",
-            (code,),
-        )
-    ]
-    conn.close()
-    return rows
+    """The card's diary, read through the same read the app renders from.
+
+    This used to re-implement the diary SQL. It now imports it, so a change to
+    how the diary is read is exercised here rather than passing against a copy
+    (task 6.3).
+    """
+    from app import queries
+
+    return queries.initiative_card(code)["diary"]
 
 
 def _count(fresh_db):
@@ -54,7 +51,8 @@ def test_update_is_appended_not_replaced(logged_in, fresh_db):
 def test_update_records_who_entered_it(logged_in, fresh_db):
     logged_in("Elizabeth").post(f"/initiatives/{D1}/updates",
                                 data={"percent": 55, "status": "At risk", "note": "x"})
-    assert _diary(fresh_db, D1)[0]["EnteredByID"] == ELIZABETH
+    # Read through the card, which names the person rather than their id.
+    assert _diary(fresh_db, D1)[0]["EnteredBy"] == ELIZABETH_NAME
 
 
 # --- validation -----------------------------------------------------------

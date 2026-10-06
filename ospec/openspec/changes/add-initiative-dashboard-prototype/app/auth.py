@@ -21,7 +21,7 @@ from fastapi import Request
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from app.config import Config
-from app.db import get_connection
+from app.db import connect
 
 PASSCODE_COOKIE = "cll_passcode"
 PERSON_COOKIE = "cll_person"
@@ -44,7 +44,7 @@ def _serializer() -> URLSafeTimedSerializer:
 
 
 def _conn():
-    return get_connection(settings().DB_PATH)
+    return connect()
 
 
 def passcode_matches(candidate: str) -> bool:
@@ -112,9 +112,19 @@ def person_id_from_cookie(request: Request):
         return None
 
 
-def current_person(request: Request):
+def current_person(request: Request) -> dict | None:
+    # Resolved once per request (design D2). The access gate, the template
+    # context, and each permission check all ask for the signed-in person; the
+    # first ask reads the database and the rest reuse it. Cached on the request
+    # so every caller sees the same person. `_resolved` distinguishes "not yet
+    # asked" from "asked, and there is no signed-in person".
+    if getattr(request.state, "person_resolved", False):
+        return request.state.person
+
     person_id = person_id_from_cookie(request)
     if person_id is None:
+        request.state.person = None
+        request.state.person_resolved = True
         return None
     with _conn() as conn:
         row = conn.execute(
@@ -122,7 +132,10 @@ def current_person(request: Request):
             "FROM People WHERE PersonID = ? AND IsActive = 1",
             (person_id,),
         ).fetchone()
-    return dict(row) if row else None
+    person: dict | None = dict(row) if row else None
+    request.state.person = person
+    request.state.person_resolved = True
+    return person
 
 
 def active_people() -> list[dict]:

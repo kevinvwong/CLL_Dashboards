@@ -146,6 +146,40 @@ Then walk the gate:
 A 503 from `/healthz` reading `database unreachable` means the archive omitted the
 database. Rebuild with the script and redeploy.
 
+**A 403 reading `This web app is stopped` is the F1 plan's quota, not your deploy.**
+Observed 2026-10-06 while deploying groups 1–3. The Free (F1) plan enforces
+`WP stop requests` — **15 per hour** — and every deploy, start, and idle shutdown
+counts as one. Cross it and Azure stops the **whole shared plan**, so *both* apps on
+`cll-dash-proto-plan` return 403 with an empty body and `state: QuotaExceeded`. The
+deploy itself succeeded; it was the stop that exceeded the cap. Diagnose it, do not
+redeploy:
+
+```powershell
+& "...azure-cli\python.exe" -IBm azure.cli webapp show `
+    --name clldashproto2kwong27 --resource-group rg-cll-dash-proto `
+    --query "{state:state, usageState:usageState}" -o json
+# "state": "QuotaExceeded"  -> the plan is stopped, not the deploy
+```
+
+The counter resets hourly (`nextResetTime`). Space deploys out, or move to a paid
+tier before a launch where several deploys land in one hour. **Do not** treat this as
+a rollback trigger: rolling back is another stop request and deepens the problem.
+
+**Do not try to `webapp start` your way out of it.** Measured 2026-10-06: a
+`webapp start` is itself a stop request, so it raises the count *and pushes
+`nextResetTime` out by another hour*. Two start attempts moved the reset from
+`17:00Z` to `18:00Z` and the count from 16 to 34, so the plan stayed down longer than
+if it had been left alone. The count is visible and so is the reset:
+
+```powershell
+& "...azure-cli\python.exe" -IBm azure.cli rest --method get --url `
+  "https://management.azure.com/subscriptions/<sub>/resourceGroups/rg-cll-dash-proto/providers/Microsoft.Web/serverfarms/cll-dash-proto-plan/usages?api-version=2023-12-01"
+# WP stop requests: <count> / 15, nextResetTime <t>
+```
+
+Wait for `nextResetTime` and do nothing until then. If a launch cannot afford an
+hour of downtime, that is the argument for leaving the F1 tier, not for poking it.
+
 ---
 
 ## The October 16 data swap

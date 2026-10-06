@@ -79,7 +79,7 @@
         <span class="connection-owner">
           {% if c.OwnerID %}<a href="/people/{{ c.OwnerID }}">{{ c.Owner }}</a>{% else %}{{ c.Owner }}{% endif %}
         </span>
-        {% if c.Direction == 'Fed by' and c.Status %}<span class="connection-status {{ c.Status | lower | replace(' ', '-') }}">{{ c.Status }}</span>{% endif %}
+        {% if c.Direction == 'Fed by' and c.Status %}<span class="connection-status {{ c.Status | status_class }}">{{ c.Status }}</span>{% endif %}
       </li>
       {% endfor %}
     </ul>
