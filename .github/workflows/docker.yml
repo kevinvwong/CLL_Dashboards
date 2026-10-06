@@ -1,13 +1,13 @@
-name: Docker Build & Test
+name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
-  build-and-test:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,20 +24,34 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Verify DB build script
-        run: |
-          python ospec/db/build_db.py
+      # The sample database is committed, but a rebuild proves the schema and
+      # seeds still produce it. This is the same builder a fresh clone runs.
+      - name: Rebuild the sample database
+        run: python db/build_db.py
 
-      - name: Build Docker image
-        run: |
-          docker build -t cll-dashboard-prototype .
+      - name: Run the test suite
+        run: python -m pytest
 
-      - name: Run container and check health
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build the image
+        run: docker build -t cll-dashboard .
+
+      # The app is behind a passcode gate, so / redirects to /login. /healthz
+      # is exempt and is the honest liveness probe.
+      - name: Run the container and probe /healthz
         run: |
-          docker run -d -p 8000:8000 --name test-dashboard cll-dashboard-prototype
-          # Wait for the server to start
-          sleep 5
-          # Verify the placeholder page returns HTTP 200
-          curl -f http://localhost:8000 || exit 1
-          docker stop test-dashboard
-          docker rm test-dashboard
+          docker run -d -p 8000:8000 --name dashboard \
+            -e APP_PASSCODE=ci -e APP_SECRET=ci-secret cll-dashboard
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:8000/healthz; then ok=1; break; fi
+            sleep 2
+          done
+          docker logs dashboard
+          docker stop dashboard && docker rm dashboard
+          test "${ok:-0}" = "1"

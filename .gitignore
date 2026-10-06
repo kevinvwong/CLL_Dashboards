@@ -15,14 +15,15 @@ node_modules/
 CLL_Strategy_Portfolio_Enterprise_Package_*.zip
 
 # Build artefacts. The deploy archive is produced by
-# ospec/scripts/build_deploy_zip.py and is not a source file; committing it would
-# put a stale copy of the database and the app in the tree. See ospec/docs/DEPLOY.md.
-ospec/deploy.zip
+# scripts/build_deploy_zip.py and is not a source file; committing it would
+# put a stale copy of the database and the app in the tree. See docs/ops/DEPLOY.md.
 deploy.zip
 
 # The cwd-relative default database is a runtime artefact. Config.DB_PATH defaults
 # to "./cll_initiatives.db", so anything that connects without an explicit path
-# while the working directory is ospec/ leaves an empty database there. The real
-# sample database is ospec/cll_initiatives.db, which IS committed; this covers
+# while the working directory is a subfolder leaves an empty database there. The
+# real sample database is cll_initiatives.db, which IS committed; this covers
 # only the stray the default creates.
-ospec/app/cll_initiatives.db
+app/cll_initiatives.db
+# The brainstorming visual companion's session files (mockups, state).
+.superpowers/

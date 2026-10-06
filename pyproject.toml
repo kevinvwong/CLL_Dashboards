@@ -1,0 +1,43 @@
+[project]
+name = "cll-initiative-dashboard"
+version = "0.1.0"
+description = "CLL Initiative Dashboard — the Dean's leadership-meeting dashboard"
+requires-python = ">=3.12"
+
+# Runtime dependencies live in requirements.txt so the Docker image and App
+# Service install one file. This section exists only to satisfy tooling that
+# expects a project table; keep it in step with requirements.txt.
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "gunicorn",
+    "jinja2",
+    "python-multipart",
+    "itsdangerous",
+    "openpyxl",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[tool.pytest.ini_options]
+# Run from the repo root: `pytest`. testpaths keeps collection to the suite;
+# pythonpath puts the repo root on sys.path so `import app` resolves without the
+# sys.path manipulation conftest.py used to need.
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# The app and the suite; db/ and scripts/ are utilities with looser needs.
+extend-exclude = ["db/rev2", "db/mssql", "source", ".superpowers"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    # E501 line length is handled by the formatter; do not fail the lint on it.
+    "E501",
+]

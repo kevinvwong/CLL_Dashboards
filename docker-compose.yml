@@ -15,6 +15,6 @@ services:
       APP_ENV: "local"
       APP_PASSCODE: "${APP_PASSCODE:-localdev}"
       APP_SECRET: "${APP_SECRET:-localdev-secret}"
-      DB_PATH: "./ospec/cll_initiatives.db"
+      DB_PATH: "./cll_initiatives.db"
     volumes:
-      - ./ospec/cll_initiatives.db:/app/ospec/cll_initiatives.db
+      - ./cll_initiatives.db:/app/cll_initiatives.db

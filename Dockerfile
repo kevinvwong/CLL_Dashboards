@@ -9,20 +9,20 @@ RUN useradd --create-home --uid 10001 appuser \
  && mkdir -p /app/data \
  && chown -R appuser:appuser /app
 
-# The application source lives under ospec/: the `app` package, its
-# requirements, and the sample database. APP_DIR is the one place that has to
-# change if the app is relocated.
-ARG APP_DIR=ospec/app
+# The application lives at the repo root: the app package, requirements.txt,
+# and the sample database. APP_DIR is the one place that has to change if the
+# app is relocated.
+ARG APP_DIR=app
 
 # Copy requirements and install them
-COPY ospec/requirements.txt ./requirements.txt
+COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application package (static/ and templates/ are inside it) and the
 # sample database, which DB_PATH points at relative to WORKDIR.
-COPY ospec/cll_initiatives.db ./ospec/cll_initiatives.db
+COPY cll_initiatives.db ./cll_initiatives.db
 COPY ${APP_DIR} ./app
-COPY ospec/db ./ospec/db
+COPY db ./db
 
 # Non-root from here on. Task 9.4 asked for this explicitly.
 #
