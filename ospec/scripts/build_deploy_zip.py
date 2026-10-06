@@ -52,6 +52,16 @@ def build(out_path: str = DEFAULT_OUT) -> str:
     if not os.path.isdir(APP):
         raise SystemExit("application directory not found: %s" % APP)
 
+    # REQUIRED is authoritative for these arcnames. The walk below also visits the
+    # application folder, and a cwd-relative default database can be sitting there
+    # (Config.DB_PATH defaults to "./cll_initiatives.db", so anything that connects
+    # without an explicit path from that directory leaves an EMPTY one behind).
+    # Writing both produces a DUPLICATE entry, and which one wins on extraction is
+    # order-dependent - so the archive could ship the empty database and take the
+    # site down with "database unreachable". Skip the walk's copy and let REQUIRED
+    # win.
+    reserved = {arc for _, arc in REQUIRED}
+
     added = []
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
         for root, dirs, files in os.walk(APP):
@@ -61,6 +71,8 @@ def build(out_path: str = DEFAULT_OUT) -> str:
                     continue
                 full = os.path.join(root, fn)
                 arc = os.path.relpath(full, APP).replace(os.sep, "/")
+                if arc in reserved:
+                    continue
                 z.write(full, arc)
                 added.append(arc)
 
@@ -73,6 +85,13 @@ def build(out_path: str = DEFAULT_OUT) -> str:
     # Verify, rather than trust the loop above.
     with zipfile.ZipFile(out_path) as z:
         names = z.namelist()
+
+    duplicates = sorted({n for n in names if names.count(n) > 1})
+    if duplicates:
+        raise SystemExit(
+            "archive contains duplicate entries, extraction order decides the "
+            "winner and the deployed database could be the empty one: %s"
+            % duplicates)
 
     backslashes = [n for n in names if "\\" in n]
     if backslashes:
