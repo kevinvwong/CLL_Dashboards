@@ -65,7 +65,13 @@ def _raw_priority_counts(fresh_db):
     return {r[0]: r[1] for r in rows}
 
 
-def test_home_shows_five_goal_and_six_priority_tiles(logged_in):
+def test_home_shows_the_stage_with_goals_and_priorities(logged_in):
+    """Replaces the tile-grid assertion (blueprint-redesign group 2).
+
+    The home is now a hero stage, not a tile grid: the Dean node, the six
+    priority cards, and the goals panel. The goals and priorities are still
+    each reachable, which is what this checked.
+    """
     from app import queries
 
     response = logged_in("Bill").get("/")
@@ -76,12 +82,17 @@ def test_home_shows_five_goal_and_six_priority_tiles(logged_in):
     assert len(goals) == GOAL_COUNT
     assert len(priorities) == PRIORITY_COUNT
 
-    # One anchor per tile, so the counts are tile counts and not stray numbers.
     body = response.text
+    # The stage and its node.
+    assert "stage" in body and "dean-node" in body
+    # Six priority cards, each linking to its panel selection.
+    for priority in priorities:
+        assert f"/?priority={priority['PriorityName']}" in body
+    # The goals panel keeps every goal reachable.
     for goal in goals:
         assert f"/goals/{goal['GoalNumber']}" in body
-    for priority in priorities:
-        assert f"/priorities/{priority['PriorityName']}" in body
+    # And the full cascade for the selected priority stays one link away.
+    assert "/priorities/" in body
 
 
 def test_goal_tile_counts_match_an_independent_count(logged_in, fresh_db):

@@ -669,12 +669,28 @@ async def initiatives_index(request: Request):
 
 @app.get("/")
 async def root(request: Request):
-    """Home: the two entry points, each with its active initiative count.
+    """The blueprint home: the Dean's outcomes as a hero stage.
 
-    An initiative tagged to several goals counts once per goal it carries,
-    so the tile counts sum to more than the total number of initiatives.
+    A Dean node fans into the six colour-keyed priority cards; below it, the
+    selected-priority panel and the initiative-signals strip. Replaces the tile
+    grid (blueprint-redesign 2.1-2.4).
+
+    Selecting a priority is a query parameter (?priority=Pathways) rather than
+    client state, so a selection is a shareable URL and works without
+    JavaScript; the panel renders server-side.
     """
-    priorities = queries.priority_tiles()
+    priorities = queries.blueprint_priorities()
+    selected = request.query_params.get("priority")
+
+    # Default to the first priority, so the panel is never empty on first load.
+    chosen = None
+    if priorities:
+        chosen = next((p for p in priorities if p["Name"] == selected), priorities[0])
+
+    panel_initiatives = []
+    if chosen is not None:
+        panel_initiatives = queries.priority_rows(chosen["Name"])
+
     plan_year = max((p["PlanYear"] for p in priorities), default=None)
     return templates.TemplateResponse(
         request,
@@ -683,6 +699,9 @@ async def root(request: Request):
             request,
             goals=queries.goal_tiles(),
             priorities=priorities,
+            selected=chosen,
+            panel_initiatives=panel_initiatives,
+            signals=queries.initiative_signals(),
             plan_year=plan_year,
         ),
     )

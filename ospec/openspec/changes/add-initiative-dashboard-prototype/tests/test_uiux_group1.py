@@ -241,19 +241,25 @@ def test_unknown_route_still_answers_json_for_a_non_browser(logged_in):
     assert "application/json" in r.headers.get("content-type", "")
 
 
-# --- 1.7 accessible names on the tiles --------------------------------------
+# --- 1.7 accessible names on the home links ---------------------------------
+#
+# Group 2 of blueprint-redesign replaced the tile grid with a hero stage. The
+# requirement is unchanged: a goal or priority link must carry an accessible
+# name stating what it is and how many initiatives it holds. The links simply
+# moved from `.tile` to the stage's cards and goals panel.
 
 
-def test_goal_tile_links_have_accessible_names(logged_in):
+def test_goal_links_have_accessible_names(logged_in):
     body = logged_in("Bill").get("/").text
     names = re.findall(r'aria-label="([^"]+)"', body)
     goal_labels = [n for n in names if "initiative" in n]
-    assert goal_labels, "goal tiles have no aria-label"
+    assert goal_labels, "goal links have no aria-label"
     # A label names the goal and its count, not just a bare number.
     assert any(re.match(r"^.+, \d+ initiatives?$", n) for n in goal_labels), goal_labels
 
 
-def test_priority_tile_links_have_accessible_names(logged_in):
-    body = logged_in("Bill").get("/").text
+def test_priority_cards_have_accessible_names(logged_in):
+    import html as _html
+    body = _html.unescape(logged_in("Bill").get("/").text)
     names = re.findall(r'aria-label="([^"]+)"', body)
-    assert any("Culture" in n and "initiative" in n for n in names), names
+    assert any("Culture & Learning" in n and "initiative" in n for n in names), names

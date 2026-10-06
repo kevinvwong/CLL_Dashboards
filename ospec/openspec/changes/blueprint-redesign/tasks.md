@@ -10,11 +10,11 @@
 
 ## 2. Blueprint home
 
-- [ ] 2.1 Build the hero stage: a Dean node fanning into six colour-keyed priority cards, with the priority scale applied. *Verify: the home renders the node and six cards; each card carries a distinct priority colour, its code, name, and count.*
-- [ ] 2.2 Add the selected-priority panel: selecting a card shows that priority's definition and linked initiatives, with no page reload. *Verify: selecting a card updates the panel; it shows the priority's name, description, and initiatives.*
-- [ ] 2.3 Add the initiative-signals strip with per-initiative progress and an explicit no-update state. *Verify: each signal shows name and progress; an initiative with no update reads as no-update, not zero; no aggregate figure appears.*
-- [ ] 2.4 Rewire `/` to serve the stage from the reads the screen needs. *Verify: the home renders from named reads, not ad-hoc queries; the suite is green.*
-- [ ] 2.5 **Group check:** the home reads as an executive blueprint, not a tile grid. *Verify: the stage is the heaviest block; selecting each of the six cards works; a screenshot at 375/726/1280px shows the hierarchy.*
+- [x] 2.1 Build the hero stage: a Dean node fanning into six colour-keyed priority cards, with the priority scale applied. *Verify: the home renders the node and six cards; each card carries a distinct priority colour, its code, name, and count.*
+- [x] 2.2 Add the selected-priority panel: selecting a card shows that priority's definition and linked initiatives, with no page reload. *Verify: selecting a card updates the panel; it shows the priority's name, description, and initiatives.*
+- [x] 2.3 Add the initiative-signals strip with per-initiative progress and an explicit no-update state. *Verify: each signal shows name and progress; an initiative with no update reads as no-update, not zero; no aggregate figure appears.*
+- [x] 2.4 Rewire `/` to serve the stage from the reads the screen needs. *Verify: the home renders from named reads, not ad-hoc queries; the suite is green.*
+- [x] 2.5 **Group check:** the home reads as an executive blueprint, not a tile grid. *Verify: the stage is the heaviest block; selecting each of the six cards works; a screenshot at 375/726/1280px shows the hierarchy.*
 
 ## 3. Cascade drill-downs and indexes
 

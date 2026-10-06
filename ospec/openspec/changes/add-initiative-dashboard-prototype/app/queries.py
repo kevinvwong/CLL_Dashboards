@@ -59,6 +59,70 @@ def priority_tiles() -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def blueprint_priorities() -> list[dict]:
+    """The six priorities as the blueprint stage needs them.
+
+    One read shaped to the stage (blueprint-redesign 2.4): each priority with
+    its code, full title, canonical description, key colour and active
+    initiative count. The code, title and description come from app.priorities,
+    which is read from the Dean's prototype; the count comes from the database,
+    which decides which priorities exist.
+
+    Ordered by code so the stage reads P01..P06, not alphabetically.
+    """
+    from app import priorities as canon
+    from app import status as status_mod
+
+    rows = priority_tiles()
+    out = []
+    for r in rows:
+        name = r["PriorityName"]
+        code = canon.code(name)
+        out.append({
+            "Name": name,
+            "Code": code,
+            "Title": canon.title(name),
+            "Description": canon.description(name),
+            "PlanYear": r["PlanYear"],
+            "InitiativeCount": r["InitiativeCount"],
+            "ColourToken": status_mod.priority_colour_token(code) if code else "--priority-1",
+        })
+    # A priority with a code sorts by it; one without falls to the end, so the
+    # canonical six always lead.
+    out.sort(key=lambda p: (p["Code"] == "", p["Code"] or p["Name"]))
+    return out
+
+
+def initiative_signals(limit: int = 12) -> list[dict]:
+    """Existing initiatives with their current progress, for the home strip.
+
+    Carries `HasUpdate` so the strip can show "no update yet" distinctly from a
+    reported zero - the same distinction the person card makes.
+    """
+    with _conn() as conn:
+        rows = [
+            dict(r)
+            for r in conn.execute(
+                """
+                SELECT i.Code, i.InitiativeName, i.Level,
+                       p.Name AS Owner,
+                       lp.PercentComplete, lp.Status
+                FROM Initiatives i
+                JOIN People p ON p.PersonID = i.OwnerID
+                LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID
+                WHERE i.IsActive = 1
+                ORDER BY i.Code
+                LIMIT ?
+                """,
+                (limit,),
+            )
+        ]
+    for r in rows:
+        r["HasUpdate"] = r["PercentComplete"] is not None
+    return rows
+
+
+
 def goal_by_number(goal_number: int):
     with _conn() as conn:
         row = conn.execute(

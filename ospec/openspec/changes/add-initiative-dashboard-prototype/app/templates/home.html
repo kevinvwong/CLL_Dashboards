@@ -1,38 +1,154 @@
 {% extends "base.html" %}
-{% block title %}Initiative Dashboard{% endblock %}
+{% block title %}Blueprint — CLL Initiative Dashboard{% endblock %}
 {% block content %}
-<section class="entry-points">
-  <h1>Strategy 2035</h1>
-  <ul class="tiles goals">
-    {% for g in goals %}
+{#
+  The blueprint home (blueprint-redesign group 2). The prototype's structure:
+    section heading (eyebrow -> serif heading -> note)
+    -> hero stage: Dean node fanning into six colour-keyed priority cards
+    -> selected-priority panel + team/goal panel
+    -> initiative-signals strip
+  The stage is the heaviest block on the page; a tile grid cannot show the
+  relationship between the Dean's outcomes and the priorities.
+#}
+
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Executive map</p>
+    <h1>Six priorities. One accountable cascade.</h1>
+  </div>
+  <p class="section-note">
+    {{ priorities | length }} priorities ·
+    {{ goals | length }} Strategy 2035 goals ·
+    {{ signals | length }} initiatives shown
+  </p>
+</div>
+
+{# --- the hero stage ------------------------------------------------------- #}
+<section class="stage" aria-label="The Dean's outcomes and the annual priorities">
+  <div class="dean-node">
+    <span class="node-label">Dean</span>
+    <strong>College outcomes</strong>
+    <span>{{ priorities | length }} priorities · {{ plan_year }}</span>
+  </div>
+
+  <ul class="priority-map">
+    {% for p in priorities %}
     <li>
-      {# The tile reads "1 Academic" then a bare count, which a screen reader
-         announces without saying what the number counts. The accessible name
-         states the goal and its count (the Accessibility Baseline
-         requirement). #}
-      <a class="tile" href="/goals/{{ g.GoalNumber }}"
-         aria-label="{{ g.ShortName }}, {{ g.InitiativeCount }} initiative{{ '' if g.InitiativeCount == 1 else 's' }}">
-        <span class="tile-label">{{ g.GoalNumber }} {{ g.ShortName }}</span>
-        <span class="tile-count">{{ g.InitiativeCount }}</span>
+      <a class="priority-card{% if selected and p.Name == selected.Name %} is-selected{% endif %}"
+         href="/?priority={{ p.Name | urlencode }}#panel"
+         style="--priority: var({{ p.ColourToken }});"
+         aria-label="{{ p.Title }}, {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}"
+         {% if selected and p.Name == selected.Name %}aria-current="true"{% endif %}>
+        <span class="card-top">
+          <span class="code">{{ p.Code or "—" }}</span>
+          <span class="count">{{ p.InitiativeCount }}</span>
+        </span>
+        <strong>{{ p.Title }}</strong>
+        <span class="card-note">
+          {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}
+        </span>
       </a>
-      {% if g.FullName %}<p class="tile-full">{{ g.FullName }}</p>{% endif %}
     </li>
     {% endfor %}
   </ul>
 </section>
 
-<section class="entry-points">
-  <h1>{{ plan_year }} Priorities</h1>
-  <ul class="tiles priorities">
-    {% for p in priorities %}
-    <li>
-      <a class="tile" href="/priorities/{{ p.PriorityName | urlencode }}"
-         aria-label="{{ p.PriorityName }}, {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}">
-        <span class="tile-label">{{ p.PriorityName }}</span>
-        <span class="tile-count">{{ p.InitiativeCount }}</span>
+{# --- the selected-priority panel and the goals ---------------------------- #}
+<div class="split-grid">
+  <section class="panel" id="panel" aria-labelledby="selected-heading">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Selected priority</p>
+        <h2 id="selected-heading">{{ selected.Title if selected else "No priority" }}</h2>
+      </div>
+      {% if selected %}
+      {# The card selects the panel; this link leaves for the full cascade, the
+         same "see full cascade" affordance the prototype has. Keeps
+         /priorities/{name} reachable now the tiles are gone. #}
+      <a class="text-button" href="/priorities/{{ selected.Name | urlencode }}">
+        See full cascade →</a>
+      {% endif %}
+    </div>
+    {% if selected and selected.Description %}
+    <p class="priority-description">{{ selected.Description }}</p>
+    {% endif %}
+    {% if panel_initiatives %}
+    <ul class="panel-initiatives">
+      {% for row in panel_initiatives %}
+      <li class="unit-row">
+        <span>
+          <strong>{{ row.Code }}</strong> {{ row.InitiativeName }}
+          <span>{{ row.Owner }} · {{ row.Level }}</span>
+        </span>
+        {% if row.PercentComplete is none %}
+        <span class="bar-label muted">No update</span>
+        {% else %}
+        <span class="badge {{ row.Status | status_class }}">{{ row.Status }}</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">No active initiatives are tagged to this priority.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="goals-heading">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">The other axis</p>
+        <h2 id="goals-heading">Strategy 2035 goals</h2>
+      </div>
+    </div>
+    <p class="section-note">Priorities and goals are independent; an initiative may carry both.</p>
+    <ul class="unit-contribution">
+      {% for g in goals %}
+      <li class="unit-row">
+        <a href="/goals/{{ g.GoalNumber }}"
+           aria-label="{{ g.ShortName }}, {{ g.InitiativeCount }} initiative{{ '' if g.InitiativeCount == 1 else 's' }}">
+          <strong>{{ g.GoalNumber }} {{ g.ShortName }}</strong>
+          <span>{{ g.FullName or "" }}</span>
+        </a>
+        <span class="unit-count">{{ g.InitiativeCount }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+{# --- the initiative signals ----------------------------------------------- #}
+<section class="panel initiative-panel" aria-labelledby="signals-heading">
+  <div class="panel-heading">
+    <div>
+      <p class="eyebrow">Starting point</p>
+      <h2 id="signals-heading">Existing initiative signals</h2>
+    </div>
+    <span class="muted">Sample data</span>
+  </div>
+  {% if signals %}
+  <ul class="initiative-signals">
+    {% for s in signals %}
+    <li class="initiative">
+      <a href="/initiatives/{{ s.Code }}">
+        <strong>{{ s.Code }} {{ s.InitiativeName }}</strong>
       </a>
+      {% if s.HasUpdate %}
+      <div class="progress-track" role="progressbar"
+           aria-valuenow="{{ s.PercentComplete }}" aria-valuemin="0" aria-valuemax="100"
+           aria-label="{{ s.Status }}, {{ s.PercentComplete }} percent">
+        <span class="progress-fill" style="width: {{ s.PercentComplete }}%"></span>
+      </div>
+      <span>{{ s.PercentComplete }}% {{ s.Status }}</span>
+      {% else %}
+      {# A missing update is not 0%: stated, never a zero bar. #}
+      <div class="progress-track progress-empty" aria-hidden="true"><span></span></div>
+      <span>No update yet</span>
+      {% endif %}
     </li>
     {% endfor %}
   </ul>
+  {% else %}
+  <p class="empty">No active initiatives yet.</p>
+  {% endif %}
 </section>
 {% endblock %}
