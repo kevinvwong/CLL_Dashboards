@@ -59,11 +59,15 @@ def test_the_college_dashboard_milestone_is_not_claimed_as_delivered(logged_in):
 
 def test_the_cards_use_the_wireframes_wording(logged_in):
     """The drawing says "1 of 4 milestones reached" and carries an
-    "Owner: [name] · updated [date]" line. Both are reproduced, and the owner
-    line shows its placeholder rather than a guessed name."""
+    "Owner: ... · updated ..." line. Both are reproduced.
+
+    The owner position is now one of three distinguishable states rather than a
+    bare "[name]" placeholder - see test_confirmed_data.py. The wireframe's
+    bracket convention is kept for the unnamed case.
+    """
     body = logged_in("Bill").get("/oct16").text
     assert "of 4 milestones reached" in body
-    assert "Owner: [name]" in body, "the owner placeholder is missing"
+    assert "no owner named" in body, "the unnamed owner state is missing"
     assert "updated [date]" in body, "the updated placeholder is missing"
 
 

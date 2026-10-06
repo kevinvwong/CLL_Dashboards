@@ -374,3 +374,20 @@ h2 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
   .oct16-table { font-size: .68rem; }
   .oct16-requirements, .oct16-scope, .oct16-tradeoffs { break-inside: avoid; }
 }
+
+
+/* The three owner states must be distinguishable at a glance, so a withheld
+   placeholder is never mistaken for a real name. The placeholder is marked by
+   its bracketed form AND by style, in case a reader scans only one. */
+.oct16-owner .owner-value { font-weight: 600; }
+.oct16-owner .owner-none {
+  font-style: italic; color: var(--muted);
+}
+.oct16-owner.unconfirmed .owner-value {
+  font-weight: 400; color: var(--muted);
+  border-bottom: 1px dashed var(--muted);
+}
+@media print {
+  .oct16-owner.unconfirmed .owner-value { color: #000; }
+  .oct16-owner .owner-none { color: #000; }
+}

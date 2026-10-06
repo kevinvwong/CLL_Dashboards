@@ -16,7 +16,7 @@
 <h1 class="oct16-title">{{ d.TITLE }}</h1>
 <p class="oct16-sub">{{ d.SUBTITLE }}</p>
 <p class="oct16-explainer">{{ d.EXPLAINER }}</p>
-<p class="oct16-status" role="status">{{ d.DATA_STATUS }}{% if d.AS_OF %} &middot; as of {{ d.AS_OF }}{% endif %}</p>
+<p class="oct16-status" role="status">{{ d.data_status() }}{% if d.AS_OF %} &middot; as of {{ d.AS_OF }}{% endif %}</p>
 
 <ul class="oct16-grid">
   {% for o in d.OUTCOMES %}
@@ -42,10 +42,19 @@
       </li>
       {% endfor %}
     </ul>
-    {# As drawn. Owner and date are placeholders: the data plan marks "Outcome
-       owner" as "No", so showing a name here would be inventing one. #}
-    <p class="oct16-owner">
-      Owner: {{ o.owner or "[name]" }} &middot; updated {{ o.updated or "[date]" }}
+    {# Owner, in one of three states, all distinguishable at a glance:
+         a real name          -> shown as a name
+         withheld pending the  -> a marked placeholder, never mistaken for a name
+           data-policy decision
+         nobody named yet     -> an explicit absence
+       The data plan marks "Outcome owner" as "No", so the committed data is the
+       third state. Real names are withheld until the data-policy question is
+       answered, per the decision of 2026-10-07. #}
+    <p class="oct16-owner{% if not d.owner_is_confirmed(o.owner) %} unconfirmed{% endif %}">
+      Owner:
+      {% if o.owner %}<span class="owner-value">{{ d.owner_label(o.owner) }}</span>
+      {% else %}<span class="owner-none">no owner named</span>{% endif %}
+      &middot; updated {{ o.updated or "[date]" }}
     </p>
   </li>
   {% endfor %}

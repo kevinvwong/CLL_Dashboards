@@ -31,14 +31,14 @@ Goals 3 and 4 are transposed and goal 1 is truncated. Correct from the canonical
 
 The marker is a constant today, so a redeploy or a swap could leave it wrong. Make it follow the data.
 
-- [ ] 3.1 Add a `CONFIRMED` flag to `app/oct16_data.py` defaulting to false, and set it true only in a confirmed dataset. *Verify: the flag exists in the generated module and is false in the committed one.*
-- [ ] 3.2 Render the illustrative status text from that flag in `oct16.html` rather than from the `DATA_STATUS` constant. *Verify: with the flag false the page says illustrative; flipping it true locally clears the statement with no template edit.*
-- [ ] 3.3 Extend the generator so `CONFIRMED` is set by whether it was run with confirmed values, not hand-edited. *Verify: regenerating from the wireframe source yields false; a unit test proves a confirmed input yields true.*
-- [ ] 3.4 Add a test asserting the marker survives a redeploy: build the page from the committed data twice and assert the status text is identical. *Verify: the test fails if the flag is hard-coded in the template.*
-- [ ] 3.5 Add a test asserting an unknown figure is shown as unknown and not as zero, covering the no-update case on both the outcome cards and the person card. *Verify: both surfaces show a distinct unknown state; the test fails if either renders an empty bar.*
-- [ ] 3.6 Add a test asserting an unnamed owner renders as an explicit absence and never as a team or a role string. *Verify: the test fails against a team-valued owner.*
-- [ ] 3.7 Add a placeholder for a withheld owner name, distinct from both a real name and an unnamed owner, and test that it is treated as unconfirmed. *Verify: the placeholder renders as one, and the item is not reported as having a confirmed owner. Per the user's decision of 2026-10-07, real names are withheld until the data-policy question is answered, so every owner position carries a placeholder at launch.*
-- [ ] 3.8 **Group check:** deploy with the flag false and confirm the live page states its figures are illustrative and shows placeholders in every owner position. *Verify: the live page's status text says so and no real name appears; both were set by the data, not by an app setting.*
+- [x] 3.1 Add a `CONFIRMED` flag to `app/oct16_data.py` defaulting to false, and set it true only in a confirmed dataset. *Verify: the flag exists in the generated module and is false in the committed one.*
+- [x] 3.2 Render the illustrative status text from that flag in `oct16.html` rather than from the `DATA_STATUS` constant. *Verify: with the flag false the page says illustrative; flipping it true locally clears the statement with no template edit.*
+- [x] 3.3 Extend the generator so `CONFIRMED` is set by whether it was run with confirmed values, not hand-edited. *Verify: regenerating from the wireframe source yields false; a unit test proves a confirmed input yields true.*
+- [x] 3.4 Add a test asserting the marker survives a redeploy: build the page from the committed data twice and assert the status text is identical. *Verify: the test fails if the flag is hard-coded in the template.*
+- [x] 3.5 Add a test asserting an unknown figure is shown as unknown and not as zero, covering the no-update case on both the outcome cards and the person card. *Verify: both surfaces show a distinct unknown state; the test fails if either renders an empty bar.*
+- [x] 3.6 Add a test asserting an unnamed owner renders as an explicit absence and never as a team or a role string. *Verify: the test fails against a team-valued owner.*
+- [x] 3.7 Add a placeholder for a withheld owner name, distinct from both a real name and an unnamed owner, and test that it is treated as unconfirmed. *Verify: the placeholder renders as one, and the item is not reported as having a confirmed owner. Per the user's decision of 2026-10-07, real names are withheld until the data-policy question is answered, so every owner position carries a placeholder at launch.*
+- [x] 3.8 **Group check:** deploy with the flag false and confirm the live page states its figures are illustrative and shows placeholders in every owner position. *Verify: the live page's status text says so and no real name appears; both were set by the data, not by an app setting.*
 
 ## 4. Data swap, once owners are named
 

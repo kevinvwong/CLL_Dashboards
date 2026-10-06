@@ -245,10 +245,16 @@ def person_card(person_id: int):
     for row in rows:
         if row["LastUpdated"] is None:
             row["NeedsUpdate"] = True
+            # Whether a figure exists at all, distinct from what it says. A
+            # missing update is NOT "0% complete" - the confirmed-data spec
+            # requires the two to be distinguishable, and the template renders
+            # from this rather than inferring zero from an empty percent.
+            row["HasUpdate"] = False
         else:
             age = (today - _dt.date.fromisoformat(row["LastUpdated"])).days
             row["AgeDays"] = age
             row["NeedsUpdate"] = age > STALE_DAYS
+            row["HasUpdate"] = True
     card = {"person": dict(person), "initiatives": rows}
     return card
 
