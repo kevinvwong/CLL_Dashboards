@@ -152,8 +152,8 @@ WITH t(c,dt,pct,st,note,by) AS (VALUES
  ('MAR-4','2026-10-05',10,'On track','Sample update.','Mario'),
  ('MAR-5','2026-10-05',30,'On track','Sample update.','Mario')
 )
-INSERT INTO ProgressUpdates (InitiativeID, UpdateDate, PercentComplete, Status, Note, EnteredByID)
-SELECT i.InitiativeID, t.dt, t.pct, t.st, t.note, p.PersonID
+INSERT INTO ProgressUpdates (InitiativeID, UpdateDate, PercentComplete, Status, Note, EnteredByID, CreatedAt)
+SELECT i.InitiativeID, t.dt, t.pct, t.st, t.note, p.PersonID, t.dt || ' 08:00:00'
 FROM t
 JOIN Initiatives i ON i.Code = t.c
 JOIN People p      ON p.Name = t.by;
