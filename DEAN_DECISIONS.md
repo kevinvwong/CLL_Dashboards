@@ -118,38 +118,52 @@ the view should be — *who is accountable*.
 
 ---
 
-## Decision 3 — Which six priorities are real?
+## Decision 3 — The annual priorities: now largely settled
 
-**Question:** The college has two different sets of six annual priorities in
-circulation. Which set is authoritative?
+**This was written as an open question. Reading your Blueprint prototype
+(`cll-blueprint-2027.wag32002.chatgpt.site`) narrowed it, and it is worth stating
+plainly what is and is not still open.**
 
-**Background.** This does not block October 16 — neither offered option shows a
-priority list — but it governs everything after, including the Stage 2 build.
+**What is settled.** Three independent artifacts carry the *same six* priorities
+word for word:
 
-| From the enterprise package (workshop-derived) | From the wireframes (citing the May 13 deck) |
+- your **Blueprint prototype** — P01–P06
+- the **PMO KPI workbook** (`07_CLL_KPI_Atomic_Definitions_Master.xlsx`)
+- the **October 16 wireframes**, Option A
+
+| | |
 |---|---|
-| Culture | Culture |
-| Scale | **Financial Model** |
-| Identity | **Operating Model** |
-| Innovation | **Field of Study** |
-| Pathways | **Content and Product** |
-| Data | **Technology and AI** |
+| P01 | One Shared Identity |
+| P02 | Champion Innovation |
+| P03 | Integrated Portfolio & Pathways |
+| P04 | Quality at Scale |
+| P05 | Data-Informed Action |
+| P06 | Culture & Learning |
 
-**Only Culture appears in both.** The wireframes name the problem themselves:
+The enterprise package's six — `Identity · Innovation · Pathways · Scale · Data ·
+Culture` — are **the same six under short names**. Verified one by one: 6 of 6 map.
+So there is not a competing second set here; there is one set named two ways.
 
-> *"Two sets of six priorities stay unreconciled."*
+**What remains open.** A *different* six appears in the wireframes' **Option B**,
+citing the May 13 deck: `Culture · Financial Model · Operating Model · Field of
+Study · Content and Product · Technology and AI`. Five of those six appear in
+neither the prototype nor the package.
 
-The package's six are self-described as unconfirmed — each reads *"Annual
-execution lens identified in the workshop; description to be confirmed."*
+**Question:** is the May 13 deck's six still live, or superseded by the six your
+prototype uses? If it is superseded, nothing needs doing. If it is still current,
+the prototype and the PMO workbook are built on the wrong set.
 
-The canonical strategy deck contains **no priorities at all**, so it cannot
-settle this either.
+**Why this matters despite not blocking October 16.** The October 16 page uses
+P01–P06, which are the agreed six — so the deliverable is safe either way. But
+Stage 2 will be built on one of these, and the two cannot both be right.
 
-**Also ask:** is the "May 13, 2026 deck" the authoritative source for goal and
-priority wording? The wireframes cite it, but it is not in the material provided.
+**Also worth settling, before the Board sees it:** the same six records are called
+**"priorities"** in your prototype and the package, and **"Dean outcomes"** in the
+PMO workbook and the wireframes. A reader cannot tell whether those are the same
+thing. I believe they are, but the documents use both terms for one set.
 
-*Source: the package's `Priorities` sheet; the wireframes' Level 2 page;
-`CLL-strategy-2035-presentation.pptx`.*
+*Source: `bp_data.js` from the prototype; `07_CLL_KPI_Atomic_Definitions_Master.xlsx`,
+Metrics sheet; the package's `Priorities` sheet; the wireframes' Option A and B pages.*
 
 ---
 
@@ -211,12 +225,17 @@ them.
 |---|---|---|---|
 | **1** | Which view: A or B (and which wireframe version) | **Oct 7** | the whole Oct 16 build |
 | **2** | Named owner per outcome (A) or for Infinity (B) | **Oct 9** | any real status on the page |
-| 3 | Which six priorities are authoritative | after Oct 16 | Stage 2, and any priority view |
+| 3 | Is the May 13 deck's six still live, or superseded by your prototype's six? | after Oct 16 | Stage 2 |
 | 4 | Goal wording on 1, 3 and 5 | after Oct 16 | goal identity and every goal link |
 | 5 | Board endorsement of timeline and Steward Network | at the Board meeting | Phase 1 onward |
 
 **Decisions 1 and 2 are the ones that change what is delivered on October 16.**
 Decisions 3 and 4 change the system underneath it. Decision 5 is the Board's.
+
+**Decision 3 is smaller than I first wrote it.** Your prototype, the PMO KPI
+workbook and the wireframes all use the same six priorities, and the enterprise
+package's six are those same six under short names. Only the May 13 deck differs.
+The page shipped for October 16 uses the agreed six either way.
 
 ---
 

@@ -169,32 +169,48 @@ without them lacks.
 
 ---
 
-## 6. OPEN — the priority list is genuinely unresolved
+## 6. SETTLED — the priority list, corrected 2026-10-06
 
-**This is the one conflict no document I hold can settle, and it must not be
-guessed.**
+**This section previously read "OPEN — the priority list is genuinely unresolved".
+That was wrong, and the error is corrected here rather than deleted.**
 
-- The **package (B)** carries six priorities with provenance *"workshop transcript
-  and whiteboard photos"*, each described as *"Annual execution lens identified in
-  the workshop; **description to be confirmed**"*:
+I had recorded two competing sets of six. Reading the Dean's prototype at
+`cll-blueprint-2027.wag32002.chatgpt.site` shows the package and the prototype
+**agree**: the package's six **short names** and the prototype's six **long names
+are the same six**. Verified one by one, 6 of 6:
 
-  `Culture · Scale · Identity · Innovation · Pathways · Data`
+| Package | Prototype / PMO workbook / wireframes Option A |
+|---|---|
+| `Identity` | P01 One Shared Identity |
+| `Innovation` | P02 Champion Innovation |
+| `Pathways` | P03 Integrated Portfolio & Pathways |
+| `Scale` | P04 Quality at Scale |
+| `Data` | P05 Data-Informed Action |
+| `Culture` | P06 Culture & Learning |
 
-- The **wireframes (C)** carry a different six, citing *"the May 13, 2026 deck"*:
+Three independent artifacts carry these six **word for word**: the **Dean's
+prototype**, the **PMO KPI workbook**, and the **wireframes' Option A**.
 
-  `Culture · Financial Model · Operating Model · Field of Study · Content and Product · Technology and AI`
+### The remaining conflict, stated correctly
 
-- Only **Culture** is common to both. The 20-page wireframes say so themselves:
-  *"Two sets of six priorities stay unreconciled."*
+The second set is the **May 13 deck's**, which the wireframes' *Option B* draws on:
 
-- The canonical deck **(A)** contains **no priorities at all** — zero occurrences of
-  any of the twelve names. It also is **not** the "May 13, 2026 deck" (file created
-  2025-09-05), which I do not hold.
+`Culture · Financial Model · Operating Model · Field of Study · Content and Product · Technology and AI`
 
-**Therefore the priority set cannot be settled from the documents.** What *is*
-settled is that the package's six carry the weaker provenance: they are
-workshop-derived and self-described as unconfirmed, while the wireframes' six cite a
-strategy deck. **Decision required.**
+Checked against both the package and the prototype: **five of those six appear in
+neither** — only `Culture` is common, and that is a shared word, not a shared
+priority.
+
+So the question is **not** "which of two sets of six". It is: **the operational
+system — package, prototype and PMO workbook, all agreeing — versus the May 13
+deck that Option B uses.** The canonical Strategy 2035 deck contains no priorities
+at all, so it does not arbitrate.
+
+### Consequence for October 16
+
+**The page we shipped uses the agreed six.** Option A's cards are P01–P06, which
+are the package's and the prototype's six. That is a second, independent reason
+Option A was the safer choice.
 
 ---
 
