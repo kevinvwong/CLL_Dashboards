@@ -78,11 +78,23 @@ async def access_gate(request: Request, call_next):
     """Send anyone without a passcode to /login, and anyone without a person
     to /whoami. Static files and /healthz stay outside the gate."""
     path = request.url.path
+
+    def _redirect(url: str) -> RedirectResponse:
+        # The noindex header is set here as well as on the normal path below.
+        # Returning early used to skip it, so the gate's own redirects went out
+        # without X-Robots-Tag - and those are precisely the responses a crawler
+        # that has never authenticated will see. Found by probing the live site:
+        # GET / returned 303 to /login with no X-Robots-Tag, while the local test
+        # only ever checked a 200.
+        response = RedirectResponse(url=url, status_code=303)
+        response.headers["X-Robots-Tag"] = "noindex"
+        return response
+
     if not _is_exempt(path):
         if not auth.has_passcode(request):
-            return RedirectResponse(url="/login", status_code=303)
+            return _redirect("/login")
         if auth.current_person(request) is None:
-            return RedirectResponse(url="/whoami", status_code=303)
+            return _redirect("/whoami")
     response = await call_next(request)
     # Task 9.2: noindex on every response, so nothing here reaches a search
     # engine even before robots.txt is fetched.

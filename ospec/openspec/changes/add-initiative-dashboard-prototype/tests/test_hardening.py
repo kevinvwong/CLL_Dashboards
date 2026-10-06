@@ -102,9 +102,38 @@ def test_every_response_carries_noindex(logged_in):
         assert response.headers.get("X-Robots-Tag") == "noindex", f"{path} missing noindex"
 
 
-def test_noindex_is_present_on_a_redirect_too(logged_in):
+def test_noindex_is_present_on_a_normal_response(logged_in):
     response = logged_in("Bill").get("/goals/3", follow_redirects=False)
     assert response.status_code == 200
+    assert response.headers.get("X-Robots-Tag") == "noindex"
+
+
+def test_noindex_is_present_on_the_gate_redirect(anon):
+    """The path the old version of this test missed.
+
+    An unauthenticated request is redirected before the normal response path
+    runs, so the header has to be set on the redirect too. These are exactly the
+    responses a crawler that has never logged in will see, yet the old test only
+    checked a 200 and so never noticed the header was absent here. Found by
+    probing the live site, not by reading the code.
+    """
+    response = anon.get("/", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers.get("Location") == "/login"
+    assert response.headers.get("X-Robots-Tag") == "noindex", (
+        "the gate redirect must carry noindex; it is the first thing a crawler sees"
+    )
+
+
+def test_noindex_is_present_on_the_whoami_redirect(fresh_db, monkeypatch):
+    """The second early return: passcode but no person chosen yet."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    client = TestClient(app)
+    client.post("/login", data={"passcode": "testpass"}, follow_redirects=False)
+    response = client.get("/", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers.get("Location") == "/whoami"
     assert response.headers.get("X-Robots-Tag") == "noindex"
 
 
@@ -142,3 +171,26 @@ def test_healthz_is_outside_the_gate_and_data_free(anon):
 def test_healthz_reports_an_unreachable_database(anon, monkeypatch):
     monkeypatch.setenv("DB_PATH", "C:/definitely/not/here.db")
     assert anon.get("/healthz").status_code == 503
+
+
+# --- local banner (task 9.9) ----------------------------------------------
+# Task 9.9 names four things to test: lockout, noindex, /healthz outside the
+# gate, and the local banner. The first three already had tests here; the
+# banner had none, so a regression that dropped it would have shipped silently.
+# The banner exists so a dev server is never mistaken for the live site in a
+# meeting, which is exactly the kind of thing nobody notices until it matters.
+
+
+def test_local_banner_shows_when_app_env_is_local(anon, monkeypatch):
+    monkeypatch.setenv("APP_ENV", "local")
+    body = anon.get("/login").text
+    assert "local-banner" in body, "a local dev server must announce itself"
+    assert "LOCAL" in body
+
+
+def test_local_banner_is_absent_when_app_env_is_not_local(anon, monkeypatch):
+    """The other half of the assertion. A banner that showed everywhere would
+    be noise on the live site and would stop meaning anything."""
+    monkeypatch.setenv("APP_ENV", "live")
+    body = anon.get("/login").text
+    assert "local-banner" not in body
