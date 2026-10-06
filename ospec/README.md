@@ -4,6 +4,19 @@ Spec-driven with OpenSpec. The change to build is `add-initiative-dashboard-prot
 
 ## Run it locally
 
+The quickest way, from the repository root:
+
+```bat
+run-dashboard.cmd            :: port 8000
+run-dashboard.cmd 8010       :: a different port
+run-dashboard.cmd 8000 --reload
+```
+
+It resolves its own location, so it works from any working directory, and picks
+a Python that has the dependencies.
+
+By hand:
+
 ```powershell
 cd ospec
 python -m pip install -r openspec/changes/add-initiative-dashboard-prototype/requirements.txt
