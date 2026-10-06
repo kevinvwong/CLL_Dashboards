@@ -182,6 +182,38 @@ def split_for_list(rows: list[dict]):
     return dean, groups
 
 
+#: The groupings the cascade offers, with the field each groups on. Kept here
+#: so the route and the template cannot disagree about what is offered.
+GROUPINGS = {
+    "owner": "Owner",
+    "tier": "Level",
+    "status": "Status",
+}
+
+
+def group_rows(rows: list[dict], by: str) -> list[dict]:
+    """Group initiative rows by owner, tier, or status (blueprint-redesign 3.1).
+
+    Returns [{"label", "rows"}] with only non-empty groups, so a label never
+    renders without rows under it. The old split_for_list is kept for the
+    default Dean-then-D-1 view; this is the toggle the spec adds.
+    """
+    field = GROUPINGS.get(by)
+    if field is None:
+        return []
+    buckets: dict = {}
+    for row in rows:
+        # A missing status reads as Not started, matching the header counts.
+        key = (row.get(field) or ("Not started" if field == "Status" else "—"))
+        buckets.setdefault(key, []).append(row)
+    out = []
+    for label in sorted(buckets):
+        rs = sorted(buckets[label], key=lambda r: r["Code"])
+        out.append({"label": label, "rows": rs})
+    return out
+
+
+
 def status_counts(rows: list[dict]) -> list[dict]:
     """Counts by status for the list header.
 
@@ -541,7 +573,7 @@ def link_edit_options(initiative_id: int) -> dict:
 # --- index screens (task 1.6; filters and sorting land in tasks 4.2, 4.3) ---
 
 
-def all_initiatives() -> list[dict]:
+def all_initiatives(filters: dict | None = None) -> list[dict]:
     """Every active initiative, one row each, for the /initiatives index.
 
     One row per initiative, not per tag, so the index does not repeat an
@@ -588,6 +620,28 @@ def all_initiatives() -> list[dict]:
             if row["LastUpdated"] else None
         )
         row["NeedsUpdate"] = row["AgeDays"] is None or row["AgeDays"] > STALE_DAYS
+
+    # Filters (blueprint-redesign 3.4). Applied in Python rather than SQL because
+    # the goal/priority names are collected above, not joined; the set is small
+    # (<100 initiatives) so this is not a performance concern.
+    if filters:
+        if filters.get("status"):
+            want = filters["status"].replace("-", " ").lower()
+            rows = [r for r in rows
+                    if (r["Status"] or "Not started").lower() == want]
+        if filters.get("owner"):
+            want = filters["owner"].lower()
+            rows = [r for r in rows if (r["Owner"] or "").lower() == want]
+        if filters.get("tier"):
+            rows = [r for r in rows if (r["Level"] or "").lower() == filters["tier"].lower()]
+        if filters.get("goal"):
+            want = filters["goal"]
+            rows = [r for r in rows if want in r["Goals"]]
+        if filters.get("priority"):
+            want = filters["priority"]
+            rows = [r for r in rows if want in r["Priorities"]]
+        if filters.get("stale"):
+            rows = [r for r in rows if r["NeedsUpdate"]]
     return rows
 
 def all_people() -> list[dict]:
@@ -618,3 +672,45 @@ def all_people() -> list[dict]:
         person["InitiativeCount"] = len(statuses)
         person["Counts"] = status_counts([{"Status": s} for s in statuses])
     return people
+
+
+# --- relationships, for the cascade rows (blueprint-redesign 3.2) -----------
+
+
+def relationships_for(codes: list) -> dict:
+    """What each initiative feeds and what feeds it, keyed by its code.
+
+    vw_InitiativeConnections is keyed on the SUBJECT's InitiativeID and returns
+    the RELATED initiative's code. So this resolves the subject ids first, then
+    reads the connections for all of them in one query rather than one per row.
+
+    Returns {} for an empty input, so a caller never iterates a missing key.
+    """
+    if not codes:
+        return {}
+    placeholders = ",".join("?" * len(codes))
+    with _conn() as conn:
+        id_to_code = {
+            r["InitiativeID"]: r["Code"]
+            for r in conn.execute(
+                "SELECT InitiativeID, Code FROM Initiatives WHERE Code IN (%s)"
+                % placeholders, tuple(codes))
+        }
+        if not id_to_code:
+            return {}
+        ids = list(id_to_code)
+        id_ph = ",".join("?" * len(ids))
+        rows = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT InitiativeID, Direction, Code, InitiativeName, Owner, "
+                "       Status, PercentComplete "
+                "FROM vw_InitiativeConnections WHERE InitiativeID IN (%s) "
+                "ORDER BY Direction, Code" % id_ph, tuple(ids))
+        ]
+    out: dict = {}
+    for r in rows:
+        subject = id_to_code.get(r["InitiativeID"])
+        if subject:
+            out.setdefault(subject, []).append(r)
+    return out

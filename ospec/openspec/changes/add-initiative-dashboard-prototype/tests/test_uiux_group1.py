@@ -88,6 +88,7 @@ def test_empty_sides_render_no_orphan_chrome():
         return tpl.render(request=None, person={"Name": "Bill"}, app_env="test",
                           may_admin=False, heading="X", description=None,
                           entry_kind="goal", entry_key=1, counts=[], rollup="0 initiatives",
+                          groupings={"owner": "Owner"}, group_by=None, grouped=[],
                           dean_rows=dean_rows, d1_groups=d1_groups)
 
     both_empty = render([], [])
@@ -116,6 +117,7 @@ def test_a_group_with_no_rows_renders_no_label():
     body = tpl.render(request=None, person={"Name": "Bill"}, app_env="test",
                       may_admin=False, heading="X", description=None, entry_kind="goal",
                       entry_key=1, counts=[], rollup="0 initiatives",
+                      groupings={"owner": "Owner"}, group_by=None, grouped=[],
                       dean_rows=[], d1_groups=[{"owner": "Nobody", "rows": []}])
     assert "list-group-label" not in body, "an empty group rendered its label"
 
@@ -154,7 +156,7 @@ def test_rollup_label_singularises():
 def test_goal_header_reads_total_not_a_status_word(logged_in):
     """The defect: the header read "On track 10"."""
     body = logged_in("Bill").get("/goals/4").text
-    m = re.search(r'class="status-counts">([^<]+)<', body)
+    m = re.search(r'class="section-note">([^<]+)<', body)
     assert m, "no rollup rendered"
     label = m.group(1)
     assert re.match(r"^\d+ initiatives", label), label

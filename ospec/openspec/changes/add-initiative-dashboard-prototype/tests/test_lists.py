@@ -92,7 +92,7 @@ def test_status_counts_in_header_sum_to_the_row_count(logged_in):
 
     response = logged_in("Bill").get("/goals/%d" % _goal_number("Research"))
     text = response.text
-    m = re.search(r'class="status-counts">([^<]+)<', text)
+    m = re.search(r'class="section-note">([^<]+)<', text)
     assert m, "no rollup line rendered"
     label = m.group(1).strip()
     assert label.startswith("5 initiatives"), label

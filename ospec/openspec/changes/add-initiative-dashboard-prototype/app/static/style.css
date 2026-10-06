@@ -1067,3 +1067,65 @@ body.overlay-open { overflow: hidden; }
   text-decoration: none;
 }
 .text-button:hover { text-decoration: underline; }
+
+/* ---- Cascade grouping toggle (blueprint-redesign 3.1) --------------------- */
+.group-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-4);
+}
+.group-toggle .toggle-label {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.chip.is-active,
+.group-toggle .chip[aria-current] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+  background: var(--surface-hover);
+}
+.entry-description { margin: 0 0 var(--space-3); color: var(--ink-muted); max-width: 72ch; }
+.entry-actions { margin: 0 0 var(--space-4); }
+.status-counts {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Index filter bar (blueprint-redesign 3.4) ---------------------------- */
+.filter-bar {
+  display: flex;
+  align-items: end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+.field-inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.field-inline select {
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  text-transform: none;
+}
+.field-inline input[type=checkbox] { margin-right: var(--space-1); }
+.index-row .code { font-weight: 700; }

@@ -18,11 +18,11 @@
 
 ## 3. Cascade drill-downs and indexes
 
-- [ ] 3.1 Rebuild the goal and priority detail as a cascade: header, rollup label as total-plus-breakdown, initiative list grouped. *Verify: the header reads "N initiatives · M on track"; grouping by owner puts each header before its rows; no orphan header renders.*
-- [ ] 3.2 Show relationships on an initiative in the drill-down, both directions, with status and progress. *Verify: a D-1 that supports two Dean initiatives shows both, each with code, name, status, and progress.*
-- [ ] 3.3 Make each initiative row a single click target carrying code, name, owner, primary marker, progress, status, and age. *Verify: clicking anywhere on a row opens the detail; the progress bar exposes its value and its number as text.*
-- [ ] 3.4 Rebuild the `/initiatives` and `/people` indexes on the table component, filters in the query string. *Verify: a filtered URL lists only matching rows and the controls reflect the filter; an empty result shows an empty state offering to clear.*
-- [ ] 3.5 **Group check:** the cascade reads from outcome to work in one step. *Verify: from the home, reach a priority, then an initiative, then a person in clicks only.*
+- [x] 3.1 Rebuild the goal and priority detail as a cascade: header, rollup label as total-plus-breakdown, initiative list grouped. *Verify: the header reads "N initiatives · M on track"; grouping by owner puts each header before its rows; no orphan header renders.*
+- [x] 3.2 Show relationships on an initiative in the drill-down, both directions, with status and progress. *Verify: a D-1 that supports two Dean initiatives shows both, each with code, name, status, and progress.*
+- [x] 3.3 Make each initiative row a single click target carrying code, name, owner, primary marker, progress, status, and age. *Verify: clicking anywhere on a row opens the detail; the progress bar exposes its value and its number as text.*
+- [x] 3.4 Rebuild the `/initiatives` and `/people` indexes on the table component, filters in the query string. *Verify: a filtered URL lists only matching rows and the controls reflect the filter; an empty result shows an empty state offering to clear.*
+- [x] 3.5 **Group check:** the cascade reads from outcome to work in one step. *Verify: from the home, reach a priority, then an initiative, then a person in clicks only.*
 
 ## 4. Initiative detail drawer
 

@@ -1,53 +1,89 @@
 {% extends "base.html" %}
 {% block title %}{{ heading }}{% endblock %}
 {% block content %}
-{# One template serves both entry points (task 4.1). The caller supplies
-   heading, description, dean_rows, d1_groups, counts and owner_ids. #}
+{#
+  The cascade drill-down (blueprint-redesign group 3). One template serves both
+  entry points; the caller supplies heading, description, the rows, the rollup,
+  and the current grouping.
 
-<h1>{{ heading }}</h1>
+  Two layouts:
+    - default (no grouping): Dean rows, a divider, then D-1 rows grouped by owner.
+    - grouped (?group=owner|tier|status): a flat set of labelled groups.
+  Each side renders only when it has rows, so no label appears above nothing.
+#}
+
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">{{ entry_kind | capitalize if entry_kind else "View" }} · {{ plan_year or "" }}</p>
+    <h1>{{ heading }}</h1>
+  </div>
+  {% if rollup %}<p class="section-note">{{ rollup }}</p>{% endif %}
+</div>
+
 {% if description %}<p class="entry-description">{{ description }}</p>{% endif %}
 
-{# 8.4 lets an admin edit this goal's or priority's description. The route
-   existed with no link to it. #}
 {% if may_admin and entry_kind %}
-<p class="entry-actions"><a href="/entries/{{ entry_kind }}/{{ entry_key }}/edit">Edit this description</a></p>
+<p class="entry-actions"><a class="text-button" href="/entries/{{ entry_kind }}/{{ entry_key }}/edit">Edit this description →</a></p>
 {% endif %}
 
-{# Rollup: total first, then a per-status breakdown. The old form read
-   "On track 10", a status word glued to a number that did not say it was the
-   total (the Accurate Rollup Labels requirement). #}
-{% if rollup %}
-<p class="status-counts">{{ rollup }}</p>
-{% endif %}
-
-{# Each side renders only when it has rows. Rendering the Dean <ul> and the
-   "D-1" divider unconditionally left an empty list and a divider pointing at
-   nothing on a Dean-only or D-1-only slice (the Grouped Initiative Lists
-   requirement: "No tier label SHALL appear without a group under it").
-   Today every seeded goal and priority happens to have both sides, which is
-   why the defect was invisible. #}
-{% if dean_rows %}
-<ul class="initiative-list dean-rows">
-  {% for row in dean_rows %}
-  {% include "_row.html" with context %}
+{# The grouping toggle (task 3.1). A link, so it works without JavaScript and
+   the grouping is shareable in the URL. #}
+<nav class="group-toggle" aria-label="Group initiatives">
+  <span class="toggle-label">Group by</span>
+  <a class="chip{% if not group_by %} is-active{% endif %}"
+     href="?">Default</a>
+  {% for key, label in groupings.items() %}
+  <a class="chip{% if group_by == key %} is-active{% endif %}"
+     href="?group={{ key }}"{% if group_by == key %} aria-current="true"{% endif %}>{{ label }}</a>
   {% endfor %}
-</ul>
-{% endif %}
+</nav>
 
-{% if dean_rows and d1_groups %}
-<div class="divider">D-1</div>
-{% endif %}
-
-{% for group in d1_groups %}
-{% if group.rows %}
-<div class="list-group">
-  <h2 class="list-group-label">{{ group.owner }}</h2>
-  <ul class="initiative-list">
-    {% for row in group.rows %}
+{% if group_by %}
+  {# Grouped layout: labelled groups, each with rows. #}
+  {% for group in grouped %}
+  {% if group.rows %}
+  <div class="list-group">
+    <h2 class="list-group-label">{{ group.label }}</h2>
+    <ul class="initiative-list">
+      {% for row in group.rows %}
+      {% include "_row.html" with context %}
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% if not grouped %}
+  <p class="empty">No initiatives match this view.</p>
+  {% endif %}
+{% else %}
+  {# Default layout: Dean, divider, D-1 by owner. #}
+  {% if dean_rows %}
+  <ul class="initiative-list dean-rows">
+    {% for row in dean_rows %}
     {% include "_row.html" with context %}
     {% endfor %}
   </ul>
-</div>
+  {% endif %}
+
+  {% if dean_rows and d1_groups %}
+  <div class="divider">D-1</div>
+  {% endif %}
+
+  {% for group in d1_groups %}
+  {% if group.rows %}
+  <div class="list-group">
+    <h2 class="list-group-label">{{ group.owner }}</h2>
+    <ul class="initiative-list">
+      {% for row in group.rows %}
+      {% include "_row.html" with context %}
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  {% if not dean_rows and not d1_groups %}
+  <p class="empty">No active initiatives are tagged to this view.</p>
+  {% endif %}
 {% endif %}
-{% endfor %}
 {% endblock %}

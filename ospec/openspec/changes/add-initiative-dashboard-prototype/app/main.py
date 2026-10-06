@@ -247,7 +247,7 @@ async def whoami_submit(request: Request):
 
 
 @app.get("/goals/{goal_number}")
-async def goal_list(request: Request, goal_number: int):
+async def goal_list(request: Request, goal_number: int, group: str | None = None):
     goal = queries.goal_by_number(goal_number)
     if goal is None:
         raise HTTPException(status_code=404, detail="No such goal")
@@ -265,6 +265,9 @@ async def goal_list(request: Request, goal_number: int):
             entry_key=goal["GoalNumber"],
             dean_rows=dean_rows,
             d1_groups=d1_groups,
+            grouped=queries.group_rows(rows, group) if group else [],
+            group_by=group if group in queries.GROUPINGS else None,
+            groupings={k: v.capitalize() for k, v in queries.GROUPINGS.items()},
             counts=counts,
             rollup=queries.rollup_label(len(rows), counts),
         ),
@@ -272,7 +275,7 @@ async def goal_list(request: Request, goal_number: int):
 
 
 @app.get("/priorities/{priority_name}")
-async def priority_list(request: Request, priority_name: str):
+async def priority_list(request: Request, priority_name: str, group: str | None = None):
     priority = queries.priority_by_name(priority_name)
     if priority is None:
         raise HTTPException(status_code=404, detail="No such priority")
@@ -288,8 +291,12 @@ async def priority_list(request: Request, priority_name: str):
             description=priority["Description"],
             entry_kind="priority",
             entry_key=priority["PriorityName"],
+            plan_year=priority["PlanYear"],
             dean_rows=dean_rows,
             d1_groups=d1_groups,
+            grouped=queries.group_rows(rows, group) if group else [],
+            group_by=group if group in queries.GROUPINGS else None,
+            groupings={k: v.capitalize() for k, v in queries.GROUPINGS.items()},
             counts=counts,
             rollup=queries.rollup_label(len(rows), counts),
         ),
@@ -657,13 +664,39 @@ async def person(request: Request, person_id: int):
 
 @app.get("/initiatives")
 async def initiatives_index(request: Request):
-    """The initiatives index (task 1.6).
+    """The initiatives index (task 1.6; filters task 3.4).
 
-    Filters and sorting are task 4.2; this is the working table the spec's
-    "Initiatives Index" requirement builds on.
+    Filter state lives in the query string, so a filtered view is shareable and
+    the controls can reflect what is applied. The controls are plain links, so
+    the page works without JavaScript.
     """
+    q = request.query_params
+    filters: dict = {k: q.get(k) for k in ("status", "owner", "tier", "goal", "priority")
+                     if q.get(k)}
+    if q.get("stale"):
+        filters["stale"] = True
+
+    all_rows = queries.all_initiatives()
+    rows = queries.all_initiatives(filters) if filters else all_rows
+
+    # The filter options come from the data, so a control never offers a value
+    # that matches nothing.
+    owners = sorted({r["Owner"] for r in all_rows if r["Owner"]})
+    statuses = sorted({r["Status"] or "Not started" for r in all_rows})
+    goals = sorted({g for r in all_rows for g in r["Goals"]})
+
     return templates.TemplateResponse(
-        request, "initiatives.html", _ctx(request, initiatives=queries.all_initiatives())
+        request,
+        "initiatives.html",
+        _ctx(
+            request,
+            initiatives=rows,
+            total=len(all_rows),
+            filters=filters,
+            owners=owners,
+            statuses=statuses,
+            goals=goals,
+        ),
     )
 
 

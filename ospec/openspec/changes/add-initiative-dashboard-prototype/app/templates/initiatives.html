@@ -1,13 +1,59 @@
 {% extends "base.html" %}
 {% block title %}Initiatives{% endblock %}
 {% block content %}
-{# The initiatives index (task 1.6). Filters and sorting are task 4.2; this is
-   the full list with the row facts the spec names: ID, name, owner, tier,
-   progress, status, last-update age. #}
-<h1>Initiatives</h1>
+{#
+  The initiatives index (task 1.6; filters task 3.4). A filterable table where
+  the row is the click target. Filters are query-string links, so a filtered
+  view is shareable and the page works without JavaScript.
+#}
+
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">All work</p>
+    <h1>Initiatives</h1>
+  </div>
+  <p class="section-note">
+    {{ initiatives | length }} of {{ total }} initiative{{ '' if total == 1 else 's' }}
+    {% if filters %}· filtered{% endif %}
+  </p>
+</div>
+
+{# --- filters -------------------------------------------------------------- #}
+<form class="filter-bar" method="get" action="/initiatives">
+  <label class="field-inline">Status
+    <select name="status">
+      <option value="">Any</option>
+      {% for s in statuses %}
+      <option value="{{ s | status_class | replace('status-', '') }}"
+              {% if filters.get('status') == (s | status_class | replace('status-', '')) %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="field-inline">Owner
+    <select name="owner">
+      <option value="">Anyone</option>
+      {% for o in owners %}
+      <option value="{{ o }}"{% if filters.get('owner') == o %}selected{% endif %}>{{ o }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="field-inline">Goal
+    <select name="goal">
+      <option value="">Any</option>
+      {% for g in goals %}
+      <option value="{{ g }}"{% if filters.get('goal') == g %}selected{% endif %}>{{ g }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="field-inline">
+    <input type="checkbox" name="stale" value="1"{% if filters.get('stale') %} checked{% endif %}>
+    Needs update only
+  </label>
+  <button class="button primary" type="submit">Apply</button>
+  {% if filters %}<a class="text-button" href="/initiatives">Clear filters</a>{% endif %}
+</form>
 
 {% if initiatives %}
-<p class="status-counts">{{ initiatives | length }} initiative{{ '' if initiatives | length == 1 else 's' }}</p>
 <div class="index-table-wrap">
   <table class="index-table">
     <thead>
@@ -60,6 +106,9 @@
   </table>
 </div>
 {% else %}
-<p class="empty">No active initiatives.</p>
+<div class="empty">
+  <p>No initiatives match these filters.</p>
+  {% if filters %}<p><a class="text-button" href="/initiatives">Clear the filters</a></p>{% endif %}
+</div>
 {% endif %}
 {% endblock %}
