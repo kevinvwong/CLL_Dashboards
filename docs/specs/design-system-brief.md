@@ -67,6 +67,27 @@ Four things, delivered as files:
 | 3 | `fonts/` | Self-hosted woff2 font files + an `@font-face` block in `style.css`. |
 | 4 | `style-guide.html` | A standalone page rendering every token and component, for review. Not linked from the app. |
 
+### Where these files go (the integration contract)
+
+The app is served by FastAPI with `app/static/` mounted at `/static`. Deliver the
+files so they drop in **without touching the templates**:
+
+```
+app/static/style.css        # replaces the existing file (same path)
+app/static/print.css        # replaces the existing file (same path)
+app/static/fonts/*.woff2    # new folder, beside the two stylesheets
+```
+
+- **Paths inside the CSS are `/static/…`.** The page loads
+  `<link rel="stylesheet" href="/static/style.css">`, so a font is referenced as
+  `url("/static/fonts/roboto-regular.woff2")` — an **absolute URL beginning with
+  `/static/`**, not `./fonts/…`. A relative path resolves against `/static/` and
+  will 404 in some contexts; use the absolute form.
+- **`style-guide.html` is a deliverable you hand back, not a file that ships.** It
+  is for review. Keep it self-contained (inline the CSS, or link `/static/…`).
+- Give me the files as a **zip or a directory tree**, plus a short note of what
+  changed. I will copy them into `app/static/`, run the guard tests, and report.
+
 The app is a FastAPI + Jinja2 dashboard, server-rendered, ~5,600 lines of HTML
 across 33 templates that you will **not** be editing. Your CSS must style the
 class names those templates already emit.
@@ -159,6 +180,13 @@ white and in print:
 > Note on `--priority-5`: the guide reserves Bright Blue `#004C97` for gradients.
 > Using it here to reach six legible keys is a knowing, recorded deviation — keep
 > it, and keep this note in a CSS comment.
+>
+> Note on `--priority-1`: it is the same navy as `--accent`, which is correct (the
+> first priority is keyed to the Institute navy) but means a priority chip and an
+> accent element share a colour. That is fine — the priority chip is a *key* shown
+> beside a priority code, and the accent is chrome — but if it reads ambiguously in
+> the style guide, prefer making `--priority-1` a touch lighter `#0A2A4D` and note
+> the change.
 
 ### The status scale is NOT yours to choose
 
@@ -254,27 +282,97 @@ light — a bug the tests catch.
 
 ## 7. The guard tests your output must pass
 
-These run unchanged against your `style.css`. Each is a hard pass/fail.
+These run unchanged against your `style.css` and `print.css`. Each is a hard
+pass/fail. Some assert **exact strings** — where a rule is quoted below, reproduce
+that text verbatim (selectors, property value and spacing), because a regex or an
+`in css` check looks for the literal characters. Reordering a multi-selector list
+or changing `2px` to `0.125rem` will fail a test even though the rendered result is
+identical.
+
+### 7a. Token discipline (`test_design_system.py`)
 
 1. **No colour literal outside a token block.** A `#hex` or `rgba(` anywhere except
    inside `:root` or the dark-mode block fails. Comments are stripped first, so you
-   may name hex values in prose (as the current file's header does).
+   may name hex values in prose.
 2. **Every colour token is both declared and referenced.** A token you declare but
-   never `var()` fails; a `var()` you never declared fails.
-3. **Required spacing / radius / type / shadow tokens exist** (the names in §6).
-4. **Dark mode overrides every colour token** in `:root` (the names matching
-   `ink|surface|accent|line|error|warn|status|backdrop`).
+   never `var()` fails; a `var()` you never declared fails. The check greps token
+   names for `ink|surface|accent|line|error|warn|status|backdrop` — so a new
+   `--surface-*` / `--status-*` token must also be used and dark-overridden.
+3. **Required spacing / radius / type / shadow tokens exist** (the exact names in §6).
+4. **Dark mode overrides every colour token** in `:root` whose name matches
+   `ink|surface|accent|line|error|warn|status|backdrop`.
 5. **No `font-size: X rem` literal** outside tokens.
-6. **Component classes are defined:** `.card-modal .card-body .badge .bar .bar-fill
-   .initiative-row .tile .button .error-page .breadcrumb .toast .drawer .empty
-   .chip .field` must each appear as a rule.
+6. **Component classes are defined** (each must appear as a rule): `.card-modal
+   .card-body .badge .bar .bar-fill .initiative-row .tile .button .error-page
+   .breadcrumb .toast .drawer .empty .chip .field`.
 7. **Button variants exist:** `.button.primary`, `.button.secondary`,
    `.button.ghost`.
 8. **Status classes cover exactly the schema statuses.** For each of the six
-   statuses, its generated class (`status-on-track`, `status-at-risk`,
-   `status-off-track`, `status-not-started`, `status-paused`, `status-complete`)
-   must have a CSS rule. **Do not invent a status the schema cannot store** — a
-   `status-done` class fails the build.
+   statuses its class (`status-on-track`, `status-at-risk`, `status-off-track`,
+   `status-not-started`, `status-paused`, `status-complete`) must have a rule.
+   **Do not invent a status the schema cannot store** — a `status-done` class fails.
+
+### 7b. Visual system (`test_visual_system.py`)
+
+9. **Six priority tokens exist in `:root`:** `--priority-1` … `--priority-6`.
+10. **They are all distinct values** (two priorities sharing a colour fails).
+11. **Each is overridden in the dark block.**
+12. **No priority colour equals a status colour** (the two scales must never be
+    confusable — a shared hex fails).
+13. **`h1 {` and `h2 {` rules use `var(--font-serif)`.** These are matched as
+    `^h1 {`/`^h2 {` at line start — keep them as their own top-level rules.
+14. **A `body {` rule uses `var(--font-sans)`.**
+15. **`.eyebrow`, `.section-heading`, `.section-note`** each have a rule.
+16. **No colour literal outside tokens** (same as 7a.1).
+
+### 7c. Layout, focus and print behaviour (`test_design_system_behaviour.py`, `test_navigation.py`, `test_verification.py`)
+
+17. **Three breakpoints, exact text:** `@media (max-width: 640px)`,
+    `@media (min-width: 641px) and (max-width: 1024px)`,
+    `@media (min-width: 1025px)`.
+18. **No horizontal overflow guard:** the sheet contains the literal
+    `overflow-x: hidden`.
+19. **The no-JS nav collapse:** the sheet contains the literal selector
+    `.nav-toggle:checked ~ .site-nav`.
+20. **Focus ring:** the sheet contains `:focus-visible` **and** the exact string
+    `outline: 2px solid var(--accent)`.
+21. **Overlay scroll lock:** the sheet contains `overflow: hidden` (for
+    `body.overlay-open`).
+22. **The sample-data bar caps at 32px:** the `.sample-banner` rule must contain
+    `max-height: var(--space-8)`.
+23. **The banner is hidden for print:** a print rule hides `.sample-banner`
+    (`@media print { … .sample-banner … }`).
+24. **The nav is hidden for print, exact text:** `print.css` (or `style.css`) must
+    contain the literal `.site-nav, .nav-toggle-label { display: none; }`.
+25. **Print hides the presenter:** `@media print { … .presenter … display: none }`
+    (or `.presenter { display: none; }`).
+26. **A mid-width breakpoint exists:** `@media (max-width: 900px)` or
+    `@media (max-width: 1024px)` (in addition to the 640px one).
+
+### 7d. Status / milestone / availability colour rules (`test_status_presentation.py`)
+
+27. **Every generated status class has a rule** (`status-*`).
+28. **Every status has a badge colour rule:** `.badge.status-on-track`,
+    **`.badge.status-at-risk`**, … for all six. (The old sheet scoped status colour
+    to `.bar-fill.status-*` only, and the badge rendered uncoloured — this test
+    exists because of that bug.)
+29. **Every milestone class emitted by the data has a rule.** The exact set today
+    is: `.m-confirm`, `.m-due-dec`, `.m-in-progress`, `.m-met`, `.m-not-started`.
+    The test derives the set from `oct16_data.OUTCOMES`, so cover all five.
+30. **Every availability class emitted by the data has a rule.** The exact set
+    today is: `.availability-build`, `.availability-derived`,
+    `.availability-have-it`, `.availability-no`, `.availability-partial`.
+
+### 7e. Tokens referenced by literal name (`test_verification.py`)
+
+31. The sheet contains the literal `--surface:` and `--accent:` declarations
+    (so those two token names must be spelled exactly).
+32. The dark block opener is the literal `prefers-color-scheme: dark`.
+
+If you are unsure which classes exist, grep the templates in `app/templates/` and
+the string data in `app/oct16_data.py` — every class emitted there must have a rule.
+The guard tests are in `tests/`; read them before you finish.
+
 
 ---
 
@@ -300,11 +398,18 @@ These run unchanged against your `style.css`. Each is a hard pass/fail.
 - [ ] Grep your `style.css`: no `font-size:` with a literal unit.
 - [ ] All required token names from §6 present.
 - [ ] Every colour token in `:root` also in the dark block.
-- [ ] All 15 component classes from §7.6 have rules; three button variants exist.
+- [ ] All 15 component classes from §7a.6 have rules; three button variants exist.
 - [ ] All six `status-*` classes have rules; no invented status.
-- [ ] Fonts self-hosted; no external URL anywhere in the CSS.
+- [ ] Every `.badge.status-*`, `.m-*` and `.availability-*` class has a rule (§7d).
+- [ ] The exact-string rules from §7c are present verbatim (breakpoints, focus
+      outline, nav-collapse selector, `max-height: var(--space-8)`, print
+      `.site-nav, .nav-toggle-label { display: none; }`).
+- [ ] `h1`/`h2` use `var(--font-serif)`; `body` uses `var(--font-sans)` (as their
+      own top-level rules).
+- [ ] Fonts self-hosted at `/static/fonts/…`; no external URL anywhere in the CSS.
 - [ ] Roboto + Roboto Slab used; Georgia gone; `#003057` gone.
-- [ ] The six priority tokens use the hybrid set in §3.
+- [ ] The six priority tokens use the hybrid set in §3, are distinct, dark-overridden,
+      and share no value with a status colour.
 - [ ] `style-guide.html` renders every token and component on one reviewable page.
 
 **The goal check — do this last, and be honest:**
