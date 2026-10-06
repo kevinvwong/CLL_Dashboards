@@ -272,3 +272,45 @@ h2 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
 @media print {
   .reason { color: #000; }
 }
+
+/* ---- October 16 deliverable: the six Dean outcomes -------------------------
+   Option A of the wireframes. Cards in a grid, each showing milestones reached
+   of planned. Deliberately no rollup figure anywhere: the brief forbids invented
+   composite scores, so a reader adds nothing up. */
+.oct16-sub { margin: .2rem 0 0; color: var(--muted); }
+.oct16-status { margin: .35rem 0 1rem; font-size: .85rem; color: var(--muted); }
+.oct16-grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+}
+.oct16-card {
+  border: 1px solid #d8d8d8; border-radius: 6px;
+  padding: .85rem .95rem; background: #fff;
+}
+.oct16-head { display: flex; justify-content: space-between; align-items: center; }
+.oct16-id { font-weight: 700; letter-spacing: .04em; }
+.oct16-name { margin: .35rem 0 .3rem; font-size: 1.05rem; }
+.oct16-target { margin: 0 0 .5rem; font-size: .85rem; color: var(--muted); }
+.oct16-count { margin: 0 0 .35rem; font-size: .85rem; }
+.oct16-bar {
+  height: 10px; border-radius: 5px; background: #ececec; overflow: hidden;
+}
+.oct16-fill { display: block; height: 100%; background: var(--status-on-track); }
+.oct16-milestones { list-style: none; margin: .6rem 0 0; padding: 0; }
+.oct16-milestone {
+  display: flex; gap: .45rem; align-items: baseline;
+  font-size: .82rem; padding: .12rem 0;
+}
+.oct16-mstatus {
+  flex: 0 0 auto; min-width: 5.2rem; font-size: .68rem;
+  text-transform: uppercase; letter-spacing: .03em; color: var(--muted);
+}
+.oct16-mname { flex: 1 1 auto; }
+.oct16-notes { margin-top: 1.4rem; font-size: .85rem; color: var(--muted); }
+.oct16-notes h2 { font-size: .95rem; margin: 0 0 .3rem; }
+.oct16-caveat { margin: .3rem 0 0; }
+@media print {
+  .oct16-notes { color: #000; }
+  .oct16-card { break-inside: avoid; }
+}

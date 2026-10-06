@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}October 16 — Dean outcomes{% endblock %}
+{% block content %}
+{#
+  The October 16 deliverable (Oct16_Wireframe_Data_Lists.xlsx, "Option A Data";
+  wireframes Option A). Progress is milestones reached of milestones planned, as
+  the brief specifies, rather than KPI values that cannot yet be calculated.
+
+  Every figure here is illustrative. The wireframes say of this page: "values show
+  format only, not CLL results". That is stated on the page itself, not only here.
+#}
+<h1>Dean outcomes</h1>
+<p class="oct16-sub">Six outcomes, shown by milestones reached, until their KPIs have data.</p>
+<p class="oct16-status" role="status">{{ d.DATA_STATUS }}{% if d.AS_OF %} &middot; as of {{ d.AS_OF }}{% endif %}</p>
+
+<ul class="oct16-grid">
+  {% for o in d.OUTCOMES %}
+  <li class="oct16-card oct16-{{ o.id|lower }}">
+    <div class="oct16-head">
+      <span class="oct16-id">{{ o.id }}</span>
+      <span class="oct16-outcome-status badge status-{{ o.status | lower | replace(' ', '-') }}">{{ o.status }}</span>
+    </div>
+    <h2 class="oct16-name">{{ o.name }}</h2>
+    <p class="oct16-target">{{ o.target }}</p>
+    <p class="oct16-count">
+      <strong>{{ o.planned }}</strong> milestones planned,
+      <strong>{{ o.reached }}</strong> reached
+    </p>
+    {# A bar whose width is milestones reached / planned. aria-label carries the
+       numbers in words so the bar is not colour-only information. #}
+    <div class="oct16-bar" role="img"
+         aria-label="{{ o.reached }} of {{ o.planned }} milestones reached">
+      <span class="oct16-fill"
+            style="width: {{ (100 * o.reached / o.planned) | round(0, 'floor') }}%"></span>
+    </div>
+    <ul class="oct16-milestones">
+      {% for m in o.milestones %}
+      <li class="oct16-milestone">
+        <span class="oct16-mstatus m-{{ m.status | lower | replace(' ', '-') }}">{{ m.status }}</span>
+        <span class="oct16-mname">{{ m.name }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </li>
+  {% endfor %}
+</ul>
+
+<section class="oct16-notes">
+  <h2>About these figures</h2>
+  <p>{{ d.SOURCE_NOTE }}</p>
+  <p class="oct16-caveat">
+    Milestones and statuses are the wireframes' illustrative values, not CLL results.
+    They are replaced when owners confirm their milestone lists and status, which the
+    plan schedules for October 9&ndash;12.
+  </p>
+</section>
+{% endblock %}

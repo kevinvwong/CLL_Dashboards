@@ -351,6 +351,27 @@ async def checks(request: Request):
     )
 
 
+@app.get("/oct16")
+async def oct16(request: Request):
+    """The October 16 deliverable: the six Dean outcomes by milestones reached.
+
+    Option A of the wireframes. Its own definition says "Static, clickable pages;
+    no live data feeds", so this renders a fixed data module rather than reading
+    the prototype's tables. That is deliberate, not a shortcut: the outcome and
+    team model does not exist in the prototype schema, and inventing tables for a
+    ten-day deliverable would have been the expensive way to get this wrong.
+
+    It also sidesteps the one open question. Option A shows the Dean's own six
+    outcomes, which the wireframes note "does not match the 2026 priorities
+    presented in May" - so it needs no decision on which priority list is real.
+    """
+    from app import oct16_data
+
+    return templates.TemplateResponse(
+        request, "oct16.html", _ctx(request, d=oct16_data)
+    )
+
+
 @app.get("/initiatives/{code}/edit/details")
 async def edit_details_form(request: Request, code: str):
     card = queries.initiative_card(code)
