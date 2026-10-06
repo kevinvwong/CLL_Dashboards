@@ -4,6 +4,7 @@
     hx-get="/initiatives/{{ row.Code }}"
     hx-target="#card-modal"
     hx-swap="innerHTML"
+    hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
     tabindex="0"
     role="link"
     aria-label="Open {{ row.InitiativeName }}">

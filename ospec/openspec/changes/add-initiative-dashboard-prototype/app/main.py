@@ -1,4 +1,4 @@
-﻿import os
+import os
 
 # Stamped by the deploy step as an app setting, and echoed by /healthz, so
 # "is the code I just deployed the code being served?" is answerable over
@@ -37,7 +37,15 @@ def _is_exempt(path: str) -> bool:
 def _ctx(request: Request, **extra) -> dict:
     """Common template context. `person` is the signed-in person, or None
     before the picker has been completed."""
-    return {"person": auth.current_person(request), "app_env": auth.settings().APP_ENV, **extra}
+    return {
+        "person": auth.current_person(request),
+        "app_env": auth.settings().APP_ENV,
+        # Every page needs to know whether to offer admin-only entry points
+        # (new initiative, edit description). Task 8.4 built the routes but
+        # nothing linked to them.
+        "may_admin": auth.is_admin_request(request),
+        **extra,
+    }
 
 
 def _edit_ctx(request: Request, code: str) -> dict:
@@ -47,6 +55,22 @@ def _edit_ctx(request: Request, code: str) -> dict:
         "may_edit_details": auth.can_edit_details(request, code),
         "may_admin": auth.is_admin_request(request),
     }
+
+
+def _edit_result(request: Request, code: str):
+    """What to return after a successful edit.
+
+    The edit forms submit over HTMX into the modal, so the card fragment is
+    the right answer there. Without JavaScript the same POST is a normal page
+    load, and returning the bare fragment would replace the whole page with a
+    `<div class="card-body">` and no header or nav - so send that case to the
+    card's own full page instead.
+    """
+    card = queries.initiative_card(code)
+    context = _ctx(request, card=card, **_edit_ctx(request, code))
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(request, "card.html", context)
+    return RedirectResponse(url=f"/initiatives/{code}", status_code=303)
 
 
 @app.middleware("http")
@@ -156,6 +180,8 @@ async def goal_list(request: Request, goal_number: int):
             request,
             heading=goal["ShortName"],
             description=goal["FullName"] or goal["Description"],
+            entry_kind="goal",
+            entry_key=goal["GoalNumber"],
             dean_rows=dean_rows,
             d1_groups=d1_groups,
             counts=queries.status_counts(rows),
@@ -177,6 +203,8 @@ async def priority_list(request: Request, priority_name: str):
             request,
             heading=f"{priority['PriorityName']} ({priority['PlanYear']})",
             description=priority["Description"],
+            entry_kind="priority",
+            entry_key=priority["PriorityName"],
             dean_rows=dean_rows,
             d1_groups=d1_groups,
             counts=queries.status_counts(rows),
@@ -345,10 +373,7 @@ async def edit_details_submit(request: Request, code: str):
             _ctx(request, card=queries.initiative_card(code), error=exc.message),
             status_code=422,
         )
-    return templates.TemplateResponse(
-        request, "card.html",
-        _ctx(request, card=queries.initiative_card(code), **_edit_ctx(request, code)),
-    )
+    return _edit_result(request, code)
 
 
 @app.get("/initiatives/{code}/edit/tags")
@@ -425,10 +450,7 @@ async def edit_tags_submit(request: Request, code: str):
             ),
             status_code=422,
         )
-    return templates.TemplateResponse(
-        request, "card.html",
-        _ctx(request, card=queries.initiative_card(code), **_edit_ctx(request, code)),
-    )
+    return _edit_result(request, code)
 
 
 @app.get("/initiatives/{code}/edit/links")
@@ -480,10 +502,7 @@ async def edit_links_submit(request: Request, code: str):
             ),
             status_code=422,
         )
-    return templates.TemplateResponse(
-        request, "card.html",
-        _ctx(request, card=queries.initiative_card(code), **_edit_ctx(request, code)),
-    )
+    return _edit_result(request, code)
 
 
 
@@ -563,7 +582,9 @@ async def edit_entry_submit(request: Request, kind: str, key: str):
             _ctx(request, kind=kind, entry=goal, error=message),
             status_code=422,
         )
-    return RedirectResponse(url="/", status_code=303)
+    # Return to the list this entry was edited from, not to the home screen.
+    back = "/goals/" + key if kind == "goal" else "/priorities/" + str(key)
+    return RedirectResponse(url=back, status_code=303)
 
 
 @app.get("/people/{person_id}")

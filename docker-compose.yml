@@ -1,10 +1,20 @@
+# Local development only. Production is Azure App Service, which builds from
+# the Dockerfile directly and injects its own PORT; nothing here is deployed.
+#
+# The environment is written out rather than pulled from `env_file: .env`,
+# because .env is gitignored and therefore absent on a fresh clone - which made
+# `docker compose up` fail immediately on a missing env_file. These defaults
+# keep a fresh clone working; a local .env still overrides them.
 version: "3.9"
 services:
   dashboard:
     build: .
     ports:
-      - "8000:8000"
-    env_file:
-      - .env
+      - "127.0.0.1:8000:8000"
+    environment:
+      APP_ENV: "local"
+      APP_PASSCODE: "${APP_PASSCODE:-localdev}"
+      APP_SECRET: "${APP_SECRET:-localdev-secret}"
+      DB_PATH: "./ospec/cll_initiatives.db"
     volumes:
       - ./ospec/cll_initiatives.db:/app/ospec/cll_initiatives.db

@@ -7,6 +7,12 @@
 <h1>{{ heading }}</h1>
 {% if description %}<p class="entry-description">{{ description }}</p>{% endif %}
 
+{# 8.4 lets an admin edit this goal's or priority's description. The route
+   existed with no link to it. #}
+{% if may_admin and entry_kind %}
+<p class="entry-actions"><a href="/entries/{{ entry_kind }}/{{ entry_key }}/edit">Edit this description</a></p>
+{% endif %}
+
 {# Counts by status only. design.md decision: no aggregate percent anywhere,
    because Bill expects rollups and we are deliberately not providing one. #}
 {% if counts %}

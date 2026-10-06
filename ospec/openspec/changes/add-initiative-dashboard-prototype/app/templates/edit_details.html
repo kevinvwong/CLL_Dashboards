@@ -1,9 +1,9 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Edit {{ card.Code }}{% endblock %}
 {% block content %}
 <h1>Edit {{ card.Code }}</h1>
 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-<form method="post" action="/initiatives/{{ card.Code }}/edit/details" class="card">
+<form hx-post="/initiatives/{{ card.Code }}/edit/details" hx-target="#card-modal" hx-swap="innerHTML" class="card">
   <label for="name">Name</label>
   <input id="name" name="name" value="{{ card.InitiativeName }}" required>
   <label for="description">Description</label>

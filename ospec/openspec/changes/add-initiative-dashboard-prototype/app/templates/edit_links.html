@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Edit links for {{ card.Code }}{% endblock %}
 {% block content %}
 <h1>{{ card.Code }} feeds&hellip;</h1>
@@ -6,7 +6,7 @@
 <p class="error">Only a D-1 initiative feeds a Dean initiative.</p>
 {% else %}
 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-<form method="post" action="/initiatives/{{ card.Code }}/edit/links" class="card">
+<form hx-post="/initiatives/{{ card.Code }}/edit/links" hx-target="#card-modal" hx-swap="innerHTML" class="card">
   {% for de in deans %}
   <label class="check">
     <input type="checkbox" name="dean_initiative_id" value="{{ de.InitiativeID }}"

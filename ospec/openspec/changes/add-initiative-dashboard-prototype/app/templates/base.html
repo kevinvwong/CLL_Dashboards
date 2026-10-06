@@ -20,6 +20,11 @@
       <a href="/">Home</a>
       <a href="/meeting">Meeting</a>
       <a href="/checks">Checks</a>
+      {% if may_admin %}
+      {# 8.4 built this route; without a link an admin can only reach it by
+         typing the URL. #}
+      <a href="/initiatives/new">New initiative</a>
+      {% endif %}
     </nav>
     <div class="whoami">
       {% if person %}

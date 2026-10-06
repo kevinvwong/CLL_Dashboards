@@ -17,7 +17,9 @@
       <td><a href="/initiatives/{{ check.Code }}"
              hx-get="/initiatives/{{ check.Code }}"
              hx-target="#card-modal"
-             hx-swap="innerHTML">{{ check.Code }}</a></td>
+             hx-swap="innerHTML"
+             hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
+             tabindex="0" role="link">{{ check.Code }}</a></td>
       <td>{{ check.Issue }}</td>
     </tr>
     {% endfor %}

@@ -17,7 +17,7 @@
   <ul class="initiative-list attention-list">
     {% for row in attention %}
     <li class="initiative-row" hx-get="/initiatives/{{ row.Code }}"
-        hx-target="#card-modal" hx-swap="innerHTML">
+        hx-target="#card-modal" hx-swap="innerHTML" hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']" tabindex="0" role="link">
       <div class="row-main">
         <span class="code">{{ row.Code }}</span>
         <span class="name">{{ row.InitiativeName }}</span>
@@ -46,7 +46,7 @@
       <ul class="initiative-list">
         {% for row in group.rows %}
         <li class="initiative-row" hx-get="/initiatives/{{ row.Code }}"
-            hx-target="#card-modal" hx-swap="innerHTML">
+            hx-target="#card-modal" hx-swap="innerHTML" hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']" tabindex="0" role="link">
           <div class="row-main">
             <span class="code">{{ row.Code }}</span>
             <span class="name">{{ row.InitiativeName }}</span>

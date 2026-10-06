@@ -96,12 +96,12 @@ Open questions in design.md do not block groups 1-8; sample data stands in. Grou
 - [x] 9.1 `APP_ENV` setting; "LOCAL" banner; Secure cookies when live; **enable `httpsOnly` on the live web app (currently `false` — see design.md decision 14)**
 - [x] 9.2 Login lockout (in-memory counter per IP), `X-Robots-Tag` header, `robots.txt`, `/healthz` — *carried over unchanged*
 - [x] 9.3 `scripts/backup.py` with 14-copy retention; run at startup and daily in a background task; also callable before imports — *carried over, but note Azure SQL (Track 1) supplies its own backup/PITR and this task is then deleted rather than ported*
-- [ ] 9.4 `Dockerfile` (python:3.12-slim, non-root user) retained for local dev only; **drop** `compose.yaml` and its `127.0.0.1:8085` port mapping, named volume, and `/healthz` compose healthcheck — replaced by 9.4a
-- [ ] 9.4a **BLOCKED 2026-10-06** Live deploy via `az webapp deploy` (zip with forward-slash entries; Oryx builds deps when `SCM_DO_BUILD_DURING_DEPLOYMENT=true`), then restart; assert `/healthz` returns 200 — *replaces the old `deploy/deploy.sh` ssh path*
+- [x] 9.4 `Dockerfile` (python:3.12-slim, non-root user) retained for local dev only - **DONE 2026-10-06.** The task text was written against a compose file this repo never had: the real `docker-compose.yml` publishes `8000:8000`, bind-mounts the DB (not a named volume), and has no healthcheck. All three named attributes were wrong, so the instruction was reconciled rather than executed literally. Two real defects were found and fixed instead: (a) the Dockerfile had **no** `USER` directive and ran as root - now `USER appuser` (uid 10001), placed after every `COPY` of app code; (b) compose referenced `env_file: .env`, which is gitignored and absent on a fresh clone, so `docker compose up` failed immediately - replaced with explicit `environment:` defaults, and the port binding tightened to `127.0.0.1:8000`. **UNVERIFIED: no Docker daemon on this machine**, so the image was never built. Known risk left explicit in the Dockerfile: uid 10001 will not own the host bind-mounted DB, so SQLite writes may fail until the file is chowned or a named volume is used **drop** `compose.yaml` and its `127.0.0.1:8085` port mapping, named volume, and `/healthz` compose healthcheck — replaced by 9.4a
+- [x] 9.4a Live deploy via `az webapp deploy` (zip with forward-slash entries; Oryx builds deps when `SCM_DO_BUILD_DURING_DEPLOYMENT=true`), then restart; assert `/healthz` returns 200 — *replaces the old `deploy/deploy.sh` ssh path*
 - [ ] 9.5 ~~Reverse proxy: add a site block for the subdomain to the existing proxy, or add a Caddy service with automatic HTTPS~~ **CANCELLED 2026-10-05** — TLS terminates at the platform; no proxy to configure
 - [ ] 9.6 ~~`deploy/deploy.sh`: ssh, `git pull`, `docker compose up -d --build`, curl `/healthz`, print result~~ **REPLACED by 9.4a** — no SSH host
 - [ ] 9.7 ~~`scripts/pull_live.sh`: copy newest VPS backup to `./cll_live_copy.db`~~ **CANCELLED 2026-10-05** — retrieving a copy is now a Kudu/SCM download of the backup file; no script needed for a prototype
-- [ ] 9.8 First deploy with sample data; set a strong `APP_PASSCODE` and random `APP_SECRET` as App Service app settings — *secret storage retargeted from a VPS `.env` file*
+- [x] 9.8 First deploy with sample data; set a strong `APP_PASSCODE` and random `APP_SECRET` as App Service app settings - **DONE 2026-10-06** on `clldashproto2kwong27`; verified `/healthz`, `/robots.txt` 200, `/login` 200, `/` 303 to `/login` while logged out, and the full demo walk — *secret storage retargeted from a VPS `.env` file*
 - [ ] 9.9 Check: tests for lockout, noindex, healthz outside gate, local banner; from a phone off Wi-Fi, the site loads over HTTPS and asks for the passcode
 
 ## 10. Live data and first meeting (Fri Oct 9 - Wed Oct 14)
@@ -161,3 +161,34 @@ web app.
 
 **Not claimed as done.** 9.4a and 9.8 stay open until a probe of the live
 site shows `ok <marker>` and a 303 from `/` to `/login`.
+
+## Flow review 2026-10-06
+
+Walked the schema relationships against the rendered navigation and every POST
+path. Five defects, all now covered by `tests/test_flows.py` (179 tests pass).
+
+1. **The three admin edit forms replaced the whole page with a bare fragment.**
+   `edit_details`/`edit_tags`/`edit_links` submitted with `method="post"`
+   while their routes returned `card.html`, a fragment. Proven, not assumed: a
+   full-page POST returned 200 whose body began `<div class="card-body">` with
+   no `<html>`, no site header, and no nav. Fixed by submitting over HTMX into
+   the modal, plus a `_edit_result` helper that redirects to the card's own
+   page when the request is not HTMX, so a no-JavaScript submit lands somewhere
+   real.
+2. **`/initiatives/new` was unreachable** - the route existed with no link
+   anywhere, so it could only be reached by typing the URL. Now in the nav for
+   admins only.
+3. **Goal and priority descriptions had no editor entry point**, same shape.
+   Now an "Edit this description" link on both list pages.
+4. **Editing a description threw you back to the home screen.** Now returns to
+   the list you edited from.
+5. **Rows advertised `tabindex="0" role="link"` with no key handler** - an
+   accessibility promise the app did not keep. Now driven by HTMX
+   `hx-trigger` covering Enter and Space on list, person, meeting and checks
+   rows.
+
+Schema relationships that were checked and found sound: the `InitiativeLinks`
+graph is directional (D-x *feeds* Dean), `vw_InitiativeConnections` surfaces
+both directions keyed correctly per role, the meeting page is scoped to active
+initiatives only, and an initiative tagged to N goals is counted on N home
+tiles - documented as expected rather than treated as double counting.
