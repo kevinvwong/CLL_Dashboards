@@ -47,12 +47,17 @@ def priority_tiles() -> list[dict]:
             """
             SELECT p.PriorityName,
                    p.PlanYear,
+                   p.Description,
+                   p.Code, p.FullTitle, p.Measure, p.Target, p.Cadence,
+                   p.OwnerLabel, p.Colour,
                    COUNT(DISTINCT i.InitiativeID) AS InitiativeCount
             FROM Priorities p
             LEFT JOIN InitiativePriorities ip ON ip.PriorityID = p.PriorityID
             LEFT JOIN Initiatives i
                    ON i.InitiativeID = ip.InitiativeID AND i.IsActive = 1
-            GROUP BY p.PriorityID, p.PriorityName, p.PlanYear
+            GROUP BY p.PriorityID, p.PriorityName, p.PlanYear, p.Description,
+                     p.Code, p.FullTitle, p.Measure, p.Target, p.Cadence,
+                     p.OwnerLabel, p.Colour
             ORDER BY p.PriorityName
             """
         ).fetchall()
@@ -86,6 +91,14 @@ def blueprint_priorities() -> list[dict]:
             "PlanYear": r["PlanYear"],
             "InitiativeCount": r["InitiativeCount"],
             "ColourToken": status_mod.priority_colour_token(code) if code else "--priority-1",
+            # The governed fields, now stored (scope correction). Read from the
+            # database so the screen and the register cannot drift; the
+            # generated module is only the fallback for a name not in the DB.
+            "Measure": r.get("Measure"),
+            "Target": r.get("Target"),
+            "Cadence": r.get("Cadence"),
+            "Owner": r.get("OwnerLabel"),
+            "Colour": r.get("Colour"),
         })
     # A priority with a code sorts by it; one without falls to the end, so the
     # canonical six always lead.
@@ -758,3 +771,80 @@ def coverage_summary() -> dict:
         "total": total,
         "percent": round(100 * covered / total) if total else 0,
     }
+
+
+# --- the organizational layer, for the redesigned screens -------------------
+
+
+def priority_detail(name: str) -> dict | None:
+    """A priority with every governed field, plus the team KPIs that feed it.
+
+    Reads the four fields the schema used to lack (measure, target, cadence,
+    owner) and the team-KPI layer, so a priority screen can show all of it
+    rather than a name and a count.
+    """
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT PriorityID, PriorityName, PlanYear, Description, Code, "
+            "       FullTitle, Measure, Target, Cadence, OwnerLabel, Colour "
+            "FROM Priorities WHERE PriorityName = ?", (name,)).fetchone()
+        if row is None:
+            return None
+        out = dict(row)
+        out["team_kpis"] = [
+            dict(r) for r in conn.execute(
+                "SELECT k.KPIID, k.Code, k.Title, k.StrategyAlign, k.Status, "
+                "       k.TargetStatus, k.ProposedTarget, t.Name AS Team "
+                "FROM TeamKPIPriorities tp "
+                "JOIN TeamKPIs k ON k.KPIID = tp.KPIID "
+                "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
+                "WHERE tp.PriorityID = ? ORDER BY k.Code", (out["PriorityID"],))
+        ]
+        out["initiative_count"] = conn.execute(
+            "SELECT COUNT(DISTINCT i.InitiativeID) FROM InitiativePriorities ip "
+            "JOIN Initiatives i ON i.InitiativeID = ip.InitiativeID AND i.IsActive = 1 "
+            "WHERE ip.PriorityID = ?", (out["PriorityID"],)).fetchone()[0]
+    return out
+
+
+def team_overview() -> list[dict]:
+    """The four teams, each with its KPIs. Every field the KPIs carry."""
+    with _conn() as conn:
+        teams = [dict(r) for r in conn.execute(
+            "SELECT TeamID, Name, Description FROM Teams ORDER BY Name")]
+        kpis = [dict(r) for r in conn.execute(
+            "SELECT KPIID, Code, Title, TeamID, SourceAreaID, StrategyAlign, "
+            "       Initiatives, SourceTarget, ProposedTarget, TargetStatus, "
+            "       SlideRef, Status, Note FROM TeamKPIs ORDER BY Code")]
+        areas = {r["SourceAreaID"]: r["Name"]
+                 for r in conn.execute("SELECT SourceAreaID, Name FROM SourceAreas")}
+        for k in kpis:
+            k["SourceArea"] = areas.get(k["SourceAreaID"])
+        for team in teams:
+            team["kpis"] = [k for k in kpis if k["TeamID"] == team["TeamID"]]
+    return teams
+
+
+def kpi_cards() -> list[dict]:
+    """The 29 team KPIs, each with the priorities it feeds.
+
+    One read per screen: the KPI and its priority links together, so a card can
+    render without a second query per KPI.
+    """
+    with _conn() as conn:
+        kpis = [dict(r) for r in conn.execute(
+            "SELECT k.KPIID, k.Code, k.Title, k.StrategyAlign, k.Initiatives, "
+            "       k.SourceTarget, k.ProposedTarget, k.TargetStatus, k.SlideRef, "
+            "       k.Status, k.Note, t.Name AS Team, sa.Name AS SourceArea "
+            "FROM TeamKPIs k LEFT JOIN Teams t ON t.TeamID = k.TeamID "
+            "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
+            "ORDER BY k.Code")]
+        links: dict = {}
+        for r in conn.execute(
+                "SELECT tp.KPIID, p.PriorityName, p.Code, p.Colour "
+                "FROM TeamKPIPriorities tp JOIN Priorities p ON p.PriorityID = tp.PriorityID "
+                "ORDER BY p.Code"):
+            links.setdefault(r["KPIID"], []).append(dict(r))
+    for k in kpis:
+        k["priorities"] = links.get(k["KPIID"], [])
+    return kpis

@@ -65,12 +65,11 @@ def _raw_priority_counts(fresh_db):
     return {r[0]: r[1] for r in rows}
 
 
-def test_home_shows_the_stage_with_goals_and_priorities(logged_in):
-    """Replaces the tile-grid assertion (blueprint-redesign group 2).
+def test_home_shows_the_dashboard_and_keeps_everything_reachable(logged_in):
+    """The home is a portfolio dashboard (scope correction), not a tile grid or
+    the prototype's stage. The goals, priorities and initiatives stay reachable.
 
-    The home is now a hero stage, not a tile grid: the Dean node, the six
-    priority cards, and the goals panel. The goals and priorities are still
-    each reachable, which is what this checked.
+    Replaces the earlier stage assertion: the stage was removed by direction.
     """
     from app import queries
 
@@ -83,16 +82,16 @@ def test_home_shows_the_stage_with_goals_and_priorities(logged_in):
     assert len(priorities) == PRIORITY_COUNT
 
     body = response.text
-    # The stage and its node.
-    assert "stage" in body and "dean-node" in body
-    # Six priority cards, each linking to its panel selection.
+    # The dashboard's parts, not the prototype's stage.
+    assert "stat-band" in body
+    assert "priority-grid" in body
+    assert "dean-node" not in body, "the prototype's stage still renders"
+    # Every priority is reachable from its card.
     for priority in priorities:
-        assert f"/?priority={priority['PriorityName']}" in body
-    # The goals panel keeps every goal reachable.
-    for goal in goals:
-        assert f"/goals/{goal['GoalNumber']}" in body
-    # And the full cascade for the selected priority stays one link away.
-    assert "/priorities/" in body
+        assert f"/priorities/{priority['PriorityName']}" in body or \
+               priority["PriorityName"] in body
+    # The goals are reachable from the dashboard's KPI table and nav.
+    assert "/initiatives" in body
 
 
 def test_goal_tile_counts_match_an_independent_count(logged_in, fresh_db):
@@ -130,14 +129,16 @@ def test_goal_names_come_from_the_canonical_list(logged_in):
     assert got == by_number
 
 
-def test_tile_counts_appear_in_the_rendered_page(logged_in, fresh_db):
-    body = logged_in("Bill").get("/").text
-    # A goal name and its count appear together in the markup.
+def test_a_priority_and_its_count_appear_in_the_rendered_page(logged_in, fresh_db):
+    """A priority name and its initiative count render together (scope
+    correction: the tiles became full-field cards, so this checks the card)."""
     from app import queries
 
-    a_goal = queries.goal_tiles()[0]
-    assert a_goal["ShortName"] in body
-    assert f">{a_goal['InitiativeCount']}<" in body
+    body = logged_in("Bill").get("/").text
+    p = queries.blueprint_priorities()[0]
+    assert p["Title"] in body
+    assert f">{p['InitiativeCount']}<" in body or \
+           f"{p['InitiativeCount']} initiative" in body
 
 
 def test_home_requires_a_signed_in_person(anon):

@@ -1,154 +1,175 @@
 {% extends "base.html" %}
-{% block title %}Blueprint — CLL Initiative Dashboard{% endblock %}
+{% block title %}Portfolio — CLL Initiative Dashboard{% endblock %}
 {% block content %}
 {#
-  The blueprint home (blueprint-redesign group 2). The prototype's structure:
-    section heading (eyebrow -> serif heading -> note)
-    -> hero stage: Dean node fanning into six colour-keyed priority cards
-    -> selected-priority panel + team/goal panel
-    -> initiative-signals strip
-  The stage is the heaviest block on the page; a tile grid cannot show the
-  relationship between the Dean's outcomes and the priorities.
+  The portfolio dashboard (blueprint-redesign scope correction). Our own
+  design, not the Dean's prototype's shape:
+
+    1. a stat band        - the portfolio at a glance (counts, not a score)
+    2. the six priorities - cards carrying EVERY governed field
+    3. the four teams     - each with its KPI count and a bar
+    4. the 29 team KPIs   - a filterable table with every field
+
+  No hero stage, no Dean node: that was the prototype's structure, and the
+  instruction is to design our own while carrying all of its content.
 #}
 
 <div class="section-heading">
   <div>
-    <p class="eyebrow">Executive map</p>
-    <h1>Six priorities. One accountable cascade.</h1>
+    <p class="eyebrow">{{ plan_year }} Strategy Portfolio</p>
+    <h1>How the College's work is organised</h1>
   </div>
-  <p class="section-note">
-    {{ priorities | length }} priorities ·
-    {{ goals | length }} Strategy 2035 goals ·
-    {{ signals | length }} initiatives shown
-  </p>
+  <p class="section-note">Six priorities · four teams · 29 team KPIs</p>
 </div>
 
-{# --- the hero stage ------------------------------------------------------- #}
-<section class="stage" aria-label="The Dean's outcomes and the annual priorities">
-  <div class="dean-node">
-    <span class="node-label">Dean</span>
-    <strong>College outcomes</strong>
-    <span>{{ priorities | length }} priorities · {{ plan_year }}</span>
+{# --- 1. the stat band ----------------------------------------------------- #}
+<section class="stat-band" aria-label="Portfolio summary">
+  <a class="stat-tile" href="/initiatives">
+    <span class="stat-value">{{ stats.initiatives }}</span>
+    <span class="stat-label">Initiatives</span>
+  </a>
+  <a class="stat-tile" href="#priorities">
+    <span class="stat-value">{{ stats.priorities }}</span>
+    <span class="stat-label">Priorities</span>
+  </a>
+  <a class="stat-tile" href="#teams">
+    <span class="stat-value">{{ stats.teams }}</span>
+    <span class="stat-label">Teams</span>
+  </a>
+  <a class="stat-tile" href="#kpis">
+    <span class="stat-value">{{ stats.kpis }}</span>
+    <span class="stat-label">Team KPIs</span>
+  </a>
+  <a class="stat-tile stat-warn" href="#kpis">
+    <span class="stat-value">{{ stats.needs_review }}</span>
+    <span class="stat-label">Need review</span>
+  </a>
+</section>
+
+{# --- 2. the six priorities, each with every governed field ---------------- #}
+<section id="priorities" aria-labelledby="priorities-heading">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Annual priorities</p>
+      <h2 id="priorities-heading">The six priorities</h2>
+    </div>
+    <p class="section-note">Measure · target · cadence · owner</p>
   </div>
 
-  <ul class="priority-map">
+  <ul class="priority-grid">
     {% for p in priorities %}
-    <li>
-      <a class="priority-card{% if selected and p.Name == selected.Name %} is-selected{% endif %}"
-         href="/?priority={{ p.Name | urlencode }}#panel"
-         style="--priority: var({{ p.ColourToken }});"
-         aria-label="{{ p.Title }}, {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}"
-         {% if selected and p.Name == selected.Name %}aria-current="true"{% endif %}>
-        <span class="card-top">
-          <span class="code">{{ p.Code or "—" }}</span>
-          <span class="count">{{ p.InitiativeCount }}</span>
-        </span>
-        <strong>{{ p.Title }}</strong>
-        <span class="card-note">
-          {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}
-        </span>
-      </a>
+    <li class="priority-card" style="--priority: var({{ p.ColourToken }});">
+      <div class="priority-card-head">
+        <span class="priority-code">{{ p.Code or "—" }}</span>
+        <span class="priority-colour" aria-hidden="true"></span>
+      </div>
+      <h3 class="priority-title">{{ p.Title }}</h3>
+      {% if p.Description %}<p class="priority-desc">{{ p.Description }}</p>{% endif %}
+
+      <dl class="field-list">
+        {% if p.Measure %}<dt>Measure</dt><dd>{{ p.Measure }}</dd>{% endif %}
+        {% if p.Target %}<dt>Target</dt><dd>{{ p.Target }}</dd>{% endif %}
+        {% if p.Cadence %}<dt>Cadence</dt><dd>{{ p.Cadence }}</dd>{% endif %}
+        {% if p.Owner %}<dt>Owner</dt><dd>{{ p.Owner }}</dd>{% endif %}
+      </dl>
+
+      <p class="priority-foot">
+        {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}
+        · <a href="/priorities/{{ p.Name | urlencode }}">View cascade →</a>
+      </p>
     </li>
     {% endfor %}
   </ul>
 </section>
 
-{# --- the selected-priority panel and the goals ---------------------------- #}
-<div class="split-grid">
-  <section class="panel" id="panel" aria-labelledby="selected-heading">
-    <div class="panel-heading">
-      <div>
-        <p class="eyebrow">Selected priority</p>
-        <h2 id="selected-heading">{{ selected.Title if selected else "No priority" }}</h2>
-      </div>
-      {% if selected %}
-      {# The card selects the panel; this link leaves for the full cascade, the
-         same "see full cascade" affordance the prototype has. Keeps
-         /priorities/{name} reachable now the tiles are gone. #}
-      <a class="text-button" href="/priorities/{{ selected.Name | urlencode }}">
-        See full cascade →</a>
-      {% endif %}
-    </div>
-    {% if selected and selected.Description %}
-    <p class="priority-description">{{ selected.Description }}</p>
-    {% endif %}
-    {% if panel_initiatives %}
-    <ul class="panel-initiatives">
-      {% for row in panel_initiatives %}
-      <li class="unit-row">
-        <span>
-          <strong>{{ row.Code }}</strong> {{ row.InitiativeName }}
-          <span>{{ row.Owner }} · {{ row.Level }}</span>
-        </span>
-        {% if row.PercentComplete is none %}
-        <span class="bar-label muted">No update</span>
-        {% else %}
-        <span class="badge {{ row.Status | status_class }}">{{ row.Status }}</span>
-        {% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="empty">No active initiatives are tagged to this priority.</p>
-    {% endif %}
-  </section>
-
-  <section class="panel" aria-labelledby="goals-heading">
-    <div class="panel-heading">
-      <div>
-        <p class="eyebrow">The other axis</p>
-        <h2 id="goals-heading">Strategy 2035 goals</h2>
-      </div>
-    </div>
-    <p class="section-note">Priorities and goals are independent; an initiative may carry both.</p>
-    <ul class="unit-contribution">
-      {% for g in goals %}
-      <li class="unit-row">
-        <a href="/goals/{{ g.GoalNumber }}"
-           aria-label="{{ g.ShortName }}, {{ g.InitiativeCount }} initiative{{ '' if g.InitiativeCount == 1 else 's' }}">
-          <strong>{{ g.GoalNumber }} {{ g.ShortName }}</strong>
-          <span>{{ g.FullName or "" }}</span>
-        </a>
-        <span class="unit-count">{{ g.InitiativeCount }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-  </section>
-</div>
-
-{# --- the initiative signals ----------------------------------------------- #}
-<section class="panel initiative-panel" aria-labelledby="signals-heading">
-  <div class="panel-heading">
+{# --- 3. the four teams ---------------------------------------------------- #}
+<section id="teams" aria-labelledby="teams-heading">
+  <div class="section-heading">
     <div>
-      <p class="eyebrow">Starting point</p>
-      <h2 id="signals-heading">Existing initiative signals</h2>
+      <p class="eyebrow">Organizational layer</p>
+      <h2 id="teams-heading">The four teams</h2>
     </div>
-    <span class="muted">Sample data</span>
+    <p class="section-note">{{ stats.kpis }} team KPIs across them</p>
   </div>
-  {% if signals %}
-  <ul class="initiative-signals">
-    {% for s in signals %}
-    <li class="initiative">
-      <a href="/initiatives/{{ s.Code }}">
-        <strong>{{ s.Code }} {{ s.InitiativeName }}</strong>
-      </a>
-      {% if s.HasUpdate %}
-      <div class="progress-track" role="progressbar"
-           aria-valuenow="{{ s.PercentComplete }}" aria-valuemin="0" aria-valuemax="100"
-           aria-label="{{ s.Status }}, {{ s.PercentComplete }} percent">
-        <span class="progress-fill" style="width: {{ s.PercentComplete }}%"></span>
-      </div>
-      <span>{{ s.PercentComplete }}% {{ s.Status }}</span>
-      {% else %}
-      {# A missing update is not 0%: stated, never a zero bar. #}
-      <div class="progress-track progress-empty" aria-hidden="true"><span></span></div>
-      <span>No update yet</span>
-      {% endif %}
+
+  <ul class="team-grid">
+    {% for t in teams %}
+    <li class="team-card">
+      <h3 class="team-name">{{ t.Name }}</h3>
+      <p class="team-desc">{{ t.Description }}</p>
+      <p class="team-count">
+        <strong>{{ t.kpis | length }}</strong> KPI{{ '' if t.kpis | length == 1 else 's' }}
+      </p>
+      <ul class="team-kpis">
+        {% for k in t.kpis %}
+        <li>
+          <span class="kpi-code">{{ k.Code }}</span>
+          <span class="kpi-title">{{ k.Title }}</span>
+          {% if k.TargetStatus == 'needs_review' %}
+          <span class="chip chip-warn">needs review</span>
+          {% else %}
+          <span class="chip">source</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
     </li>
     {% endfor %}
   </ul>
-  {% else %}
-  <p class="empty">No active initiatives yet.</p>
-  {% endif %}
+</section>
+
+{# --- 4. the 29 team KPIs, every field ------------------------------------- #}
+<section id="kpis" aria-labelledby="kpis-heading">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">The cascade</p>
+      <h2 id="kpis-heading">Team KPIs</h2>
+    </div>
+    <p class="section-note">Every field from the source register</p>
+  </div>
+
+  <div class="index-table-wrap">
+    <table class="index-table kpi-table">
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Team KPI</th>
+          <th scope="col">Team</th>
+          <th scope="col">Source area</th>
+          <th scope="col">Strategy alignment</th>
+          <th scope="col">Initiatives</th>
+          <th scope="col">Target</th>
+          <th scope="col">Target status</th>
+          <th scope="col">Feeds</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for k in kpis %}
+        <tr class="kpi-row">
+          <td class="code">{{ k.Code }}</td>
+          <td>{{ k.Title }}{% if k.Note %} <span class="note-mark" title="{{ k.Note }}">ⓘ</span>{% endif %}</td>
+          <td>{{ k.Team or "—" }}</td>
+          <td>{{ k.SourceArea or "—" }}</td>
+          <td class="muted-cell">{{ k.StrategyAlign or "—" }}</td>
+          <td class="muted-cell">{{ k.Initiatives or "—" }}</td>
+          <td class="target-cell">{{ k.ProposedTarget or "—" }}</td>
+          <td>
+            {% if k.TargetStatus == 'needs_review' %}
+            <span class="chip chip-warn">needs review</span>
+            {% else %}
+            <span class="chip">source</span>
+            {% endif %}
+          </td>
+          <td>
+            {% for pr in k.priorities %}
+            <a class="chip chip-priority" href="/priorities/{{ pr.PriorityName | urlencode }}"
+               style="--priority: var({{ pr.Colour | priority_colour }});">{{ pr.Code }}</a>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endblock %}

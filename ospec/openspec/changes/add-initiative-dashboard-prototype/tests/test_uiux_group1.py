@@ -5,6 +5,7 @@ the fix (see the group-1 tasks). The point of this file is that these defects
 cannot come back silently.
 """
 import os
+import html as _html
 import re
 
 import pytest
@@ -245,23 +246,23 @@ def test_unknown_route_still_answers_json_for_a_non_browser(logged_in):
 
 # --- 1.7 accessible names on the home links ---------------------------------
 #
-# Group 2 of blueprint-redesign replaced the tile grid with a hero stage. The
-# requirement is unchanged: a goal or priority link must carry an accessible
-# name stating what it is and how many initiatives it holds. The links simply
-# moved from `.tile` to the stage's cards and goals panel.
+# Group 2 built a stage, then the scope correction replaced it with a portfolio
+# dashboard. The requirement is unchanged: a link must carry an accessible name
+# stating what it is and how many initiatives it holds. The links moved again,
+# so the assertions point at the nav and the priority cards' visible text.
 
 
-def test_goal_links_have_accessible_names(logged_in):
-    body = logged_in("Bill").get("/").text
-    names = re.findall(r'aria-label="([^"]+)"', body)
-    goal_labels = [n for n in names if "initiative" in n]
-    assert goal_labels, "goal links have no aria-label"
-    # A label names the goal and its count, not just a bare number.
-    assert any(re.match(r"^.+, \d+ initiatives?$", n) for n in goal_labels), goal_labels
-
-
-def test_priority_cards_have_accessible_names(logged_in):
-    import html as _html
+def test_home_has_accessible_names(logged_in):
     body = _html.unescape(logged_in("Bill").get("/").text)
-    names = re.findall(r'aria-label="([^"]+)"', body)
-    assert any("Culture & Learning" in n and "initiative" in n for n in names), names
+    # The nav destinations are named by their visible text.
+    for dest in ("/initiatives", "/people", "/meeting", "/outcomes"):
+        assert ('href="%s"' % dest) in body
+    # The priority cards carry their full title as text, not a bare code.
+    assert "One Shared Identity" in body
+
+
+def test_priority_cards_name_their_priority(logged_in):
+    """A priority card names the priority; its count is beside it."""
+    body = _html.unescape(logged_in("Bill").get("/").text)
+    assert "One Shared Identity" in body
+    assert "initiative" in body

@@ -751,27 +751,26 @@ async def initiatives_index(request: Request):
 
 @app.get("/")
 async def root(request: Request):
-    """The blueprint home: the Dean's outcomes as a hero stage.
+    """Home: a portfolio dashboard in our own design.
 
-    A Dean node fans into the six colour-keyed priority cards; below it, the
-    selected-priority panel and the initiative-signals strip. Replaces the tile
-    grid (blueprint-redesign 2.1-2.4).
-
-    Selecting a priority is a query parameter (?priority=Pathways) rather than
-    client state, so a selection is a shareable URL and works without
-    JavaScript; the panel renders server-side.
+    Deliberately NOT the Dean's prototype's layout (hero stage + Dean node).
+    This is a dashboard: a stat band, then the six priorities as cards carrying
+    every governed field, then the four teams, then the team-KPI table. It shows
+    all the prototype's content without copying its shape.
     """
     priorities = queries.blueprint_priorities()
-    selected = request.query_params.get("priority")
+    teams = queries.team_overview()
+    kpis = queries.kpi_cards()
 
-    # Default to the first priority, so the panel is never empty on first load.
-    chosen = None
-    if priorities:
-        chosen = next((p for p in priorities if p["Name"] == selected), priorities[0])
-
-    panel_initiatives = []
-    if chosen is not None:
-        panel_initiatives = queries.priority_rows(chosen["Name"])
+    # The stat band: counts, not a performance score.
+    stats = {
+        "priorities": len(priorities),
+        "goals": len(queries.goal_tiles()),
+        "teams": len(teams),
+        "kpis": len(kpis),
+        "needs_review": sum(1 for k in kpis if k["TargetStatus"] == "needs_review"),
+        "initiatives": len(queries.all_initiatives()),
+    }
 
     plan_year = max((p["PlanYear"] for p in priorities), default=None)
     return templates.TemplateResponse(
@@ -779,11 +778,10 @@ async def root(request: Request):
         "home.html",
         _ctx(
             request,
-            goals=queries.goal_tiles(),
             priorities=priorities,
-            selected=chosen,
-            panel_initiatives=panel_initiatives,
-            signals=queries.initiative_signals(),
+            teams=teams,
+            kpis=kpis,
+            stats=stats,
             plan_year=plan_year,
         ),
     )
