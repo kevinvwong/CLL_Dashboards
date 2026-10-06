@@ -1,16 +1,20 @@
 {% extends "base.html" %}
-{% block title %}October 16 — Dean outcomes{% endblock %}
+{% block title %}October 16 — {{ d.TITLE }}{% endblock %}
 {% block content %}
 {#
-  The October 16 deliverable (Oct16_Wireframe_Data_Lists.xlsx, "Option A Data";
-  wireframes Option A). Progress is milestones reached of milestones planned, as
-  the brief specifies, rather than KPI values that cannot yet be calculated.
+  Option A of the October 16 wireframes, laid out to match the drawing:
+    eyebrow -> title -> explainer -> six outcome cards -> scope block
+    -> data-requirements table -> trade-offs
 
-  Every figure here is illustrative. The wireframes say of this page: "values show
-  format only, not CLL results". That is stated on the page itself, not only here.
+  Every label here is the wireframes' own. The cards print "n of m milestones
+  reached" and an "Owner: ... · updated ..." line, both as drawn; owner and date
+  render as placeholders because no owners are named yet, which the data plan
+  marks "No" rather than pretending otherwise.
 #}
-<h1>Dean outcomes</h1>
-<p class="oct16-sub">Six outcomes, shown by milestones reached, until their KPIs have data.</p>
+<p class="oct16-eyebrow">{{ d.EYEBROW }}</p>
+<h1 class="oct16-title">{{ d.TITLE }}</h1>
+<p class="oct16-sub">{{ d.SUBTITLE }}</p>
+<p class="oct16-explainer">{{ d.EXPLAINER }}</p>
 <p class="oct16-status" role="status">{{ d.DATA_STATUS }}{% if d.AS_OF %} &middot; as of {{ d.AS_OF }}{% endif %}</p>
 
 <ul class="oct16-grid">
@@ -21,37 +25,109 @@
       <span class="oct16-outcome-status badge status-{{ o.status | lower | replace(' ', '-') }}">{{ o.status }}</span>
     </div>
     <h2 class="oct16-name">{{ o.name }}</h2>
-    <p class="oct16-target">{{ o.target }}</p>
-    <p class="oct16-count">
-      <strong>{{ o.planned }}</strong> milestones planned,
-      <strong>{{ o.reached }}</strong> reached
-    </p>
-    {# A bar whose width is milestones reached / planned. aria-label carries the
-       numbers in words so the bar is not colour-only information. #}
+    <p class="oct16-target">{{ o.summary }}</p>
+    {# The wireframes' own phrasing: "1 of 4 milestones reached". #}
+    <p class="oct16-count">{{ o.reached }} of {{ o.planned }} milestones reached</p>
     <div class="oct16-bar" role="img"
          aria-label="{{ o.reached }} of {{ o.planned }} milestones reached">
       <span class="oct16-fill"
             style="width: {{ (100 * o.reached / o.planned) | round(0, 'floor') }}%"></span>
     </div>
     <ul class="oct16-milestones">
-      {% for m in o.milestones %}
+      {% for name, status in o.milestones %}
       <li class="oct16-milestone">
-        <span class="oct16-mstatus m-{{ m.status | lower | replace(' ', '-') }}">{{ m.status }}</span>
-        <span class="oct16-mname">{{ m.name }}</span>
+        <span class="oct16-mname">{{ name }}</span>
+        <span class="oct16-mstatus m-{{ status | lower | replace(' ', '-') }}">{{ status }}</span>
       </li>
       {% endfor %}
     </ul>
+    {# As drawn. Owner and date are placeholders: the data plan marks "Outcome
+       owner" as "No", so showing a name here would be inventing one. #}
+    <p class="oct16-owner">
+      Owner: {{ o.owner or "[name]" }} &middot; updated {{ o.updated or "[date]" }}
+    </p>
   </li>
   {% endfor %}
 </ul>
+
+<section class="oct16-scope">
+  <h2>Scope and scale of this choice</h2>
+  <p class="oct16-scope-sub">What the Dean is choosing to have collected by October 16</p>
+  <dl class="oct16-scope-grid">
+    {% for label, value, note in d.SCOPE %}
+    <div class="oct16-scope-item">
+      <dt>{{ label }}</dt>
+      <dd><strong>{{ value }}</strong> <span class="oct16-scope-note">{{ note }}</span></dd>
+    </div>
+    {% endfor %}
+  </dl>
+</section>
+
+<section class="oct16-requirements">
+  <h2>Data requirements: the complete list</h2>
+  <p class="oct16-scope-sub">
+    Full detail in <code>Oct16_Wireframe_Data_Lists.xlsx</code>, sheet
+    &ldquo;Option A Data&rdquo;. These are the {{ d.DATA_REQUIREMENTS | length }} rows,
+    reproduced so the page and the workbook cannot disagree.
+  </p>
+  <div class="oct16-table-wrap">
+    <table class="oct16-table">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Section</th>
+          <th scope="col">Data element</th>
+          <th scope="col">Definition or rule</th>
+          <th scope="col">Volume</th>
+          <th scope="col">Source</th>
+          <th scope="col">Provided by</th>
+          <th scope="col">Available today</th>
+          <th scope="col">Needed for Oct 16</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in d.DATA_REQUIREMENTS %}
+        <tr class="availability-{{ r.available | lower | replace(' ', '-') }}">
+          <td>{{ r.id }}</td>
+          <td>{{ r.section }}</td>
+          <td>{{ r.element }}</td>
+          <td>{{ r.definition }}</td>
+          <td>{{ r.volume }}</td>
+          <td>{{ r.source }}</td>
+          <td>{{ r.provided_by }}</td>
+          {# The availability column is the one the reader scans for. It is text,
+             not colour alone. #}
+          <td class="oct16-avail">{{ r.available or "&mdash;" }}</td>
+          <td>{{ r.needed }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="oct16-tradeoffs">
+  <h2>Trade-offs</h2>
+  {# Both sides, as drawn. A page that showed only the advantages would not be
+     one the Dean could decide from. #}
+  <ul class="oct16-tradeoff-list">
+    {% for good, text in d.TRADE_OFFS %}
+    <li class="oct16-tradeoff {{ 'pro' if good else 'con' }}">
+      <span class="oct16-mark" aria-hidden="true">{{ '+' if good else '&minus;' }}</span>
+      <span class="oct16-tradeoff-text">{{ text }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
 
 <section class="oct16-notes">
   <h2>About these figures</h2>
   <p>{{ d.SOURCE_NOTE }}</p>
   <p class="oct16-caveat">
     Milestones and statuses are the wireframes' illustrative values, not CLL results.
-    They are replaced when owners confirm their milestone lists and status, which the
-    plan schedules for October 9&ndash;12.
+    No outcome owner is named yet and milestone status is not collected &mdash; the
+    data plan marks both &ldquo;No&rdquo;. They are replaced when owners confirm their
+    milestone lists and status, which the plan schedules for October 9&ndash;12.
   </p>
 </section>
 {% endblock %}

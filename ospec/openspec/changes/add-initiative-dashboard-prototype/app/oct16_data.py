@@ -1,112 +1,407 @@
-"""The October 16 deliverable data: the six Dean outcomes and their milestones.
+"""The October 16 deliverable: Option A of the wireframes.
 
-Static by design. The brief for this view says 'Static, clickable pages; no live
-data feeds', so the content lives here rather than in new tables. Values are the
-wireframes' ILLUSTRATIVE figures - 'values show format only, not CLL results' -
-and are replaced when owners confirm milestones and status on Oct 9-12.
+Generated from the two sources the wireframes themselves name, so the page
+matches the drawing rather than a retyped version of it:
 
-Outcome names and target text are from the KPI workbook (07_CLL_KPI_Atomic_Definitions
-_Master.xlsx, Metrics sheet). Milestones are from the wireframes' Option A page.
+  - Oct16_Wireframe_Data_Lists.xlsx, sheet 'Option A Data'
+      -> DATA_REQUIREMENTS (the 19 rows of the 'what it takes' table)
+  - the wireframes' Option A page
+      -> OUTCOMES, SCOPE, TRADE_OFFS, and every heading
 
-Generated from those two sources; do not hand-edit without re-reading them.
+Static by design. The brief for this view says 'Static, clickable pages; no
+live data feeds', and the outcome/team/component model exists in no table
+either the prototype or Revision 2 has.
+
+Every figure is ILLUSTRATIVE. The wireframes say of this page: 'values show
+format only, not CLL results'. Owners are unnamed and milestone status is
+uncollected, which the data plan marks 'No'; the page states that.
 """
 
-# As-of date shown on the page. Set at the data cutoff (Oct 13).
-AS_OF = None  # None renders “illustrative” instead of a false date
-
+# Page furniture, verbatim from the wireframes.
+EYEBROW = "OCTOBER 16 · OPTION A"
+TITLE = "The Dean's six Blueprint outcomes"
+SUBTITLE = "Each outcome shown by milestones reached, until its KPIs have data"
+EXPLAINER = (
+    "Built on P01–P06 from the Blueprint for 2027. Progress = milestones "
+    "reached of milestones planned, reported by each owner."
+)
 DATA_STATUS = "Illustrative — format only, not CLL results"
+AS_OF = None  # None renders “illustrative” rather than a false date
 
 SOURCE_NOTE = (
-    "Outcome names and targets: CLL KPI Atomic Definitions Master, Metrics sheet. "
-    "Milestones: the October 16 wireframes, Option A. Status values are the "
-    "wireframes' illustrative figures and are replaced when owners confirm."
+    "Outcomes, headings and the scope figures: the October 16 wireframes, "
+    "Option A. The data-requirements table: Oct16_Wireframe_Data_Lists.xlsx, "
+    "'Option A Data'. Outcome names and target wording also appear in the CLL "
+    "KPI Atomic Definitions Master, Metrics sheet, which the wireframes cite "
+    "as their source for target text."
 )
 
-# id, name, target text, executive summary, status, milestones-reached,
-# milestones-planned, milestone list, and what it takes to show this
+# What the Dean is choosing to have collected by October 16.
+# label, value, note
+SCOPE = [
+    ('Data elements', '19', 'on this wireframe'),
+    ('Required for Oct 16', '16', 'none deferred'),
+    ('In hand now', '8 of 16', '2 partial, 6 not collected'),
+    ('Items to collect', '20–30', 'milestones, status from owners'),
+    ('People to ask', '4', 'team leads, for owners, dates and status'),
+    ('Realistic by Oct 16?', 'Yes', 'if scoped down'),
+]
+
+# The honest trade-offs, pros marked True. Both sides are shown: a page that
+# listed only the advantages would not be one the Dean could decide from.
+TRADE_OFFS = [
+    (True, "Uses the Dean's own framing from the Blueprint"),
+    (True, 'Milestone counts are honest: no invented composite scores'),
+    (True, 'Grows into the full KPI dashboard later'),
+    (False, 'Does not match the 2026 priorities presented in May'),
+    (False, 'Needs about 25 milestone updates from owners in one week'),
+]
+
+# id, name, status, milestones reached, planned, target line, owner, updated.
+# owner and updated are None because no owners are named yet - the data plan
+# marks 'Outcome owner' as 'No'. The page shows the placeholder, not a guess.
 OUTCOMES = [
     {
         "id": 'P01',
         "name": 'One Shared Identity',
-        "target": "All 4 teams adopt by Q2; ≥90% of reviewed assets aligned by Q4 (Dean's Blueprint)",
-        "summary": '',
         "status": 'On track',
         "reached": 1,
         "planned": 4,
+        "summary": 'All 4 teams adopt the message architecture by Q2; 90% of assets aligned by Q4',
+        "owner": None,
+        "updated": None,
         "milestones": [
-            {"name": 'Message architecture approved', "status": 'Met'},
-            {"name": 'Teams adopted (1 of 4)', "status": 'In progress'},
-            {"name": 'First asset audit', "status": 'Not started'},
+            ('Message architecture approved', 'Met'),
+            ('Teams adopted (1 of 4)', 'In progress'),
+            ('First asset audit', 'Not started'),
         ],
     },
     {
         "id": 'P02',
         "name": 'Champion Innovation',
-        "target": "≥6 pilots; ≥3 decisions; learning documented for 100% (Dean's Blueprint)",
-        "summary": '',
         "status": 'On track',
         "reached": 2,
         "planned": 5,
+        "summary": '6 priority pilots; 3 scale, adapt or stop decisions',
+        "owner": None,
+        "updated": None,
         "milestones": [
-            {"name": 'RDI baseline complete', "status": 'Met'},
-            {"name": 'Innovation call launched', "status": 'Met'},
-            {"name": 'First stage-gate decisions', "status": 'Due Dec'},
+            ('RDI baseline complete', 'Met'),
+            ('Innovation call launched', 'Met'),
+            ('First stage-gate decisions', 'Due Dec'),
         ],
     },
     {
         "id": 'P03',
         "name": 'Integrated Portfolio & Pathways',
-        "target": "≥2 badged pathways; 100% of new programs and credentials mapped; one approval workflow by Q2 (Dean's Blueprint)",
-        "summary": '',
         "status": 'At risk',
         "reached": 1,
         "planned": 4,
+        "summary": '2 badged pathways; all new programs mapped; one approval workflow by Q2',
+        "owner": None,
+        "updated": None,
         "milestones": [
-            {"name": 'Unified approval process', "status": 'In progress'},
-            {"name": 'First badged pathway', "status": 'In progress'},
-            {"name": 'Mapping rule approved', "status": 'Met'},
+            ('Unified approval process', 'In progress'),
+            ('First badged pathway', 'In progress'),
+            ('Mapping rule approved', 'Met'),
         ],
     },
     {
         "id": 'P04',
         "name": 'Quality at Scale',
-        "target": "≥20% reuse; ≤28-day average build; quality standard applied to 100% of scaled offerings (Dean's Blueprint)",
-        "summary": '',
         "status": 'At risk',
         "reached": 0,
         "planned": 3,
+        "summary": '20% content reuse; 28-day builds; quality standard on all scaled offerings',
+        "owner": None,
+        "updated": None,
         "milestones": [
-            {"name": 'Quality standard approved', "status": 'Not started'},
-            {"name": 'Reuse baseline', "status": 'In progress'},
-            {"name": 'Build-time baseline', "status": 'Not started'},
+            ('Quality standard approved', 'Not started'),
+            ('Reuse baseline', 'In progress'),
+            ('Build-time baseline', 'Not started'),
         ],
     },
     {
         "id": 'P05',
         "name": 'Data-Informed Action',
-        "target": "5 dashboards by Q2; owner, target and cadence for 100% of KPIs; monthly executive reviews (Dean's Blueprint)",
-        "summary": '',
         "status": 'On track',
         "reached": 2,
         "planned": 4,
+        "summary": '5 dashboards by Q2; every KPI owned; monthly reviews',
+        "owner": None,
+        "updated": None,
         "milestones": [
-            {"name": 'KPI definitions drafted', "status": 'Met'},
-            {"name": 'College dashboard', "status": 'This decision'},
-            {"name": 'Owners named', "status": 'Not started'},
+            ('KPI definitions drafted', 'Met'),
+            ('College dashboard', 'This decision'),
+            ('Owners named', 'Not started'),
         ],
     },
     {
         "id": 'P06',
         "name": 'Culture & Learning',
-        "target": "Operating models tested; quarterly learning reviews; ≥90% of priority commitments owned and current (Dean's Blueprint)",
-        "summary": '',
         "status": 'On track',
         "reached": 1,
         "planned": 3,
+        "summary": 'Operating models tested; quarterly learning reviews; 90% of commitments current',
+        "owner": None,
+        "updated": None,
         "milestones": [
-            {"name": 'Target structure approved', "status": 'Confirm'},
-            {"name": 'Q1 learning reviews', "status": 'In progress'},
-            {"name": 'Operating model template', "status": 'Met'},
+            ('Target structure approved', 'Confirm'),
+            ('Q1 learning reviews', 'In progress'),
+            ('Operating model template', 'Met'),
         ],
+    },
+]
+
+# The full 'what it takes to show this on October 16' table: one row per data
+# element, with where it comes from and whether we have it. From the workbook,
+# not retyped, so the counts on the page and the table cannot drift apart.
+DATA_REQUIREMENTS = [
+    {
+        'id': 'A-01',
+        'section': 'Page',
+        'element': 'As-of date',
+        'definition': 'Date the data was last confirmed',
+        'example': 'Oct 13, 2026',
+        'volume': '1',
+        'source': 'Build team',
+        'provided_by': 'Associate Director',
+        'available': 'Build',
+        'how': 'Set at data cutoff',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-02',
+        'section': 'Outcome cards',
+        'element': 'Outcome code and name',
+        'definition': 'The six Dean outcomes from the Blueprint for 2027',
+        'example': 'P03 · Integrated Portfolio & Pathways',
+        'volume': '6',
+        'source': "Dean's Blueprint (prototype site)",
+        'provided_by': 'Build team',
+        'available': 'Have it',
+        'how': 'Copy from Blueprint',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-03',
+        'section': 'Outcome cards',
+        'element': 'Outcome target',
+        'definition': 'Blueprint target wording for each outcome',
+        'example': '2 badged pathways; all new programs mapped; one approval workflow by Q2',
+        'volume': '6',
+        'source': "Dean's Blueprint; KPI definitions doc",
+        'provided_by': 'Build team',
+        'available': 'Have it',
+        'how': 'Copy from Blueprint',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-04',
+        'section': 'Outcome cards',
+        'element': 'Outcome owner',
+        'definition': 'Named person accountable for the outcome',
+        'example': '[name]',
+        'volume': '6',
+        'source': 'Dean; team leads',
+        'provided_by': 'Elizabeth / Dean',
+        'available': 'No',
+        'how': "Ask at the Dean's pick meeting",
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-05',
+        'section': 'Outcome cards',
+        'element': 'Outcome status',
+        'definition': 'On track, At risk, Behind, or Not started; owner judgment, confirmed by the team lead',
+        'example': 'At risk',
+        'volume': '6',
+        'source': 'Outcome owners',
+        'provided_by': 'Team leads',
+        'available': 'No',
+        'how': 'Team-lead confirmation session (30 min)',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-06',
+        'section': 'Outcome cards',
+        'element': 'Last-updated date',
+        'definition': "When each outcome's status was last confirmed",
+        'example': 'Oct 13, 2026',
+        'volume': '6',
+        'source': 'Outcome owners',
+        'provided_by': 'Team leads',
+        'available': 'No',
+        'how': 'Recorded in the confirmation session',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-07',
+        'section': 'Milestones',
+        'element': 'Milestone ID',
+        'definition': 'Stable ID for each milestone',
+        'example': 'P03-M2',
+        'volume': '18–30',
+        'source': 'Build team',
+        'provided_by': 'Associate Director',
+        'available': 'Build',
+        'how': 'Assigned when the list is drafted',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-08',
+        'section': 'Milestones',
+        'element': 'Milestone name',
+        'definition': 'A concrete, checkable event (approval, launch, first delivery), not an activity',
+        'example': 'Unified approval process launched',
+        'volume': '18–30 (3–5 per outcome)',
+        'source': 'KPI definitions (milestone components); Blueprint targets',
+        'provided_by': 'Build team drafts; team leads confirm',
+        'available': 'Partial',
+        'how': 'Draft from definitions (EXP-05a, EXP-07a, INF-03a, INF-07a, FUT-01a…), confirm with team leads',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-09',
+        'section': 'Milestones',
+        'element': 'Linked outcome',
+        'definition': 'Which Dean outcome the milestone counts toward',
+        'example': 'P03',
+        'volume': '18–30',
+        'source': 'Crosswalk; KPI definitions',
+        'provided_by': 'Build team',
+        'available': 'Have it',
+        'how': 'From the Blueprint cascade (primary priority)',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-10',
+        'section': 'Milestones',
+        'element': 'Linked KPI component',
+        'definition': 'Team KPI component the milestone evidences, if any',
+        'example': 'EXP-07a',
+        'volume': '18–30',
+        'source': 'KPI definitions workbook, Components tab',
+        'provided_by': 'Build team',
+        'available': 'Have it',
+        'how': 'Lookup',
+        'needed': 'Optional',
+    },
+    {
+        'id': 'A-11',
+        'section': 'Milestones',
+        'element': 'Planned date',
+        'definition': 'Date the milestone is due',
+        'example': 'Dec 31, 2026',
+        'volume': '18–30',
+        'source': 'Blueprint quarter deadlines; owners',
+        'provided_by': 'Team leads',
+        'available': 'Partial',
+        'how': 'Blueprint gives quarters for some; owners set the rest',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-12',
+        'section': 'Milestones',
+        'element': 'Milestone owner',
+        'definition': 'Person responsible for the milestone',
+        'example': '[name]',
+        'volume': '18–30',
+        'source': 'Team leads',
+        'provided_by': 'Team leads',
+        'available': 'No',
+        'how': 'Confirmation session',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-13',
+        'section': 'Milestones',
+        'element': 'Milestone status',
+        'definition': 'Met, In progress, Not started, or Missed',
+        'example': 'In progress',
+        'volume': '18–30',
+        'source': 'Milestone owners',
+        'provided_by': 'Team leads',
+        'available': 'No',
+        'how': 'Confirmation session; self-reported',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-14',
+        'section': 'Milestones',
+        'element': 'Date met',
+        'definition': 'Date the milestone was achieved',
+        'example': 'Sep 18, 2026',
+        'volume': 'Met milestones only',
+        'source': 'Milestone owners',
+        'provided_by': 'Team leads',
+        'available': 'No',
+        'how': 'Confirmation session',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-15',
+        'section': 'Milestones',
+        'element': 'Evidence link',
+        'definition': 'Link to the approving document, minutes, or release note',
+        'example': 'SharePoint URL',
+        'volume': 'Met milestones only',
+        'source': 'Milestone Evidence Register (to build)',
+        'provided_by': 'Milestone owners',
+        'available': 'No',
+        'how': 'Collect links; register built in Stage 2',
+        'needed': 'Optional',
+    },
+    {
+        'id': 'A-16',
+        'section': 'Outcome cards',
+        'element': 'Milestones reached / planned',
+        'definition': 'Count of Met milestones over all milestones for the outcome',
+        'example': '1 of 4',
+        'volume': '6',
+        'source': 'Calculated',
+        'provided_by': 'Build team',
+        'available': 'Derived',
+        'how': 'Formula',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-17',
+        'section': 'Outcome cards',
+        'element': 'Progress bar',
+        'definition': 'Milestones reached / planned, as a percent',
+        'example': '25%',
+        'volume': '6',
+        'source': 'Calculated',
+        'provided_by': 'Build team',
+        'available': 'Derived',
+        'how': 'Formula',
+        'needed': 'Required',
+    },
+    {
+        'id': 'A-18',
+        'section': 'Outcome cards',
+        'element': 'Existing initiative % complete (optional context)',
+        'definition': 'Percent complete for the 11 existing initiatives listed in the Blueprint',
+        'example': 'GT Infinity 2.0 Public · 10%',
+        'volume': '11',
+        'source': "Dean's Blueprint (prototype site)",
+        'provided_by': 'Build team',
+        'available': 'Have it',
+        'how': 'Copy from Blueprint; ask owners to confirm',
+        'needed': 'Optional',
+    },
+    {
+        'id': 'A-19',
+        'section': 'Needs panel',
+        'element': 'Data availability flags',
+        'definition': 'Have it / No for each data row on the board',
+        'example': 'No',
+        'volume': '5',
+        'source': 'This list',
+        'provided_by': 'Build team',
+        'available': 'Derived',
+        'how': 'From this sheet',
+        'needed': 'Required',
     },
 ]

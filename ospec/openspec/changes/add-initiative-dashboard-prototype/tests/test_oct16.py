@@ -11,11 +11,68 @@ reader to assume they are real.
 from app import oct16_data
 
 
-def test_the_page_renders_the_six_outcomes(logged_in):
+def test_it_follows_the_wireframe_layout(logged_in):
+    """The page is Option A of the wireframes, so its own furniture must match the
+    drawing: eyebrow, title, explainer, the scope block, the data-requirements
+    table and the trade-offs. An earlier version showed only the six cards and was
+    therefore not the wireframe."""
     body = logged_in("Bill").get("/oct16").text
-    assert "Dean outcomes" in body
-    for oid in ("P01", "P02", "P03", "P04", "P05", "P06"):
-        assert oid in body or oid.lower() in body, "outcome %s is missing" % oid
+    assert "OCTOBER 16" in body, "the eyebrow is missing"
+    assert "Blueprint outcomes" in body, "the wireframe's own title is missing"
+    assert "until its KPIs have data" in body, "the explainer is missing"
+    assert "Scope and scale of this choice" in body, "the scope block is missing"
+    assert "Data requirements: the complete list" in body, "the data table is missing"
+    assert "Trade-offs" in body, "the trade-offs are missing"
+
+
+def test_the_cards_use_the_wireframes_wording(logged_in):
+    """The drawing says "1 of 4 milestones reached" and carries an
+    "Owner: [name] · updated [date]" line. Both are reproduced, and the owner
+    line shows its placeholder rather than a guessed name."""
+    body = logged_in("Bill").get("/oct16").text
+    assert "of 4 milestones reached" in body
+    assert "Owner: [name]" in body, "the owner placeholder is missing"
+    assert "updated [date]" in body, "the updated placeholder is missing"
+
+
+def test_the_data_requirements_table_has_every_row(logged_in):
+    """19 rows, matching the workbook's Option A Data sheet. Reproduced rather than
+    summarised so the page and the workbook cannot drift apart."""
+    import html as _html
+
+    assert len(oct16_data.DATA_REQUIREMENTS) == 19
+    readable = _html.unescape(logged_in("Bill").get("/oct16").text)
+    for r in oct16_data.DATA_REQUIREMENTS:
+        assert r["id"] in readable, "data row %s is missing from the table" % r["id"]
+        assert r["element"] in readable, "the element text for %s is missing" % r["id"]
+
+
+def test_the_scope_block_matches_the_wireframes_figures(logged_in):
+    body = logged_in("Bill").get("/oct16").text
+    for _, value, _ in oct16_data.SCOPE:
+        assert value in body, "scope figure %r is missing" % value
+    assert "8 of 16" in body, "the in-hand figure is missing"
+    assert "20\u201330" in body, "the items-to-collect figure is missing"
+
+
+def test_both_sides_of_the_trade_offs_are_shown(logged_in):
+    """A page listing only the advantages would not be one the Dean could decide
+    from. The wireframes list three pros and two cons."""
+    pros = [t for g, t in oct16_data.TRADE_OFFS if g]
+    cons = [t for g, t in oct16_data.TRADE_OFFS if not g]
+    assert len(pros) == 3 and len(cons) == 2, "the trade-off list changed shape"
+    body = logged_in("Bill").get("/oct16").text
+    # Compare on rendered text, not raw HTML: an apostrophe renders as &#39;, so a
+    # raw substring check reports "missing" for text that is present. Unescape
+    # first, then compare.
+    import html as _html
+
+    readable = _html.unescape(body)
+    for text in pros + cons:
+        assert text in readable, "trade-off %r is missing" % text[:40]
+    assert "Does not match the 2026 priorities presented in May" in readable, (
+        "the sharpest caveat must not be dropped"
+    )
 
 
 def test_every_outcome_shows_milestones_reached_of_planned(logged_in):

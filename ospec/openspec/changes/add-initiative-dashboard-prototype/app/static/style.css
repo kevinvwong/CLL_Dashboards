@@ -314,3 +314,63 @@ h2 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
   .oct16-notes { color: #000; }
   .oct16-card { break-inside: avoid; }
 }
+
+
+/* ---- October 16, Option A: the wireframes' page -------------------------- */
+.oct16-eyebrow {
+  margin: 0; font-size: .72rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.oct16-title { margin: .1rem 0 .15rem; }
+.oct16-explainer { margin: 0 0 .2rem; font-size: .88rem; color: var(--muted); }
+
+/* milestone row: name then status, as drawn */
+.oct16-milestone { justify-content: space-between; }
+.oct16-mstatus { min-width: 0; text-align: right; }
+.oct16-owner { margin: .55rem 0 0; font-size: .78rem; color: var(--muted); }
+
+/* scope block */
+.oct16-scope, .oct16-requirements, .oct16-tradeoffs { margin-top: 1.6rem; }
+.oct16-scope h2, .oct16-requirements h2, .oct16-tradeoffs h2 {
+  font-size: 1rem; margin: 0 0 .2rem;
+}
+.oct16-scope-sub { margin: 0 0 .7rem; font-size: .85rem; color: var(--muted); }
+.oct16-scope-grid {
+  margin: 0; display: grid; gap: .6rem 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+}
+.oct16-scope-item dt {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--muted);
+}
+.oct16-scope-item dd { margin: .1rem 0 0; font-size: .92rem; }
+.oct16-scope-note { color: var(--muted); font-size: .82rem; }
+
+/* the data-requirements table */
+.oct16-table-wrap { overflow-x: auto; }
+.oct16-table {
+  border-collapse: collapse; width: 100%; font-size: .8rem;
+}
+.oct16-table th, .oct16-table td {
+  border: 1px solid #dcdcdc; padding: .3rem .45rem; text-align: left;
+  vertical-align: top;
+}
+.oct16-table th {
+  background: #f4f4f4; font-size: .72rem; text-transform: uppercase;
+  letter-spacing: .03em; white-space: nowrap;
+}
+.oct16-avail { font-weight: 600; white-space: nowrap; }
+
+/* trade-offs, both sides */
+.oct16-tradeoff-list { list-style: none; margin: 0; padding: 0; }
+.oct16-tradeoff {
+  display: flex; gap: .5rem; align-items: baseline; padding: .15rem 0;
+  font-size: .88rem;
+}
+.oct16-mark { flex: 0 0 auto; font-weight: 700; width: .8rem; }
+.oct16-tradeoff.pro .oct16-mark { color: var(--status-on-track); }
+.oct16-tradeoff.con .oct16-mark { color: var(--status-at-risk); }
+@media print {
+  .oct16-table { font-size: .68rem; }
+  .oct16-requirements, .oct16-scope, .oct16-tradeoffs { break-inside: avoid; }
+}
