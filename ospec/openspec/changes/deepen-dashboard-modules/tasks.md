@@ -78,6 +78,9 @@
 
 ## 7. Integration
 
-- [ ] 7.1 Run the whole suite and both validations. *Verify: `python -m pytest tests -q` green and `openspec validate --all --strict` exits 0.*
+- [x] 7.1 Run the whole suite and both validations. *Verify: `python -m pytest tests -q` green and `openspec validate --all --strict` exits 0.*
+  - 304 passed; `openspec validate --all --strict` → 4 passed, 0 failed.
 - [ ] 7.2 Build the deploy archive and deploy it once, observing the marker. *Verify: `/healthz` reports the new marker; the gate walk in `ospec/docs/DEPLOY.md` passes.*
-- [ ] 7.3 Record the new seams for the next reader: which module owns the connection, the write transaction, the status vocabulary, and the screen reads. *Verify: `design.md` in the prototype change points to each seam, so a future explorer does not re-derive them.*
+  - **BLOCKED, not attempted.** The live plan `cll-dash-proto-plan` (F1 Free) is `QuotaExceeded`: `WP stop requests 34 / 15`, `nextResetTime 2026-10-06T18:00:00Z`. The site returns 403 `This web app is stopped`, and *both* apps on the shared plan are down. A deploy now is itself a stop request and would push the reset out another hour (measured: two `webapp start` attempts moved it 17:00Z → 18:00Z and the count 16 → 34). The archive builds and the rollback is already exercised (`ospec/docs/DEPLOY.md`); only the deploy is gated on the quota. Do this after `nextResetTime`, and space it from any other deploy.
+- [x] 7.3 Record the new seams for the next reader: which module owns the connection, the write transaction, the status vocabulary, and the screen reads. *Verify: `design.md` in the prototype change points to each seam, so a future explorer does not re-derive them.*
+  - Added a **Module seams** table to the prototype's `design.md`, naming the module, its interface, and what it hides, for all six. Also recorded the F1 stop-request finding in `DEPLOY.md`.
