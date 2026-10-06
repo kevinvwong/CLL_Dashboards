@@ -50,10 +50,17 @@ ALLOWED_NAMES = {".env.example"}
 # The database and the files needed to recreate it. App Service serves
 # DB_PATH=./cll_initiatives.db relative to wwwroot, so the db ships at the archive
 # root and the schema and seed beside it under db/.
+#
+# seed_team_layer.sql is REQUIRED and was missing until 2026-10-06: the schema
+# gained Teams/SourceAreas/TeamKPIs, but only seed_sample.sql shipped, so a
+# rebuild from the archive produced the tables with no rows. The deployed db
+# file itself was fine, which is exactly why this was invisible - the rebuild
+# path, not the shipped data, was broken.
 REQUIRED = [
     (os.path.join(SPEC, "cll_initiatives.db"), "cll_initiatives.db"),
     (os.path.join(SPEC, "db", "schema.sql"), "db/schema.sql"),
     (os.path.join(SPEC, "db", "seed_sample.sql"), "db/seed_sample.sql"),
+    (os.path.join(SPEC, "db", "seed_team_layer.sql"), "db/seed_team_layer.sql"),
 ]
 
 # Asserted present after building. A missing one means a broken deploy, so the
