@@ -13,3 +13,9 @@ node_modules/
 # of documents authored outside this repository and may contain internal
 # planning data; they are read in place and never committed. See design.md D8.
 CLL_Strategy_Portfolio_Enterprise_Package_*.zip
+
+# Build artefacts. The deploy archive is produced by
+# ospec/scripts/build_deploy_zip.py and is not a source file; committing it would
+# put a stale copy of the database and the app in the tree. See ospec/docs/DEPLOY.md.
+ospec/deploy.zip
+deploy.zip

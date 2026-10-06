@@ -1,0 +1,99 @@
+"""Build the deployment archive for the live App Service.
+
+    python scripts/build_deploy_zip.py [output.zip]
+
+Why this exists in the repo rather than in a shell history:
+
+  - PowerShell's `Compress-Archive` writes BACKSLASH separators into the zip, and
+    Linux Kudu/rsync cannot stat them. The deploy then fails with a bare
+    `Kudu Status: 400` whose real cause is one line deep:
+        rsync: failed to stat ".../app\\main.py": Invalid argument (22)
+    So the zip is built here with an explicit '/'.
+
+  - `az webapp deploy --type zip` REPLACES /home/site/wwwroot, and nothing in the
+    application recreates the SQLite database at startup. A zip that omits it
+    takes the live site down with "database unreachable". It has happened once.
+    This script refuses to produce an archive without it.
+
+See docs/DEPLOY.md for the procedure that uses this.
+"""
+
+import os
+import sys
+import zipfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SPEC = os.path.dirname(HERE)  # ospec/
+APP = os.path.join(SPEC, "openspec", "changes", "add-initiative-dashboard-prototype")
+
+DEFAULT_OUT = os.path.join(SPEC, "deploy.zip")
+
+# Bytecode and test scaffolding: not needed at runtime, and shipping tests slows
+# the build for no benefit.
+SKIP_DIRS = {"__pycache__", ".pytest_cache", ".git", "tests"}
+SKIP_EXT = {".pyc", ".pyo"}
+
+# The database and the files needed to recreate it. App Service serves
+# DB_PATH=./cll_initiatives.db relative to wwwroot, so the db ships at the archive
+# root and the schema and seed beside it under db/.
+REQUIRED = [
+    (os.path.join(SPEC, "cll_initiatives.db"), "cll_initiatives.db"),
+    (os.path.join(SPEC, "db", "schema.sql"), "db/schema.sql"),
+    (os.path.join(SPEC, "db", "seed_sample.sql"), "db/seed_sample.sql"),
+]
+
+# Asserted present after building. A missing one means a broken deploy, so the
+# script fails loudly rather than producing an archive that takes the site down.
+MUST_CONTAIN = ["app/main.py", "app/templates/base.html", "requirements.txt",
+                "cll_initiatives.db"]
+
+
+def build(out_path: str = DEFAULT_OUT) -> str:
+    if not os.path.isdir(APP):
+        raise SystemExit("application directory not found: %s" % APP)
+
+    added = []
+    with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
+        for root, dirs, files in os.walk(APP):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            for fn in files:
+                if os.path.splitext(fn)[1] in SKIP_EXT:
+                    continue
+                full = os.path.join(root, fn)
+                arc = os.path.relpath(full, APP).replace(os.sep, "/")
+                z.write(full, arc)
+                added.append(arc)
+
+        for src, arc in REQUIRED:
+            if not os.path.exists(src):
+                raise SystemExit("required file missing, refusing to build: %s" % src)
+            z.write(src, arc)
+            added.append(arc)
+
+    # Verify, rather than trust the loop above.
+    with zipfile.ZipFile(out_path) as z:
+        names = z.namelist()
+
+    backslashes = [n for n in names if "\\" in n]
+    if backslashes:
+        raise SystemExit(
+            "archive contains backslash separators, Linux Kudu cannot stat them: %s"
+            % backslashes[:3])
+
+    missing = [n for n in MUST_CONTAIN if n not in names]
+    if missing:
+        raise SystemExit("archive is missing required entries: %s" % missing)
+
+    return out_path
+
+
+if __name__ == "__main__":
+    out = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_OUT
+    path = build(out)
+    with zipfile.ZipFile(path) as z:
+        names = z.namelist()
+    print("Built %s" % path)
+    print("  entries     : %d" % len(names))
+    print("  backslashes : %d (must be 0)" % sum(1 for n in names if "\\" in n))
+    print("  templates   : %d" % sum(1 for n in names if n.startswith("app/templates/")))
+    print("  size        : %.1f KB" % (os.path.getsize(path) / 1024))
