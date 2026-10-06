@@ -2,11 +2,11 @@
 
 ## 1. Visual system
 
-- [ ] 1.1 Rewrite the token block: dark GT-navy chrome tokens, light content tokens, GT gold accent, `--ink-print`, and the six-value priority colour scale. *Verify: every token is declared once; the token test asserts no colour literal outside a token block.*
-- [ ] 1.2 Add the serif heading face and keep the sans body; apply `eyebrow → serif heading → note` to section headings. *Verify: a heading and its body differ in face; a section on any page renders the three-part heading.*
-- [ ] 1.3 Extend `app/status.py` with the priority colour scale; do not add a second status vocabulary. *Verify: a test asserts `status.vocabulary()` still equals the schema's CHECK; the priority scale has six distinct colours.*
-- [ ] 1.4 Rebuild the component set on the tokens: stage, panel, card, chip, stat tile, pill, table, drawer, dialog, empty state, breadcrumb, toast. *Verify: each component renders; buttons have variants; the progress bar exposes `role="progressbar"` with `aria-valuenow` and its number as text.*
-- [ ] 1.5 **Group check:** the token and component system carries the Outcomes page end to end with no regression. *Verify: `/oct16` renders on the new components; the design-system tests pass; a visual check at 375/726/1280px shows no horizontal scroll.*
+- [x] 1.1 Rewrite the token block: dark GT-navy chrome tokens, light content tokens, GT gold accent, `--ink-print`, and the six-value priority colour scale. *Verify: every token is declared once; the token test asserts no colour literal outside a token block.*
+- [x] 1.2 Add the serif heading face and keep the sans body; apply `eyebrow → serif heading → note` to section headings. *Verify: a heading and its body differ in face; a section on any page renders the three-part heading.*
+- [x] 1.3 Extend `app/status.py` with the priority colour scale; do not add a second status vocabulary. *Verify: a test asserts `status.vocabulary()` still equals the schema's CHECK; the priority scale has six distinct colours.*
+- [x] 1.4 Rebuild the component set on the tokens: stage, panel, card, chip, stat tile, pill, table, drawer, dialog, empty state, breadcrumb, toast. *Verify: each component renders; buttons have variants; the progress bar exposes `role="progressbar"` with `aria-valuenow` and its number as text.*
+- [x] 1.5 **Group check:** the token and component system carries the Outcomes page end to end with no regression. *Verify: `/oct16` renders on the new components; the design-system tests pass; a visual check at 375/726/1280px shows no horizontal scroll.*
 
 ## 2. Blueprint home
 

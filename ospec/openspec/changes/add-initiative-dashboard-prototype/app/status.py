@@ -68,3 +68,42 @@ def milestone_class(value: str) -> str:
 def availability_class(value: str) -> str:
     """The class for a data-requirements availability cell."""
     return "availability-" + slug(value)
+
+
+# --- the per-priority colour scale (blueprint-redesign task 1.3) -------------
+#
+# Six key colours, each tied to its priority CODE (P01-P06), adopted from the
+# Dean's prototype's own PRIORITIES data. These are NOT status colours and must
+# never be used as one: the status scale is read from the schema above. A
+# priority keeps its colour wherever it appears, so a reader can track a
+# priority across the stage, the cards and the cascade by colour alone.
+
+#: code -> CSS custom property name. Kept beside the module's other mappings so
+#: there is one place that knows how a priority maps to a colour.
+PRIORITY_COLOUR_TOKENS = {
+    "P01": "--priority-1",
+    "P02": "--priority-2",
+    "P03": "--priority-3",
+    "P04": "--priority-4",
+    "P05": "--priority-5",
+    "P06": "--priority-6",
+}
+
+
+def priority_colour_token(code: str) -> str:
+    """The CSS custom property holding a priority's key colour.
+
+    Unknown codes fall back to the first token rather than raising, so a new
+    priority renders in a defined colour instead of an unstyled one.
+    """
+    return PRIORITY_COLOUR_TOKENS.get((code or "").strip().upper(),
+                                      "--priority-1")
+
+
+def priority_colour_var(code: str) -> str:
+    """The `var(...)` expression for a priority's colour.
+
+    For inline styles, where a class cannot carry the value.
+    """
+    return "var(%s)" % priority_colour_token(code)
+

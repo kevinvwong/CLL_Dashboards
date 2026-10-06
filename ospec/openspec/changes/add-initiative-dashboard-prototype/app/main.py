@@ -30,6 +30,10 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 templates.env.filters["status_class"] = status.status_class
 templates.env.filters["milestone_class"] = status.milestone_class
 templates.env.filters["availability_class"] = status.availability_class
+# The per-priority key colour (blueprint-redesign 1.1/1.3). A priority keeps
+# its colour across the stage, the cards and the cascade. Deliberately a
+# separate scale from status, so the two can never be confused.
+templates.env.filters["priority_colour"] = status.priority_colour_var
 
 # htmx is vendored (design.md decision 1) so the app works with no CDN access.
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
