@@ -115,9 +115,21 @@ def test_the_superseded_change_records_its_supersession():
 
 
 def test_the_scope_correction_is_recorded():
-    p = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(APP))),
-                     "openspec", "changes", "blueprint-redesign", "proposal.md")
-    t = open(p, encoding="utf-8").read()
+    """The correction survives archiving.
+
+    The change was archived (2026-10-06), so its proposal moved under
+    changes/archive/. The record must still be findable - and if a future
+    archive changes that location, this fails rather than silently passing.
+    """
+    changes = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(APP))),
+                           "openspec", "changes")
+    candidates = [
+        os.path.join(changes, "archive", "2026-10-06-blueprint-redesign", "proposal.md"),
+        os.path.join(changes, "blueprint-redesign", "proposal.md"),
+    ]
+    found = next((p for p in candidates if os.path.exists(p)), None)
+    assert found, "the blueprint-redesign proposal is not in the archive or in changes/"
+    t = open(found, encoding="utf-8").read()
     assert "SCOPE CORRECTION" in t
     # And it names the config contradiction it creates.
     assert "Nothing below D-1" in t

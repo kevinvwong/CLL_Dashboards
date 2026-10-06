@@ -78,7 +78,7 @@ capability overlaps an existing delta, its requirements add to that behaviour.
 - `visual-system`: the D3 token set — dark chrome, light content, GT gold accent,
   serif/sans type split, the status scale read from the schema, and the
   per-priority colour scale.
-- `blueprint-home`: the hero stage, Dean node, priority cards, selected-priority
+- `portfolio-dashboard`: the hero stage, Dean node, priority cards, selected-priority
   panel, and initiative-signals strip.
 - `cascade-views`: the goal and priority drill-down, grouping, and relationship
   display.
