@@ -1,4 +1,41 @@
 -- =====================================================================
+-- SUPERSEDED 2026-10-06 by Revision 2 (ospec/db/rev2/, ospec/db/mssql/)
+-- =====================================================================
+-- This file describes the PROTOTYPE schema - nine tables, one owner per
+-- initiative, one meaning per initiative link. It remains accurate as a record
+-- of what the prototype does, and the prototype is still deployed, so it is NOT
+-- deleted. It is no longer the target model.
+--
+-- Revision 2 supersedes it: 27 tables plus one addition, effective-dated
+-- multi-role ownership, ten-or-five typed relationships, a traceability tier
+-- between goals and initiatives, and reusable priority definitions.
+-- See openspec/changes/adopt-rev2-strategy-portfolio-schema/design.md.
+--
+-- Table mapping, prototype -> Revision 2:
+--
+--   Goals                 -> goal  (+ strategic_objective, a tier this model lacks)
+--   Priorities(PlanYear)  -> annual_priority  and, in Rev2,
+--                            priority_definition + planning_cycle + priority_cycle
+--   People                -> person  (+ team); the prototype's IsAdmin flag is an
+--                            application concern and has no Rev2 counterpart
+--   Initiatives           -> initiative  (gains type, validation status, dates)
+--   InitiativeGoals       -> initiative_goal  (gains relationship type and dates)
+--   InitiativePriorities  -> initiative_priority / initiative_priority_cycle
+--   InitiativeLinks       -> initiative_relationship  (one meaning becomes five
+--                            permitted types; direction is level-enforced)
+--   Initiatives.OwnerID   -> initiative_owner  (one slot becomes four roles,
+--                            effective-dated) + stewardship_assignment
+--   ProgressUpdates       -> initiative_update  (append-only, attributed)
+--   AuditLog              -> NO Rev2 COUNTERPART. Effective-dated rows and
+--                            validation_event carry what it held. See design.md D7.
+--   vw_* views            -> redefined in Rev2; the prototype's versions resolve
+--                            through OwnerID and InitiativeLinks, both replaced
+--
+-- NOT carried forward: nothing. The prototype's behaviour is either represented
+-- in Rev2 or recorded as deliberately dropped, with the drop named above.
+-- =====================================================================
+
+-- =====================================================================
 -- CLL Strategic Initiatives Database  (v3, SQLite for local dev)
 -- Two entry points: Strategy 2035 Goals (5) and Annual Priorities (6)
 -- Two initiative levels: Dean, and D-1 (each D-1 feeds 1+ Dean initiatives)

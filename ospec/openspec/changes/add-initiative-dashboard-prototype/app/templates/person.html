@@ -17,6 +17,7 @@
     <div class="row-main">
       <span class="code">{{ row.Code }}</span>
       <span class="name">{{ row.InitiativeName }}</span>
+      {% include "_synthetic_label.html" %}
       <span class="level">{{ row.Level }}</span>
       {% if row.NeedsUpdate %}<span class="flag">Needs update</span>{% endif %}
     </div>

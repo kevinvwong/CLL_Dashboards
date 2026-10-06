@@ -235,3 +235,27 @@ h2 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
 .people .title { color: var(--muted); font-size: 0.85rem; }
 
 .error { color: var(--error); margin: 0.75rem 0 0; }
+/* 8.2: the synthetic-data markers. Visible in every environment, including
+   live, because the initiatives are invented and must not read as approved. */
+.synthetic-label {
+  display: inline-block;
+  margin-left: .4rem;
+  padding: 0 .35rem;
+  font-size: .7em;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  opacity: .75;
+  vertical-align: middle;
+}
+
+.synthetic-banner {
+  margin: 0;
+  padding: .45rem .75rem;
+  font-size: .85rem;
+  text-align: center;
+  background: #fff4d6;
+  border-bottom: 1px solid #d9c48a;
+  color: #4a3c14;
+}

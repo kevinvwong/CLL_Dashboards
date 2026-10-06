@@ -14,6 +14,15 @@
   {% if app_env == "local" %}
   <p class="local-banner" role="status">LOCAL — sample data only</p>
   {% endif %}
+  {#  adopt-rev2-strategy-portfolio-schema 8.2: shown in EVERY environment,
+      including live. The initiatives in this database were invented for the
+      demo - the source package contains canonical strategy and zero
+      operational rows, and no approved initiative inventory exists. A
+      visitor must not be able to read this as an approved portfolio. #}
+  <p class="synthetic-banner" role="status">
+    Sample data — these initiatives are invented for this prototype and are
+    not governance-approved portfolio records.
+  </p>
   <header class="site-header">
     <a class="brand" href="/">Initiative Dashboard</a>
     <nav class="site-nav">

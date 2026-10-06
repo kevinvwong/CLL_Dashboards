@@ -6,6 +6,11 @@
 
 PRAGMA foreign_keys = ON;
 
+-- NOTE (adopt-rev2-strategy-portfolio-schema 8.2): every initiative below is
+-- INVENTED for this prototype and is NOT GOVERNANCE-APPROVED portfolio data.
+-- The source package ships canonical strategy with zero operational rows, and
+no approved Dean or D-1 inventory exists. Do not treat these as records.
+
 -- Goals (confirm FullName wording from the Strategy 2035 PDF)
 INSERT INTO Goals (GoalNumber, ShortName, FullName) VALUES
  (1, 'Academic',       'Catalyze a learning society and build a home for transformative learning'),

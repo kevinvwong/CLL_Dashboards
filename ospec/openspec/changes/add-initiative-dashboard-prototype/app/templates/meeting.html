@@ -21,6 +21,7 @@
       <div class="row-main">
         <span class="code">{{ row.Code }}</span>
         <span class="name">{{ row.InitiativeName }}</span>
+        {% include "_synthetic_label.html" %}
         <span class="badge">{{ row.Status }}</span>
       </div>
       <div class="row-progress">
@@ -50,6 +51,7 @@
           <div class="row-main">
             <span class="code">{{ row.Code }}</span>
             <span class="name">{{ row.InitiativeName }}</span>
+            {% include "_synthetic_label.html" %}
           </div>
           <div class="row-progress">
             <span class="bar-label">{{ row.UpdateDate }} &middot; {{ row.PercentComplete }}% {{ row.Status }}</span>

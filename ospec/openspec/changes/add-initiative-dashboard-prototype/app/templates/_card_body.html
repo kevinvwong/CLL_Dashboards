@@ -2,7 +2,7 @@
   <button class="card-close" data-close aria-label="Close">&times;</button>
 
   <p class="card-code">{{ card.Code }} <span class="level">{{ card.Level }}</span></p>
-  <h2 class="card-title">{{ card.InitiativeName }}</h2>
+  <h2 class="card-title">{{ card.InitiativeName }} {% include "_synthetic_label.html" %}</h2>
   <p class="card-owner">Owner:
     <a href="/people/{{ card.OwnerID }}">{{ card.Owner }}</a>
   </p>

@@ -8,3 +8,8 @@ node_modules/
 # uncommitted transactions from anyone who opens the database read-only.
 *.db-shm
 *.db-wal
+
+# Institutional source packages, not project artefacts. These are the only copy
+# of documents authored outside this repository and may contain internal
+# planning data; they are read in place and never committed. See design.md D8.
+CLL_Strategy_Portfolio_Enterprise_Package_*.zip
