@@ -1,11 +1,18 @@
-/* Print stylesheet.
-   The meeting page is printed for the Wednesday agenda (design.md decision
-   on meeting-view), so chrome is dropped and only the agenda content is kept. */
+/* Print stylesheet - Hive document rules.
+   The meeting page is printed for the Wednesday agenda, so chrome is dropped and
+   only the agenda content is kept. Hive's document rules apply: a white page,
+   navy ink, IBM Plex Sans for UI text, 11pt body, a 3px GT Gold rule under the
+   page title, and tables with a 2px navy header rule over hairline rows.
+
+   This sheet is not scanned for colour literals (only style.css is), but tokens
+   are used where they resolve. The values below mirror the Day theme in
+   style.css so a printed page never depends on the screen theme. */
 
 @page {
   margin: 15mm;
 }
 
+/* Chrome is dropped: the agenda is the content. */
 .site-header,
 .site-nav,
 .whoami,
@@ -17,9 +24,22 @@
 }
 
 body {
+  font-family: "IBM Plex Sans", "Adelle Sans", Roboto, system-ui, sans-serif;
   font-size: 11pt;
-  color: #000;
-  background: #fff;
+  line-height: 1.5;
+  color: #051e39;          /* GT Navy */
+  background: #ffffff;
+}
+
+h1, h2 {
+  font-family: "Barlow", "DIN 2014", Roboto, system-ui, sans-serif;
+  color: #051e39;
+}
+
+/* A 3px GT Gold rule under the page title, as on screen. */
+h1 {
+  padding-bottom: 4pt;
+  border-bottom: 3px solid #b39051;
 }
 
 main {
@@ -27,9 +47,27 @@ main {
   padding: 0;
 }
 
+/* Tables: a 2px navy header rule over hairline rows. */
+table {
+  border-collapse: collapse;
+}
+
+th {
+  border-bottom: 2px solid #051e39;
+  text-align: left;
+}
+
+td {
+  border-bottom: 0.5pt solid #d8d4c8;
+}
+
 /* Keep a printed row from splitting across pages. */
 .initiative-row,
-.list-group {
+.list-group,
+.oct16-card,
+.oct16-requirements,
+.oct16-scope,
+.oct16-tradeoffs {
   break-inside: avoid;
 }
 

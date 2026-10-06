@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hive — review page for the CLL Initiative Dashboard restyle</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+  /* The review page's own layout only. Every colour, size and font it shows
+     comes from the app's stylesheet, so the guide cannot drift from the app. */
+  main { max-width: 76rem; }
+  .guide-section { margin: var(--space-8) 0; padding-top: var(--space-4); border-top: 1px solid var(--line); }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: var(--space-3); }
+  .swatch { border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+  .swatch .chip-area { height: 3rem; }
+  .swatch .meta { padding: var(--space-2); font-size: var(--text-xs); }
+  .swatch code { font-family: var(--font-mono); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .specimen { border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); background: var(--surface-raised); }
+</style>
+</head>
+<body>
+
+<div class="sample-banner">
+  <span class="sample-banner-text">Sample data — the review page uses the app's own sample records</span>
+</div>
+
+<header class="site-header">
+  <a class="brand" href="#">CLL Initiative Dashboard</a>
+  <nav class="site-nav">
+    <a href="#" aria-current="page">Overview</a>
+    <a href="#">Initiatives</a>
+    <a href="#">People</a>
+    <a href="#">Outcomes</a>
+  </nav>
+  <span class="whoami">Review page</span>
+</header>
+
+<main>
+
+<section class="section-heading">
+  <div>
+    <p class="eyebrow">Hive design system</p>
+    <h1>Review page</h1>
+  </div>
+  <p class="section-note">Every token and component. Follows your OS theme: switch the OS to Night to review the dark theme.</p>
+</section>
+
+<section class="guide-section">
+  <h2>Typography</h2>
+  <div class="specimen">
+    <p class="eyebrow">Eyebrow — Barlow 600, gold rule</p>
+    <h1>Heading 1 — Barlow 600, the engineered display voice</h1>
+    <h2>Heading 2 — Barlow 600</h2>
+    <h3>Heading 3 — IBM Plex Sans 600</h3>
+    <p class="entry-description">A lede or description reads in IBM Plex Serif, the human voice — a direct line to the Institute's print heritage.</p>
+    <p>Body text is IBM Plex Sans 400. Numbers in tables and bars use tabular figures: <span style="font-variant-numeric: tabular-nums">1,234 · 5,678 · 90%</span>.</p>
+    <p class="section-note">A section note, also IBM Plex Serif, muted.</p>
+    <p><code>Monospace</code> is IBM Plex Mono.</p>
+  </div>
+</section>
+
+<section class="guide-section">
+  <h2>Colour — core and brand</h2>
+  <div class="swatches">
+    <div class="swatch"><div class="chip-area" style="background: var(--ink)"></div><div class="meta"><code>--ink</code> GT Navy</div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--chrome)"></div><div class="meta"><code>--chrome</code> app bar</div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--gold)"></div><div class="meta"><code>--gold</code> gt-gold</div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--gold-ink)"></div><div class="meta"><code>--gold-ink</code> gold text</div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--action-primary)"></div><div class="meta"><code>--action-primary</code></div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--accent)"></div><div class="meta"><code>--accent</code> Bright Blue</div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--surface)"></div><div class="meta"><code>--surface</code> page</div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--surface-sunken)"></div><div class="meta"><code>--surface-sunken</code> Diploma</div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--surface-selected)"></div><div class="meta"><code>--surface-selected</code></div></div>
+    <div class="swatch"><div class="chip-area" style="background: var(--warn-bg); border-bottom: 1px solid var(--warn-border)"></div><div class="meta"><code>--warn-bg</code> Buzz</div></div>
+  </div>
+</section>
+
+<section class="guide-section">
+  <h2>Status — six badges, each with its word</h2>
+  <div class="row">
+    <span class="badge status-on-track">On track</span>
+    <span class="badge status-at-risk">At risk</span>
+    <span class="badge status-off-track">Off track</span>
+    <span class="badge status-not-started">Not started</span>
+    <span class="badge status-paused">Paused</span>
+    <span class="badge status-complete">Complete</span>
+  </div>
+  <p class="section-note">Status always pairs colour with its word — the colour-blind mitigation.</p>
+</section>
+
+<section class="guide-section">
+  <h2>Priority keys — six colours, P01–P06</h2>
+  <div class="row">
+    <span class="chip chip-priority" style="--priority: var(--priority-1)">P01</span>
+    <span class="chip chip-priority" style="--priority: var(--priority-2)">P02</span>
+    <span class="chip chip-priority" style="--priority: var(--priority-3)">P03</span>
+    <span class="chip chip-priority" style="--priority: var(--priority-4)">P04</span>
+    <span class="chip chip-priority" style="--priority: var(--priority-5)">P05</span>
+    <span class="chip chip-priority" style="--priority: var(--priority-6)">P06</span>
+  </div>
+</section>
+
+<section class="guide-section">
+  <h2>Buttons — one primary per view, the chamfer</h2>
+  <div class="row">
+    <button class="button primary" type="button">Primary action</button>
+    <button class="button secondary" type="button">Secondary</button>
+    <button class="button ghost" type="button">Ghost</button>
+    <button class="button" type="button">Outline</button>
+    <button class="button primary" type="button" disabled>Disabled</button>
+  </div>
+</section>
+
+<section class="guide-section">
+  <h2>Fields, cards, tables</h2>
+  <div class="row" style="align-items: flex-start">
+    <label class="field" style="min-width: 18rem">
+      A labelled field
+      <input type="text" placeholder="Type here">
+      <span class="hint">An optional hint below the control.</span>
+    </label>
+    <div class="tile" style="min-width: 18rem">
+      <span class="tile-label">Stat tile</span>
+      <span class="tile-count">1,234</span>
+    </div>
+  </div>
+
+  <div class="index-table-wrap" style="margin-top: var(--space-4)">
+    <table class="index-table">
+      <thead>
+        <tr><th>Code</th><th>Name</th><th>Status</th><th>Progress</th></tr>
+      </thead>
+      <tbody>
+        <tr class="index-row">
+          <td class="code">MAR-3</td><td>Sample initiative</td>
+          <td><span class="badge status-on-track">On track</span></td>
+          <td style="font-variant-numeric: tabular-nums">84%</td>
+        </tr>
+        <tr class="index-row">
+          <td class="code">TIM-4</td><td>Another sample</td>
+          <td><span class="badge status-at-risk">At risk</span></td>
+          <td style="font-variant-numeric: tabular-nums">42%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="guide-section">
+  <h2>Radii and elevation</h2>
+  <div class="row">
+    <div style="padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-raised)">radius-sm 2px</div>
+    <div style="padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised)">radius-md 4px</div>
+    <div style="padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface-raised)">radius-lg 8px</div>
+    <div style="padding: var(--space-3); background: var(--surface-raised); border-radius: var(--radius-md); box-shadow: var(--shadow-md)">shadow-md (menus)</div>
+    <div style="padding: var(--space-3); background: var(--surface-raised); border-radius: var(--radius-md); box-shadow: var(--shadow-lg)">shadow-lg (dialogs)</div>
+  </div>
+</section>
+
+</main>
+
+</body>
+</html>

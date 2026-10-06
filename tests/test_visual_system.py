@@ -107,21 +107,25 @@ def test_priority_colour_is_not_a_status_colour():
     assert not overlap, "a priority colour equals a status colour: %s" % overlap
 
 
-# --- 1.2 the serif / sans split ---------------------------------------------
+# --- 1.2 the display / sans / serif split -----------------------------------
 
 
 def test_font_family_tokens_exist():
     root = _root()
+    assert "--font-display" in root, "no display family token"
     assert "--font-serif" in root, "no serif family token"
     assert "--font-sans" in root, "no sans family token"
 
 
-def test_headings_use_the_serif_token():
+def test_headings_use_the_display_token():
+    """Headings use the display face. Hive's display is Barlow, a sans display
+    face, so this replaced the earlier serif-heading check (the restyle brief,
+    section 8). --font-serif stays for ledes and reading text."""
     css = _sheet()
     for sel in ("h1", "h2"):
         m = re.search(r"(?m)^%s \{([^}]*)\}" % sel, css)
         assert m, "no %s rule" % sel
-        assert "var(--font-serif)" in m.group(1), "%s is not serif" % sel
+        assert "var(--font-display)" in m.group(1), "%s is not the display face" % sel
 
 
 def test_body_uses_the_sans_token():

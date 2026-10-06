@@ -1,427 +1,440 @@
-# Design-system brief — drop-in replacement for the CLL Initiative Dashboard
+# Design-system brief — restyle the CLL Initiative Dashboard with Hive
 
-**For:** Claude, building the design system in its own tooling.
-**From:** the CLL Initiative Dashboard repo.
-**Deliverable:** drop-in files that replace the current stylesheet with **no
-change to markup**. This is a restyle, not a rewrite of the app.
+**For:** opencode, working in this repo.
+**From:** Kevin Wong (Strategic Operations, CLL), with the Hive design system.
+**Deliverable:** a restyle of `app/static/style.css` and `app/static/print.css`,
+self-hosted fonts in `app/static/fonts/`, and a review page — **with no change
+to templates or Python**. This is a restyle, not a rewrite of the app.
 
-Read this whole brief before starting. It states the exact visual direction, the
-token vocabulary, and the machine-checked rules your output must satisfy. Nothing
-here is a suggestion — the guard tests in section 7 will run against your output.
+**Source of truth: Hive.** Hive is the design system for this dashboard and the
+decks and reports that come out of it. Where this brief and your instincts (or
+the previous version of this brief) disagree, Hive wins. A copy of Hive ships
+with this brief at `docs/specs/hive/` — read `README.md` there first, then
+`dashboards.md` and `data-visualization.md`. Every colour, size and font below
+is taken from Hive's `tokens.json`; do not invent values.
+
+Read this whole brief before starting. Section 7 lists the guard tests; they run
+against your output, and section 8 lists the two test edits this restyle requires.
 
 ---
 
-## The goal — read this first
+## The goal
 
 > **A reimagining of the Georgia Tech brand: ultra modern, but a clear evolution
 > with clear lineage.**
 
-This one sentence governs every decision below. Unpack it, because the two halves
-pull against each other and the tension is the point:
+- **Ultra modern** is the execution: a real type hierarchy, restrained
+  elevation, small radii, calm dense-data layout. Software made in 2026.
+- **Clear lineage** is the substance: someone who knows the Institute should
+  recognise it with no logo present.
 
-- **Ultra modern** is the *execution*: current spacing, a real type hierarchy,
-  restrained elevation, a calm dense-data layout. It should feel like software
-  made in 2026, not a university site from 2015.
-- **Clear lineage** is the *substance*: it must still, unmistakably, be Georgia
-  Tech. Someone who knows the Institute should look at a screen and recognise it
-  **with no logo present**.
+Hive resolves that tension with these cues. Keep every one legible:
 
-So the failure modes are equal and opposite. A **dated, generic university
-dashboard** fails the first half. A **generic modern SaaS dashboard with GT
-colours sprinkled on** fails the second — and it is the more tempting mistake,
-because it is easy to reach for Polaris or Material wholesale. Do not. Borrow
-their *craft* (token discipline, elevation logic, spacing) and none of their
-*identity*.
+1. **White and gold lead; navy steadies.** Pages are white. Gold is the primary
+   action, the 3px rule and the eyebrow. Navy is the ink and the one solid bar
+   across the top of the app.
+2. **Gold as a rule and a mark, never a wash.** No gold backgrounds larger than a
+   button; no gradients in product UI.
+3. **The engineered display voice.** Headings are **Barlow** (open-source, the
+   same signage-and-engineering lineage as GT's DIN 2014). Body and UI are **IBM
+   Plex Sans** (GT's own named web alternate for Adelle Sans). Ledes and reading
+   text may use **IBM Plex Serif** (GT's alternate for Adelle).
+4. **The 30° facet.** GT's hexagon becomes one cut corner (`--chamfer-sm`, 8px)
+   on the primary button only. One chamfered element per region.
+5. **Honest data.** Status always carries its word (and in Hive, an icon);
+   numbers right-aligned in tabular figures; one y-axis.
 
-**The GT cues that must survive and be legible** — these are the lineage, and they
-should read at a glance without a wordmark:
-
-- **White and gold lead; navy is the counterweight.** The Institute's own rule,
-  and the single strongest GT signal. A GT screen should feel *warm and bright*,
-  punctuated by navy — not navy-dominant.
-- **Gold as a rule and a mark, not a wash.** Hairlines, active states, small
-  emphases. The gold-gradient heritage is a material to reference, not a
-  background to flood.
-- **The slab heading voice.** Roboto Slab is GT's sanctioned digital display face;
-  its slab terminals are a direct line to the Institute's print and signage
-  heritage. It is what makes the type feel *Georgia Tech* rather than *any app*.
-- **The technical-institute character.** GT is an engineering school: precise
-  alignment, measured proportions, honest data presentation. The design should
-  read as *engineered* — exact, unhurried, trustworthy.
-
-**The test to hold yourself to:** open the style guide and ask *"could this be any
-university, or any SaaS product?"* If yes, it has lost the lineage — go back and
-let the GT cues lead. Then ask *"does this look current?"* If no, it has lost the
-modernity. The brief is satisfied only when both answers hold at once.
+**The test:** open the review page and ask "could this be any university, or
+any SaaS product?" If yes, the lineage is lost. Then ask "does this look
+current?" If no, the modernity is lost. Both must hold.
 
 ---
 
 ## 1. What you are building
 
-Four things, delivered as files:
-
-| # | File | What it is |
+| # | Path | What it is |
 |---|------|-----------|
-| 1 | `style.css` | The whole design system. One file, tokens + every component rule. |
-| 2 | `print.css` | The print overrides (strips chrome, keeps content). |
-| 3 | `fonts/` | Self-hosted woff2 font files + an `@font-face` block in `style.css`. |
-| 4 | `style-guide.html` | A standalone page rendering every token and component, for review. Not linked from the app. |
+| 1 | `app/static/style.css` | The restyled sheet: Hive tokens + every existing component rule. |
+| 2 | `app/static/print.css` | Print overrides (keep current behaviour, apply Hive print rules). |
+| 3 | `app/static/fonts/*.woff2` | Copy the ten files from `docs/specs/hive/fonts/`, plus their `LICENSE-*.txt`. |
+| 4 | `docs/specs/hive/style-guide.html` | A standalone review page rendering every token and component class. Not linked from the app. |
 
-### Where these files go (the integration contract)
+**Approach: edit the current sheet, do not rewrite it.** The current
+`style.css` already passes every guard test and styles every class the
+templates emit. Change it in place:
 
-The app is served by FastAPI with `app/static/` mounted at `/static`. Deliver the
-files so they drop in **without touching the templates**:
+1. Replace the `:root` and dark-mode token values with the Hive values in §3–§6.
+2. Add the new tokens in §3 (`--gold`, `--action-primary`, `--chrome`, status
+   backgrounds, `--font-display`, `--chamfer-sm`, …).
+3. Restyle rules in place (chrome, buttons, badges, cards, tables) per §2 and §4.
+4. Keep every selector. Do not delete a rule even if it looks unused (section 4
+   lists classes that look unused but are emitted from Python).
+5. Run `pytest` after each step.
 
-```
-app/static/style.css        # replaces the existing file (same path)
-app/static/print.css        # replaces the existing file (same path)
-app/static/fonts/*.woff2    # new folder, beside the two stylesheets
-```
-
-- **Paths inside the CSS are `/static/…`.** The page loads
-  `<link rel="stylesheet" href="/static/style.css">`, so a font is referenced as
-  `url("/static/fonts/roboto-regular.woff2")` — an **absolute URL beginning with
-  `/static/`**, not `./fonts/…`. A relative path resolves against `/static/` and
-  will 404 in some contexts; use the absolute form.
-- **`style-guide.html` is a deliverable you hand back, not a file that ships.** It
-  is for review. Keep it self-contained (inline the CSS, or link `/static/…`).
-- Give me the files as a **zip or a directory tree**, plus a short note of what
-  changed. I will copy them into `app/static/`, run the guard tests, and report.
-
-The app is a FastAPI + Jinja2 dashboard, server-rendered, ~5,600 lines of HTML
-across 33 templates that you will **not** be editing. Your CSS must style the
-class names those templates already emit.
+Font URLs are absolute: `url("/static/fonts/barlow-600.woff2")`. No CDN, no
+external request of any kind: the app runs on Azure and is printed offline.
 
 ---
 
-## 2. The visual direction (already decided — build this)
+## 2. The visual direction
 
-**Light-first, modern SaaS — executed with GT lineage.** Not dark chrome. The
-craft of Polaris, Carbon-light and Fluent 2's light theme, carrying Georgia Tech's
-identity (see "The goal" above). Concretely:
+- **App bar (`.site-header`): GT Navy** `--chrome`, white text, with a **3px GT
+  Gold bottom rule**. `.brand` in Barlow 600, `--text-lg`. Nav links in IBM Plex
+  Sans 500, white at rest; the current page (`.site-nav a[aria-current=page]`)
+  gets a 3px gold underline and full-white text. On the bar, focus rings use
+  `--focus-on-chrome` (Buzz), because Bright Blue disappears on navy.
+- **Page:** `--surface` (white by day). Alternate bands and table headers use
+  `--surface-sunken`, which is **GT Diploma** by day: this is where the warmth
+  comes from. Cards are `--surface-raised` (white) with a 1px `--line` border and
+  no shadow; shadows are for menus (`--shadow-md`) and dialogs (`--shadow-lg`).
+- **Primary action:** `.button.primary` is GT Gold fill (`--action-primary`),
+  navy ink (`--on-action-primary`), 1px `--gold-ink` border, `--radius-md`, and
+  the chamfer:
+  `clip-path: polygon(0 0, calc(100% - var(--chamfer-sm)) 0, 100% var(--chamfer-sm), 100% 100%, 0 100%);`
+  One per view. **Never white text on gold.**
+- **Secondary:** `.button.secondary` is Bright Blue fill (`--accent`) with
+  `--on-accent` ink. **Ghost:** transparent, `--ink`, hover `--surface-hover`.
+  Quiet/outline buttons (`.button` alone): transparent, 1px `--line-strong`.
+- **Headings:** `h1`, `h2` in `var(--font-display)` (Barlow 600). `h3` and card
+  titles in IBM Plex Sans 600. `.eyebrow`: Barlow 600, `--text-xs`, uppercase,
+  letter-spacing 0.12em, `--gold-ink`, preceded by a 24×3px `--gold` rule.
+  `.section-note` and ledes: IBM Plex Serif, `--ink-muted`.
+- **Radii stay small:** `--radius-sm` 2px (badges, chips), `--radius-md` 4px
+  (buttons, inputs), `--radius-lg` 8px (cards, dialogs). Pills only for `.chip`.
+- **Sample-data bar (`.sample-banner`):** `--warn-bg` with `--warn-ink` text and
+  a 1px `--warn-border` bottom edge; keep `max-height: var(--space-8)`.
+- **Dark mode** is Hive's Night theme: a navy ground (`--surface` #07101c), cards
+  one step lighter, gold and Buzz accents. Selected per token, not inverted.
 
-- **Chrome (header, nav, footer): white**, not dark. A strong bottom border or
-  hairline in GT gold, not a filled navy bar. This is the clearest expression of
-  "white and gold lead".
-- **Content: near-white paper**, warmed slightly toward the GT Diploma tint
-  rather than a cold grey. Cards are white with a subtle border and a soft low
-  shadow. Surface hierarchy is expressed with **colour alternation and borders
-  before shadows** (the Carbon approach), so dense tables stay calm.
-- **Navy is the strong accent, not the dominant field.** Per the GT brand guide:
-  "White and Gold should lead the visual palette... Navy can be used to add
-  contrast and balance, without becoming the dominant color."
-- **Elevation** is a small token set (Atlassian-style): a `sunken` level below the
-  default surface (for table headers, code, inset areas), plus `raised` and
-  `overlay`. Each has a matching shadow token.
-- **Type: Roboto for all UI text, Roboto Slab for headings** (see §5). The slab is
-  the lineage — let it carry the GT voice rather than reaching for ornament.
-- **Generous, consistent spacing.** The app is projected in a leadership meeting
-  and printed, so it must read at a distance and on paper. Prefer space and a
-  clear type hierarchy over density tricks.
-- **The instinct to avoid:** a generic modern dashboard wearing GT colours. Every
-  surface should read as *engineered and warm* — precise, unhurried, clearly the
-  Institute — not as a stock component library with a navy accent.
+The instinct to avoid: a generic SaaS dashboard with a navy accent. Gold rule
+under the bar, gold eyebrows, Diploma bands, Barlow headings and the one
+chamfered gold button are what make it Georgia Tech. Use all five.
 
 ---
 
-## 3. The colour system (official GT palette, 2026-27)
+## 3. Colour tokens
 
-These are the real values from `brand.gatech.edu/our-look/colors`. Use them
-exactly. Note the app's current navy `#003057` is **outdated** — do not use it.
+Every value below is a literal in the `:root` block (Day) and the
+`@media (prefers-color-scheme: dark) { :root { … } }` block (Night). Hive token
+names are in brackets so you can trace each one in `docs/specs/hive/tokens.json`.
 
-### Core (the palette leaders)
+### Required names (keep the names, replace the values)
 
-| Token role | Name | Hex | Note |
+| App token | Day | Night | Hive source |
 |---|---|---|---|
-| Gold | Gold | `#B39051` | Leads with white |
-| Navy | Navy | `#051E39` | Contrast & balance, not dominant |
-| Dark Gold | Dark Gold | `#8F713D` | **Use this for any gold *text*** |
+| `--ink` | `#051e39` | `#eaeff6` | `text` (GT Navy by day) |
+| `--ink-muted` | `#615a4a` | `#bec8d6` | `text-muted` (`neutral-11`) |
+| `--ink-subtle` | `#7b7461` | `#8997a8` | `neutral-10`; 4.65:1 on white, **use only on `--surface` / `--surface-raised`** |
+| `--surface` | `#ffffff` | `#07101c` | `bg` |
+| `--surface-sunken` | `#f9f6e5` | `#0c1723` | `bg-subtle` (GT Diploma by day) |
+| `--surface-raised` | `#ffffff` | `#16212f` | `surface` |
+| `--surface-hover` | `#ebe8df` | `#1e2a38` | `surface-hover` |
+| `--line` | `#d8d4c8` | `#323e4e` | `border-subtle` |
+| `--line-strong` | `#87806c` | `#7a8798` | `border-control` (≥3:1, for inputs) |
+| `--backdrop` | `rgba(5, 30, 57, 0.55)` | `rgba(0, 0, 0, 0.6)` | navy scrim |
+| `--accent` | `#004c97` | `#508ed9` | `navy-9` (GT Bright Blue): links, secondary button, focus ring |
+| `--on-accent` | `#ffffff` | `#051e39` | `text-on-secondary` |
+| `--error` | `#c22a63` | `#f39ab2` | `danger` (`azalea-11`) |
+| `--warn-bg` | `#feeed2` | `#342301` | `warning-bg` (`buzz-3`) |
+| `--warn-border` | `#eaaa00` | `#eaaa00` | `gt-buzz` |
+| `--warn-ink` | `#896306` | `#e6bf6a` | `warning` (`buzz-11`) |
 
-### Secondary
+### New tokens to add (names chosen to pass the guard greps)
 
-| Name | Hex |
-|---|---|
-| Buzz | `#EAAA00` |
-| Diploma | `#F9F6E5` |
+Any new name containing `ink|surface|accent|line|error|warn|status|backdrop` must
+be declared in both blocks **and** used at least once (§7a.2).
 
-### Accents (≤10% of a design, per the guide)
+| App token | Day | Night | Hive source / use |
+|---|---|---|---|
+| `--gold` | `#b39051` | `#b39051` | `gt-gold`: rules, eyebrow bar, active-tab underline |
+| `--gold-ink` | `#886a36` | `#debd88` | `text-gold` (`gold-11`): gold text, weight ≥500 |
+| `--action-primary` | `#b39051` | `#b39051` | `action-primary` |
+| `--action-primary-hover` | `#c29d5b` | `#c29d5b` | `gold-10` |
+| `--on-action-primary` | `#051e39` | `#051e39` | `text-on-gold`: always navy |
+| `--accent-hover` | `#003f7c` | `#5f9eea` | `navy-10` |
+| `--chrome` | `#051e39` | `#0c213a` | `surface-brand`: the app bar |
+| `--on-chrome` | `#ffffff` | `#eaeff6` | `text-on-brand` |
+| `--focus-on-chrome` | `#eaaa00` | `#eaaa00` | `focus-ring-inverse` (Buzz) |
+| `--surface-selected` | `#f5e6cd` | `#322713` | selected row / active nav tint |
 
-| Name | Hex |
-|---|---|
-| Campanile | `#048A81` |
-| Whistle | `#660064` |
-| Burdell | `#BBE6F2` |
-| Azalea | `#D90368` |
-| Tech Lawn | `#066034` |
-
-### Brand rules you must honour
-
-- **Gold text on white fails WCAG AA.** Use **Dark Gold `#8F713D`** for any gold
-  text. (The guide says this explicitly.)
-- Core-colour text must be **font-weight 500 or higher**.
-- Accent colours are subordinate — they add interest, they do not lead.
-
-### The six priority key colours (decided)
-
-The app keys each of six priorities (P01–P06) to one colour so a reader can track
-a priority across screens. **These are not status colours** and must never be
-confusable with them. Use this GT-anchored set, tuned darker for legibility on
-white and in print:
-
-| Token | Hex | GT source |
-|---|---|---|
-| `--priority-1` | `#051E39` | Navy |
-| `--priority-2` | `#8F713D` | Dark Gold |
-| `--priority-3` | `#048A81` | Campanile |
-| `--priority-4` | `#660064` | Whistle |
-| `--priority-5` | `#004C97` | Bright Blue (gradient palette) |
-| `--priority-6` | `#066034` | Tech Lawn |
-
-> Note on `--priority-5`: the guide reserves Bright Blue `#004C97` for gradients.
-> Using it here to reach six legible keys is a knowing, recorded deviation — keep
-> it, and keep this note in a CSS comment.
->
-> Note on `--priority-1`: it is the same navy as `--accent`, which is correct (the
-> first priority is keyed to the Institute navy) but means a priority chip and an
-> accent element share a colour. That is fine — the priority chip is a *key* shown
-> beside a priority code, and the accent is chrome — but if it reads ambiguously in
-> the style guide, prefer making `--priority-1` a touch lighter `#0A2A4D` and note
-> the change.
-
-### The status scale is NOT yours to choose
-
-The six initiative statuses are read from the database schema and must keep their
-current values. **Do not restyle them to brand colours** — a status colour is a
-signal, not decoration, and changing it breaks a tested contract:
-
-`On track #1b7f3b`, `At risk #b26a00`, `Off track #c0392b`,
-`Not started #9a9a9a`, `Paused #9a9a9a`, `Complete #14532d`.
-Their dark-mode values are in the current file; carry them forward (adjust only
-if a contrast check demands it, and say so).
+The focus ring stays exactly `outline: 2px solid var(--accent)` (a test checks
+the string) with `outline-offset: 2px`. Inside `.site-header`, override with
+`outline-color: var(--focus-on-chrome)`.
 
 ---
 
-## 4. The output contract (read this twice)
+## 4. Status, milestone, availability and priority colours
 
-The single most important constraint: **preserve every existing class name.**
-The 33 templates emit them; renaming one silently breaks a screen.
+### The six statuses (schema vocabulary — never add a seventh)
 
-- **Keep all class names exactly.** `.card-modal`, `.card-body`, `.badge`, `.bar`,
-  `.bar-fill`, `.initiative-row`, `.tile`, `.button`, `.error-page`,
-  `.breadcrumb`, `.toast`, `.drawer`, `.empty`, `.chip`, `.field`, `.button.primary`,
-  `.button.secondary`, `.button.ghost`, `.status-*`, `.mi-*`, `.oct16-*`,
-  `.goal-*`, `.team-*`, `.priority-*`, `.coverage-*`, `.delta-*`, `.presenter-*`,
-  `.search-*`, `.user-menu`, `.nav-toggle`, and the rest — all of them.
-- **You may add** new classes, tokens, and a style-guide page.
-- **You may not** edit the templates, change an import, or rename anything the
-  Python reads. The status class strings are generated in code
-  (`status_class()` → `status-on-track`; `milestone_class()` → `m-in-progress`;
-  `availability_class()` → `availability-*`). Those exact strings must have rules.
-- **The app must run with zero template changes.** If a rule you want to write
-  needs different markup, express it with a selector that already exists instead.
+Status values come from `db/schema.sql` via `app/status.py`. Restyle them to
+Hive's status tokens; the words are unchanged. Every status shown anywhere
+carries its word; that is the colour-blind mitigation, so never show a status
+as colour alone.
+
+| Class | `--status-*` (ink and bar fill), Day / Night | Badge background `--status-*-bg`, Day / Night |
+|---|---|---|
+| `status-on-track` | `#007870` / `#7cc2ba` (Campanile) | `#dcf7f3` / `#032d2a` |
+| `status-at-risk` | `#896306` / `#e6bf6a` (Buzz) | `#feeed2` / `#342301` |
+| `status-off-track` | `#c22a63` / `#f39ab2` (Azalea) | `#feeaee` / `#470c21` |
+| `status-not-started` | `#615a4a` / `#bec8d6` (neutral) | `--status-neutral-bg`: `#f2f0ea` / `#16212f` |
+| `status-paused` | `#615a4a` / `#bec8d6` (neutral) | `--status-neutral-bg` |
+| `status-complete` | `#003d69` / `#a5cbfa` (Medium Navy) | `#e7f3f6` / `#1a292d` (Burdell) |
+
+Token names to add: `--status-on-track-bg`, `--status-at-risk-bg`,
+`--status-off-track-bg`, `--status-neutral-bg`, `--status-complete-bg`.
+
+- `.badge.status-*`: background `--status-*-bg`, text `--status-*`, weight 500,
+  `--radius-sm`. Every ink clears 4.5:1 on its background in both themes.
+- `.bar-fill.status-*`, `.count.status-*`, `.connection-status.status-*`: use
+  `--status-*` as the fill or text colour.
+- Not started and Paused share an ink. Their words tell them apart; keep it.
+
+**Milestones** (`.oct16-mstatus.m-*`, from `oct16_data.OUTCOMES`):
+`m-met` → `--status-on-track`; `m-in-progress` → `--accent`;
+`m-not-started` → `--status-not-started`; `m-due-dec` → `--warn-ink`;
+`m-confirm` → `--status-at-risk`. Same badge treatment as status badges.
+
+**Availability** (`.availability-*`, from `oct16_data.DATA_REQUIREMENTS`):
+`availability-have-it` → `--status-on-track`; `availability-derived` →
+`--accent`; `availability-partial` → `--status-at-risk`; `availability-build` →
+`--warn-ink`; `availability-no` → `--status-off-track`.
+
+### The six priority keys
+
+One key colour per priority code, used only to identify P01–P06 (the inline
+`--priority` custom property on cards and chips). Hive validated this set: worst
+adjacent pair ΔE 10 under protanopia/deuteranopia, 18 for normal vision, and at
+least 11.1 (ΔE, OKLab ×100) from every status ink in both themes, so a priority
+does not read as a status.
+
+| Token | Day | Night | Hue (Hive source) |
+|---|---|---|---|
+| `--priority-1` | `#051e39` | `#7f9cc0` | Navy (`gt-navy`; lifted at night so it shows on the navy ground) |
+| `--priority-2` | `#92398f` | `#a955a5` | Plum (`chart-5`, from GT Whistle) |
+| `--priority-3` | `#b2852e` | `#b78934` | Gold (`chart-2`, from GT Gold) |
+| `--priority-4` | `#1762b6` | `#4087de` | Blue (`chart-1`, from GT Bright Blue) |
+| `--priority-5` | `#d8662a` | `#d8662a` | Ember (`chart-4`, Hive addition) |
+| `--priority-6` | `#299abe` | `#32a0c5` | Sky (`chart-7`, from GT Burdell) |
+
+`--priority-5` Night equals Day; that is intended (it clears 3:1 on both grounds).
+The dark block must still declare it (§7b.11).
 
 ---
 
 ## 5. Typography
 
-GT's digital-media typefaces are **free and self-hostable**:
+Self-host these ten woff2 files (SIL Open Font License; copy from
+`docs/specs/hive/fonts/`, with the two `LICENSE-*.txt` files):
 
-- **Roboto** — all UI/text.
-- **Roboto Slab** — headings and subheads.
+| Family | Files | Weights |
+|---|---|---|
+| Barlow | `barlow-500.woff2`, `barlow-600.woff2`, `barlow-700.woff2` | 500, 600, 700 |
+| IBM Plex Sans | `ibm-plex-sans-400.woff2`, `-500`, `-600` | 400, 500, 600 |
+| IBM Plex Serif | `ibm-plex-serif-400.woff2`, `ibm-plex-serif-400-italic.woff2` | 400, 400 italic |
+| IBM Plex Mono | `ibm-plex-mono-400.woff2`, `-500` | 400, 500 |
 
-Self-host as **woff2** in a `fonts/` folder. **No CDN link** — the app must work
-with no external requests (it is served from Azure and often printed offline).
+One `@font-face` per file, `font-display: swap`, `src: url("/static/fonts/<file>") format("woff2")`.
 
-Required families and weights: Roboto 400 / 500 / 700; Roboto Slab 500 / 700.
-Define them with `@font-face` and `font-display: swap`. Keep a system-font
-fallback stack. **Do not use Georgia** — the current file does; the brand wants
-Roboto Slab.
+Family tokens (in `:root`, not colour so no dark override needed):
 
-Keep a real type scale as tokens (the existing `--text-xs`…`--text-3xl` names must
-survive — see §6). Every `font-size` in the sheet must be a `var(--text-*)`.
+```css
+--font-display: "Barlow", "DIN 2014", Roboto, system-ui, sans-serif;
+--font-sans: "IBM Plex Sans", "Adelle Sans", Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+--font-serif: "IBM Plex Serif", "Adelle", "Source Serif 4", serif;
+--font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+```
 
----
+Georgia is removed everywhere. `body` uses `var(--font-sans)`; `h1` and `h2` use
+`var(--font-display)` (this needs the test edit in §8). Use
+`font-variant-numeric: tabular-nums` in tables, bars' labels and counts.
 
-## 6. The token system
+Type scale (every `font-size` in the sheet is a `var(--text-*)`):
 
-Every value is a custom property declared in `:root`, with dark-mode overrides in
-a `@media (prefers-color-scheme: dark)` block. **No colour literal, and no bare
-`font-size: Xrem`, may appear anywhere outside those blocks.**
+| Token | Value | Hive style |
+|---|---|---|
+| `--text-xs` | `0.75rem` (12px) | `caption`, eyebrow |
+| `--text-sm` | `0.875rem` (14px) | `body-sm`, `label`, table cells |
+| `--text-base` | `1rem` (16px) | `body` |
+| `--text-lg` | `1.125rem` (18px) | `heading-4`, card titles |
+| `--text-xl` | `1.375rem` (22px) | `heading-3` |
+| `--text-2xl` | `1.75rem` (28px) | `heading-2` |
+| `--text-3xl` | `2.25rem` (36px) | `heading-1` |
+| `--text-stat` (new) | `2.5rem` (40px) | `stat-xl`, the `.stat-value` number |
 
-### These token names must exist and be used (the guard tests check for them)
-
-Spacing: `--space-1 --space-2 --space-3 --space-4 --space-5 --space-6 --space-8`
-Radius: `--radius-sm --radius-md --radius-lg --radius-pill`
-Type scale: `--text-xs --text-sm --text-base --text-lg --text-xl --text-2xl --text-3xl`
-Shadow: `--shadow-sm --shadow-md` (you may add `--shadow-lg`, elevation tokens)
-Families: `--font-sans` (Roboto), `--font-serif` (Roboto Slab)
-Colour (keep these names; retune the values):
-  `--ink --ink-muted --ink-subtle --surface --surface-sunken --surface-raised
-   --surface-hover --line --line-strong --backdrop --accent --on-accent
-   --error --warn-bg --warn-border --warn-ink
-   --status-on-track --status-at-risk --status-off-track --status-not-started
-   --status-paused --status-complete
-   --priority-1 --priority-2 --priority-3 --priority-4 --priority-5 --priority-6`
-
-Add elevation tokens (e.g. `--elevation-sunken`, `--elevation-raised`,
-`--elevation-overlay`) and any neutral ramp you want — but keep the names above.
-
-**Important:** the guard test greps token names for
-`ink|surface|accent|line|error|warn|status|backdrop` and requires each to be
-**both declared and referenced**, and **overridden in dark mode**. So if you
-declare a new `--surface-*` or `--status-*` token, you must use it and give it a
-dark value.
-
-### Dark mode
-
-The app already supports `prefers-color-scheme: dark`. Every colour token declared
-in `:root` must also appear in the dark block. Missing one leaves that surface
-light — a bug the tests catch.
+Line heights: headings 1.15–1.2, body 1.5, tables 1.4.
 
 ---
 
-## 7. The guard tests your output must pass
+## 6. Spacing, radius, shadow, motion
 
-These run unchanged against your `style.css` and `print.css`. Each is a hard
-pass/fail. Some assert **exact strings** — where a rule is quoted below, reproduce
-that text verbatim (selectors, property value and spacing), because a regex or an
-`in css` check looks for the literal characters. Reordering a multi-selector list
-or changing `2px` to `0.125rem` will fail a test even though the rendered result is
-identical.
+```css
+--space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+--space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem;
+--radius-sm: 2px; --radius-md: 4px; --radius-lg: 8px; --radius-pill: 999px;
+--chamfer-sm: 8px;
+--duration-fast: 120ms; --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+```
 
-### 7a. Token discipline (`test_design_system.py`)
+Shadows are colour literals, so they live in the token blocks:
 
-1. **No colour literal outside a token block.** A `#hex` or `rgba(` anywhere except
-   inside `:root` or the dark-mode block fails. Comments are stripped first, so you
-   may name hex values in prose.
-2. **Every colour token is both declared and referenced.** A token you declare but
-   never `var()` fails; a `var()` you never declared fails. The check greps token
-   names for `ink|surface|accent|line|error|warn|status|backdrop` — so a new
-   `--surface-*` / `--status-*` token must also be used and dark-overridden.
-3. **Required spacing / radius / type / shadow tokens exist** (the exact names in §6).
-4. **Dark mode overrides every colour token** in `:root` whose name matches
-   `ink|surface|accent|line|error|warn|status|backdrop`.
-5. **No `font-size: X rem` literal** outside tokens.
-6. **Component classes are defined** (each must appear as a rule): `.card-modal
-   .card-body .badge .bar .bar-fill .initiative-row .tile .button .error-page
-   .breadcrumb .toast .drawer .empty .chip .field`.
-7. **Button variants exist:** `.button.primary`, `.button.secondary`,
-   `.button.ghost`.
-8. **Status classes cover exactly the schema statuses.** For each of the six
-   statuses its class (`status-on-track`, `status-at-risk`, `status-off-track`,
-   `status-not-started`, `status-paused`, `status-complete`) must have a rule.
-   **Do not invent a status the schema cannot store** — a `status-done` class fails.
+| Token | Day | Night |
+|---|---|---|
+| `--shadow-sm` | `0 1px 2px rgba(5, 30, 57, 0.08)` | `0 1px 2px rgba(0, 0, 0, 0.5)` |
+| `--shadow-md` | `0 4px 12px rgba(5, 30, 57, 0.10)` | `0 4px 12px rgba(0, 0, 0, 0.55)` |
+| `--shadow-lg` (new) | `0 12px 32px rgba(5, 30, 57, 0.14)` | `0 12px 32px rgba(0, 0, 0, 0.6)` |
 
-### 7b. Visual system (`test_visual_system.py`)
-
-9. **Six priority tokens exist in `:root`:** `--priority-1` … `--priority-6`.
-10. **They are all distinct values** (two priorities sharing a colour fails).
-11. **Each is overridden in the dark block.**
-12. **No priority colour equals a status colour** (the two scales must never be
-    confusable — a shared hex fails).
-13. **`h1 {` and `h2 {` rules use `var(--font-serif)`.** These are matched as
-    `^h1 {`/`^h2 {` at line start — keep them as their own top-level rules.
-14. **A `body {` rule uses `var(--font-sans)`.**
-15. **`.eyebrow`, `.section-heading`, `.section-note`** each have a rule.
-16. **No colour literal outside tokens** (same as 7a.1).
-
-### 7c. Layout, focus and print behaviour (`test_design_system_behaviour.py`, `test_navigation.py`, `test_verification.py`)
-
-17. **Three breakpoints, exact text:** `@media (max-width: 640px)`,
-    `@media (min-width: 641px) and (max-width: 1024px)`,
-    `@media (min-width: 1025px)`.
-18. **No horizontal overflow guard:** the sheet contains the literal
-    `overflow-x: hidden`.
-19. **The no-JS nav collapse:** the sheet contains the literal selector
-    `.nav-toggle:checked ~ .site-nav`.
-20. **Focus ring:** the sheet contains `:focus-visible` **and** the exact string
-    `outline: 2px solid var(--accent)`.
-21. **Overlay scroll lock:** the sheet contains `overflow: hidden` (for
-    `body.overlay-open`).
-22. **The sample-data bar caps at 32px:** the `.sample-banner` rule must contain
-    `max-height: var(--space-8)`.
-23. **The banner is hidden for print:** a print rule hides `.sample-banner`
-    (`@media print { … .sample-banner … }`).
-24. **The nav is hidden for print, exact text:** `print.css` (or `style.css`) must
-    contain the literal `.site-nav, .nav-toggle-label { display: none; }`.
-25. **Print hides the presenter:** `@media print { … .presenter … display: none }`
-    (or `.presenter { display: none; }`).
-26. **A mid-width breakpoint exists:** `@media (max-width: 900px)` or
-    `@media (max-width: 1024px)` (in addition to the 640px one).
-
-### 7d. Status / milestone / availability colour rules (`test_status_presentation.py`)
-
-27. **Every generated status class has a rule** (`status-*`).
-28. **Every status has a badge colour rule:** `.badge.status-on-track`,
-    **`.badge.status-at-risk`**, … for all six. (The old sheet scoped status colour
-    to `.bar-fill.status-*` only, and the badge rendered uncoloured — this test
-    exists because of that bug.)
-29. **Every milestone class emitted by the data has a rule.** The exact set today
-    is: `.m-confirm`, `.m-due-dec`, `.m-in-progress`, `.m-met`, `.m-not-started`.
-    The test derives the set from `oct16_data.OUTCOMES`, so cover all five.
-30. **Every availability class emitted by the data has a rule.** The exact set
-    today is: `.availability-build`, `.availability-derived`,
-    `.availability-have-it`, `.availability-no`, `.availability-partial`.
-
-### 7e. Tokens referenced by literal name (`test_verification.py`)
-
-31. The sheet contains the literal `--surface:` and `--accent:` declarations
-    (so those two token names must be spelled exactly).
-32. The dark block opener is the literal `prefers-color-scheme: dark`.
-
-If you are unsure which classes exist, grep the templates in `app/templates/` and
-the string data in `app/oct16_data.py` — every class emitted there must have a rule.
-The guard tests are in `tests/`; read them before you finish.
-
+Honour `prefers-reduced-motion: reduce` (no transitions).
 
 ---
 
-## 8. What NOT to do
+## 7. The guard tests your output must pass (unchanged except §8)
 
-- **Do not change class names or touch templates.** (§4)
-- **Do not invent statuses** or restyle the status scale to brand colours. (§3, §7)
-- **Do not use a CDN font** or any external request.
-- **Do not put a colour/rgb/font-size literal outside the token blocks.**
-- **Do not use the old navy `#003057`** or the prototype's off-brand priority
-  colours (`#53d7e8`, `#9a8cff`, `#ff7f6e`, `#42d39b`, `#ef8ad2`).
-- **Do not use Georgia** as the heading face.
-- **Do not remove** the print stylesheet's existing behaviour: it hides
-  `.site-header`, `.site-nav`, `.nav-toggle-label`, `.sample-banner`,
-  `.meeting-controls`, `.presenter`, `.no-print`, and keeps the content.
+Verified against the tests in `tests/` at commit `64a0894`.
+
+### 7a. `test_design_system.py`
+
+1. No `#hex` or `rgba(` outside a `:root {` block. Token blocks are found by a
+   line that is exactly `:root {` after trimming, so the dark block must be
+   `@media (prefers-color-scheme: dark) {` then `  :root {` on its own line.
+   Comments are stripped before the check.
+2. Every token whose name contains `ink|surface|accent|line|error|warn|status|backdrop`
+   is declared and used; every `var()` is declared.
+3. `--space-1…4`, `--radius-sm/md/lg`, `--text-xs/sm/base/lg`, `--shadow-sm/md` exist.
+4. Each such colour token in `:root` is redeclared in the dark block.
+5. No `font-size: <n>rem` outside tokens.
+6. Rules exist for `.card-modal .card-body .badge .bar .bar-fill .initiative-row
+   .tile .button .error-page .breadcrumb .toast .drawer .empty .chip .field`.
+7. `.button.primary`, `.button.secondary`, `.button.ghost` exist.
+8. A rule for each schema status class; the string `status-done` never appears.
+
+### 7b. `test_visual_system.py`
+
+9–11. `--priority-1…6` in `:root`, all distinct, each redeclared in the dark block.
+12. No priority literal equals a status literal (guaranteed by §4's values).
+13. `^h1 {` and `^h2 {` rules at line start contain the heading-font var (see §8).
+14. A `body {` rule contains `var(--font-sans)`.
+15. `.eyebrow`, `.section-heading`, `.section-note` have rules.
+
+### 7c. Behaviour, navigation, verification
+
+17. Exact strings: `@media (max-width: 640px)`,
+    `@media (min-width: 641px) and (max-width: 1024px)`, `@media (min-width: 1025px)`.
+18. `overflow-x: hidden` appears.
+19. `.nav-toggle:checked ~ .site-nav` appears.
+20. `:focus-visible` and `outline: 2px solid var(--accent)` appear.
+21. `overflow: hidden` appears (for `body.overlay-open`).
+22. The `.sample-banner { … }` rule contains `max-height: var(--space-8)`.
+23. A `@media print { … sample-banner … }` block in `style.css`.
+24. **`style.css`** contains `@media print` and the literal
+    `.site-nav, .nav-toggle-label { display: none; }` (`test_navigation.py` reads
+    `style.css` only; the earlier brief wrongly said print.css would do).
+25. `print.css` exists and mentions `.site-header` and `.site-nav`.
+26. `@media (max-width: 900px)` or `@media (max-width: 1024px)` appears.
+31–32. `--surface:` and `--accent:` declared; the literal `prefers-color-scheme: dark` appears.
+
+### 7d. `test_status_presentation.py`
+
+27. `.badge.status-*` rule for all six statuses.
+28. A rule for every milestone class the data emits: `.m-confirm .m-due-dec
+    .m-in-progress .m-met .m-not-started`.
+29. A rule for every availability class: `.availability-build -derived -have-it -no -partial`.
 
 ---
 
-## 9. Acceptance checklist (self-check before you hand back)
+## 8. Test edits this restyle requires
 
-- [ ] `style.css` + `print.css` + `fonts/` + `style-guide.html` delivered.
-- [ ] Grep your `style.css`: no `#` hex or `rgba(` outside `:root` / dark block.
-- [ ] Grep your `style.css`: no `font-size:` with a literal unit.
-- [ ] All required token names from §6 present.
-- [ ] Every colour token in `:root` also in the dark block.
-- [ ] All 15 component classes from §7a.6 have rules; three button variants exist.
-- [ ] All six `status-*` classes have rules; no invented status.
-- [ ] Every `.badge.status-*`, `.m-*` and `.availability-*` class has a rule (§7d).
-- [ ] The exact-string rules from §7c are present verbatim (breakpoints, focus
-      outline, nav-collapse selector, `max-height: var(--space-8)`, print
-      `.site-nav, .nav-toggle-label { display: none; }`).
-- [ ] `h1`/`h2` use `var(--font-serif)`; `body` uses `var(--font-sans)` (as their
-      own top-level rules).
-- [ ] Fonts self-hosted at `/static/fonts/…`; no external URL anywhere in the CSS.
-- [ ] Roboto + Roboto Slab used; Georgia gone; `#003057` gone.
-- [ ] The six priority tokens use the hybrid set in §3, are distinct, dark-overridden,
-      and share no value with a status colour.
-- [ ] `style-guide.html` renders every token and component on one reviewable page.
+These were dry-run before handoff: the §3–§6 token values, the new tokens, `--font-display` on `h1`/`h2` and these two edits pass all 74 guard tests in the seven files of §7.
 
-**The goal check — do this last, and be honest:**
+Hive's headings are Barlow, a sans display face, not a serif. Two edits, made in
+the same change and called out in the commit message:
 
-- [ ] Looking at the style guide, **could a GT person recognise it as Georgia
-      Tech with no logo present?** (lineage)
-- [ ] Does it **look like software made in 2026**, not a dated university site?
-      (modernity)
-- [ ] Is it **white-and-gold-led**, with navy as a counterweight rather than the
-      dominant field?
-- [ ] Does it read as **engineered and warm** — the Institute — and not as a
-      stock component library with a navy accent?
+1. `tests/test_visual_system.py::test_headings_use_the_serif_token`: rename to
+   `test_headings_use_the_display_token` and assert `var(--font-display)` in the
+   `h1 {` and `h2 {` rules.
+2. `tests/test_visual_system.py::test_font_family_tokens_exist`: also assert
+   `--font-display` in `:root` (keep the `--font-serif` and `--font-sans` checks;
+   `--font-serif` stays, now IBM Plex Serif, for ledes and reading text).
 
-When you hand back, note any place you **deviated** from this brief and why. A
-recorded deviation is fine; an unrecorded one is a defect.
+Update the "serif headings" wording in the `style.css` header comment and in
+`docs/specs` where it describes the split. No other test changes. If any other
+test fails, fix the CSS, not the test.
+
+---
+
+## 9. Classes the templates emit with no rule today
+
+These 56 classes appear in templates but have no selector in the current sheet.
+Most need nothing; style the ones that carry meaning (at minimum `attention*`,
+`card-*`, `diary*`, `panel*`, `progress-*`, `update-*`, `danger`, `needs-update`):
+
+`admin-actions age attention attention-list card-actions card-code
+card-connections card-description card-diary card-fullpage card-latest
+card-owner card-tags card-title changes check checks-clear connection-owner
+connections danger dean-rows detail-header diary diary-by diary-date diary-note
+diary-percent diary-status footer-note goal-mis level mi-row needs-update
+oct16-outcome-status oct16-tradeoff-text panel panel-heading
+person-initiatives priority-fields priority-link progress-fill progress-track
+row-main row-owner row-progress search-label since-form slider-row tags
+tags-label team-link text-button update-button update-form update-form-body`
+
+Also emitted dynamically: `oct16-{id}` per outcome, `pro` / `con` on
+`.oct16-tradeoff`, and the status, milestone and availability classes above.
+Classes present in the sheet but not found in templates (for example
+`availability-*`, `m-*`, `status-*`, `tile*`, `drawer-close`, `modal-close`,
+`overlay-open`) are emitted from Python or JavaScript: **keep them.**
+
+---
+
+## 10. Print
+
+Keep everything `print.css` does today (hide `.site-header`, `.site-nav`,
+`.whoami`, `.switch`, `.brand`, `.card-modal`, `.no-print`; 15mm margins; rows
+don't split). Apply Hive's document rules: white page, navy ink (`#051e39`), IBM
+Plex Sans for UI text, 11pt body, a 3px GT Gold rule under the page title,
+tables with a 2px navy header rule and hairline rows. `print.css` is not
+scanned for literals, but prefer tokens where they resolve.
+
+`style.css` must also keep its own `@media print` block hiding `.sample-banner`,
+`.meeting-controls`, `.presenter` and `.no-print`, with the exact
+`.site-nav, .nav-toggle-label { display: none; }` line.
+
+---
+
+## 11. Recorded deviations from GT's brand guide (keep these comments in the CSS)
+
+- **Dark Gold text** is `#886a36`, not GT's `#8F713D`: darkened about 2% so gold
+  text also clears 4.5:1 on Diploma (`#8F713D` is 4.21:1 there; `#886a36` is 4.65:1).
+- **Bright Blue** (`#004C97`), **Medium Navy** and **Light Gold** are
+  gradient-only in GT's guide; Hive promotes them to the interactive blue, the
+  Complete status and night-mode gold text.
+- **Fonts:** GT names DIN/Adelle for print and Roboto for web. Hive uses Barlow
+  (DIN lineage) and IBM Plex (GT's own named web alternate for Adelle).
+  Roboto remains in every fallback stack.
+- **Status colours** move from the prototype's generic green/amber/red to GT
+  Campanile, Buzz and Azalea with neutral and navy, each tuned for 4.5:1.
+- **Ember** (`#d8662a`, `--priority-5`) is a Hive addition; GT has no orange.
+- **Gradients** are retired in product UI.
+- The old navy `#003057` and the prototype priority colours (`#53d7e8`,
+  `#f2b84b`, `#9a8cff`, `#ff7f6e`, `#42d39b`, `#ef8ad2`) are gone.
+
+---
+
+## 12. Acceptance
+
+- [ ] `pytest` passes in full, with only the two test edits in §8. Exception: `tests/test_oct16_swap.py::test_dry_run_reports_a_no_op_as_a_no_op` and `::test_the_swap_does_not_change_layout` already fail on a clean checkout of `64a0894` (Linux, Python 3.13); they do not touch CSS. Leave them as they are and say so in the PR.
+- [ ] `grep -nE '#[0-9a-fA-F]{3,8}|rgba?\(' app/static/style.css` matches only
+      inside the two token blocks or comments.
+- [ ] Every colour token in §3–§4 exists in both blocks with the values given.
+- [ ] Ten woff2 files in `app/static/fonts/`; no `http` URL anywhere in either sheet.
+- [ ] Georgia, Roboto Slab, `#003057` and the old priority hexes are gone.
+- [ ] `docs/specs/hive/style-guide.html` renders every token, the six status
+      badges, the six priority keys, buttons, fields, cards, tables, the app bar,
+      in Day and Night (toggle `data-theme` or use the OS setting).
+- [ ] Screenshots of `/`, `/goals/1`, `/oct16` and a card modal in both themes,
+      attached to the PR.
+- [ ] **Lineage:** with no logo, a GT person recognises it: navy bar with the gold
+      rule, gold eyebrows, Diploma bands, Barlow headings, one chamfered gold
+      button.
+- [ ] **Modernity:** it reads as software made in 2026.
+- [ ] Any further deviation from this brief is listed in the PR description.
