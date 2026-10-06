@@ -1,0 +1,31 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+class Config:
+    """Simple configuration loader.
+    
+    It first loads variables from a `.env` file (if present) and then
+    falls back to the OS environment.  All values are returned as strings.
+    """
+    def __init__(self, env_path: str | None = None):
+        # Load .env if it exists.  ``load_dotenv`` is safe to call multiple
+        # times – it only loads the file once per process.
+        env_file = env_path or (Path(__file__).parent.parent / ".env")
+        if Path(env_file).exists():
+            load_dotenv(dotenv_path=env_file, override=False)
+        # Retrieve values – they may be empty strings if not set.
+        self.APP_PASSCODE = os.getenv("APP_PASSCODE", "")
+        self.APP_SECRET = os.getenv("APP_SECRET", "")
+        self.DB_PATH = os.getenv("DB_PATH", "./data/db.sqlite3")
+        self.BACKUP_DIR = os.getenv("BACKUP_DIR", "./backups")
+        self.PORT = int(os.getenv("PORT", "8000"))
+
+    def as_dict(self):
+        return {
+            "APP_PASSCODE": self.APP_PASSCODE,
+            "APP_SECRET": self.APP_SECRET,
+            "DB_PATH": self.DB_PATH,
+            "BACKUP_DIR": self.BACKUP_DIR,
+            "PORT": self.PORT,
+        }
