@@ -1,6 +1,6 @@
 """The deploy archive carries a complete rebuild path.
 
-Found 2026-10-06: the schema gained Teams/SourceAreas/TeamKPIs but the archive
+Found 2026-10-06: the schema gained Teams/SourceAreas/MajorInitiatives but the archive
 shipped only seed_sample.sql, so a rebuild from the archive produced the tables
 with no rows. The deployed db file was fine - only the rebuild path was broken -
 which is why nothing caught it. This guards the rebuild path directly.
@@ -53,7 +53,7 @@ def test_a_rebuild_from_the_archive_reproduces_the_team_layer(tmp_path, stray):
 
     This is the strongest form: it proves the shipped files are sufficient to
     reconstruct the data, not merely present. If seed_team_layer.sql were
-    dropped again, the TeamKPIs count would be zero and this fails.
+    dropped again, the MajorInitiatives count would be zero and this fails.
     """
     import sqlite3
 
@@ -76,13 +76,13 @@ def test_a_rebuild_from_the_archive_reproduces_the_team_layer(tmp_path, stray):
         counts = {
             t: conn.execute("SELECT COUNT(*) FROM %s" % t).fetchone()[0]
             for t in ("Goals", "Priorities", "Initiatives", "Teams",
-                      "SourceAreas", "TeamKPIs", "TeamKPIPriorities")
+                      "SourceAreas", "MajorInitiatives", "MajorInitiativePriorities")
         }
     finally:
         conn.close()
 
     assert counts["Teams"] == 4, counts
     assert counts["SourceAreas"] == 5, counts
-    assert counts["TeamKPIs"] == 29, counts
-    assert counts["TeamKPIPriorities"] == 51, counts
+    assert counts["MajorInitiatives"] == 29, counts
+    assert counts["MajorInitiativePriorities"] == 51, counts
     assert counts["Initiatives"] == 22, counts

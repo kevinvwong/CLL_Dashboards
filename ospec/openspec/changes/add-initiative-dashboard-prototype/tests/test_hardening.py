@@ -97,7 +97,7 @@ def test_counter_expires(logged_in, monkeypatch):
 
 def test_every_response_carries_noindex(logged_in):
     client = logged_in("Bill")
-    for path in ("/", "/goals/3", "/kpis", "/checks", "/healthz", "/login", "/robots.txt"):
+    for path in ("/", "/goals/3", "/major-initiatives", "/checks", "/healthz", "/login", "/robots.txt"):
         response = client.get(path, follow_redirects=False)
         assert response.headers.get("X-Robots-Tag") == "noindex", f"{path} missing noindex"
 

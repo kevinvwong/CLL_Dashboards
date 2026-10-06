@@ -6,17 +6,19 @@
   interconnection-redesign group 5).
 
   An OVERVIEW, not four full catalogs. Measured before the cut: 56 KB, of which
-  67% was the 29-row KPI table, and every KPI rendered twice (inside the team
-  cards and again in the table). The table now has its own page, /kpis, and the
-  sections here are compact entry points that state a count and link to detail:
+  67% was the 29-row table, and every row rendered twice (inside the team cards
+  and again in the table). The table now has its own page, /major-initiatives,
+  and the sections here are compact entry points that state a count and link to
+  detail:
 
     1. the stat band   - the portfolio at a glance (counts, not a score)
     2. the five goals  - each linking to its cascade
     3. the six priorities - code, title, count, link
-    4. the four teams  - name, KPI count, link
+    4. the four teams  - name, Major Initiative count, link
 
   The governed fields (measure, target, cadence, owner) live on the priority
-  page; every KPI lives on /kpis. Nothing is lost, it is one click away.
+  page; every Major Initiative lives on /major-initiatives. Nothing is lost, it
+  is one click away.
 #}
 
 <div class="section-heading">
@@ -24,7 +26,7 @@
     <p class="eyebrow">{{ plan_year }} Strategy Portfolio</p>
     <h1>How the College's work is organised</h1>
   </div>
-  <p class="section-note">Six priorities · four teams · 29 team KPIs</p>
+  <p class="section-note">Six priorities · four teams · 29 Major Initiatives</p>
 </div>
 
 {# --- 1. the stat band ----------------------------------------------------- #}
@@ -41,11 +43,11 @@
     <span class="stat-value">{{ stats.teams }}</span>
     <span class="stat-label">Teams</span>
   </a>
-  <a class="stat-tile" href="/kpis">
-    <span class="stat-value">{{ stats.kpis }}</span>
-    <span class="stat-label">Team KPIs</span>
+  <a class="stat-tile" href="/major-initiatives">
+    <span class="stat-value">{{ stats.major_initiatives }}</span>
+    <span class="stat-label">Major Initiatives</span>
   </a>
-  <a class="stat-tile stat-warn" href="/kpis?target=needs_review">
+  <a class="stat-tile stat-warn" href="/major-initiatives?target=needs_review">
     <span class="stat-value">{{ stats.needs_review }}</span>
     <span class="stat-label">Need review</span>
   </a>
@@ -60,7 +62,7 @@
       <p class="eyebrow">Strategy 2035</p>
       <h2 id="goals-heading">The five goals</h2>
     </div>
-    <p class="section-note">Initiatives and team KPIs that advance each</p>
+    <p class="section-note">Initiatives and Major Initiatives that advance each</p>
   </div>
 
   <ul class="goal-grid">
@@ -70,7 +72,7 @@
         <span class="goal-number">G{{ g.GoalNumber }}</span>
         <span class="goal-name">{{ g.ShortName }}</span>
       </a>
-      <p class="goal-counts">{{ g.InitiativeCount }} initiative{{ '' if g.InitiativeCount == 1 else 's' }} · {{ g.TeamKPICount }} team KPI{{ '' if g.TeamKPICount == 1 else 's' }}</p>
+      <p class="goal-counts">{{ g.InitiativeCount }} initiative{{ '' if g.InitiativeCount == 1 else 's' }} · {{ g.MajorInitiativeCount }} Major Initiative{{ '' if g.MajorInitiativeCount == 1 else 's' }}</p>
     </li>
     {% endfor %}
   </ul>
@@ -112,7 +114,7 @@
       <p class="eyebrow">Organizational layer</p>
       <h2 id="teams-heading">The four teams</h2>
     </div>
-    <p class="section-note">{{ stats.kpis }} team KPIs across them</p>
+    <p class="section-note">{{ stats.major_initiatives }} Major Initiatives across them</p>
   </div>
 
   <ul class="team-grid">
@@ -123,7 +125,7 @@
       </a>
       <p class="team-desc">{{ t.Description }}</p>
       <p class="team-count">
-        <a href="/teams/{{ t.TeamID }}"><strong>{{ t.kpis | length }}</strong> KPI{{ '' if t.kpis | length == 1 else 's' }} →</a>
+        <a href="/teams/{{ t.TeamID }}"><strong>{{ t.major_initiatives | length }}</strong> Major Initiative{{ '' if t.major_initiatives | length == 1 else 's' }} →</a>
       </p>
     </li>
     {% endfor %}

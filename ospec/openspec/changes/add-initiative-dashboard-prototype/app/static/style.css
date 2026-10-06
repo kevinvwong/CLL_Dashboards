@@ -977,7 +977,7 @@ body.overlay-open { overflow: hidden; }
 
 /* ---- Portfolio dashboard (blueprint-redesign scope correction) -------------
    Our own design, not the Dean's prototype's stage. A stat band, a grid of
-   priority cards carrying every governed field, team cards, and a KPI table.
+   priority cards carrying every governed field, team cards, and the MI table.
    `--priority` is set per card from the priority colour scale. */
 
 /* 1. the stat band */
@@ -1093,10 +1093,8 @@ body.overlay-open { overflow: hidden; }
 .team-desc { margin: 0 0 var(--space-3); color: var(--ink-muted); font-size: var(--text-sm); }
 .team-count { margin: 0 0 var(--space-3); font-size: var(--text-sm); }
 .team-count strong { font-size: var(--text-xl); font-family: var(--font-serif); }
-.team-kpis { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
-.team-kpis li { display: flex; align-items: baseline; gap: var(--space-2); font-size: var(--text-sm); }
-.kpi-code { font-weight: 700; color: var(--ink-muted); font-size: var(--text-xs); }
-.kpi-title { flex: 1 1 auto; }
+.mi-code { font-weight: 700; color: var(--ink-muted); font-size: var(--text-xs); }
+.mi-title { flex: 1 1 auto; }
 
 /* chips */
 .chip {
@@ -1119,13 +1117,13 @@ body.overlay-open { overflow: hidden; }
 }
 .chip-priority:hover { background: var(--surface-hover); }
 
-/* 4. the KPI table */
-.kpi-table { font-size: var(--text-sm); }
-.kpi-table .muted-cell { color: var(--ink-muted); }
-.kpi-table .target-cell { max-width: 34ch; }
+/* 4. the Major Initiatives table */
+.mi-table { font-size: var(--text-sm); }
+.mi-table .muted-cell { color: var(--ink-muted); }
+.mi-table .target-cell { max-width: 34ch; }
 .note-mark { color: var(--accent); cursor: help; }
 
-/* ---- Interconnection: goals, teams, KPIs (interconnection-redesign) ------- */
+/* ---- Interconnection: goals, teams, MIs (interconnection-redesign) --------- */
 
 /* 2. the five Strategy 2035 goals */
 .goal-grid {
@@ -1162,28 +1160,28 @@ body.overlay-open { overflow: hidden; }
 .goal-counts { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink-muted); }
 .goal-counts a { color: var(--ink-muted); }
 
-/* The KPI controls (filter + group), a row of chips over the table. */
-.kpi-controls {
+/* The MI controls (filter + group), a row of chips over the table. */
+.mi-controls {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
   margin-bottom: var(--space-4);
 }
-.kpi-controls .toggle-label {
+.mi-controls .toggle-label {
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: .05em;
   color: var(--ink-subtle);
   margin-left: var(--space-2);
 }
-.kpi-controls .toggle-label:first-child { margin-left: 0; }
-.kpi-controls .chip { text-decoration: none; }
-.kpi-controls .chip.is-active { border-color: var(--accent); color: var(--accent); font-weight: 700; }
-.kpi-controls .chip-warn.is-active { border-color: var(--status-at-risk); color: var(--status-at-risk); }
+.mi-controls .toggle-label:first-child { margin-left: 0; }
+.mi-controls .chip { text-decoration: none; }
+.mi-controls .chip.is-active { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.mi-controls .chip-warn.is-active { border-color: var(--status-at-risk); color: var(--status-at-risk); }
 
-/* A group label row inside the KPI table. */
-.kpi-table .group-row th {
+/* A group label row inside the MI table. */
+.mi-table .group-row th {
   text-align: left;
   padding: var(--space-2) var(--space-3);
   background: var(--surface-sunken);
@@ -1201,8 +1199,8 @@ body.overlay-open { overflow: hidden; }
   text-decoration: none;
 }
 
-/* The goal-side list of aligned team KPIs, and the KPI-side chip lists. */
-.kpi-chip-list {
+/* The goal-side list of aligned MIs, and the MI-side chip lists. */
+.mi-chip-list {
   list-style: none;
   margin: 0 0 var(--space-4);
   padding: 0;
@@ -1210,7 +1208,7 @@ body.overlay-open { overflow: hidden; }
   grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
   gap: var(--space-2);
 }
-.kpi-chip {
+.mi-chip {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
@@ -1219,7 +1217,7 @@ body.overlay-open { overflow: hidden; }
   border-radius: var(--radius-sm);
   background: var(--surface);
 }
-.kpi-chip a {
+.mi-chip a {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
@@ -1227,17 +1225,17 @@ body.overlay-open { overflow: hidden; }
   text-decoration: none;
   color: var(--ink);
 }
-.kpi-chip a:hover .kpi-chip-title { text-decoration: underline; }
-.kpi-chip-title { font-size: var(--text-sm); }
-.kpi-chip-team { color: var(--ink-muted); font-size: var(--text-xs); white-space: nowrap; }
+.mi-chip a:hover .mi-chip-title { text-decoration: underline; }
+.mi-chip-title { font-size: var(--text-sm); }
+.mi-chip-team { color: var(--ink-muted); font-size: var(--text-xs); white-space: nowrap; }
 
-/* The team page's source-area row and the KPI page's field list. */
+/* The team page's source-area row and the MI page's field list. */
 .team-areas { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-4); }
-.kpi-fields { margin-bottom: var(--space-4); }
-.kpi-note { color: var(--ink-muted); font-size: var(--text-sm); }
+.mi-fields { margin-bottom: var(--space-4); }
+.mi-note { color: var(--ink-muted); font-size: var(--text-sm); }
 
 @media (max-width: 900px) {
-  .priority-grid, .team-grid, .goal-grid, .kpi-chip-list { grid-template-columns: 1fr; }
+  .priority-grid, .team-grid, .goal-grid, .mi-chip-list { grid-template-columns: 1fr; }
 }
 
 

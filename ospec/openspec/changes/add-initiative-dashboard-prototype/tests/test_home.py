@@ -90,7 +90,7 @@ def test_home_shows_the_dashboard_and_keeps_everything_reachable(logged_in):
     for priority in priorities:
         assert f"/priorities/{priority['PriorityName']}" in body or \
                priority["PriorityName"] in body
-    # The goals are reachable from the dashboard's KPI table and nav.
+    # The goals are reachable from the dashboard's tables and nav.
     assert "/initiatives" in body
 
 

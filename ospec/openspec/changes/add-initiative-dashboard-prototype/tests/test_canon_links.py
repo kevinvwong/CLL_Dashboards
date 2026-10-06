@@ -1,7 +1,7 @@
-"""The KPI -> Goal edge and the canon's stable keys.
+"""The Major Initiative -> Goal edge and the canon's stable keys.
 
 Covers the interconnection-redesign data layer: the canon workbook's MI-ids,
-exact titles, and the KPI -> Goal alignment, all verified against the workbook
+exact titles, and the MI -> Goal alignment, all verified against the workbook
 itself rather than against a copy.
 """
 import os
@@ -44,21 +44,21 @@ def _canon():
 # --- the edge exists ---------------------------------------------------------
 
 
-def test_every_team_kpi_has_a_goal_link(fresh_db):
+def test_every_major_initiative_has_a_goal_link(fresh_db):
     """The interconnection the canon states and the schema did not hold."""
-    n = _rows(fresh_db, "SELECT COUNT(DISTINCT KPIID) AS n FROM TeamKPIGoals")[0]["n"]
-    assert n == 29, "expected all 29 KPIs to align to at least one goal"
+    n = _rows(fresh_db, "SELECT COUNT(DISTINCT MajorInitiativeID) AS n FROM MajorInitiativeGoals")[0]["n"]
+    assert n == 29, "expected all 29 Major Initiatives to align to a goal"
 
 
-def test_every_team_kpi_has_an_mi_id(fresh_db):
-    n = _rows(fresh_db, "SELECT COUNT(*) AS n FROM TeamKPIs WHERE MIId IS NOT NULL")[0]["n"]
+def test_every_major_initiative_has_an_mi_id(fresh_db):
+    n = _rows(fresh_db, "SELECT COUNT(*) AS n FROM MajorInitiatives WHERE MIId IS NOT NULL")[0]["n"]
     assert n == 29
 
 
 def test_goal_links_reference_real_goals(fresh_db):
     from app import queries
     bad = _rows(fresh_db,
-        "SELECT kg.KPIID FROM TeamKPIGoals kg "
+        "SELECT kg.MajorInitiativeID FROM MajorInitiativeGoals kg "
         "LEFT JOIN Goals g ON g.GoalID = kg.GoalID WHERE g.GoalID IS NULL")
     assert not bad, "goal links pointing at no goal: %s" % bad
 
@@ -71,7 +71,7 @@ def test_goal_numbers_parse_from_the_canon_alignments(fresh_db):
     canon = _canon()
     links = _rows(fresh_db, """
         SELECT k.MIId, GROUP_CONCAT(g.GoalNumber) AS goals
-        FROM TeamKPIGoals kg JOIN TeamKPIs k ON k.KPIID = kg.KPIID
+        FROM MajorInitiativeGoals kg JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
         JOIN Goals g ON g.GoalID = kg.GoalID GROUP BY k.MIId""")
     got = {r["MIId"]: set(str(r["goals"]).split(",")) for r in links}
     assert len(got) == 29
@@ -83,7 +83,7 @@ def test_a_range_alignment_expands(fresh_db):
     """'Goals 1-5' means all five, not just 1 and 5."""
     rows = _rows(fresh_db, """
         SELECT GROUP_CONCAT(g.GoalNumber) AS goals
-        FROM TeamKPIGoals kg JOIN TeamKPIs k ON k.KPIID = kg.KPIID
+        FROM MajorInitiativeGoals kg JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
         JOIN Goals g ON g.GoalID = kg.GoalID
         WHERE k.MIId = 'MI-006' GROUP BY k.MIId""")
     # MI-006 'Unified branding...' aligns to Goals 1-5 in the canon.
@@ -97,7 +97,7 @@ def test_a_range_alignment_expands(fresh_db):
 def test_every_mi_id_matches_the_canon_title(fresh_db):
     canon = _canon()
     ours = {r["MIId"]: r["Title"] for r in
-            _rows(fresh_db, "SELECT MIId, Title FROM TeamKPIs WHERE MIId IS NOT NULL")}
+            _rows(fresh_db, "SELECT MIId, Title FROM MajorInitiatives WHERE MIId IS NOT NULL")}
     for mid, (title, _) in canon.items():
         assert ours.get(mid) == title, "MI-id %s title differs from canon" % mid
 
@@ -107,8 +107,8 @@ def test_the_goal_links_match_the_canon_alignment(fresh_db):
     canon = _canon()
     got = {}
     for r in _rows(fresh_db, """
-            SELECT k.MIId, g.GoalNumber FROM TeamKPIGoals kg
-            JOIN TeamKPIs k ON k.KPIID = kg.KPIID
+            SELECT k.MIId, g.GoalNumber FROM MajorInitiativeGoals kg
+            JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
             JOIN Goals g ON g.GoalID = kg.GoalID"""):
         got.setdefault(r["MIId"], set()).add(str(r["GoalNumber"]))
     mismatched = []
@@ -126,13 +126,13 @@ def test_the_goal_links_match_the_canon_alignment(fresh_db):
 # --- the read model ----------------------------------------------------------
 
 
-def test_the_goal_view_lists_kpis_per_goal(fresh_db):
+def test_the_goal_view_lists_major_initiatives_per_goal(fresh_db):
     from app import queries
     rows = _rows(fresh_db, """
-        SELECT g.GoalNumber, COUNT(DISTINCT v.KPIID) AS n
-        FROM vw_TeamKPIGoals v JOIN Goals g ON g.GoalID = v.GoalID
+        SELECT g.GoalNumber, COUNT(DISTINCT v.MajorInitiativeID) AS n
+        FROM vw_MajorInitiativeGoals v JOIN Goals g ON g.GoalID = v.GoalID
         GROUP BY g.GoalNumber ORDER BY g.GoalNumber""")
-    assert len(rows) == 5, "all five goals should carry team KPIs"
+    assert len(rows) == 5, "all five goals should carry Major Initiatives"
     assert sum(r["n"] for r in rows) >= 29
 
 

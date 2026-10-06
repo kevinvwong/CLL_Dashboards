@@ -156,3 +156,33 @@ intact and not merely parked.
 
 None blocking. Deferred: whether Person → Team returns once the canon's People
 sheet is completed.
+
+## Terminology corrected (2026-10-06)
+
+The 29 rows this project called "team KPIs" are **not KPIs**. A KPI is a
+measured indicator: it carries a unit of count, a grain, a numerator, a
+denominator, a target and a cadence (see `07_CLL_KPI_Atomic_Definitions_Master
+.xlsx`, `Metrics`; its README: "35 FY27 KPIs + 5 Strategy 2035 goals = 40
+measures"). The 29 rows carry none of those. The canon workbook
+(`CLL_FY2027_Goals_Priorities_Initiatives_and_People.xlsx`, 2026-10-06) names
+them **Major Initiatives** — its sheet is "Initiatives", its header "Major
+Initiatives", its columns are Initiative ID / Initiative Name / Source Area /
+Strategy Alignment / Status / Validation Category, and its own Quality Check
+reads `Initiatives 29/29 PASS`.
+
+The prototype they came from called them "KPIs", and that word propagated into
+the schema, the routes and the UI. Corrected end to end:
+
+| Was | Now |
+|---|---|
+| `TeamKPIs` / `TeamKPIPriorities` / `TeamKPIGoals` | `MajorInitiatives` / `MajorInitiativePriorities` / `MajorInitiativeGoals` |
+| `KPIID` column, `KPICode`/`KPITitle` aliases | `MajorInitiativeID`, `MajorInitiativeCode`/`Title` |
+| `vw_TeamKPIs` and the other views | `vw_MajorInitiatives` etc. |
+| routes `/kpis`, `/kpis/{id}` | `/major-initiatives`, `/major-initiatives/{MI-id}` |
+| UI label "Team KPI" | "Major Initiative" |
+
+The word **KPI** is now reserved for measures that earn it: the six Priorities
+carry a real measure/target/cadence, and the outcomes page cites the real KPI
+register. The glossary of record is `CONTEXT.md`. The `portfolio-dashboard`
+spec was updated too, and one of its requirements corrected: it had claimed the
+home lists every KPI in full, which the group-5 cut already made false.

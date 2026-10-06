@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ mi.MIId or mi.Code }} — {{ mi.Title }}{% endblock %}
+{% block content %}
+{#
+  One Major Initiative, with every edge (interconnection-redesign 3.3): its team,
+  its source area, the goals it aligns to, and the priorities it feeds. Found by
+  the canon's stable key, MI-###, or by the code we held before it arrived.
+#}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">{{ mi.MIId or mi.Code }} · Major Initiative</p>
+    <h1>{{ mi.Title }}</h1>
+  </div>
+  <p class="section-note">
+    {% if mi.TargetStatus == 'needs_review' %}
+    <span class="chip chip-warn">needs review</span>
+    {% else %}
+    <span class="chip">source target</span>
+    {% endif %}
+  </p>
+</div>
+
+<dl class="field-list mi-fields">
+  {% if mi.Team %}<dt>Team</dt><dd><a href="/teams/{{ mi.TeamID }}">{{ mi.Team }}</a></dd>{% endif %}
+  {% if mi.SourceArea %}<dt>Source area</dt><dd>{{ mi.SourceArea }}</dd>{% endif %}
+  {% if mi.SlideRef %}<dt>Slide</dt><dd>{{ mi.SlideRef }}</dd>{% endif %}
+  <dt>Status</dt><dd>{{ mi.Status }}</dd>
+  {% if mi.SourceTarget %}<dt>Source target</dt><dd>{{ mi.SourceTarget }}</dd>{% endif %}
+  {% if mi.ProposedTarget %}<dt>Proposed target</dt><dd>{{ mi.ProposedTarget }}</dd>{% endif %}
+</dl>
+
+{# The goals this Major Initiative aligns to (the new edge, from its side). #}
+<section aria-labelledby="mi-goals-heading">
+  <h2 id="mi-goals-heading" class="list-group-label">Strategy goals</h2>
+  {% if mi.goals %}
+  <ul class="mi-chip-list">
+    {% for g in mi.goals %}
+    <li class="mi-chip">
+      <a href="/goals/{{ g.GoalNumber }}">
+        <span class="goal-number">G{{ g.GoalNumber }}</span>
+        <span class="mi-chip-title">{{ g.ShortName }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">No goal alignment is recorded for this Major Initiative.</p>
+  {% endif %}
+</section>
+
+{# The annual priorities this Major Initiative feeds. #}
+<section aria-labelledby="mi-priorities-heading">
+  <h2 id="mi-priorities-heading" class="list-group-label">Feeds priorities</h2>
+  {% if mi.priorities %}
+  <ul class="mi-chip-list">
+    {% for pr in mi.priorities %}
+    <li class="mi-chip">
+      <a href="/priorities/{{ pr.PriorityName | urlencode }}"
+         style="--priority: var({{ pr.Colour | priority_colour }});">
+        <span class="mi-code">{{ pr.Code or "—" }}</span>
+        <span class="mi-chip-title">{{ pr.PriorityName }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">This Major Initiative feeds no priority in the register.</p>
+  {% endif %}
+</section>
+
+{% if mi.Initiatives %}
+<section aria-labelledby="mi-initiatives-heading">
+  <h2 id="mi-initiatives-heading" class="list-group-label">Initiatives named in the source register</h2>
+  <p class="entry-description">{{ mi.Initiatives }}</p>
+</section>
+{% endif %}
+
+{% if mi.Note %}
+<p class="mi-note"><span class="note-mark">ⓘ</span> {{ mi.Note }}</p>
+{% endif %}
+{% endblock %}

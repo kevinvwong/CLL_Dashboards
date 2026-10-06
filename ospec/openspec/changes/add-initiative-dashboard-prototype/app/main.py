@@ -54,7 +54,7 @@ def _ctx(request: Request, **extra) -> dict:
     section = "home"
     for prefix, name in (("/initiatives", "initiatives"), ("/people", "people"),
                          ("/goals", "initiatives"), ("/priorities", "initiatives"),
-                         ("/teams", "initiatives"), ("/kpis", "initiatives"),
+                         ("/teams", "initiatives"), ("/major-initiatives", "initiatives"),
                          ("/meeting", "meeting"), ("/outcomes", "outcomes")):
         if path == prefix or path.startswith(prefix + "/"):
             section = name
@@ -297,9 +297,9 @@ async def goal_list(request: Request, goal_number: int, group: str | None = None
             groupings={k: v.capitalize() for k, v in queries.GROUPINGS.items()},
             counts=counts,
             rollup=queries.rollup_label(len(rows), counts),
-            # The team KPIs aligned to this goal (interconnection-redesign
-            # 3.1): the new edge, shown from the goal side.
-            team_kpis=queries.goal_team_kpis(goal_number),
+            # The Major Initiatives aligned to this goal (interconnection-
+            # redesign 3.1): the new edge, shown from the goal side.
+            major_initiatives=queries.goal_major_initiatives(goal_number),
         ),
     )
 
@@ -338,7 +338,7 @@ async def priority_list(request: Request, priority_name: str, group: str | None 
 
 @app.get("/teams/{team_id}")
 async def team_page(request: Request, team_id: int):
-    """One team, with its KPIs (interconnection-redesign 3.2).
+    """One team, with its Major Initiatives (interconnection-redesign 3.2).
 
     Closes the dead end: the four teams existed only inside the home table.
     """
@@ -353,20 +353,20 @@ async def team_page(request: Request, team_id: int):
     )
 
 
-@app.get("/kpis/{mi_id}")
-async def kpi_page(request: Request, mi_id: str):
-    """One team KPI by its canon key, with every edge (interconnection 3.3).
+@app.get("/major-initiatives/{mi_id}")
+async def major_initiative_page(request: Request, mi_id: str):
+    """One Major Initiative by its canon key, with every edge (interconnection 3.3).
 
     Reachable by `MI-###` or by the code we held before the canon arrived.
     """
-    kpi = queries.kpi_detail(mi_id)
-    if kpi is None:
-        raise HTTPException(status_code=404, detail="No such KPI")
+    mi = queries.major_initiative_detail(mi_id)
+    if mi is None:
+        raise HTTPException(status_code=404, detail="No such Major Initiative")
     return templates.TemplateResponse(
         request,
-        "kpi.html",
-        _ctx(request, kpi=kpi,
-             crumbs=[("Priorities", None), (kpi["MIId"] or kpi["Code"], None)]),
+        "major_initiative.html",
+        _ctx(request, mi=mi,
+             crumbs=[("Priorities", None), (mi["MIId"] or mi["Code"], None)]),
     )
 
 
@@ -837,26 +837,27 @@ async def root(request: Request):
     """Home: the portfolio OVERVIEW.
 
     An overview, not four full catalogs (interconnection-redesign group 5).
-    Measured before the cut: 56 KB, 67% of it the 29-row KPI table, and every
-    KPI rendered twice. The table now has its own page, /kpis; the sections
-    here are compact entry points that state a count and link to detail.
+    Measured before the cut: 56 KB, 67% of it the 29-row table, and every
+    initiative rendered twice. The table now has its own page,
+    /major-initiatives; the sections here are compact entry points that state a
+    count and link to detail.
     """
     priorities = queries.blueprint_priorities()
     teams = queries.team_overview()
-    all_kpis = queries.kpi_cards()
-    # The five goals, with their team-KPI reach (interconnection-redesign 4.1).
+    all_mis = queries.major_initiative_cards()
+    # The five goals, with their Major Initiative reach (interconnection 4.1).
     goals = queries.goal_tiles()
     for g in goals:
-        g["TeamKPICount"] = len(queries.goal_team_kpis(g["GoalNumber"]))
+        g["MajorInitiativeCount"] = len(queries.goal_major_initiatives(g["GoalNumber"]))
 
-    # The stat band: counts, not a performance score. The team KPI and
-    # needs-review tiles link into the /kpis index.
+    # The stat band: counts, not a performance score. The Major Initiative and
+    # needs-review tiles link into the /major-initiatives index.
     stats = {
         "priorities": len(priorities),
         "goals": len(goals),
         "teams": len(teams),
-        "kpis": len(all_kpis),
-        "needs_review": sum(1 for k in all_kpis if k["TargetStatus"] == "needs_review"),
+        "major_initiatives": len(all_mis),
+        "needs_review": sum(1 for k in all_mis if k["TargetStatus"] == "needs_review"),
         "initiatives": len(queries.all_initiatives()),
     }
 
@@ -875,42 +876,42 @@ async def root(request: Request):
     )
 
 
-def _kpi_index_ctx(request: Request, target: str | None, group: str | None) -> dict:
-    """Context for the /kpis index (and shared with the home when linked).
+def _mi_index_ctx(request: Request, target: str | None, group: str | None) -> dict:
+    """Context for the /major-initiatives index.
 
     The counts in the controls describe the whole set, not the filtered view,
     so "All 29" stays 29 under any filter.
     """
-    all_kpis = queries.kpi_cards()
-    kpi_filter = target if target in ("needs_review",) else None
-    kpi_group = group if group in ("team", "source_area") else None
-    kpis = queries.filter_and_group_kpis(all_kpis, kpi_filter, kpi_group)
+    all_mis = queries.major_initiative_cards()
+    mi_filter = target if target in ("needs_review",) else None
+    mi_group = group if group in ("team", "source_area") else None
+    mis = queries.filter_and_group_major_initiatives(all_mis, mi_filter, mi_group)
     params = []
-    if kpi_filter:
-        params.append("target=" + kpi_filter)
-    if kpi_group:
-        params.append("group=" + kpi_group)
-    kpi_base = "/kpis" + ("?" + "&".join(params) if params else "")
+    if mi_filter:
+        params.append("target=" + mi_filter)
+    if mi_group:
+        params.append("group=" + mi_group)
+    mi_base = "/major-initiatives" + ("?" + "&".join(params) if params else "")
     return _ctx(
         request,
-        kpis=kpis,
-        all_kpis=all_kpis,
-        needs_review_count=sum(1 for k in all_kpis if k["TargetStatus"] == "needs_review"),
-        kpi_filter=kpi_filter,
-        kpi_group=kpi_group,
-        kpi_groupings={"team": "Team", "source_area": "Source area"},
-        kpi_base=kpi_base,
+        major_initiatives=mis,
+        all_major_initiatives=all_mis,
+        needs_review_count=sum(1 for k in all_mis if k["TargetStatus"] == "needs_review"),
+        mi_filter=mi_filter,
+        mi_group=mi_group,
+        mi_groupings={"team": "Team", "source_area": "Source area"},
+        mi_base=mi_base,
     )
 
 
-@app.get("/kpis")
-async def kpi_index(request: Request, target: str | None = None, group: str | None = None):
-    """The team-KPI index: all 29, filterable and groupable.
+@app.get("/major-initiatives")
+async def major_initiative_index(request: Request, target: str | None = None, group: str | None = None):
+    """The Major Initiatives index: all 29, filterable and groupable.
 
     Moved here from the overview, which measured 56 KB with this table as
     two-thirds of it (interconnection-redesign 5).
     """
     return templates.TemplateResponse(
-        request, "kpis.html",
-        _kpi_index_ctx(request, target, group),
+        request, "major_initiatives.html",
+        _mi_index_ctx(request, target, group),
     )

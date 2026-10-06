@@ -74,7 +74,7 @@ CREATE TABLE Priorities (
 
 -- ---------- Organizational layer (blueprint-redesign scope correction) -------
 -- The Dean's prototype carries a layer beneath the six priorities: four
--- organizational TEAMS, and 29 team KPIs grouped by FIVE source areas. Our
+-- organizational TEAMS, and 29 Major Initiatives grouped by FIVE source areas. Our
 -- schema held none of it.
 --
 -- NOTE: this deliberately contradicts config.yaml's "Nothing below D-1 (no
@@ -92,12 +92,12 @@ CREATE TABLE SourceAreas (
     Name         TEXT    NOT NULL UNIQUE
 );
 
--- The 29 team KPIs. `AreaID` is the team accountable; `SourceAreaID` is the
+-- The 29 Major Initiatives. `TeamID` is the team accountable; `SourceAreaID` is the
 -- workbook area they came from; the two are different axes.
-CREATE TABLE TeamKPIs (
-    KPIID          INTEGER PRIMARY KEY,
+CREATE TABLE MajorInitiatives (
+    MajorInitiativeID          INTEGER PRIMARY KEY,
     Code           TEXT    NOT NULL UNIQUE,   -- e.g. '3-02'
-    -- The canon workbook's own stable key (MI-001..MI-029), so a KPI can be
+    -- The canon workbook's own stable key (MI-001..MI-029), so a row can be
     -- cited by the identifier the source register uses.
     MIId           TEXT    UNIQUE,
     Title          TEXT    NOT NULL,
@@ -114,20 +114,20 @@ CREATE TABLE TeamKPIs (
     Note           TEXT
 );
 
--- Which priorities a team KPI feeds (its `priorities` array).
-CREATE TABLE TeamKPIPriorities (
-    KPIID      INTEGER NOT NULL REFERENCES TeamKPIs(KPIID),
+-- Which priorities a Major Initiative feeds (its `priorities` array).
+CREATE TABLE MajorInitiativePriorities (
+    MajorInitiativeID      INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
     PriorityID INTEGER NOT NULL REFERENCES Priorities(PriorityID),
-    PRIMARY KEY (KPIID, PriorityID)
+    PRIMARY KEY (MajorInitiativeID, PriorityID)
 );
 
--- Which Strategy 2035 goals a team KPI aligns to, parsed from the canon
--- workbook's `Strategy Alignment` column. This is the KPI -> Goal edge the
+-- Which Strategy 2035 goals a Major Initiative aligns to, parsed from the
+-- canon workbook's `Strategy Alignment` column. This is the MI -> Goal edge that
 -- register states and the schema did not hold.
-CREATE TABLE TeamKPIGoals (
-    KPIID  INTEGER NOT NULL REFERENCES TeamKPIs(KPIID),
+CREATE TABLE MajorInitiativeGoals (
+    MajorInitiativeID  INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
     GoalID INTEGER NOT NULL REFERENCES Goals(GoalID),
-    PRIMARY KEY (KPIID, GoalID)
+    PRIMARY KEY (MajorInitiativeID, GoalID)
 );
 
 
@@ -338,41 +338,41 @@ LEFT JOIN People e ON e.PersonID = pu.EnteredByID;
 
 -- ---------- Read models for the organizational layer -------------------------
 -- One view per screen, matching the existing convention. These expose the
--- 29 team KPIs with their team, source area, and the priorities they feed.
+-- 29 Major Initiatives with their team, source area, and what they feed.
 
-CREATE VIEW vw_TeamKPIs AS
-SELECT k.KPIID, k.Code, k.Title, k.StrategyAlign, k.Initiatives,
+CREATE VIEW vw_MajorInitiatives AS
+SELECT k.MajorInitiativeID, k.Code, k.Title, k.StrategyAlign, k.Initiatives,
        k.SourceTarget, k.ProposedTarget, k.TargetStatus, k.SlideRef,
        k.Status, k.Note,
        t.TeamID, t.Name AS Team,
        sa.SourceAreaID, sa.Name AS SourceArea
-FROM TeamKPIs k
+FROM MajorInitiatives k
 LEFT JOIN Teams t       ON t.TeamID = k.TeamID
 LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID;
 
--- Which priorities each team KPI feeds, one row per link.
-CREATE VIEW vw_TeamKPIPriorities AS
-SELECT kp.KPIID, k.Code AS KPICode, k.Title AS KPITitle,
+-- Which priorities each Major Initiative feeds, one row per link.
+CREATE VIEW vw_MajorInitiativePriorities AS
+SELECT kp.MajorInitiativeID, k.Code AS MajorInitiativeCode, k.Title AS MajorInitiativeTitle,
        p.PriorityID, p.PriorityName, p.Code AS PriorityCode,
        p.FullTitle AS PriorityTitle, p.Colour AS PriorityColour
-FROM TeamKPIPriorities kp
-JOIN TeamKPIs k       ON k.KPIID = kp.KPIID
+FROM MajorInitiativePriorities kp
+JOIN MajorInitiatives k       ON k.MajorInitiativeID = kp.MajorInitiativeID
 JOIN Priorities p     ON p.PriorityID = kp.PriorityID;
 
--- Team rollup: how many KPIs each team carries, and how many need review.
+-- Team rollup: how many Major Initiatives each team carries, and how many review.
 CREATE VIEW vw_TeamSummary AS
 SELECT t.TeamID, t.Name AS Team, t.Description,
-       COUNT(k.KPIID) AS KPICount,
+       COUNT(k.MajorInitiativeID) AS MajorInitiativeCount,
        SUM(CASE WHEN k.TargetStatus = 'needs_review' THEN 1 ELSE 0 END) AS NeedsReview
 FROM Teams t
-LEFT JOIN TeamKPIs k ON k.TeamID = t.TeamID
+LEFT JOIN MajorInitiatives k ON k.TeamID = t.TeamID
 GROUP BY t.TeamID, t.Name, t.Description;
 
 
--- The KPI -> Goal edge, one row per link, for the goal page and KPI page.
-CREATE VIEW vw_TeamKPIGoals AS
-SELECT kg.KPIID, k.Code AS KPICode, k.MIId, k.Title AS KPITitle,
+-- The MI -> Goal edge, one row per link, for the goal page and MI page.
+CREATE VIEW vw_MajorInitiativeGoals AS
+SELECT kg.MajorInitiativeID, k.Code AS MajorInitiativeCode, k.MIId, k.Title AS MajorInitiativeTitle,
        g.GoalID, g.GoalNumber, g.ShortName AS GoalShort
-FROM TeamKPIGoals kg
-JOIN TeamKPIs k ON k.KPIID = kg.KPIID
+FROM MajorInitiativeGoals kg
+JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
 JOIN Goals g    ON g.GoalID = kg.GoalID;

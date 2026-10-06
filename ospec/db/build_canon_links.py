@@ -1,12 +1,12 @@
-"""Generate seed SQL for the KPI -> Goal edge from the canon workbook.
+"""Generate seed SQL for the Major Initiative -> Goal edge from the canon workbook.
 
 Source of truth: `CLL_FY2027_Goals_Priorities_Initiatives_and_People.xlsx`,
 supplied 2026-10-06 as the most recent canon. Read directly, not retyped.
 
 It emits three things the schema lacked:
-  - TeamKPIs.MIId      the canon's stable key (MI-001..MI-029)
-  - TeamKPIs.Title     the canon's exact wording (5 differ from what we hold)
-  - TeamKPIGoals       the KPI -> Goal edge, parsed from Strategy Alignment
+  - MajorInitiatives.MIId      the canon's stable key (MI-001..MI-029)
+  - MajorInitiatives.Title     the canon's exact wording (5 differ from what we hold)
+  - MajorInitiativeGoals       the MI -> Goal edge, parsed from Strategy Alignment
 
 The mapping from the canon's row to our Code is by SOURCE AREA and POSITION
 within it, because our codes were built the same way (SOURCE_AREAS index + 1,
@@ -100,17 +100,17 @@ def build(path=WORKBOOK, out=OUT):
          "-- CLL_FY2027_Goals_Priorities_Initiatives_and_People.xlsx.",
          "-- Do not hand-edit. Read from the workbook, not retyped.",
          ""]
-    L.append("-- The canon's stable key and exact title for each team KPI.")
+    L.append("-- The canon's stable key and exact title for each Major Initiative.")
     for r in rows:
-        L.append("UPDATE TeamKPIs SET MIId=%s, Title=%s WHERE Code=%s;"
+        L.append("UPDATE MajorInitiatives SET MIId=%s, Title=%s WHERE Code=%s;"
                  % (_sq(r["mi_id"]), _sq(r["name"]), _sq(r["code"])))
     L.append("")
-    L.append("-- The KPI -> Goal edge, parsed from each alignment string.")
-    L.append("INSERT INTO TeamKPIGoals (KPIID, GoalID) VALUES")
+    L.append("-- The MI -> Goal edge, parsed from each alignment string.")
+    L.append("INSERT INTO MajorInitiativeGoals (MajorInitiativeID, GoalID) VALUES")
     vals = []
     for r in rows:
         for g in r["goals"]:
-            vals.append("  ((SELECT KPIID FROM TeamKPIs WHERE Code=%s), "
+            vals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
                         "(SELECT GoalID FROM Goals WHERE GoalNumber=%d))"
                         % (_sq(r["code"]), g))
     L.append(",\n".join(vals) + ";")
@@ -122,13 +122,13 @@ def build(path=WORKBOOK, out=OUT):
         if current != text:
             print("seed_canon_links.sql is STALE; re-run without --check")
             return 1
-        print("seed_canon_links.sql is current (%d KPI rows, %d goal links)"
+        print("seed_canon_links.sql is current (%d MI rows, %d goal links)"
               % (len(rows), len(vals)))
         return 0
 
     io.open(out, "w", encoding="utf-8", newline="\n").write(text)
     print("wrote %s" % out)
-    print("  KPI rows: %d | goal links: %d" % (len(rows), len(vals)))
+    print("  MI rows: %d | goal links: %d" % (len(rows), len(vals)))
     return 0
 
 

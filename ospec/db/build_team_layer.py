@@ -63,7 +63,7 @@ def parse_priorities(t):
 
 
 def parse_goals(t):
-    """The 29 team KPIs, from the goal() factory calls."""
+    """The 29 Major Initiatives, from the goal() factory calls."""
     calls = re.findall(
         r'goal\(SOURCE_AREAS\[(\d+)\],\s*"(\d+)",\s*"((?:[^"\\]|\\.)*)",\s*'
         r'"((?:[^"\\]|\\.)*)",\s*"((?:[^"\\]|\\.)*)",\s*'
@@ -127,12 +127,12 @@ def build(src=DEFAULT_SRC):
                _sq(p["target"]), _sq(p["cadence"]), _sq(p["owner"]),
                _sq(p["color"]), _sq(p["description"]), _sq(db_name)))
     L.append("")
-    L.append("-- The 29 team KPIs")
-    L.append("INSERT INTO TeamKPIs (Code, Title, TeamID, SourceAreaID, StrategyAlign, "
+    L.append("-- The 29 Major Initiatives")
+    L.append("INSERT INTO MajorInitiatives (Code, Title, TeamID, SourceAreaID, StrategyAlign, "
              "Initiatives, SourceTarget, ProposedTarget, TargetStatus, SlideRef) VALUES")
     vals = []
     for g in goals:
-        # Team is assigned per-KPI in the prototype (TEAM_ASSIGNMENTS); the
+        # Team is assigned per-initiative in the prototype (TEAM_ASSIGNMENTS); the
         # generator resolves it to the team's row id by name.
         team = _team_for(g["code"], t)
         vals.append("  (%s, %s, (SELECT TeamID FROM Teams WHERE Name=%s), "
@@ -143,8 +143,8 @@ def build(src=DEFAULT_SRC):
                        _sq(g["proposedTarget"]), _sq(g["targetStatus"]), g["slide"]))
     L.append(",\n".join(vals) + ";")
     L.append("")
-    L.append("-- Which priorities each team KPI feeds")
-    L.append("INSERT INTO TeamKPIPriorities (KPIID, PriorityID) VALUES")
+    L.append("-- Which priorities each Major Initiative feeds")
+    L.append("INSERT INTO MajorInitiativePriorities (MajorInitiativeID, PriorityID) VALUES")
     # The prototype's `priorities` array holds its internal ids ("pathways",
     # "data", ...), which map onto the database's short names by capitalising -
     # except where they differ. Resolve through the same code map.
@@ -158,7 +158,7 @@ def build(src=DEFAULT_SRC):
             db_name = PROTOTYPE_ID_TO_DB.get(pr.lower())
             if db_name is None:
                 raise SystemExit("unmapped prototype priority id: %r" % pr)
-            pvals.append("  ((SELECT KPIID FROM TeamKPIs WHERE Code=%s), "
+            pvals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
                          "(SELECT PriorityID FROM Priorities WHERE PriorityName=%s))"
                          % (_sq(g["code"]), _sq(db_name)))
     L.append(",\n".join(pvals) + ";")
@@ -166,12 +166,12 @@ def build(src=DEFAULT_SRC):
 
     io.open(OUT, "w", encoding="utf-8", newline="\n").write("\n".join(L))
     print("wrote %s" % OUT)
-    print("  source areas: %d, teams: %d, priorities: %d, team KPIs: %d, links: %d"
+    print("  source areas: %d, teams: %d, priorities: %d, major initiatives: %d, links: %d"
           % (len(areas), len(teams), len(priorities), len(goals), len(pvals)))
 
 
 def _team_for(code, t):
-    """Resolve a KPI's team from TEAM_ASSIGNMENTS, falling back to a lookup."""
+    """Resolve an initiative's team from TEAM_ASSIGNMENTS, falling back to a lookup."""
     m = re.search(r'const TEAM_ASSIGNMENTS = \{(.*?)\};', t, re.S)
     pairs = re.findall(r'"([\d-]+)":\s*AREAS\[(\d)\]', m.group(1))
     idx = {k: int(v) for k, v in pairs}

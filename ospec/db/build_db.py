@@ -20,21 +20,21 @@ con.execute("PRAGMA foreign_keys = ON")
 con.executescript(open(os.path.join(HERE, "schema.sql"), encoding="utf-8").read())
 if "--empty" not in sys.argv:
     con.executescript(open(os.path.join(HERE, "seed_sample.sql"), encoding="utf-8").read())
-    # The organizational layer (teams, source areas, 29 team KPIs, and the four
+    # The organizational layer (teams, source areas, 29 Major Initiatives, and the four
     # governed priority fields) generated from the Dean's prototype. Loaded
     # after the sample seed because it updates Priorities by name.
     team_layer = os.path.join(HERE, "seed_team_layer.sql")
     if os.path.exists(team_layer):
         con.executescript(open(team_layer, encoding="utf-8").read())
-    # The canon workbook's stable keys, exact titles, and the KPI -> Goal edge.
-    # Loaded after the team layer because it updates TeamKPIs by Code.
+    # The canon workbook's stable keys, exact titles, and the MI -> Goal edge.
+    # Loaded after the team layer because it updates MajorInitiatives by Code.
     canon = os.path.join(HERE, "seed_canon_links.sql")
     if os.path.exists(canon):
         con.executescript(open(canon, encoding="utf-8").read())
 con.commit()
 for t in ["Goals","Priorities","People","Initiatives","InitiativeGoals",
           "InitiativePriorities","InitiativeLinks","ProgressUpdates",
-          "Teams","SourceAreas","TeamKPIs","TeamKPIPriorities"]:
+          "Teams","SourceAreas","MajorInitiatives","MajorInitiativePriorities"]:
     print(f"{t:22} {con.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]:>4} rows")
 issues = con.execute("SELECT Code, Issue FROM vw_DataChecks").fetchall()
 print(f"\nData checks: {len(issues)} issue(s)")
