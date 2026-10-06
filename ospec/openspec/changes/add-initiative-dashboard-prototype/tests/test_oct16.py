@@ -25,6 +25,38 @@ def test_it_follows_the_wireframe_layout(logged_in):
     assert "Trade-offs" in body, "the trade-offs are missing"
 
 
+def test_the_page_presents_itself_as_chosen_not_as_a_candidate(logged_in):
+    """Option A was chosen 2026-10-07.
+
+    The wireframes offered A and B as candidates, so their labels read "OPTION A"
+    and "What the Dean is choosing". Now that the choice is made, the page must
+    not read as a candidate the Dean still has to pick between - and the eyebrow
+    must not be a bare letter the reader has to decode.
+    """
+    import html as _html
+
+    body = logged_in("Bill").get("/oct16").text
+    readable = _html.unescape(body)
+    assert "THE DEAN'S DASHBOARD" in readable, "the eyebrow still reads as a candidate"
+    assert "OPTION A" not in readable, "a stale candidate label survives"
+    assert "is choosing" not in readable, "the page still describes the choice as pending"
+
+
+def test_the_college_dashboard_milestone_is_not_claimed_as_delivered(logged_in):
+    """Choosing the option starts the build; it does not deliver it.
+
+    P05's third milestone is this dashboard itself. It read "This decision" while
+    the option was pending. Marking it "Met" once chosen would claim a delivery
+    that has not happened, since the deliverable is presented 2026-10-16 - so it
+    is In progress.
+    """
+    p05 = next(o for o in oct16_data.OUTCOMES if o["id"] == "P05")
+    statuses = dict(p05["milestones"])
+    assert statuses["College dashboard"] == "In progress", (
+        "the dashboard must not be marked Met before it is delivered"
+    )
+
+
 def test_the_cards_use_the_wireframes_wording(logged_in):
     """The drawing says "1 of 4 milestones reached" and carries an
     "Owner: [name] · updated [date]" line. Both are reproduced, and the owner

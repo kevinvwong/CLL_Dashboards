@@ -1,4 +1,9 @@
-"""The October 16 deliverable: Option A of the wireframes.
+"""The October 16 deliverable: the Dean's dashboard, Option A of the wireframes.
+
+**Option A was chosen 2026-10-07.** The wireframes offered this and Option B
+(Georgia Tech Infinity in depth) as candidates; this is the one selected, so the
+page reads as the deliverable rather than as one of several. Option B is not
+built and is not part of October 16.
 
 Generated from the two sources the wireframes themselves name, so the page
 matches the drawing rather than a retyped version of it:
@@ -17,8 +22,10 @@ format only, not CLL results'. Owners are unnamed and milestone status is
 uncollected, which the data plan marks 'No'; the page states that.
 """
 
-# Page furniture, verbatim from the wireframes.
-EYEBROW = "OCTOBER 16 · OPTION A"
+# The label was "OCTOBER 16 - OPTION A" in the wireframes, when A was still a
+# candidate. It is the chosen view now, so the page names itself rather than a
+# letter the reader has to decode.
+EYEBROW = "OCTOBER 16 · THE DEAN'S DASHBOARD"
 TITLE = "The Dean's six Blueprint outcomes"
 SUBTITLE = "Each outcome shown by milestones reached, until its KPIs have data"
 EXPLAINER = (
@@ -36,7 +43,8 @@ SOURCE_NOTE = (
     "as their source for target text."
 )
 
-# What the Dean is choosing to have collected by October 16.
+# What this view collects by October 16. The wireframe phrased it as "What the
+# Dean is choosing to have collected" while the option was pending.
 # label, value, note
 SCOPE = [
     ('Data elements', '19', 'on this wireframe'),
@@ -132,7 +140,11 @@ OUTCOMES = [
         "updated": None,
         "milestones": [
             ('KPI definitions drafted', 'Met'),
-            ('College dashboard', 'This decision'),
+            # Was 'This decision' while the option was pending: the milestone IS
+            # this dashboard. Now that A is chosen it is IN PROGRESS, not Met -
+            # the dashboard is not delivered until 2026-10-16, and marking it Met
+            # would claim a delivery that has not happened.
+            ('College dashboard', 'In progress'),
             ('Owners named', 'Not started'),
         ],
     },
