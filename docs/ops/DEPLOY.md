@@ -29,6 +29,13 @@ declares a checkpoint.**
 round). Production is therefore AHEAD of nothing and BEHIND any local work done
 after `f24cc5d` until the next declared checkpoint.
 
+**Latest production checkpoint:** marker `enhance-20261007T195252Z` at commit
+`bae40b7` — the Milestones model, the intake, the DB-backed Outcomes page, goal
+and team identity, the enhancements and motion, and the auth stopgap (PIN +
+local roles + change-log fields). Verified live 2026-10-07 19:52 UTC: the header
+stamp reads `bae40b7 · deployed 2026-10-07 19:52 UTC`, and the gate and the new
+visuals were walked.
+
 ### Two runbook notes that cost time this session
 
 - **`az webapp deploy` blocks the shell while it polls** — but the deploy
