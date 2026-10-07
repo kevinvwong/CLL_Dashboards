@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **136** changes in total.
+- **3** days of work recorded, **137** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 41 what we added; 28 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
+- Across all days: 42 what we added; 28 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -52,6 +52,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Give goals and teams a keyed colour and icon, with a legend
 - Nav icons, stat-tile proportion fill, and the Dean FY timeline bar
 - Milestone rings, milestone-chip icons, and cascade rails
+- All six blueprint moves, all respecting reduced motion
 
 **What we fixed**
 
