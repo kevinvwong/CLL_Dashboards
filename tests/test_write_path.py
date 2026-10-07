@@ -93,14 +93,14 @@ def test_a_successful_write_is_complete(fresh_db):
 
 def test_percent_out_of_range_is_a_message_not_a_driver_error(fresh_db):
     with pytest.raises(repo.RuleError) as e:
-        repo.add_progress_update(code="MI-002", percent=150, status="On track",
+        repo.add_progress_update(mi_id="MI-002", percent=150, status="On track",
                                  note="", entered_by_id=1)
     assert "between 0 and 100" in e.value.message
 
 
 def test_unknown_status_lists_the_allowed_set(fresh_db):
     with pytest.raises(repo.RuleError) as e:
-        repo.add_progress_update(code="MI-002", percent=10, status="Sideways",
+        repo.add_progress_update(mi_id="MI-002", percent=10, status="Sideways",
                                  note="", entered_by_id=1)
     msg = e.value.message
     assert "On track" in msg and "At risk" in msg, msg
@@ -125,9 +125,9 @@ def test_unknown_owner_is_a_message_not_a_driver_error(fresh_db):
 
 
 def test_an_update_never_rewrites_earlier_updates(fresh_db):
-    id1 = repo.add_progress_update(code="MI-002", percent=10, status="On track",
+    id1 = repo.add_progress_update(mi_id="MI-002", percent=10, status="On track",
                                    note="first", entered_by_id=1)
-    repo.add_progress_update(code="MI-002", percent=20, status="On track",
+    repo.add_progress_update(mi_id="MI-002", percent=20, status="On track",
                              note="second", entered_by_id=1)
 
     conn = sqlite3.connect(str(fresh_db))

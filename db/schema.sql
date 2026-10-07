@@ -320,12 +320,12 @@ JOIN DeanPriorities d   ON d.DeanPriorityID = kl.DeanPriorityID;
 -- it would have made every import fail. Tag completeness is the real check.
 
 CREATE VIEW vw_DataChecks AS
-SELECT k.Code, 'No goal tagged' AS Issue
+SELECT COALESCE(k.MIId, k.Code) AS Code, 'No goal tagged' AS Issue
 FROM MajorInitiatives k
 WHERE k.IsActive = 1
   AND NOT EXISTS (SELECT 1 FROM MajorInitiativeGoals g WHERE g.MajorInitiativeID = k.MajorInitiativeID)
 UNION ALL
-SELECT k.Code, 'No priority tagged'
+SELECT COALESCE(k.MIId, k.Code), 'No priority tagged'
 FROM MajorInitiatives k
 WHERE k.IsActive = 1
   AND NOT EXISTS (SELECT 1 FROM MajorInitiativePriorities p WHERE p.MajorInitiativeID = k.MajorInitiativeID);

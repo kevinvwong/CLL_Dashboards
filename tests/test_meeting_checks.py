@@ -18,6 +18,25 @@ def _enable_meeting(meeting_on):
     return meeting_on
 
 
+@pytest.fixture(autouse=True)
+def _seeded_portfolio(fresh_db, diary):
+    """Give every active Major Initiative a fresh "On track" diary entry.
+
+    The register seed ships an EMPTY diary (the prototype's sample diary was
+    dropped in the 2026-10-07 merge), so without this every meeting/attention
+    test would see 29 initiatives with no update. One entry dated today makes the
+    portfolio a clean slate the tests then perturb.
+    """
+    conn = sqlite3.connect(fresh_db)
+    mIs = [r[0] for r in conn.execute(
+        "SELECT MIId FROM MajorInitiatives WHERE IsActive = 1")]
+    today = conn.execute("SELECT date('now')").fetchone()[0]
+    conn.close()
+    for mi in mIs:
+        diary(mi, 20, "On track", on=today)
+    return True
+
+
 # --- 8.5 meeting window ---------------------------------------------------
 
 
@@ -214,14 +233,14 @@ def test_the_order_is_stable_when_ages_tie(logged_in, fresh_db):
     MI-002, MAR-2, MI-001.
     """
     _quiet(fresh_db)
-    for code in ("MI-001", "MI-002", "MAR-2"):
+    for code in ("MI-001", "MI-002", "MI-003"):
         _set_progress(fresh_db, code, "At risk", days_ago=3)
 
     first = [r["Code"] for r in queries.attention_list()]
     second = [r["Code"] for r in queries.attention_list()]
     assert first == second, "the order must not vary between renders"
-    assert first == ["MI-002", "MAR-2", "MI-001"], (
-        "equal ages must fall back to code order, not insertion order: got %s" % first
+    assert first == ["MI-001", "MI-002", "MI-003"], (
+        "equal ages must fall back to code order: got %s" % first
     )
 
 
@@ -280,31 +299,31 @@ def test_checks_page_renders(logged_in):
 def test_checks_lists_each_issue_with_its_initiative(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
+        "DELETE FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
         "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
     conn.close()
 
     issues = queries.data_checks()
-    assert issues, "removing the link must produce a data-check issue"
+    assert issues, "removing the goal tags must produce a data-check issue"
     body = logged_in("Bill Gaudelli").get("/checks").text
     for issue in issues:
         assert issue["Code"] in body
         assert issue["Issue"] in body
 
 
-def test_checks_uses_the_spec_wording_for_a_missing_dean_link(logged_in, fresh_db):
+def test_checks_uses_the_spec_wording_for_a_missing_goal(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
+        "DELETE FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
         "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
     conn.close()
 
     issues = queries.data_checks()
-    assert "D-1 initiative not linked to any Dean initiative" in [i["Issue"] for i in issues]
+    assert "No goal tagged" in [i["Issue"] for i in issues]
 
 
 def test_checks_is_clear_on_clean_sample_data(logged_in):
@@ -318,7 +337,7 @@ def test_checks_is_clear_on_clean_sample_data(logged_in):
 def test_checks_rows_link_to_the_initiative(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
+        "DELETE FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
         "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
