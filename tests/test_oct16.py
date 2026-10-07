@@ -58,17 +58,26 @@ def test_the_college_dashboard_milestone_is_not_claimed_as_delivered(logged_in):
 
 
 def test_the_cards_use_the_wireframes_wording(logged_in):
-    """The drawing says "1 of 4 milestones reached" and carries an
+    """The drawing says "N of M milestones reached" and carries an
     "Owner: ... · updated ..." line. Both are reproduced.
 
-    The owner position is now one of three distinguishable states rather than a
-    bare "[name]" placeholder - see test_confirmed_data.py. The wireframe's
-    bracket convention is kept for the unnamed case.
+    The count is asserted as a pattern, not as the literal "of 4". The wireframe
+    drew "1 of 4" but listed only three milestones; carrying its 4 made the number
+    disagree with the rows beneath it. The count is now derived from the list, so
+    the card's M equals the milestones it shows (see test_oct16_module.py).
+
+    The owner position is one of three distinguishable states rather than a bare
+    "[name]" placeholder - see test_confirmed_data.py. The wireframe's bracket
+    convention is kept for the unnamed case.
     """
+    import re
     body = logged_in("Bill").get("/oct16").text
-    assert "of 4 milestones reached" in body
+    assert re.search(r"\d+ of \d+ milestones reached", body), \
+        "no 'N of M milestones reached' line"
     assert "no owner named" in body, "the unnamed owner state is missing"
-    assert "updated [date]" in body, "the updated placeholder is missing"
+    # The unnamed state now reads as a sentence ("... — to be named by Oct 12"),
+    # not as an unfilled "updated [date]" slot. The string is still present and
+    # distinguishable; test_confirmed_data.py pins the three states.
 
 
 def test_the_data_requirements_table_has_every_row(logged_in):
@@ -153,8 +162,10 @@ def test_no_rollup_figure_appears(logged_in):
     # every outcome is its own card, and there is a card per outcome and no more
     cards = re.findall(r'class="oct16-card', body)
     assert len(cards) == 6, "expected one card per outcome, found %d" % len(cards)
-    # the grid contains only those cards
-    grid = re.search(r'<ul class="oct16-grid">(.*?)</ul>\s*<section', body, re.S)
+    # the grid contains only those cards. Each card holds a NESTED
+    # <ul class="oct16-milestones">, so a lazy ".*?</ul>" stops at the first
+    # milestone list. Match from the grid's open to the memo that now follows it.
+    grid = re.search(r'<ul class="oct16-grid">(.*?)<details', body, re.S)
     assert grid, "the outcomes grid was not found"
     assert grid.group(1).count("oct16-card") == 6, "something else is in the grid"
     # and no element aggregates them
@@ -194,3 +205,20 @@ def test_it_is_behind_the_gate(anon):
     response = anon.get("/oct16", follow_redirects=False)
     assert response.status_code == 303
     assert response.headers.get("Location") == "/login"
+
+
+def test_the_milestone_count_matches_the_rows_beneath_it(logged_in):
+    """The number must reconcile with the list on the card.
+
+    The defect (browser analysis #12): P01 said "1 of 4" but listed three
+    milestones; P05 said "2 of 4 reached" with only one MET among the three it
+    showed. The count is now derived from the list, so this cannot drift.
+    """
+    from app import oct16_data
+    for o in oct16_data.OUTCOMES:
+        met = sum(1 for _, s in o["milestones"] if s == "Met")
+        assert o["reached"] == met, "%s: reached=%d but %d are Met" % (
+            o["id"], o["reached"], met)
+        assert o["planned"] == len(o["milestones"]), (
+            "%s: planned=%d but %d milestones are listed" % (
+                o["id"], o["planned"], len(o["milestones"])))

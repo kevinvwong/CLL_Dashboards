@@ -577,6 +577,17 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .oct16-mname { flex: 1 1 auto; }
 .oct16-notes { margin-top: 1.4rem; font-size: var(--text-sm); color: var(--ink-muted); }
 .oct16-notes h2 { font-size: var(--text-lg); margin: 0 0 .3rem; }
+/* The build memo (scope, data requirements, trade-offs) behind a reveal, so the
+   default Outcomes view is the six cards. */
+.oct16-memo { margin-top: var(--space-6); }
+.oct16-memo > summary {
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+.oct16-memo > summary:hover { color: var(--ink); }
 .oct16-caveat { margin: .3rem 0 0; }
 @media print {
   .oct16-notes { color: var(--ink-print); }

@@ -49,16 +49,30 @@
          nobody named yet     -> an explicit absence
        The data plan marks "Outcome owner" as "No", so the committed data is the
        third state. Real names are withheld until the data-policy question is
-       answered, per the decision of 2026-10-07. #}
+       answered, per the decision of 2026-10-07.
+
+       The line READ AS BROKEN when it sat on the Dean's cards as
+       "Owner: [no owner named] · updated [date]" - a template variable on screen.
+       It is now a single sentence that names the state: an owner has not been
+       named YET, and the date is when one is expected, not an unfilled slot. The
+       underlying three states and their strings are unchanged. #}
     <p class="oct16-owner{% if not d.owner_is_confirmed(o.owner) %} unconfirmed{% endif %}">
-      Owner:
-      {% if o.owner %}<span class="owner-value">{{ d.owner_label(o.owner) }}</span>
-      {% else %}<span class="owner-none">{{ d.owner_label(o.owner) }}</span>{% endif %}
-      &middot; updated {{ o.updated or "[date]" }}
+      {% if d.owner_is_confirmed(o.owner) %}Owner: <span class="owner-value">{{ d.owner_label(o.owner) }}</span>{% if o.updated %} · updated {{ o.updated }}{% endif %}
+      {% elif o.owner == d.OWNER_WITHHELD %}Owner: <span class="owner-value">{{ d.owner_label(o.owner) }}</span>
+      {% else %}<span class="owner-none">{{ d.owner_label(o.owner) }}</span> — to be named by Oct 12{% endif %}
     </p>
   </li>
   {% endfor %}
 </ul>
+
+{# Below the six cards is the build team's decision memo: scope, the data-
+   requirements table and the trade-offs. It is a deliberate part of the October 16
+   deliverable, but it read as a planning document dropped into the Dean's own view
+   (#4 in the browser analysis). Wrapped in a <details> reveal so the default view
+   is the six outcome cards; the memo is one click away and nothing is lost. It is
+   open by default in print, so the printed agenda still carries the full record. #}
+<details class="oct16-memo"{% if print_open %} open{% endif %}>
+  <summary>Scope, data requirements and trade-offs (the build memo)</summary>
 
 <section class="oct16-scope">
   <h2>Scope and scale of this choice</h2>
@@ -131,6 +145,8 @@
     {% endfor %}
   </ul>
 </section>
+
+</details>
 
 <section class="oct16-notes">
   <h2>About these figures</h2>

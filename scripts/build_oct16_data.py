@@ -329,6 +329,12 @@ def build(owners_path: str | None, out_path: str = OUT) -> str:
     L.append("OUTCOMES = [")
     for oid, name, status, reached, planned, summary, mslist in OUTCOMES:
         entry = owners.get(oid, {})
+        # The count is DERIVED from the list, not carried separately: the scaffold's
+        # `planned` (4) disagreed with the three milestones it listed, so the card
+        # said "1 of 4" above only three rows. Counting the list makes the number
+        # and the rows impossible to drift. `reached` counts the Met milestones.
+        reached = sum(1 for _, st in mslist if st == "Met")
+        planned = len(mslist)
         L.append("    {")
         L.append('        "id": %r,' % oid)
         L.append('        "name": %r,' % name)
