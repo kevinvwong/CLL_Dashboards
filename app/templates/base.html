@@ -25,7 +25,7 @@
     {# Global search (overhaul 3.5): a dialog opened with Cmd/Ctrl+K. The input
        hx-gets /search as you type, so results render server-side. #}
     <button type="button" class="search-open" data-search-open aria-label="Search (Command K)">
-      <span aria-hidden="true">⌘K</span> Search
+      <span aria-hidden="true">Ctrl/⌘ K</span> Search
     </button>
     <dialog id="search-palette" class="search-palette" aria-label="Search">
       <form method="get" action="/search" class="search-form">
@@ -63,7 +63,7 @@
       <details class="user-menu">
         <summary class="person-name" aria-label="User menu for {{ person.Name }}">{{ person.Name }}</summary>
         <div class="user-menu-panel">
-          <p class="user-menu-name">{{ person.Name }}</p>
+          <p class="user-menu-name">{{ person.Name }}{% if person.Title %} <span class="user-menu-role">{{ person.Title }}</span>{% endif %}</p>
           {# Admin actions live in the menu, not the primary nav (5.1/5.4). #}
           {% if may_admin %}
           <a href="/initiatives/new">New initiative</a>

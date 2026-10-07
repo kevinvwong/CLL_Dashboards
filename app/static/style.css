@@ -1252,6 +1252,7 @@ body.overlay-open { overflow: hidden; }
   z-index: 30;
 }
 .user-menu-name { margin: 0 0 var(--space-2); font-weight: 700; font-size: var(--text-sm); }
+.user-menu-role { display: block; font-weight: 400; color: var(--ink-muted); font-size: var(--text-xs); }
 
 
 /* ---- Portfolio dashboard (blueprint-redesign scope correction) -------------
