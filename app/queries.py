@@ -41,11 +41,11 @@ def goal_tiles() -> list[dict]:
             SELECT g.GoalNumber,
                    g.ShortName,
                    g.FullName,
-                   COUNT(DISTINCT i.InitiativeID) AS InitiativeCount
+                   COUNT(DISTINCT k.MajorInitiativeID) AS InitiativeCount
             FROM Goals g
-            LEFT JOIN InitiativeGoals ig ON ig.GoalID = g.GoalID
-            LEFT JOIN Initiatives i
-                   ON i.InitiativeID = ig.InitiativeID AND i.IsActive = 1
+            LEFT JOIN MajorInitiativeGoals kg ON kg.GoalID = g.GoalID
+            LEFT JOIN MajorInitiatives k
+                   ON k.MajorInitiativeID = kg.MajorInitiativeID AND k.IsActive = 1
             GROUP BY g.GoalID, g.GoalNumber, g.ShortName, g.FullName
             ORDER BY g.GoalNumber
             """
@@ -67,11 +67,11 @@ def priority_tiles() -> list[dict]:
                    p.Description,
                    p.Code, p.FullTitle, p.Measure, p.Target, p.Cadence,
                    p.OwnerLabel, p.Colour,
-                   COUNT(DISTINCT i.InitiativeID) AS InitiativeCount
+                   COUNT(DISTINCT k.MajorInitiativeID) AS InitiativeCount
             FROM Priorities p
-            LEFT JOIN InitiativePriorities ip ON ip.PriorityID = p.PriorityID
-            LEFT JOIN Initiatives i
-                   ON i.InitiativeID = ip.InitiativeID AND i.IsActive = 1
+            LEFT JOIN MajorInitiativePriorities ip ON ip.PriorityID = p.PriorityID
+            LEFT JOIN MajorInitiatives k
+                   ON k.MajorInitiativeID = ip.MajorInitiativeID AND k.IsActive = 1
             GROUP BY p.PriorityID, p.PriorityName, p.PlanYear, p.Description,
                      p.Code, p.FullTitle, p.Measure, p.Target, p.Cadence,
                      p.OwnerLabel, p.Colour
@@ -134,14 +134,16 @@ def initiative_signals(limit: int = 12) -> list[dict]:
             dict(r)
             for r in conn.execute(
                 """
-                SELECT i.Code, i.InitiativeName, i.Level,
+                SELECT k.Code, k.MIId, k.Title AS InitiativeName,
+                       'Major Initiative' AS Level,
                        p.Name AS Owner,
                        lp.PercentComplete, lp.Status
-                FROM Initiatives i
-                JOIN People p ON p.PersonID = i.OwnerID
-                LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID
-                WHERE i.IsActive = 1
-                ORDER BY i.Code
+                FROM MajorInitiatives k
+                LEFT JOIN People p ON p.PersonID = k.OwnerID
+                LEFT JOIN vw_LatestMajorInitiativeProgress lp
+                       ON lp.MajorInitiativeID = k.MajorInitiativeID
+                WHERE k.IsActive = 1
+                ORDER BY k.MIId
                 LIMIT ?
                 """,
                 (limit,),
@@ -149,6 +151,8 @@ def initiative_signals(limit: int = 12) -> list[dict]:
         ]
     for r in rows:
         r["HasUpdate"] = r["PercentComplete"] is not None
+        # Templates key on the canon id; the internal Code is kept too.
+        r["Code"] = r["MIId"] or r["Code"]
     return rows
 
 
@@ -177,36 +181,72 @@ def priority_by_name(name: str):
 
 
 def goal_rows(goal_number: int) -> list[dict]:
+    """Major Initiatives aligned to one goal (the dropped vw_GoalInitiatives).
+
+    Keeps the old view's keys, with `Level` now the constant "Major Initiative"
+    (the merged model has no Dean/D-1 tier) and `IsPrimary` always 0 (the
+    register's goal columns are plain marks, with no primary among them).
+    """
     with _conn() as conn:
         rows = conn.execute(
-            "SELECT * FROM vw_GoalInitiatives WHERE GoalNumber = ?", (goal_number,)
+            "SELECT g.GoalNumber, g.ShortName AS Goal, k.MajorInitiativeID AS InitiativeID, "
+            "       'Major Initiative' AS Level, k.MIId AS Code, k.Title AS InitiativeName, "
+            "       p.PersonID AS OwnerID, p.Name AS Owner, 0 AS IsPrimary, "
+            "       lp.PercentComplete, lp.Status "
+            "FROM MajorInitiativeGoals ig "
+            "JOIN Goals g       ON g.GoalID = ig.GoalID "
+            "JOIN MajorInitiatives k ON k.MajorInitiativeID = ig.MajorInitiativeID AND k.IsActive = 1 "
+            "LEFT JOIN People p ON p.PersonID = k.OwnerID "
+            "LEFT JOIN vw_LatestMajorInitiativeProgress lp "
+            "       ON lp.MajorInitiativeID = k.MajorInitiativeID "
+            "WHERE g.GoalNumber = ? ORDER BY k.MIId",
+            (goal_number,),
         ).fetchall()
-    return [dict(r) for r in rows]
+    out = [dict(r) for r in rows]
+    for r in out:
+        r["Code"] = r["Code"] or ""
+    return out
 
 
 def priority_rows(priority_name: str) -> list[dict]:
+    """Major Initiatives feeding one priority (the dropped vw_PriorityInitiatives)."""
     with _conn() as conn:
         rows = conn.execute(
-            "SELECT * FROM vw_PriorityInitiatives WHERE Priority = ?", (priority_name,)
+            "SELECT pr.PriorityName AS Priority, pr.PlanYear, "
+            "       k.MajorInitiativeID AS InitiativeID, 'Major Initiative' AS Level, "
+            "       k.MIId AS Code, k.Title AS InitiativeName, "
+            "       p.PersonID AS OwnerID, p.Name AS Owner, tp.IsPrimary, "
+            "       lp.PercentComplete, lp.Status "
+            "FROM MajorInitiativePriorities tp "
+            "JOIN Priorities pr ON pr.PriorityID = tp.PriorityID "
+            "JOIN MajorInitiatives k ON k.MajorInitiativeID = tp.MajorInitiativeID AND k.IsActive = 1 "
+            "LEFT JOIN People p ON p.PersonID = k.OwnerID "
+            "LEFT JOIN vw_LatestMajorInitiativeProgress lp "
+            "       ON lp.MajorInitiativeID = k.MajorInitiativeID "
+            "WHERE pr.PriorityName = ? ORDER BY k.MIId",
+            (priority_name,),
         ).fetchall()
-    return [dict(r) for r in rows]
+    out = [dict(r) for r in rows]
+    for r in out:
+        r["Code"] = r["Code"] or ""
+    return out
 
 
 def split_for_list(rows: list[dict]):
-    """Apply design.md decision 8: Dean initiatives ordered by code, then a
-    divider, then D-1 initiatives grouped by owner name and ordered by code
-    within each owner.
+    """Group initiative rows by owner, ordered by code within each owner.
 
-    Returns (dean_rows, d1_groups) where each group is {"owner", "rows"}.
+    Before the 2026-10-07 merge this split the prototype's rows into a Dean
+    block and a D-1 block. The merged model has one tier (the register's Major
+    Initiatives), so there is no Dean/D-1 divider: every row groups by owner.
+    Returns (dean_rows, groups) with dean_rows always empty, so callers that
+    check `if dean_rows` simply render no divider. Each group is
+    {"owner", "rows"}.
     """
-    dean = sorted((r for r in rows if r["Level"] == "Dean"), key=lambda r: r["Code"])
+    dean: list = []
 
     by_owner: dict = {}
-    for row in sorted(
-        (r for r in rows if r["Level"] == "D-1"),
-        key=lambda r: (r["Owner"], r["Code"]),
-    ):
-        by_owner.setdefault(row["Owner"], []).append(row)
+    for row in sorted(rows, key=lambda r: (r.get("Owner") or "", r["Code"])):
+        by_owner.setdefault(row.get("Owner") or "Unassigned", []).append(row)
 
     groups = [{"owner": owner, "rows": rs} for owner, rs in sorted(by_owner.items())]
     return dean, groups
@@ -293,60 +333,63 @@ STALE_DAYS = 14
 ATTENTION_STALE_DAYS = 14
 
 
-def initiative_card(code: str):
+def initiative_card(mi_id: str):
     """Everything the initiative card needs, in one call.
 
-    Sections: details, goal and priority tags, what it feeds or what feeds
-    it, latest progress, and the full diary newest first.
+    Sections: details, goal and priority tags, the Dean Priorities it
+    contributes to, latest progress, and the full diary newest first. Keyed by
+    the canon's MIId (or the internal Code for a row with none).
     """
     with _conn() as conn:
         row = conn.execute(
-            "SELECT i.InitiativeID, i.Code, i.InitiativeName, i.Description, "
-            "       i.Level, i.OwnerID, p.Name AS Owner "
-            "FROM Initiatives i JOIN People p ON p.PersonID = i.OwnerID "
-            "WHERE i.Code = ? AND i.IsActive = 1",
-            (code,),
+            "SELECT k.MajorInitiativeID AS InitiativeID, k.MIId AS Code, "
+            "       k.Title AS InitiativeName, k.Description, k.MIId, "
+            "       'Major Initiative' AS Level, k.OwnerID, p.Name AS Owner "
+            "FROM MajorInitiatives k LEFT JOIN People p ON p.PersonID = k.OwnerID "
+            "WHERE (k.MIId = ? OR k.Code = ?) AND k.IsActive = 1",
+            (mi_id, mi_id),
         ).fetchone()
         if row is None:
             return None
         card = dict(row)
+        # A row with no MI-id falls back to its internal Code for display/links.
+        card["Code"] = card["MIId"] or card["Code"]
 
+        # Goal tags: the register's goal columns are plain marks (no primary).
         card["goal_tags"] = [
             dict(r)
             for r in conn.execute(
-                "SELECT g.GoalNumber, g.ShortName, ig.IsPrimary "
-                "FROM InitiativeGoals ig JOIN Goals g ON g.GoalID = ig.GoalID "
-                "WHERE ig.InitiativeID = ? ORDER BY g.GoalNumber",
+                "SELECT g.GoalNumber, g.ShortName, 0 AS IsPrimary "
+                "FROM MajorInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
+                "WHERE kg.MajorInitiativeID = ? ORDER BY g.GoalNumber",
                 (card["InitiativeID"],),
             )
         ]
         card["priority_tags"] = [
             dict(r)
             for r in conn.execute(
-                "SELECT pr.PriorityName, pr.PlanYear, ip.IsPrimary "
-                "FROM InitiativePriorities ip JOIN Priorities pr ON pr.PriorityID = ip.PriorityID "
-                "WHERE ip.InitiativeID = ? ORDER BY pr.PriorityName",
+                "SELECT pr.PriorityName, pr.PlanYear, tp.IsPrimary "
+                "FROM MajorInitiativePriorities tp JOIN Priorities pr ON pr.PriorityID = tp.PriorityID "
+                "WHERE tp.MajorInitiativeID = ? ORDER BY pr.PriorityName",
                 (card["InitiativeID"],),
             )
         ]
+        # What this initiative contributes to: the Dean FY27 Priorities. The
+        # merged model has no reverse "Fed by" direction, so only the forward
+        # direction is returned, in the old rows' shape.
         card["connections"] = [
             dict(r)
             for r in conn.execute(
-                # Status and PercentComplete are carried too, so the detail's
-                # relationship list can show each connected initiative's health
-                # in BOTH directions (blueprint-redesign 3.3) rather than only
-                # the Fed-by direction, which happened to be the only one the
-                # old template rendered a status for.
-                "SELECT Direction, Code, InitiativeName, OwnerID, Owner, "
-                "       PercentComplete, Status "
-                "FROM vw_InitiativeConnections WHERE InitiativeID = ? "
-                "ORDER BY Direction, Code",
+                "SELECT 'Contributes to' AS Direction, d.Code AS Code, d.Title AS InitiativeName, "
+                "       NULL AS OwnerID, NULL AS Owner, NULL AS PercentComplete, NULL AS Status "
+                "FROM MajorInitiativeDeanLinks kl JOIN DeanPriorities d ON d.DeanPriorityID = kl.DeanPriorityID "
+                "WHERE kl.MajorInitiativeID = ? ORDER BY d.Code",
                 (card["InitiativeID"],),
             )
         ]
         latest = conn.execute(
-            "SELECT UpdateDate, PercentComplete, Status, Note FROM vw_LatestProgress "
-            "WHERE InitiativeID = ?",
+            "SELECT UpdateDate, PercentComplete, Status, Note "
+            "FROM vw_LatestMajorInitiativeProgress WHERE MajorInitiativeID = ?",
             (card["InitiativeID"],),
         ).fetchone()
         card["latest"] = dict(latest) if latest else None
@@ -355,7 +398,7 @@ def initiative_card(code: str):
             for r in conn.execute(
                 "SELECT UpdateDate, PercentComplete, Status, Note, "
                 "       (SELECT Name FROM People e WHERE e.PersonID = pu.EnteredByID) AS EnteredBy "
-                "FROM ProgressUpdates pu WHERE InitiativeID = ? "
+                "FROM MajorInitiativeUpdates pu WHERE MajorInitiativeID = ? "
                 "ORDER BY UpdateDate DESC, UpdateID DESC",
                 (card["InitiativeID"],),
             )
@@ -381,12 +424,18 @@ def person_card(person_id: int):
         rows = [
             dict(r)
             for r in conn.execute(
-                "SELECT InitiativeID, Level, Code, InitiativeName, "
-                "       PercentComplete, Status, LastUpdated "
-                "FROM vw_PersonInitiatives WHERE PersonID = ? ORDER BY Code",
+                "SELECT k.MajorInitiativeID AS InitiativeID, 'Major Initiative' AS Level, "
+                "       k.MIId AS Code, k.Title AS InitiativeName, "
+                "       lp.PercentComplete, lp.Status, lp.UpdateDate AS LastUpdated "
+                "FROM MajorInitiatives k "
+                "LEFT JOIN vw_LatestMajorInitiativeProgress lp "
+                "       ON lp.MajorInitiativeID = k.MajorInitiativeID "
+                "WHERE k.OwnerID = ? AND k.IsActive = 1 ORDER BY k.MIId",
                 (person_id,),
             )
         ]
+    for r in rows:
+        r["Code"] = r["Code"] or ""
 
     today = _today()
     for row in rows:
@@ -418,19 +467,29 @@ def default_since(days: int = DEFAULT_MEETING_WINDOW_DAYS) -> str:
 def meeting_updates(since: str):
     """Updates entered on or after `since`, grouped by owner.
 
-    vw_RecentUpdates deliberately carries no WHERE and no ORDER BY - the
-    window and the ordering are the caller's job, which is what this does.
+    Rebuilt inline from MajorInitiativeUpdates + MajorInitiatives + People (the
+    prototype's vw_RecentUpdates was dropped in the 2026-10-07 merge). The
+    window and the ordering are the caller's job, as before.
     """
     with _conn() as conn:
         rows = conn.execute(
-            "SELECT * FROM vw_RecentUpdates WHERE UpdateDate >= ? "
-            "ORDER BY UpdateDate DESC, Code, Owner",
+            "SELECT pu.UpdateDate, pu.CreatedAt, k.MajorInitiativeID AS InitiativeID, "
+            "       k.MIId AS Code, k.Title AS InitiativeName, 'Major Initiative' AS Level, "
+            "       o.PersonID AS OwnerID, o.Name AS Owner, "
+            "       pu.PercentComplete, pu.Status, pu.Note, e.Name AS EnteredBy "
+            "FROM MajorInitiativeUpdates pu "
+            "JOIN MajorInitiatives k ON k.MajorInitiativeID = pu.MajorInitiativeID AND k.IsActive = 1 "
+            "LEFT JOIN People o ON o.PersonID = k.OwnerID "
+            "LEFT JOIN People e ON e.PersonID = pu.EnteredByID "
+            "WHERE pu.UpdateDate >= ? "
+            "ORDER BY pu.UpdateDate DESC, k.MIId, o.Name",
             (since,),
         ).fetchall()
     groups: dict = {}
     for row in rows:
         entry = dict(row)
-        groups.setdefault(entry["Owner"], []).append(entry)
+        entry["Code"] = entry["Code"] or ""
+        groups.setdefault(entry["Owner"] or "Unassigned", []).append(entry)
     return [{"owner": owner, "rows": rs} for owner, rs in sorted(groups.items())]
 
 
@@ -459,14 +518,18 @@ def attention_list() -> list[dict]:
         rows = [
             dict(r)
             for r in conn.execute(
-                "SELECT i.Code, i.InitiativeName, i.Level, i.OwnerID, "
+                "SELECT k.MIId AS Code, k.Title AS InitiativeName, "
+                "       'Major Initiative' AS Level, k.OwnerID, "
                 "       p.Name AS Owner, lp.PercentComplete, lp.Status, lp.UpdateDate "
-                "FROM Initiatives i "
-                "JOIN People p ON p.PersonID = i.OwnerID "
-                "LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID "
-                "WHERE i.IsActive = 1"
+                "FROM MajorInitiatives k "
+                "LEFT JOIN People p ON p.PersonID = k.OwnerID "
+                "LEFT JOIN vw_LatestMajorInitiativeProgress lp "
+                "       ON lp.MajorInitiativeID = k.MajorInitiativeID "
+                "WHERE k.IsActive = 1"
             )
         ]
+    for r in rows:
+        r["Code"] = r["Code"] or ""
 
     today = _today()
 
@@ -561,14 +624,14 @@ def tag_edit_options(initiative_id: int) -> dict:
         chosen_goals = {
             r["GoalID"]
             for r in conn.execute(
-                "SELECT GoalID FROM InitiativeGoals WHERE InitiativeID = ?",
+                "SELECT GoalID FROM MajorInitiativeGoals WHERE MajorInitiativeID = ?",
                 (initiative_id,),
             )
         }
         chosen_priorities = {
             r["PriorityID"]
             for r in conn.execute(
-                "SELECT PriorityID FROM InitiativePriorities WHERE InitiativeID = ?",
+                "SELECT PriorityID FROM MajorInitiativePriorities WHERE MajorInitiativeID = ?",
                 (initiative_id,),
             )
         }
@@ -581,19 +644,25 @@ def tag_edit_options(initiative_id: int) -> dict:
 
 
 def link_edit_options(initiative_id: int) -> dict:
-    """What the links edit screen needs: the Dean targets and what is chosen."""
+    """What the links edit screen needs: the Dean Priorities and what is chosen.
+
+    The merged model links a Major Initiative to a DeanPriority (the register's
+    X-matrix), not to another "Dean initiative". The returned rows alias
+    DeanPriorityID -> InitiativeID and Title -> InitiativeName so the existing
+    edit_links template keeps working unchanged.
+    """
     with _conn() as conn:
         deans = [
             dict(r)
             for r in conn.execute(
-                "SELECT InitiativeID, Code, InitiativeName FROM Initiatives "
-                "WHERE Level = 'Dean' AND IsActive = 1 ORDER BY Code"
+                "SELECT DeanPriorityID AS InitiativeID, Code, Title AS InitiativeName "
+                "FROM DeanPriorities ORDER BY FiscalYear, Code"
             )
         ]
         chosen = {
-            r["DeanInitiativeID"]
+            r["DeanPriorityID"]
             for r in conn.execute(
-                "SELECT DeanInitiativeID FROM InitiativeLinks WHERE InitiativeID = ?",
+                "SELECT DeanPriorityID FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = ?",
                 (initiative_id,),
             )
         }
@@ -614,34 +683,37 @@ def all_initiatives(filters: dict | None = None) -> list[dict]:
         rows = [
             dict(r)
             for r in conn.execute(
-                "SELECT i.InitiativeID, i.Code, i.InitiativeName, i.Level, "
+                "SELECT k.MajorInitiativeID AS InitiativeID, k.MIId AS Code, "
+                "       k.Title AS InitiativeName, 'Major Initiative' AS Level, "
                 "       p.PersonID AS OwnerID, p.Name AS Owner, "
                 "       lp.PercentComplete, lp.Status, lp.UpdateDate AS LastUpdated "
-                "FROM Initiatives i "
-                "JOIN People p ON p.PersonID = i.OwnerID "
-                "LEFT JOIN vw_LatestProgress lp ON lp.InitiativeID = i.InitiativeID "
-                "WHERE i.IsActive = 1 "
-                "ORDER BY i.Level, i.Code"
+                "FROM MajorInitiatives k "
+                "LEFT JOIN People p ON p.PersonID = k.OwnerID "
+                "LEFT JOIN vw_LatestMajorInitiativeProgress lp "
+                "       ON lp.MajorInitiativeID = k.MajorInitiativeID "
+                "WHERE k.IsActive = 1 "
+                "ORDER BY k.MIId"
             )
         ]
         goals: dict = {}
         for r in conn.execute(
-            "SELECT ig.InitiativeID, g.ShortName FROM InitiativeGoals ig "
-            "JOIN Goals g ON g.GoalID = ig.GoalID ORDER BY g.GoalNumber"
+            "SELECT kg.MajorInitiativeID, g.ShortName FROM MajorInitiativeGoals kg "
+            "JOIN Goals g ON g.GoalID = kg.GoalID ORDER BY g.GoalNumber"
         ):
-            goals.setdefault(r["InitiativeID"], []).append(r["ShortName"])
+            goals.setdefault(r["MajorInitiativeID"], []).append(r["ShortName"])
         priorities: dict = {}
         for r in conn.execute(
-            "SELECT ip.InitiativeID, pr.PriorityName, pr.Code FROM InitiativePriorities ip "
-            "JOIN Priorities pr ON pr.PriorityID = ip.PriorityID "
+            "SELECT tp.MajorInitiativeID, pr.PriorityName, pr.Code FROM MajorInitiativePriorities tp "
+            "JOIN Priorities pr ON pr.PriorityID = tp.PriorityID "
             "ORDER BY pr.PriorityName"
         ):
             # The short CODE, so the table reads "P03" like its other columns,
             # rather than the bare short name ("Pathways", #7).
-            priorities.setdefault(r["InitiativeID"], []).append(r["Code"] or r["PriorityName"])
+            priorities.setdefault(r["MajorInitiativeID"], []).append(r["Code"] or r["PriorityName"])
 
     today = _today()
     for row in rows:
+        row["Code"] = row["Code"] or ""
         row["Goals"] = goals.get(row["InitiativeID"], [])
         row["Priorities"] = priorities.get(row["InitiativeID"], [])
         row["HasUpdate"] = row["LastUpdated"] is not None
@@ -691,7 +763,11 @@ def all_people() -> list[dict]:
         rows = [
             dict(r)
             for r in conn.execute(
-                "SELECT PersonID, Status FROM vw_PersonInitiatives"
+                "SELECT k.OwnerID AS PersonID, COALESCE(lp.Status, 'Not started') AS Status "
+                "FROM MajorInitiatives k "
+                "LEFT JOIN vw_LatestMajorInitiativeProgress lp "
+                "       ON lp.MajorInitiativeID = k.MajorInitiativeID "
+                "WHERE k.IsActive = 1 AND k.OwnerID IS NOT NULL"
             )
         ]
     by_person: dict = {}
@@ -708,23 +784,27 @@ def all_people() -> list[dict]:
 
 
 def relationships_for(codes: list) -> dict:
-    """What each initiative feeds and what feeds it, keyed by its code.
+    """What each Major Initiative contributes to, keyed by its code.
 
-    vw_InitiativeConnections is keyed on the SUBJECT's InitiativeID and returns
-    the RELATED initiative's code. So this resolves the subject ids first, then
-    reads the connections for all of them in one query rather than one per row.
+    Before the merge this read vw_InitiativeConnections (a D-1 -> Dean link in
+    both directions). The merged model has one direction: a Major Initiative
+    contributes to the Dean FY27 Priorities it is linked to. Returns {} for an
+    empty input, so a caller never iterates a missing key.
 
-    Returns {} for an empty input, so a caller never iterates a missing key.
+    `codes` are the canon ids (MI-###). Owner/Status/PercentComplete are not
+    attributes of a DeanPriority, so those keys are None here; the caller renders
+    the Dean title and code.
     """
     if not codes:
         return {}
     placeholders = ",".join("?" * len(codes))
     with _conn() as conn:
         id_to_code = {
-            r["InitiativeID"]: r["Code"]
+            r["MajorInitiativeID"]: (r["MIId"] or r["Code"])
             for r in conn.execute(
-                "SELECT InitiativeID, Code FROM Initiatives WHERE Code IN (%s)"
-                % placeholders, tuple(codes))
+                "SELECT MajorInitiativeID, MIId, Code FROM MajorInitiatives "
+                "WHERE MIId IN (%s) OR Code IN (%s)" % (placeholders, placeholders),
+                tuple(codes) + tuple(codes))
         }
         if not id_to_code:
             return {}
@@ -733,10 +813,13 @@ def relationships_for(codes: list) -> dict:
         rows = [
             dict(r)
             for r in conn.execute(
-                "SELECT InitiativeID, Direction, Code, InitiativeName, Owner, "
-                "       Status, PercentComplete "
-                "FROM vw_InitiativeConnections WHERE InitiativeID IN (%s) "
-                "ORDER BY Direction, Code" % id_ph, tuple(ids))
+                "SELECT kl.MajorInitiativeID AS InitiativeID, 'Contributes to' AS Direction, "
+                "       d.Code AS Code, d.Title AS InitiativeName, "
+                "       NULL AS Owner, NULL AS Status, NULL AS PercentComplete "
+                "FROM MajorInitiativeDeanLinks kl JOIN DeanPriorities d "
+                "       ON d.DeanPriorityID = kl.DeanPriorityID "
+                "WHERE kl.MajorInitiativeID IN (%s) "
+                "ORDER BY Direction, d.Code" % id_ph, tuple(ids))
         ]
     out: dict = {}
     for r in rows:
@@ -812,9 +895,9 @@ def priority_detail(name: str) -> dict | None:
                 "WHERE tp.PriorityID = ? ORDER BY k.Code", (out["PriorityID"],))
         ]
         out["initiative_count"] = conn.execute(
-            "SELECT COUNT(DISTINCT i.InitiativeID) FROM InitiativePriorities ip "
-            "JOIN Initiatives i ON i.InitiativeID = ip.InitiativeID AND i.IsActive = 1 "
-            "WHERE ip.PriorityID = ?", (out["PriorityID"],)).fetchone()[0]
+            "SELECT COUNT(DISTINCT k.MajorInitiativeID) FROM MajorInitiativePriorities tp "
+            "JOIN MajorInitiatives k ON k.MajorInitiativeID = tp.MajorInitiativeID AND k.IsActive = 1 "
+            "WHERE tp.PriorityID = ?", (out["PriorityID"],)).fetchone()[0]
     return out
 
 
@@ -1006,12 +1089,6 @@ def search(term: str, limit: int = 10) -> list[dict]:
     out = []
     with _conn() as conn:
         for kind, rows in (
-            ("initiative", conn.execute(
-                "SELECT Code AS key, InitiativeName AS label, Code AS code "
-                "FROM Initiatives WHERE IsActive = 1 AND "
-                "(LOWER(Code) LIKE ? OR LOWER(InitiativeName) LIKE ?) "
-                "ORDER BY (LOWER(Code) LIKE ?) DESC, Code LIMIT ?",
-                (like, like, code_like, limit))),
             ("person", conn.execute(
                 "SELECT PersonID AS key, Name AS label, '' AS code FROM People "
                 "WHERE IsActive = 1 AND LOWER(Name) LIKE ? ORDER BY Name LIMIT ?",
@@ -1026,20 +1103,19 @@ def search(term: str, limit: int = 10) -> list[dict]:
                 "FROM Priorities WHERE LOWER(PriorityName) LIKE ? "
                 "OR LOWER(COALESCE(FullTitle,'')) LIKE ? ORDER BY PriorityName LIMIT ?",
                 (like, like, limit))),
-            # Major Initiatives, matched by their canon id (MI-001) or their
-            # title. Without this the 29 core objects could not be found at all.
+            # The one initiative kind: the register's Major Initiatives, matched
+            # by their canon id (MI-001) or their title. The prototype's
+            # `Initiatives` were dropped in the 2026-10-07 merge.
             ("major-initiative", conn.execute(
                 "SELECT MIId AS key, Title AS label, COALESCE(MIId,'') AS code "
                 "FROM MajorInitiatives "
-                "WHERE LOWER(COALESCE(MIId,'')) LIKE ? OR LOWER(Title) LIKE ? "
+                "WHERE IsActive = 1 AND (LOWER(COALESCE(MIId,'')) LIKE ? OR LOWER(Title) LIKE ?) "
                 "ORDER BY (LOWER(COALESCE(MIId,'')) LIKE ?) DESC, Code LIMIT ?",
                 (like, like, code_like, limit))),
         ):
             for r in rows:
                 r = dict(r)
-                if kind == "initiative":
-                    href = "/initiatives/" + str(r["key"])
-                elif kind == "person":
+                if kind == "person":
                     href = "/people/" + str(r["key"])
                 elif kind == "goal":
                     href = "/goals/" + str(r["key"])
@@ -1070,31 +1146,33 @@ def update_deltas(since: str) -> list[dict]:
             dict(r)
             for r in conn.execute(
                 """
-                SELECT pu.InitiativeID, i.Code, i.InitiativeName, p.Name AS Owner,
+                SELECT pu.MajorInitiativeID, k.MIId AS Code, k.Title AS InitiativeName,
+                       p.Name AS Owner,
                        pu.UpdateDate, pu.PercentComplete, pu.Status, pu.Note,
-                       (SELECT pu2.PercentComplete FROM ProgressUpdates pu2
-                        WHERE pu2.InitiativeID = pu.InitiativeID
+                       (SELECT pu2.PercentComplete FROM MajorInitiativeUpdates pu2
+                        WHERE pu2.MajorInitiativeID = pu.MajorInitiativeID
                           AND (pu2.UpdateDate < pu.UpdateDate
                                OR (pu2.UpdateDate = pu.UpdateDate
                                    AND pu2.UpdateID < pu.UpdateID))
                         ORDER BY pu2.UpdateDate DESC, pu2.UpdateID DESC LIMIT 1)
                        AS PrevPercent,
-                       (SELECT pu2.Status FROM ProgressUpdates pu2
-                        WHERE pu2.InitiativeID = pu.InitiativeID
+                       (SELECT pu2.Status FROM MajorInitiativeUpdates pu2
+                        WHERE pu2.MajorInitiativeID = pu.MajorInitiativeID
                           AND (pu2.UpdateDate < pu.UpdateDate
                                OR (pu2.UpdateDate = pu.UpdateDate
                                    AND pu2.UpdateID < pu.UpdateID))
                         ORDER BY pu2.UpdateDate DESC, pu2.UpdateID DESC LIMIT 1)
                        AS PrevStatus
-                FROM ProgressUpdates pu
-                JOIN Initiatives i ON i.InitiativeID = pu.InitiativeID
-                JOIN People p ON p.PersonID = i.OwnerID
+                FROM MajorInitiativeUpdates pu
+                JOIN MajorInitiatives k ON k.MajorInitiativeID = pu.MajorInitiativeID
+                LEFT JOIN People p ON p.PersonID = k.OwnerID
                 WHERE pu.UpdateDate >= ?
-                ORDER BY pu.UpdateDate DESC, i.Code
+                ORDER BY pu.UpdateDate DESC, k.MIId
                 """, (since,))
         ]
     for r in rows:
         r["IsFirst"] = r["PrevPercent"] is None and r["PrevStatus"] is None
+        r["Code"] = r["Code"] or ""
     return rows
 
 
