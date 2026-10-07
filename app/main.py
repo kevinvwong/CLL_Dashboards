@@ -38,6 +38,7 @@ templates.env.filters["priority_colour"] = status.priority_colour_var
 # The one label a priority is called by, everywhere: "P01 One Shared Identity"
 # (#7). Without it a priority read three ways across the app.
 templates.env.filters["priority_label"] = priorities.label
+templates.env.filters["priority_number"] = priorities.number
 templates.env.filters["priority_code"] = priorities.code
 # The full title WITHOUT the code, for a chip that already shows the code beside
 # it (otherwise the code is printed twice: "P03 P03 Integrated…", #N3).

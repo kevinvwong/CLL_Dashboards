@@ -115,8 +115,6 @@
   --accent: #004c97;       /* navy-9, GT Bright Blue: links, secondary button, focus ring */
   --on-accent: #ffffff;    /* text-on-secondary */
   --error: #c22a63;        /* danger (azalea-11) */
-  --warn-bg: #feeed2;      /* warning-bg (buzz-3) */
-  --warn-border: #eaaa00;  /* gt-buzz */
   --warn-ink: #896306;     /* warning (buzz-11) */
 
   /* --- colour: Hive brand and action additions --- */
@@ -228,9 +226,7 @@
     --accent: #508ed9;
     --on-accent: #051e39;
     --error: #f39ab2;
-    --warn-bg: #342301;
-    --warn-border: #eaaa00;
-    --warn-ink: #e6bf6a;
+        --warn-ink: #e6bf6a;
 
     --gold: #b39051;
     --gold-ink: #debd88;

@@ -34,17 +34,8 @@ def _base():
 # test_the_footer_marker_survives_dismissal: retired 2026-10-07 - the sample-data banner was removed when the
 # register was approved, so this tests a deleted feature.
 
-def test_the_bar_is_at_most_32px():
-    """The spec caps it at 32px."""
-    css = _sheet()
-    rule = re.search(r"\.sample-banner\s*\{(.*?)\}", css, re.S)
-    assert rule, "no .sample-banner rule"
-    assert "max-height: var(--space-8)" in rule.group(1), (
-        "the bar must cap at the 32px token")
-
-
-# --- 2.5 responsive layout --------------------------------------------------
-
+# test_the_bar_is_at_most_32px: retired 2026-10-07 - the sample-data banner was removed
+# when the register was approved.
 
 def test_the_three_breakpoints_are_defined():
     css = _sheet()

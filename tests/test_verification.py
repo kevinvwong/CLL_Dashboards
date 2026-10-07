@@ -100,9 +100,8 @@ def test_the_nav_is_hidden_for_print():
            ".site-nav" in open(PRINT_CSS, encoding="utf-8").read()
 
 
-def test_the_banner_is_hidden_for_print():
-    assert re.search(r"@media print[^}]*sample-banner", _sheet(), re.S)
-
+# test_the_banner_is_hidden_for_print: retired 2026-10-07 - the sample-data banner was removed
+# when the register was approved.
 
 def test_print_css_exists_and_targets_chrome():
     assert os.path.exists(PRINT_CSS)

@@ -103,7 +103,7 @@
     <li class="priority-card" style="--priority: var({{ p.ColourToken }});">
       <a class="priority-link" href="/priorities/{{ p.Name | urlencode }}">
         <div class="priority-card-head">
-          <span class="priority-code">{{ p.Code or "—" }}</span>
+          <span class="priority-code">{{ p.Name | priority_number }}</span>
           <span class="priority-colour" aria-hidden="true"></span>
         </div>
         <h3 class="priority-title">{{ p.Title }}</h3>

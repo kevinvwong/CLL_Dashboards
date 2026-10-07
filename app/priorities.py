@@ -75,15 +75,27 @@ def description(name: str) -> str:
 def label(name: str) -> str:
     """The ONE label a priority is called by, everywhere.
 
-    "P01 One Shared Identity" - code then full title. It read three ways before
-    ("One Shared Identity" on the Overview and Outcomes, "Identity (2027)" on its
-    own page, "Identity" in tables), so a reader could not tell they were the
-    same thing (#7). A priority whose name is not one of the six, or one with no
-    code, falls back to whatever the database holds.
+    "Priority 1 · One Shared Identity" - the word, the number, then the title.
+    It read "P01 One Shared Identity" (a code glued to a name) and, before that,
+    three different ways. "P01" is the database code and stays as the key; on
+    screen it is spelled out (design review, 2026-10-07). A priority whose name is
+    not one of the six, or one with no code, falls back to the database's name.
     """
     c = code(name)
     t = title(name)
-    return ("%s %s" % (c, t)).strip() if c else t
+    if not c:
+        return t
+    number = str(int(c[1:])) if c[1:].isdigit() else c  # 'P01' -> '1'
+    return "Priority %s · %s" % (number, t)
+
+
+def number(name: str) -> str:
+    """A priority's number as a word-phrase: 'Priority 1'. "" for a non-priority."""
+    c = code(name)
+    if not c:
+        return ""
+    n = str(int(c[1:])) if c[1:].isdigit() else c
+    return "Priority %s" % n
 
 
 #: Register the template filters, so a template can write `| priority_label`.
