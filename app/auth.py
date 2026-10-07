@@ -158,12 +158,13 @@ def person_exists(person_id) -> bool:
     return row is not None
 
 
-def get_initiative(code: str):
+def get_initiative(mi_id: str):
+    """Resolve a Major Initiative by its canon key, if active."""
     with _conn() as conn:
         row = conn.execute(
-            "SELECT InitiativeID, Code, InitiativeName, Level, OwnerID "
-            "FROM Initiatives WHERE Code = ? AND IsActive = 1",
-            (code,),
+            "SELECT MajorInitiativeID, MIId, Title AS InitiativeName, OwnerID "
+            "FROM MajorInitiatives WHERE MIId = ? AND IsActive = 1",
+            (mi_id,),
         ).fetchone()
     return dict(row) if row else None
 
@@ -173,42 +174,37 @@ def is_admin(person) -> bool:
 
 
 def is_dean(person) -> bool:
-    """The Dean is the top-level person who owns Dean-level initiatives.
+    """The Dean is the person titled "Dean".
 
-    ``ReportsToID IS NULL`` alone is not sufficient: Kevin is also top-level
-    and would be granted Dean powers by that test alone. The second clause is
-    what distinguishes Bill Gaudelli.
+    Before the 2026-10-07 merge this was "owns a Dean-level initiative", but the
+    merged model has no Dean-level initiatives - the Dean's own work is the
+    separate Dean Priorities layer. The register marks Bill Gaudelli with the
+    Title 'Dean', so that is the marker. `ReportsToID IS NULL` alone would also
+    catch the dashboard admin and any co-owner the register lists without a
+    reporting line, which is why it is not used.
     """
-    if not person or person["ReportsToID"] is not None:
-        return False
-    with _conn() as conn:
-        row = conn.execute(
-            "SELECT 1 FROM Initiatives "
-            "WHERE OwnerID = ? AND Level = 'Dean' AND IsActive = 1 LIMIT 1",
-            (person["PersonID"],),
-        ).fetchone()
-    return row is not None
+    return bool(person and (person["Title"] or "").strip().lower() == "dean")
 
 
-def can_update(request: Request, code: str) -> bool:
+def can_update(request: Request, mi_id: str) -> bool:
     """Owner, Dean, or admin may append a progress update."""
     person = current_person(request)
     if not person:
         return False
     if is_admin(person) or is_dean(person):
         return True
-    initiative = get_initiative(code)
+    initiative = get_initiative(mi_id)
     return bool(initiative and initiative["OwnerID"] == person["PersonID"])
 
 
-def can_edit_details(request: Request, code: str) -> bool:
+def can_edit_details(request: Request, mi_id: str) -> bool:
     """Owner or admin may edit name and description."""
     person = current_person(request)
     if not person:
         return False
     if is_admin(person):
         return True
-    initiative = get_initiative(code)
+    initiative = get_initiative(mi_id)
     return bool(initiative and initiative["OwnerID"] == person["PersonID"])
 
 
@@ -222,7 +218,7 @@ def is_admin_request(request: Request) -> bool:
 def database_reachable() -> bool:
     try:
         with _conn() as conn:
-            conn.execute("SELECT 1 FROM Initiatives LIMIT 1").fetchone()
+            conn.execute("SELECT 1 FROM MajorInitiatives LIMIT 1").fetchone()
     except sqlite3.Error:
         return False
     return True
