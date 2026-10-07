@@ -31,10 +31,12 @@
       <form method="get" action="/search" class="search-form">
         <input type="search" name="q" id="search-input" placeholder="Search initiatives, people, goals, priorities…"
                autocomplete="off" hx-get="/search" hx-trigger="input changed delay:150ms"
-               hx-target="#search-results" hx-swap="innerHTML" hx-include="this">
+               hx-target="#search-results" hx-swap="innerHTML" hx-include="this"
+               role="combobox" aria-expanded="true" aria-controls="search-results"
+               aria-autocomplete="list" aria-activedescendant="">
         <button type="button" data-search-close aria-label="Close search">×</button>
       </form>
-      <div id="search-results"><p class="search-hint">Type to search.</p></div>
+      <div id="search-results" role="listbox" aria-label="Search results"><p class="search-hint">Type to search.</p></div>
     </dialog>
     {# Collapsing nav (task 2.5): a checkbox and label toggle the list with no
        JavaScript, so the nav works before hydration and cannot break. #}
@@ -240,8 +242,13 @@
         const items = links();
         if (!items.length) return;
         const i = Math.max(0, Math.min(items.length - 1, n));
-        items.forEach(function (a, k) { a.classList.toggle("is-highlighted", k === i); });
+        items.forEach(function (a, k) {
+          a.classList.toggle("is-highlighted", k === i);
+          const li = a.closest("[role=option]");
+          if (li) li.setAttribute("aria-selected", k === i ? "true" : "false");
+        });
         items[i].scrollIntoView({ block: "nearest" });
+        if (input) input.setAttribute("aria-activedescendant", "search-opt-" + i);
         dlg._hi = i;
       }
       // Enter opens the highlighted result, or the first one if none is chosen.

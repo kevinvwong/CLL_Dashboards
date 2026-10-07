@@ -201,7 +201,10 @@
 
   /* --- layout --- */
   --ink-print: #051e39;
-  --content-max: 60rem;
+  /* A dashboard cap, not a document cap: 60rem (960px) left nearly half a wide
+     screen empty and squeezed the densest tables. Prose still caps at 72ch on
+     its own elements, so only the data surfaces widen. */
+  --content-max: 84rem;
   --nav-breakpoint: 640px;
 }
 
@@ -1611,8 +1614,9 @@ body.overlay-open { overflow: hidden; }
 .search-page-form { display: flex; gap: var(--space-3); align-items: flex-end; margin-bottom: var(--space-5); }
 .search-page-form .field { flex: 1 1 auto; margin-bottom: 0; }
 .search-page-results { max-width: 60ch; }
-.search-kind { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-subtle); min-width: 5rem; }
-.search-code { font-weight: 700; }
+.search-kind { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-subtle); flex: none; width: 7.5rem; }
+.search-code { font-weight: 700; white-space: nowrap; flex: none; }
+.search-label { flex: 1 1 auto; }
 .search-hint, .search-empty { color: var(--ink-muted); font-size: var(--text-sm); margin: var(--space-2); }
 
 /* ---- Meeting: ranges, deltas, presenter (overhaul 6.1/6.3/6.4) ------------ */

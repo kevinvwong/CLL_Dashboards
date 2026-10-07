@@ -1,12 +1,15 @@
 {# Search results fragment (overhaul 3.5). Swapped into the command palette by
-   htmx as the user types; each result links to its target. #}
+   htmx as the user types; each result links to its target.
+
+   role="option" + an id per row so the input can point at the highlighted one with
+   aria-activedescendant, letting a screen reader follow the arrow keys (#9 a11y). #}
 {% if q %}
   {% if results %}
   <ul class="search-results">
     {% for r in results %}
-    <li>
+    <li id="search-opt-{{ loop.index0 }}" role="option" aria-selected="false">
       <a href="{{ r.href }}">
-        <span class="search-kind">{{ r.kind }}</span>
+        <span class="search-kind">{{ r.kind | replace('-', ' ') | title }}</span>
         {% if r.code %}<span class="search-code">{{ r.code }}</span>{% endif %}
         <span class="search-label">{{ r.label }}</span>
       </a>
@@ -17,5 +20,5 @@
   <p class="search-empty">Nothing matches “{{ q }}”.</p>
   {% endif %}
 {% else %}
-<p class="search-hint">Type to search initiatives, people, goals and priorities.</p>
+<p class="search-hint">Type to search initiatives, people, goals, priorities and Major Initiatives.</p>
 {% endif %}
