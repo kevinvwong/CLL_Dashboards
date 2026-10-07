@@ -12,7 +12,7 @@ import pytest
 D1 = "ELIZ-1"
 DEAN = "D-A"
 ADMIN = "Kevin"      # the only admin in the sample data
-NOT_ADMIN = "Elizabeth"
+NOT_ADMIN = "Elizabeth Smith"
 
 
 def _rows(fresh_db, sql, params=()):
@@ -55,11 +55,11 @@ def test_non_admin_gets_403_on_admin_routes(logged_in, method, path):
 def test_non_owner_post_gets_403_not_a_silent_success(logged_in, fresh_db):
     """The spec is explicit: the server responds 403 and nothing changes.
 
-    Tim is used rather than NOT_ADMIN because Elizabeth *owns* ELIZ-1 and is
+    Tim Jacobbe is used rather than NOT_ADMIN because Elizabeth Smith *owns* ELIZ-1 and is
     therefore allowed to edit it - owner-or-admin, per design decision 5.
     """
     before = _rows(fresh_db, "SELECT InitiativeName FROM Initiatives WHERE Code = ?", (D1,))
-    response = logged_in("Tim").post(
+    response = logged_in("Tim Jacobbe").post(
         f"/initiatives/{D1}/edit/details", data={"name": "Hijacked"}
     )
     assert response.status_code == 403
@@ -75,8 +75,8 @@ def test_admin_is_allowed_on_the_same_routes(logged_in):
 
 
 def test_owner_may_edit_details_but_not_tags(logged_in):
-    assert logged_in("Elizabeth").get(f"/initiatives/{D1}/edit/details").status_code == 200
-    assert logged_in("Elizabeth").get(f"/initiatives/{D1}/edit/tags").status_code == 403
+    assert logged_in("Elizabeth Smith").get(f"/initiatives/{D1}/edit/details").status_code == 200
+    assert logged_in("Elizabeth Smith").get(f"/initiatives/{D1}/edit/tags").status_code == 403
 
 
 # --- 8.9: primary-tag error message ---------------------------------------
@@ -227,7 +227,7 @@ def test_linking_to_a_non_dean_initiative_is_refused(logged_in, fresh_db):
 def test_create_makes_an_untagged_initiative_that_shows_on_checks(logged_in, fresh_db):
     from app import queries
 
-    owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth'")[0]["PersonID"]
+    owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
     response = logged_in(ADMIN).post("/initiatives", data={
         "code": "ELIZ-9", "name": "Brand new", "level": "D-1",
         "owner_id": str(owner), "description": "",
@@ -240,7 +240,7 @@ def test_create_makes_an_untagged_initiative_that_shows_on_checks(logged_in, fre
 
 
 def test_duplicate_code_is_refused_with_a_readable_message(logged_in, fresh_db):
-    owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth'")[0]["PersonID"]
+    owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
     response = logged_in(ADMIN).post("/initiatives", data={
         "code": D1, "name": "Clash", "level": "D-1", "owner_id": str(owner), "description": "",
     })
@@ -250,7 +250,7 @@ def test_duplicate_code_is_refused_with_a_readable_message(logged_in, fresh_db):
 
 
 def test_non_admin_cannot_create(logged_in, fresh_db):
-    owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth'")[0]["PersonID"]
+    owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
     response = logged_in(NOT_ADMIN).post("/initiatives", data={
         "code": "NEW-1", "name": "Nope", "level": "D-1", "owner_id": str(owner), "description": "",
     })
@@ -270,12 +270,12 @@ def test_retire_hides_the_initiative_but_keeps_its_history(logged_in, fresh_db):
     assert after == before, "retire must keep the diary"
 
     # and it disappears from the list screens
-    assert D1 not in logged_in("Bill").get("/goals/1").text
+    assert D1 not in logged_in("Bill Gaudelli").get("/goals/1").text
 
 
 def test_retired_initiative_card_is_404(logged_in):
     logged_in(ADMIN).post(f"/initiatives/{D1}/retire", follow_redirects=False)
-    assert logged_in("Bill").get(f"/initiatives/{D1}").status_code == 404
+    assert logged_in("Bill Gaudelli").get(f"/initiatives/{D1}").status_code == 404
 
 
 def test_non_admin_cannot_retire(logged_in, fresh_db):

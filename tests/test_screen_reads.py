@@ -88,7 +88,7 @@ def test_no_update_is_distinct_from_zero_percent(fresh_db):
     finally:
         conn.close()
 
-    owner_id = _person_id(fresh_db, "Elizabeth")
+    owner_id = _person_id(fresh_db, "Elizabeth Smith")
     card = queries.person_card(owner_id)
     row = next(r for r in card["initiatives"] if r["Code"] == "ELIZ-1")
 
@@ -109,13 +109,13 @@ def test_zero_percent_with_an_update_is_present_not_missing(fresh_db):
         conn.execute(
             "INSERT INTO ProgressUpdates (InitiativeID, PercentComplete, Status, Note, EnteredByID) "
             "VALUES (?, 0, 'Not started', 'just beginning', ?)",
-            (iid, _person_id(fresh_db, "Elizabeth")),
+            (iid, _person_id(fresh_db, "Elizabeth Smith")),
         )
         conn.commit()
     finally:
         conn.close()
 
-    card = queries.person_card(_person_id(fresh_db, "Elizabeth"))
+    card = queries.person_card(_person_id(fresh_db, "Elizabeth Smith"))
     row = next(r for r in card["initiatives"] if r["Code"] == "ELIZ-1")
     assert row["HasUpdate"] is True, "a recorded 0% is still an update"
     # A freshly recorded update is not stale.

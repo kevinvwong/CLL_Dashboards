@@ -16,7 +16,7 @@ def test_it_follows_the_wireframe_layout(logged_in):
     drawing: eyebrow, title, explainer, the scope block, the data-requirements
     table and the trade-offs. An earlier version showed only the six cards and was
     therefore not the wireframe."""
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     assert "OCTOBER 16" in body, "the eyebrow is missing"
     assert "Blueprint outcomes" in body, "the wireframe's own title is missing"
     assert "until its KPIs have data" in body, "the explainer is missing"
@@ -35,7 +35,7 @@ def test_the_page_presents_itself_as_chosen_not_as_a_candidate(logged_in):
     """
     import html as _html
 
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     readable = _html.unescape(body)
     assert "THE DEAN'S DASHBOARD" in readable, "the eyebrow still reads as a candidate"
     assert "OPTION A" not in readable, "a stale candidate label survives"
@@ -71,7 +71,7 @@ def test_the_cards_use_the_wireframes_wording(logged_in):
     convention is kept for the unnamed case.
     """
     import re
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     assert re.search(r"\d+ of \d+ milestones reached", body), \
         "no 'N of M milestones reached' line"
     assert "no owner named" in body, "the unnamed owner state is missing"
@@ -86,14 +86,14 @@ def test_the_data_requirements_table_has_every_row(logged_in):
     import html as _html
 
     assert len(oct16_data.DATA_REQUIREMENTS) == 19
-    readable = _html.unescape(logged_in("Bill").get("/oct16").text)
+    readable = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     for r in oct16_data.DATA_REQUIREMENTS:
         assert r["id"] in readable, "data row %s is missing from the table" % r["id"]
         assert r["element"] in readable, "the element text for %s is missing" % r["id"]
 
 
 def test_the_scope_block_matches_the_wireframes_figures(logged_in):
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     for _, value, _ in oct16_data.SCOPE:
         assert value in body, "scope figure %r is missing" % value
     assert "8 of 16" in body, "the in-hand figure is missing"
@@ -106,7 +106,7 @@ def test_both_sides_of_the_trade_offs_are_shown(logged_in):
     pros = [t for g, t in oct16_data.TRADE_OFFS if g]
     cons = [t for g, t in oct16_data.TRADE_OFFS if not g]
     assert len(pros) == 3 and len(cons) == 2, "the trade-off list changed shape"
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     # Compare on rendered text, not raw HTML: an apostrophe renders as &#39;, so a
     # raw substring check reports "missing" for text that is present. Unescape
     # first, then compare.
@@ -123,7 +123,7 @@ def test_both_sides_of_the_trade_offs_are_shown(logged_in):
 def test_every_outcome_shows_milestones_reached_of_planned(logged_in):
     """Progress here is milestones, as the brief specifies - not a KPI value and
     not a percentage of an invented composite."""
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     assert "milestones planned" in body
     for o in oct16_data.OUTCOMES:
         assert o["planned"] >= o["reached"], (
@@ -135,13 +135,13 @@ def test_every_outcome_shows_milestones_reached_of_planned(logged_in):
 def test_the_page_says_the_figures_are_illustrative(logged_in):
     """Not decoration. A Board-facing page whose numbers are illustrative must say
     so on the page, not only in the source."""
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     assert "Illustrative" in body
     assert "not CLL results" in body
 
 
 def test_the_page_names_its_sources(logged_in):
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     assert "KPI Atomic Definitions" in body
     assert "wireframes" in body.lower()
 
@@ -158,7 +158,7 @@ def test_no_rollup_figure_appears(logged_in):
     """
     import re
 
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     # every outcome is its own card, and there is a card per outcome and no more
     cards = re.findall(r'class="oct16-card', body)
     assert len(cards) == 6, "expected one card per outcome, found %d" % len(cards)
@@ -187,14 +187,14 @@ def test_the_page_content_does_not_come_from_the_prototype_tables(logged_in, fre
     """
     import sqlite3
 
-    before = logged_in("Bill").get("/oct16").text
+    before = logged_in("Bill Gaudelli").get("/oct16").text
     conn = sqlite3.connect(fresh_db)
     conn.execute("DELETE FROM Initiatives")
     conn.execute("DELETE FROM Goals")
     conn.commit()
     conn.close()
 
-    after = logged_in("Bill").get("/oct16").text
+    after = logged_in("Bill Gaudelli").get("/oct16").text
     assert "P01" in after, "the page still renders when the prototype tables are empty"
     # strip the one per-request value that legitimately differs (nothing here), then compare
     assert after == before, "the outcome content changed when the prototype data did"

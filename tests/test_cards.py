@@ -8,8 +8,8 @@ import re
 
 import pytest
 
-DEAN = "D-A"          # Dean level, owned by Bill
-D1 = "ELIZ-1"         # D-1, owned by Elizabeth
+DEAN = "D-A"          # Dean level, owned by Bill Gaudelli
+D1 = "ELIZ-1"         # D-1, owned by Elizabeth Smith
 ELIZABETH = 2         # PersonID in the sample data
 BILL = 1
 
@@ -18,14 +18,14 @@ BILL = 1
 
 
 def test_htmx_request_gets_a_bare_fragment(logged_in):
-    response = logged_in("Bill").get(f"/initiatives/{DEAN}", headers={"HX-Request": "true"})
+    response = logged_in("Bill Gaudelli").get(f"/initiatives/{DEAN}", headers={"HX-Request": "true"})
     assert response.status_code == 200
     assert "<html" not in response.text
     assert "card-title" in response.text
 
 
 def test_direct_navigation_gets_a_full_page(logged_in):
-    response = logged_in("Bill").get(f"/initiatives/{DEAN}")
+    response = logged_in("Bill Gaudelli").get(f"/initiatives/{DEAN}")
     assert response.status_code == 200
     assert "<html" in response.text
     assert 'class="card-body' in response.text
@@ -34,14 +34,14 @@ def test_direct_navigation_gets_a_full_page(logged_in):
 
 
 def test_unknown_initiative_is_404(logged_in):
-    assert logged_in("Bill").get("/initiatives/NOPE-9").status_code == 404
+    assert logged_in("Bill Gaudelli").get("/initiatives/NOPE-9").status_code == 404
 
 
 # --- 5.2 card sections ----------------------------------------------------
 
 
 def test_card_shows_details_and_owner(logged_in):
-    body = logged_in("Bill").get(f"/initiatives/{DEAN}").text
+    body = logged_in("Bill Gaudelli").get(f"/initiatives/{DEAN}").text
     assert DEAN in body
     assert "Transparent ROI reporting" in body
     assert "Dean" in body
@@ -49,14 +49,14 @@ def test_card_shows_details_and_owner(logged_in):
 
 
 def test_card_shows_goal_and_priority_tags(logged_in):
-    body = logged_in("Bill").get(f"/initiatives/{DEAN}").text
+    body = logged_in("Bill Gaudelli").get(f"/initiatives/{DEAN}").text
     assert "Goals:" in body
     assert "Priorities:" in body
     assert "badge\">Primary" in body
 
 
 def test_card_shows_latest_progress_and_diary(logged_in):
-    body = logged_in("Bill").get(f"/initiatives/{DEAN}").text
+    body = logged_in("Bill Gaudelli").get(f"/initiatives/{DEAN}").text
     assert "Latest" in body
     assert "Diary" in body
     assert "30%" in body
@@ -73,14 +73,14 @@ def test_diary_is_newest_first(logged_in):
 
 
 def test_dean_card_lists_fed_by(logged_in):
-    body = logged_in("Bill").get(f"/initiatives/{DEAN}").text
+    body = logged_in("Bill Gaudelli").get(f"/initiatives/{DEAN}").text
     assert "Fed by" in body
     assert "Feeds" not in body.replace("Fed by", "")
 
 
 def test_dean_card_shows_owner_and_latest_progress_for_each_d1(logged_in):
     """The spec requires each Fed-by entry to carry owner and latest progress."""
-    body = logged_in("Bill").get(f"/initiatives/{DEAN}").text
+    body = logged_in("Bill Gaudelli").get(f"/initiatives/{DEAN}").text
     section = body[body.index("Fed by"):]
     assert "connection-owner" in section
     assert "ELIZ-1" in section
@@ -89,20 +89,20 @@ def test_dean_card_shows_owner_and_latest_progress_for_each_d1(logged_in):
 
 
 def test_d1_card_lists_what_it_feeds(logged_in):
-    body = logged_in("Elizabeth").get(f"/initiatives/{D1}").text
+    body = logged_in("Elizabeth Smith").get(f"/initiatives/{D1}").text
     assert "Feeds" in body
     assert DEAN in body
 
 
 def test_connected_items_swap_the_modal_in_place(logged_in):
-    body = logged_in("Elizabeth").get(f"/initiatives/{D1}").text
+    body = logged_in("Elizabeth Smith").get(f"/initiatives/{D1}").text
     assert f'hx-get="/initiatives/{DEAN}"' in body
     assert 'hx-target="#card-modal"' in body
     assert 'hx-swap="innerHTML"' in body
 
 
 def test_connected_items_link_to_their_screen(logged_in):
-    body = logged_in("Elizabeth").get(f"/initiatives/{D1}").text
+    body = logged_in("Elizabeth Smith").get(f"/initiatives/{D1}").text
     assert f'href="/initiatives/{DEAN}"' in body
 
 
@@ -110,9 +110,9 @@ def test_connected_items_link_to_their_screen(logged_in):
 
 
 def test_person_card_lists_active_initiatives(logged_in):
-    response = logged_in("Bill").get(f"/people/{ELIZABETH}")
+    response = logged_in("Bill Gaudelli").get(f"/people/{ELIZABETH}")
     assert response.status_code == 200
-    assert "Elizabeth" in response.text
+    assert "Elizabeth Smith" in response.text
     assert "ELIZ-1" in response.text
 
 
@@ -211,12 +211,12 @@ def test_stale_flag_renders_in_the_page(logged_in, fresh_db):
     conn.commit()
     conn.close()
 
-    body = logged_in("Bill").get(f"/people/{ELIZABETH}").text
+    body = logged_in("Bill Gaudelli").get(f"/people/{ELIZABETH}").text
     assert "Needs update" in body
 
 
 def test_unknown_person_is_404(logged_in):
-    assert logged_in("Bill").get("/people/9999").status_code == 404
+    assert logged_in("Bill Gaudelli").get("/people/9999").status_code == 404
 
 
 @pytest.mark.parametrize("code", [DEAN, D1])

@@ -160,6 +160,6 @@ def test_a_swap_keeps_the_page_renderable(pristine, tmp_path, logged_in, monkeyp
     monkeypatch.setattr(live, "OUTCOMES", mod.OUTCOMES, raising=True)
     monkeypatch.setattr(live, "CONFIRMED", mod.CONFIRMED, raising=True)
 
-    body = _html.unescape(logged_in("Bill").get("/oct16").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     assert "A Person" in body
     assert len(body) > 5000, "the page rendered but looks empty"

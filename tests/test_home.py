@@ -73,7 +73,7 @@ def test_home_shows_the_dashboard_and_keeps_everything_reachable(logged_in):
     """
     from app import queries
 
-    response = logged_in("Bill").get("/")
+    response = logged_in("Bill Gaudelli").get("/")
     assert response.status_code == 200
 
     goals = queries.goal_tiles()
@@ -133,7 +133,7 @@ def test_a_priority_and_its_count_appear_in_the_rendered_page(logged_in, fresh_d
     correction: the tiles became full-field cards, so this checks the card)."""
     from app import queries
 
-    body = logged_in("Bill").get("/").text
+    body = logged_in("Bill Gaudelli").get("/").text
     p = queries.blueprint_priorities()[0]
     assert p["Title"] in body
     assert f">{p['InitiativeCount']}<" in body or \
@@ -150,11 +150,11 @@ def test_home_requires_a_signed_in_person(anon):
 def test_nav_and_print_assets_are_present(logged_in):
     """The primary nav (blueprint-redesign 5.1) plus print and dialog assets.
 
-    Checks is now an ADMIN entry, not primary nav (5.4), and Bill is not an
+    Checks is now an ADMIN entry, not primary nav (5.4), and Bill Gaudelli is not an
     admin - so the primary destinations are asserted here and the admin entry
     is asserted in the coverage-checks test.
     """
-    body = logged_in("Bill").get("/").text
+    body = logged_in("Bill Gaudelli").get("/").text
     for dest in ("/", "/initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body, "missing nav destination %s" % dest
     assert 'media="print"' in body

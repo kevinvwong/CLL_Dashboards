@@ -60,14 +60,14 @@ def test_edit_forms_are_full_pages_when_loaded_directly(logged_in, path):
 def test_standalone_page_has_no_modal_close_control(logged_in):
     """The full page shows "← Back"; a second "×" is a control for a dialog
     that was never opened."""
-    body = logged_in("Bill").get("/initiatives/ELIZ-1").text
+    body = logged_in("Bill Gaudelli").get("/initiatives/ELIZ-1").text
     assert 'class="card-close"' not in body, "the full page still shows the close control"
     assert "Back" in body, "the full page lost its Back link"
 
 
 def test_the_fragment_keeps_the_close_control(logged_in):
     """The modal still needs its close button."""
-    body = logged_in("Bill").get("/initiatives/ELIZ-1",
+    body = logged_in("Bill Gaudelli").get("/initiatives/ELIZ-1",
                                 headers={"HX-Request": "true"}).text
     assert 'class="card-close"' in body
 
@@ -86,7 +86,7 @@ def test_empty_sides_render_no_orphan_chrome():
 
     def render(dean_rows, d1_groups):
         tpl = templates.get_template("list.html")
-        return tpl.render(request=None, person={"Name": "Bill"}, app_env="test",
+        return tpl.render(request=None, person={"Name": "Bill Gaudelli"}, app_env="test",
                           may_admin=False, heading="X", description=None,
                           entry_kind="goal", entry_key=1, counts=[], rollup="0 initiatives",
                           groupings={"owner": "Owner"}, group_by=None, grouped=[],
@@ -105,7 +105,7 @@ def test_empty_sides_render_no_orphan_chrome():
 
 def test_both_populated_still_renders_the_divider(logged_in):
     """The normal case must keep the divider between the two tiers."""
-    body = logged_in("Bill").get("/goals/1").text
+    body = logged_in("Bill Gaudelli").get("/goals/1").text
     assert 'class="divider"' in body
     assert body.index('class="divider"') > body.index("dean-rows")
 
@@ -115,7 +115,7 @@ def test_a_group_with_no_rows_renders_no_label():
     from app.main import templates
 
     tpl = templates.get_template("list.html")
-    body = tpl.render(request=None, person={"Name": "Bill"}, app_env="test",
+    body = tpl.render(request=None, person={"Name": "Bill Gaudelli"}, app_env="test",
                       may_admin=False, heading="X", description=None, entry_kind="goal",
                       entry_key=1, counts=[], rollup="0 initiatives",
                       groupings={"owner": "Owner"}, group_by=None, grouped=[],
@@ -156,7 +156,7 @@ def test_rollup_label_singularises():
 
 def test_goal_header_reads_total_not_a_status_word(logged_in):
     """The defect: the header read "On track 10"."""
-    body = logged_in("Bill").get("/goals/4").text
+    body = logged_in("Bill Gaudelli").get("/goals/4").text
     m = re.search(r'class="section-note">([^<]+)<', body)
     assert m, "no rollup rendered"
     label = m.group(1)
@@ -186,7 +186,7 @@ def test_one_day_is_singular(logged_in, fresh_db):
     finally:
         conn.close()
 
-    body = logged_in("Elizabeth").get("/people/2").text
+    body = logged_in("Elizabeth Smith").get("/people/2").text
     assert "1 day since last update" in body
     assert "1 days since last update" not in body
 
@@ -207,7 +207,7 @@ def test_many_days_is_plural(logged_in, fresh_db):
     finally:
         conn.close()
 
-    body = logged_in("Bill").get("/people/4").text
+    body = logged_in("Bill Gaudelli").get("/people/4").text
     assert "15 days since last update" in body
 
 
@@ -216,7 +216,7 @@ def test_many_days_is_plural(logged_in, fresh_db):
 
 def test_initiatives_index_returns_html(logged_in):
     """The defect: GET /initiatives returned a 405 JSON body."""
-    r = logged_in("Bill").get("/initiatives")
+    r = logged_in("Bill Gaudelli").get("/initiatives")
     assert r.status_code == 200, r.status_code
     assert "text/html" in r.headers.get("content-type", "")
     assert "<html" in r.text.lower()
@@ -224,14 +224,14 @@ def test_initiatives_index_returns_html(logged_in):
 
 def test_people_index_returns_html(logged_in):
     """The defect: GET /people returned a 404 JSON body."""
-    r = logged_in("Bill").get("/people")
+    r = logged_in("Bill Gaudelli").get("/people")
     assert r.status_code == 200, r.status_code
     assert "text/html" in r.headers.get("content-type", "")
     assert "<html" in r.text.lower()
 
 
 def test_unknown_route_renders_a_styled_page_for_a_browser(logged_in):
-    r = logged_in("Bill").get("/no-such-page", headers={"accept": "text/html"})
+    r = logged_in("Bill Gaudelli").get("/no-such-page", headers={"accept": "text/html"})
     assert r.status_code == 404
     assert "<html" in r.text.lower(), "raw body instead of a styled page"
     assert "error-page" in r.text
@@ -240,7 +240,7 @@ def test_unknown_route_renders_a_styled_page_for_a_browser(logged_in):
 
 def test_unknown_route_still_answers_json_for_a_non_browser(logged_in):
     """A script or probe must not be handed a full HTML document."""
-    r = logged_in("Bill").get("/no-such-page", headers={"accept": "application/json"})
+    r = logged_in("Bill Gaudelli").get("/no-such-page", headers={"accept": "application/json"})
     assert r.status_code == 404
     assert "application/json" in r.headers.get("content-type", "")
 
@@ -254,7 +254,7 @@ def test_unknown_route_still_answers_json_for_a_non_browser(logged_in):
 
 
 def test_home_has_accessible_names(logged_in):
-    body = _html.unescape(logged_in("Bill").get("/").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/").text)
     # The nav destinations are named by their visible text.
     for dest in ("/initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body
@@ -264,6 +264,6 @@ def test_home_has_accessible_names(logged_in):
 
 def test_priority_cards_name_their_priority(logged_in):
     """A priority card names the priority; its count is beside it."""
-    body = _html.unescape(logged_in("Bill").get("/").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/").text)
     assert "One Shared Identity" in body
     assert "initiative" in body

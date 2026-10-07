@@ -174,14 +174,14 @@ def test_a_team_name_is_not_accepted_as_an_owner():
 
 def test_the_page_states_its_figures_are_illustrative(logged_in):
     import html as _html
-    body = _html.unescape(logged_in("Bill").get("/oct16").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     assert "Illustrative" in body
     assert "not CLL results" in body
 
 
 def test_the_page_shows_an_unnamed_owner_as_such(logged_in):
     import html as _html
-    body = _html.unescape(logged_in("Bill").get("/oct16").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     assert "no owner named" in body, "the unowned state must be explicit"
     assert "owner-none" in body, "and visually distinct"
 
@@ -189,7 +189,7 @@ def test_the_page_shows_an_unnamed_owner_as_such(logged_in):
 def test_the_page_does_not_show_a_bare_placeholder_owner(logged_in):
     """No "[name]" placeholder: it reads as a form field, not a state."""
     import html as _html
-    body = _html.unescape(logged_in("Bill").get("/oct16").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     assert "Owner: [name]" not in body
 
 
@@ -256,7 +256,7 @@ def test_the_person_page_shows_a_missing_update_as_such(logged_in, fresh_db):
         "SELECT OwnerID FROM Initiatives WHERE Code = 'ELIZ-1'").fetchone()[0]
     conn.close()
 
-    body = _html.unescape(logged_in("Bill").get("/people/%d" % pid).text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/people/%d" % pid).text)
     assert "No update yet" in body, "the person card must say the figure is missing"
     assert "bar-empty" in body, "and must not render a filled bar"
     assert 'style="width: 0%"' not in body, "an unknown figure must not be shown as zero"
@@ -282,11 +282,11 @@ def test_the_rendered_page_marker_follows_the_data(logged_in, monkeypatch):
     from app import oct16_data
 
     monkeypatch.setattr(oct16_data, "CONFIRMED", False, raising=True)
-    illustrative = _html.unescape(logged_in("Bill").get("/oct16").text)
+    illustrative = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     assert "Illustrative" in illustrative
 
     monkeypatch.setattr(oct16_data, "CONFIRMED", True, raising=True)
-    confirmed = _html.unescape(logged_in("Bill").get("/oct16").text)
+    confirmed = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     assert "Illustrative" not in confirmed, (
         "the page still says illustrative with CONFIRMED true - the marker is not"
         " being read from the data"
@@ -310,7 +310,7 @@ def test_the_rendered_page_reports_a_partial_state(logged_in, monkeypatch):
         patched.append(row)
     monkeypatch.setattr(oct16_data, "OUTCOMES", patched, raising=True)
 
-    body = _html.unescape(logged_in("Bill").get("/oct16").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     assert oct16_data.DATA_STATUS_CONFIRMED not in body, (
         "the page claimed full confirmation with only one owner named"
     )
@@ -330,6 +330,6 @@ def test_the_rendered_page_shows_a_withheld_owner_as_a_placeholder(logged_in, mo
         patched.append(row)
     monkeypatch.setattr(oct16_data, "OUTCOMES", patched, raising=True)
 
-    body = _html.unescape(logged_in("Bill").get("/oct16").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
     assert "owner withheld" in body
     assert "unconfirmed" in body, "a withheld owner must be marked unconfirmed in the markup"

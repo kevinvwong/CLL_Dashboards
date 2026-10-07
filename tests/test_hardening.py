@@ -22,7 +22,7 @@ def _clear_lockouts():
 
 
 def test_ten_failures_then_locked_out(logged_in):
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     for _ in range(10):
         client.post("/login", data={"passcode": "wrong"}, follow_redirects=False)
 
@@ -33,7 +33,7 @@ def test_ten_failures_then_locked_out(logged_in):
 
 def test_lockout_refuses_even_the_correct_passcode(logged_in):
     """The spec is explicit: the 11th attempt is refused even if correct."""
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     for _ in range(10):
         client.post("/login", data={"passcode": "wrong"}, follow_redirects=False)
 
@@ -48,7 +48,7 @@ def test_lockout_is_per_ip(logged_in):
     TestClient reports its peer as "testclient"; the real deployment uses
     request.client.host.
     """
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     for _ in range(10):
         client.post("/login", data={"passcode": "wrong"}, follow_redirects=False)
     assert auth.too_many_attempts("testclient") is True
@@ -56,7 +56,7 @@ def test_lockout_is_per_ip(logged_in):
 
 
 def test_nine_failures_do_not_lock(logged_in):
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     for _ in range(9):
         client.post("/login", data={"passcode": "wrong"}, follow_redirects=False)
     response = client.post("/login", data={"passcode": "testpass"}, follow_redirects=False)
@@ -64,7 +64,7 @@ def test_nine_failures_do_not_lock(logged_in):
 
 
 def test_a_correct_passcode_clears_the_counter(logged_in):
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     for _ in range(5):
         client.post("/login", data={"passcode": "wrong"}, follow_redirects=False)
     client.post("/login", data={"passcode": "testpass"}, follow_redirects=False)
@@ -72,7 +72,7 @@ def test_a_correct_passcode_clears_the_counter(logged_in):
 
 
 def test_lockout_message_is_shown_on_the_login_page(logged_in):
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     for _ in range(10):
         client.post("/login", data={"passcode": "wrong"}, follow_redirects=False)
     assert "Try again in 15 minutes" in client.get("/login").text
@@ -82,7 +82,7 @@ def test_counter_expires(logged_in, monkeypatch):
     """Failures older than the window do not count."""
     import time
 
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     for _ in range(10):
         client.post("/login", data={"passcode": "wrong"}, follow_redirects=False)
     assert auth.too_many_attempts("testclient") is True
@@ -96,14 +96,14 @@ def test_counter_expires(logged_in, monkeypatch):
 
 
 def test_every_response_carries_noindex(logged_in):
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     for path in ("/", "/goals/3", "/major-initiatives", "/checks", "/healthz", "/login", "/robots.txt"):
         response = client.get(path, follow_redirects=False)
         assert response.headers.get("X-Robots-Tag") == "noindex", f"{path} missing noindex"
 
 
 def test_noindex_is_present_on_a_normal_response(logged_in):
-    response = logged_in("Bill").get("/goals/3", follow_redirects=False)
+    response = logged_in("Bill Gaudelli").get("/goals/3", follow_redirects=False)
     assert response.status_code == 200
     assert response.headers.get("X-Robots-Tag") == "noindex"
 
@@ -154,7 +154,7 @@ def test_robots_txt_is_outside_the_passcode_gate(anon):
 
 def test_robots_txt_carries_no_data(anon):
     body = anon.get("/robots.txt").text
-    for leak in ("ELIZ-", "Elizabeth", "Initiative"):
+    for leak in ("ELIZ-", "Elizabeth Smith", "Initiative"):
         assert leak not in body
 
 

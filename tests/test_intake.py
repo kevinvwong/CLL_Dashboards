@@ -153,24 +153,24 @@ def _row(code, name, level, owner, goals=(), priorities=(), feeds="",
 
 def test_clean_import_succeeds_and_swaps(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill", goals=("3 Research",), priorities=("Data",)),
-        _row("ELIZ-1", "Elizabeth one", "D-1", "Elizabeth",
+        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("ELIZ-1", "Elizabeth Smith one", "D-1", "Elizabeth Smith",
              goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D-A"),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
     conn = sqlite3.connect(fresh_db)
     assert conn.execute("SELECT InitiativeName FROM Initiatives WHERE Code='ELIZ-1'").fetchone()[0] \
-        == "Elizabeth one"
+        == "Elizabeth Smith one"
     conn.close()
 
 
 def test_new_initiative_from_the_workbook(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("ELIZ-9", "Brand new", "D-1", "Elizabeth",
+        _row("ELIZ-9", "Brand new", "D-1", "Elizabeth Smith",
              goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D-A",
              percent="10", status="On track"),
-        _row("D-A", "Dean A", "Dean", "Bill", goals=("3 Research",), priorities=("Data",)),
+        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
     before = _counts(fresh_db)["Initiatives"]
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
@@ -188,9 +188,9 @@ def test_diary_survives_a_re_import(logged_in, fresh_db, tmp_path):
     assert diary_before
 
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("ELIZ-1", "Renamed but same code", "D-1", "Elizabeth",
+        _row("ELIZ-1", "Renamed but same code", "D-1", "Elizabeth Smith",
              goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D-A"),
-        _row("D-A", "Dean A", "Dean", "Bill", goals=("3 Research",), priorities=("Data",)),
+        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
@@ -203,7 +203,7 @@ def test_diary_survives_a_re_import(logged_in, fresh_db, tmp_path):
 def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_path):
     before = _counts(fresh_db)
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill", goals=("3 Research",), priorities=("Data",)),
+        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
@@ -228,8 +228,8 @@ def test_a_failing_import_changes_nothing(logged_in, fresh_db, tmp_path):
     diary_before = _diary(fresh_db, "ELIZ-1")
 
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill", goals=("3 Research",), priorities=("Data",)),
-        _row("ELIZ-1", "Fine row", "D-1", "Elizabeth",
+        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("ELIZ-1", "Fine row", "D-1", "Elizabeth Smith",
              goals=("3 Research",), priorities=("Data", "Innovation")),
         _row("BAD-1", "Broken", "Sideways", "Nobody", goals=("3 Research",)),
     ])
@@ -242,7 +242,7 @@ def test_a_failing_import_changes_nothing(logged_in, fresh_db, tmp_path):
 
 def test_failure_names_the_sheet_row(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill", goals=("3 Research",), priorities=("Data",)),
+        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
         _row("BAD-1", "Broken", "Sideways", "Nobody", goals=("3 Research",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
@@ -255,7 +255,7 @@ def test_failure_names_the_sheet_row(logged_in, fresh_db, tmp_path):
 
 def test_unknown_owner_is_reported(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill", goals=("3 Research",), priorities=("Data",)),
+        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
         _row("NEW-1", "New", "D-1", "Someone Not Here", goals=("3 Research",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
@@ -266,8 +266,8 @@ def test_unknown_owner_is_reported(logged_in, fresh_db, tmp_path):
 def test_dry_run_reports_clean_without_swapping(logged_in, fresh_db, tmp_path):
     before = _counts(fresh_db)
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill", goals=("3 Research",), priorities=("Data",)),
-        _row("ELIZ-1", "Elizabeth one", "D-1", "Elizabeth",
+        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("ELIZ-1", "Elizabeth Smith one", "D-1", "Elizabeth Smith",
              goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D-A"),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path, dry_run=True)
@@ -354,7 +354,7 @@ def test_a_dean_row_with_feeds_is_refused_and_says_why(logged_in, fresh_db, tmp_
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
                "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["D-Z", "A dean row", "d", "Dean", "Bill", "D-A", "", "", "X", "X"])
+    ws.append(["D-Z", "A dean row", "d", "Dean", "Bill Gaudelli", "D-A", "", "", "X", "X"])
     wb.save(out)
 
     ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
@@ -376,7 +376,7 @@ def test_a_d1_row_with_no_feeds_is_refused_by_the_data_check(logged_in, fresh_db
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
                "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["ELIZ-9", "No link", "d", "D-1", "Elizabeth", "", "20", "On track", "X", "X"])
+    ws.append(["ELIZ-9", "No link", "d", "D-1", "Elizabeth Smith", "", "20", "On track", "X", "X"])
     wb.save(out)
 
     ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
@@ -411,7 +411,7 @@ def test_the_template_cannot_mark_a_primary_and_import_leaves_none(logged_in, fr
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
                "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["ELIZ-9", "Fresh", "d", "D-1", "Elizabeth", "D-A", "20", "On track", "X", "X"])
+    ws.append(["ELIZ-9", "Fresh", "d", "D-1", "Elizabeth Smith", "D-A", "20", "On track", "X", "X"])
     wb.save(out)
     ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
     assert ok, problems
@@ -500,7 +500,7 @@ def test_the_row_helper_uses_the_templates_goal_columns(fresh_db):
     """
     real = _goal_columns(fresh_db)
     assert real, "the template produced no goal columns"
-    built = _row("X-1", "x", "Dean", "Bill", goals=(real[0],), goal_cols=real)
+    built = _row("X-1", "x", "Dean", "Bill Gaudelli", goals=(real[0],), goal_cols=real)
     # The first goal column is marked, and the labels are prefix-compatible with
     # the template's, so a row can be appended under the real header.
     assert built[8] == "X", "the row does not line up with the template's first goal column"

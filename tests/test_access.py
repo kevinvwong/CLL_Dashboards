@@ -52,15 +52,15 @@ def test_picker_lists_active_people(anon):
     anon.post("/login", data={"passcode": PASSCODE}, follow_redirects=False)
     response = anon.get("/whoami")
     assert response.status_code == 200
-    for name in ("Bill", "Elizabeth", "Tim", "Mario", "Kevin"):
+    for name in ("Bill Gaudelli", "Elizabeth Smith", "Tim Jacobbe", "Mario Herane", "Kevin"):
         assert name in response.text
 
 
 def test_successful_entry_reaches_the_app_and_shows_the_person(logged_in):
-    client = logged_in("Elizabeth")
+    client = logged_in("Elizabeth Smith")
     response = client.get("/")
     assert response.status_code == 200
-    assert "Elizabeth" in response.text
+    assert "Elizabeth Smith" in response.text
     assert "Switch" in response.text
 
 
@@ -89,7 +89,7 @@ def test_healthz_is_outside_the_passcode_gate(anon):
 
 def test_healthz_returns_no_initiative_data(anon):
     body = anon.get("/healthz").text
-    for leak in ("ELIZ-", "D-A", "Elizabeth", "Initiative"):
+    for leak in ("ELIZ-", "D-A", "Elizabeth Smith", "Initiative"):
         assert leak not in body
 
 
@@ -108,9 +108,9 @@ def test_static_files_are_exempt_from_the_gate(anon):
 def test_dean_is_bill(logged_in, request_for):
     from app.auth import current_person, is_dean
 
-    person = current_person(request_for(logged_in("Bill")))
+    person = current_person(request_for(logged_in("Bill Gaudelli")))
     assert person is not None
-    assert person["Name"] == "Bill"
+    assert person["Name"] == "Bill Gaudelli"
     assert is_dean(person) is True
 
 
@@ -129,7 +129,7 @@ def test_top_level_admin_is_not_the_dean(logged_in, request_for):
 def test_reports_to_someone_is_not_the_dean(logged_in, request_for):
     from app.auth import current_person, is_dean
 
-    person = current_person(request_for(logged_in("Elizabeth")))
+    person = current_person(request_for(logged_in("Elizabeth Smith")))
     assert person is not None
     assert person["ReportsToID"] == 1
     assert is_dean(person) is False
@@ -141,9 +141,9 @@ def test_reports_to_someone_is_not_the_dean(logged_in, request_for):
 @pytest.mark.parametrize(
     "name,expected",
     [
-        ("Elizabeth", True),   # owns ELIZ-1
-        ("Tim", False),        # does not own ELIZ-1
-        ("Bill", True),        # Dean
+        ("Elizabeth Smith", True),   # owns ELIZ-1
+        ("Tim Jacobbe", False),        # does not own ELIZ-1
+        ("Bill Gaudelli", True),        # Dean
         ("Kevin", True),       # admin
     ],
 )
@@ -157,8 +157,8 @@ def test_can_update_for_a_d1_initiative(logged_in, request_for, name, expected):
 def test_non_owner_cannot_edit_details(logged_in, request_for):
     from app.auth import can_edit_details
 
-    assert can_edit_details(request_for(logged_in("Elizabeth")), "ELIZ-1") is True
-    assert can_edit_details(request_for(logged_in("Tim")), "ELIZ-1") is False
+    assert can_edit_details(request_for(logged_in("Elizabeth Smith")), "ELIZ-1") is True
+    assert can_edit_details(request_for(logged_in("Tim Jacobbe")), "ELIZ-1") is False
     # admin may edit details even without ownership
     assert can_edit_details(request_for(logged_in("Kevin")), "ELIZ-1") is True
 
@@ -166,7 +166,7 @@ def test_non_owner_cannot_edit_details(logged_in, request_for):
 def test_unknown_initiative_grants_nothing(logged_in, request_for):
     from app.auth import can_edit_details, can_update
 
-    request = request_for(logged_in("Elizabeth"))
+    request = request_for(logged_in("Elizabeth Smith"))
     assert can_update(request, "NOPE-9") is False
     assert can_edit_details(request, "NOPE-9") is False
 

@@ -247,7 +247,7 @@ def group_rows(rows: list[dict], by: str) -> list[dict]:
 def status_counts(rows: list[dict]) -> list[dict]:
     """Counts by status for the list header.
 
-    Deliberately counts and never a mean: the design's risk entry says Bill
+    Deliberately counts and never a mean: the design's risk entry says Bill Gaudelli
     expects rollups, and the decision is "no aggregate percent anywhere".
     An initiative with no progress update is counted as Not started.
     """

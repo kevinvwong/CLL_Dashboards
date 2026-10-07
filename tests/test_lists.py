@@ -38,19 +38,19 @@ def _codes(response):
 
 
 def test_goal_list_renders(logged_in):
-    response = logged_in("Bill").get("/goals/%d" % _goal_number("Research"))
+    response = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research"))
     assert response.status_code == 200
     assert "Research" in response.text
 
 
 def test_dean_rows_come_first_ordered_by_code(logged_in):
-    codes = _codes(logged_in("Bill").get("/goals/%d" % _goal_number("Research")))
+    codes = _codes(logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")))
     dean = [c for c in codes if c.startswith("D-")]
     assert dean == ["D-A", "D-C", "D-D"]
 
 
 def test_divider_sits_between_dean_and_d1(logged_in):
-    body = logged_in("Bill").get("/goals/%d" % _goal_number("Research")).text
+    body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
     divider_at = body.index('class="divider"')
     dean_at = body.index("D-A")
     eliz_at = body.index("ELIZ-1")
@@ -58,9 +58,9 @@ def test_divider_sits_between_dean_and_d1(logged_in):
 
 
 def test_d1_rows_are_grouped_by_owner(logged_in):
-    body = logged_in("Bill").get("/goals/%d" % _goal_number("Research")).text
-    groups = [g for g in ("Elizabeth", "Mario") if f'class="list-group-label">{g}<' in body]
-    assert groups == ["Elizabeth", "Mario"]
+    body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
+    groups = [g for g in ("Elizabeth Smith", "Mario Herane") if f'class="list-group-label">{g}<' in body]
+    assert groups == ["Elizabeth Smith", "Mario Herane"]
     # grouped, not interleaved: each owner's rows sit inside their own group
     assert body.index("ELIZ-1") < body.index("MAR-4")
 
@@ -74,7 +74,7 @@ def test_primary_tag_shows_a_badge(logged_in):
     number = _goal_number("Research")
     primaries = sorted(r["Code"] for r in queries.goal_rows(number) if r["IsPrimary"])
     assert primaries, "sample data should carry primary tags for this goal"
-    body = logged_in("Bill").get("/goals/%d" % number).text
+    body = logged_in("Bill Gaudelli").get("/goals/%d" % number).text
     # Exactly the primary rows get a badge, and no others do.
     assert body.count('class="badge">Primary<') == len(primaries)
     for code in primaries:
@@ -90,7 +90,7 @@ def test_status_counts_in_header_sum_to_the_row_count(logged_in):
     """
     import re
 
-    response = logged_in("Bill").get("/goals/%d" % _goal_number("Research"))
+    response = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research"))
     text = response.text
     m = re.search(r'class="section-note">([^<]+)<', text)
     assert m, "no rollup line rendered"
@@ -111,7 +111,7 @@ def test_no_aggregate_percent_is_rendered(logged_in):
     carries an aggregate class, and the only percentages on the page are the
     per-initiative bars.
     """
-    body = logged_in("Bill").get("/goals/%d" % _goal_number("Research")).text
+    body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
     assert "aggregate" not in body.lower()
     # Per-row percentages are present and are the only "%" figures.
     assert body.count('class="bar-label"') == 5
@@ -140,7 +140,7 @@ def test_no_update_yet_is_shown_when_an_initiative_has_no_progress(logged_in, fr
     row = [r for r in queries.goal_rows(number) if r["Code"] == "ELIZ-1"][0]
     assert row["PercentComplete"] is None
 
-    body = logged_in("Bill").get("/goals/%d" % number).text
+    body = logged_in("Bill Gaudelli").get("/goals/%d" % number).text
     assert "No update yet" in body
     assert "bar-empty" in body
     # An empty bar, never a 0% bar: "No update" is not "0% complete".
@@ -148,35 +148,35 @@ def test_no_update_yet_is_shown_when_an_initiative_has_no_progress(logged_in, fr
 
 
 def test_progress_bar_length_and_status_class(logged_in):
-    body = logged_in("Bill").get("/goals/%d" % _goal_number("Research")).text
+    body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
     assert "style=\"width: 30%\"" in body          # D-A is at 30%
     assert "status-at-risk" in body                # D-C is At risk
     assert "status-on-track" in body
 
 
 def test_rows_carry_the_htmx_attributes_for_the_card(logged_in):
-    body = logged_in("Bill").get("/goals/%d" % _goal_number("Research")).text
+    body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
     assert 'hx-get="/initiatives/D-A"' in body
     assert 'hx-target="#card-modal"' in body
     assert 'hx-swap="innerHTML"' in body
 
 
 def test_owner_name_links_to_a_person_card(logged_in):
-    body = logged_in("Bill").get("/goals/%d" % _goal_number("Research")).text
-    # Bill is PersonID 1, Elizabeth 2 in the sample data.
+    body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
+    # Bill Gaudelli is PersonID 1, Elizabeth Smith 2 in the sample data.
     assert 'href="/people/1"' in body
     assert 'href="/people/2"' in body
 
 
 def test_priority_list_uses_the_same_screen(logged_in):
-    response = logged_in("Bill").get(f"/priorities/{INNOVATION}")
+    response = logged_in("Bill Gaudelli").get(f"/priorities/{INNOVATION}")
     assert response.status_code == 200
     assert "Innovation" in response.text
     assert 'class="initiative-list' in response.text
 
 
 def test_unknown_goal_and_priority_are_404(logged_in):
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     assert client.get("/goals/99").status_code == 404
     assert client.get("/priorities/Nonexistent").status_code == 404
 
@@ -187,5 +187,5 @@ def test_lists_are_behind_the_gate(anon):
 
 @pytest.mark.parametrize("goal_number", [1, 2, 3, 4, 5])
 def test_every_goal_screen_renders(logged_in, goal_number):
-    response = logged_in("Bill").get(f"/goals/{goal_number}")
+    response = logged_in("Bill Gaudelli").get(f"/goals/{goal_number}")
     assert response.status_code == 200

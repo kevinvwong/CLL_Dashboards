@@ -98,7 +98,7 @@ def test_a_goal_scoped_url_opens_the_goal_that_number_names(logged_in):
     """The canonical source assigns each number a goal; the URL must agree."""
     stored = _stored()
     for number, (short, _) in CANONICAL.items():
-        body = logged_in("Bill").get("/goals/%d" % number).text
+        body = logged_in("Bill Gaudelli").get("/goals/%d" % number).text
         assert short in body, (
             "/goals/%d serves the wrong goal: %r not found" % (number, short)
         )

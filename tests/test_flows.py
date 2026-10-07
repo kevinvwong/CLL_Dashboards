@@ -72,7 +72,7 @@ def test_admin_sees_a_link_to_the_create_form(logged_in):
 
 
 def test_non_admin_does_not_see_the_create_link(logged_in):
-    assert 'href="/initiatives/new"' not in logged_in("Elizabeth").get("/").text
+    assert 'href="/initiatives/new"' not in logged_in("Elizabeth Smith").get("/").text
 
 
 def test_the_create_link_lands_on_the_form(logged_in):
@@ -92,7 +92,7 @@ def test_priority_list_offers_the_description_editor(logged_in):
 
 
 def test_non_admin_does_not_see_the_description_editor(logged_in):
-    assert "/entries/goal/3/edit" not in logged_in("Elizabeth").get("/goals/3").text
+    assert "/entries/goal/3/edit" not in logged_in("Elizabeth Smith").get("/goals/3").text
 
 
 def test_editing_a_description_returns_to_the_list(logged_in):
@@ -114,7 +114,7 @@ def test_editing_a_description_returns_to_the_list(logged_in):
 def test_list_rows_can_be_opened_from_the_keyboard(logged_in):
     """tabindex/role without a key handler is an accessibility promise the app
     does not keep; htmx's hx-trigger supplies Enter and Space natively."""
-    body = logged_in("Bill").get("/goals/3").text
+    body = logged_in("Bill Gaudelli").get("/goals/3").text
     assert 'hx-trigger="click, keyup[key==&#39;Enter&#39;]' in body or \
            "keyup[key=='Enter']" in body
     assert 'tabindex="0"' in body
@@ -124,5 +124,5 @@ def test_list_rows_can_be_opened_from_the_keyboard(logged_in):
 def test_person_and_initiative_rows_are_keyboard_reachable(logged_in):
     """Meeting rows were the other half; the meeting is iced (2026-10-06), so
     the initiative list carries the same keyboard contract instead."""
-    assert "keyup[key=='Enter']" in logged_in("Bill").get("/people/2").text
-    assert "keyup[key=='Enter']" in logged_in("Bill").get("/initiatives").text
+    assert "keyup[key=='Enter']" in logged_in("Bill Gaudelli").get("/people/2").text
+    assert "keyup[key=='Enter']" in logged_in("Bill Gaudelli").get("/initiatives").text

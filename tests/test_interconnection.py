@@ -3,7 +3,7 @@
 The edges the canon states and the schema now holds, browsable from both
 directions, with no dead-end route: /teams/{id} and /major-initiatives/{mi_id}.
 
-`logged_in` is a factory fixture: `logged_in("Bill")` -> a signed-in client.
+`logged_in` is a factory fixture: `logged_in("Bill Gaudelli")` -> a signed-in client.
 """
 import html
 
@@ -13,7 +13,7 @@ import pytest
 @pytest.fixture
 def page(logged_in):
     """A signed-in client, resolved once so cases read `page.get(...)`."""
-    return logged_in("Bill")
+    return logged_in("Bill Gaudelli")
 
 
 def _text(r):

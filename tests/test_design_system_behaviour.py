@@ -35,7 +35,7 @@ def test_the_bar_is_dismissible_for_the_session(logged_in):
     base = _base()
     assert "data-dismiss-banner" in base, "no dismiss control"
     # The dismissal is a cookie, and the server honours it.
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     client.cookies.set("sample_banner_dismissed", "1")
     body = client.get("/").text
     assert 'id="sample-banner"' in body
@@ -44,14 +44,14 @@ def test_the_bar_is_dismissible_for_the_session(logged_in):
 
 
 def test_the_bar_shows_when_not_dismissed(logged_in):
-    body = logged_in("Bill").get("/").text
+    body = logged_in("Bill Gaudelli").get("/").text
     segment = body.split('id="sample-banner"')[1][:40]
     assert "hidden" not in segment, "the banner should show by default"
 
 
 def test_the_footer_marker_survives_dismissal(logged_in):
     """Dismissing the bar must not hide the sample-data state."""
-    client = logged_in("Bill")
+    client = logged_in("Bill Gaudelli")
     client.cookies.set("sample_banner_dismissed", "1")
     body = client.get("/").text
     assert "sample-marker" in body, "the footer marker vanished on dismissal"

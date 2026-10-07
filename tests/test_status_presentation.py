@@ -147,13 +147,13 @@ def test_the_same_status_uses_one_class_on_every_screen(logged_in):
     from app import status
 
     # D-A is On track in the sample data; its bar uses the module's class.
-    listing = logged_in("Bill").get("/goals/1").text
+    listing = logged_in("Bill Gaudelli").get("/goals/1").text
     assert status.status_class("On track") in listing, (
         "the list screen did not render the module's status class"
     )
 
     # The October 16 badge uses the same transform for the same value.
-    page = logged_in("Bill").get("/oct16").text
+    page = logged_in("Bill Gaudelli").get("/oct16").text
     assert status.status_class("On track") in page, (
         "the October 16 badge did not use the same status class"
     )

@@ -177,7 +177,7 @@ def is_dean(person) -> bool:
 
     ``ReportsToID IS NULL`` alone is not sufficient: Kevin is also top-level
     and would be granted Dean powers by that test alone. The second clause is
-    what distinguishes Bill.
+    what distinguishes Bill Gaudelli.
     """
     if not person or person["ReportsToID"] is not None:
         return False

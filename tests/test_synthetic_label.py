@@ -16,7 +16,7 @@ def test_the_banner_shows_in_every_environment(logged_in):
     and the marker carry the meaning, so the state cannot be hidden by
     dismissing the bar.
     """
-    body = logged_in("Bill").get("/").text
+    body = logged_in("Bill Gaudelli").get("/").text
     assert "sample-banner" in body
     assert "invented for this prototype" in body
     assert "sample-marker" in body, "the footer marker must persist"
@@ -24,24 +24,24 @@ def test_the_banner_shows_in_every_environment(logged_in):
 
 
 def test_a_list_row_is_labelled(logged_in):
-    body = logged_in("Bill").get("/goals/3").text
+    body = logged_in("Bill Gaudelli").get("/goals/3").text
     assert "synthetic-label" in body, "every initiative row must carry the label"
 
 
 def test_the_card_is_labelled(logged_in):
-    body = logged_in("Bill").get("/initiatives/ELIZ-1").text
+    body = logged_in("Bill Gaudelli").get("/initiatives/ELIZ-1").text
     assert "synthetic-label" in body, "the card must carry the label too"
 
 
 def test_a_person_page_is_labelled(logged_in):
-    body = logged_in("Bill").get("/people/2").text
+    body = logged_in("Bill Gaudelli").get("/people/2").text
     assert "synthetic-label" in body
 
 
 def test_a_goal_page_is_labelled(logged_in):
     """Meeting was the other labelled page; it is iced (2026-10-06), so a live
     cascade page (its rows carry the marker) stands in for it."""
-    body = logged_in("Bill").get("/goals/3").text
+    body = logged_in("Bill Gaudelli").get("/goals/3").text
     assert "synthetic-label" in body
 
 

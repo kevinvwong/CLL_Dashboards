@@ -115,6 +115,6 @@ def test_owner_label_gives_one_spelling_for_the_absent_state():
 
 def test_missing_owner_is_stated_not_left_blank(logged_in):
     """Rendered: an outcome with no owner says so, and is visually distinct."""
-    body = logged_in("Bill").get("/oct16").text
+    body = logged_in("Bill Gaudelli").get("/oct16").text
     assert "no owner named" in body
     assert "owner-none" in body

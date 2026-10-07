@@ -22,7 +22,7 @@ def _enable_meeting(meeting_on):
 
 
 def test_meeting_defaults_to_the_last_seven_days(logged_in):
-    response = logged_in("Bill").get("/meeting")
+    response = logged_in("Bill Gaudelli").get("/meeting")
     assert response.status_code == 200
     assert queries.default_since() in response.text
 
@@ -42,22 +42,22 @@ def test_since_parameter_narrows_the_window(logged_in, fresh_db):
     def changes_section(text):
         return text[text.index("Changes since"):]
 
-    wide = logged_in("Bill").get("/meeting?since=2000-01-01").text
+    wide = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
     assert "2020-01-01" in changes_section(wide), "a wide window should show the old update"
 
-    narrow = logged_in("Bill").get("/meeting").text
+    narrow = logged_in("Bill Gaudelli").get("/meeting").text
     assert "2020-01-01" not in changes_section(narrow), (
         "the default 7-day window must exclude it"
     )
 
 
 def test_since_is_echoed_back(logged_in):
-    response = logged_in("Bill").get("/meeting?since=2026-09-30")
+    response = logged_in("Bill Gaudelli").get("/meeting?since=2026-09-30")
     assert "2026-09-30" in response.text
 
 
 def test_bad_since_is_rejected_rather_than_crashing(logged_in):
-    assert logged_in("Bill").get("/meeting?since=not-a-date").status_code in (200, 422, 400)
+    assert logged_in("Bill Gaudelli").get("/meeting?since=not-a-date").status_code in (200, 422, 400)
 
 
 def test_changes_are_grouped_by_owner(logged_in, fresh_db):
@@ -66,7 +66,7 @@ def test_changes_are_grouped_by_owner(logged_in, fresh_db):
     conn.commit()
     conn.close()
 
-    body = logged_in("Bill").get("/meeting?since=2000-01-01").text
+    body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
     assert 'class="list-group-label"' in body
     assert "Changes since" in body
 
@@ -112,7 +112,7 @@ def test_attention_list_holds_initiatives_that_are_at_risk(logged_in, fresh_db):
 
     attention = queries.attention_list()
     assert [r["Code"] for r in attention] == ["ELIZ-1"], "only ELIZ-1 should qualify"
-    assert "ELIZ-1" in logged_in("Bill").get("/meeting").text
+    assert "ELIZ-1" in logged_in("Bill Gaudelli").get("/meeting").text
 
 
 def test_attention_entries_link_to_their_card(logged_in, fresh_db):
@@ -121,7 +121,7 @@ def test_attention_entries_link_to_their_card(logged_in, fresh_db):
     conn.commit()
     conn.close()
 
-    body = logged_in("Bill").get("/meeting").text
+    body = logged_in("Bill Gaudelli").get("/meeting").text
     assert 'hx-get="/initiatives/' in body
     assert 'hx-target="#card-modal"' in body
 
@@ -144,7 +144,7 @@ def test_off_track_leads_the_attention_list(logged_in, fresh_db):
     codes = [r["Code"] for r in queries.attention_list()]
     assert "TIM-4" in codes, "Off track must be listed"
     assert codes[0] == "TIM-4", "Off track must outrank At risk"
-    assert "TIM-4" in logged_in("Bill").get("/meeting").text
+    assert "TIM-4" in logged_in("Bill Gaudelli").get("/meeting").text
 
 
 def test_a_stale_initiative_is_listed_with_its_age(logged_in, fresh_db):
@@ -154,7 +154,7 @@ def test_a_stale_initiative_is_listed_with_its_age(logged_in, fresh_db):
     rows = {r["Code"]: r for r in queries.attention_list()}
     assert "D-A" in rows, "an update 30 days old is stale"
     assert rows["D-A"]["Reason"] == "No update in 30 days"
-    assert "30 days" in logged_in("Bill").get("/meeting").text
+    assert "30 days" in logged_in("Bill Gaudelli").get("/meeting").text
 
 
 def test_an_update_inside_the_window_is_not_stale(logged_in, fresh_db):
@@ -240,7 +240,7 @@ def test_the_reason_is_shown_only_when_it_adds_something(logged_in, fresh_db):
     assert rows["ELIZ-1"]["Reason"] == "At risk"
     assert rows["D-A"]["Reason"] == "No update in 40 days"
 
-    body = logged_in("Bill").get("/meeting").text
+    body = logged_in("Bill Gaudelli").get("/meeting").text
     section = body[body.index("Needs attention"):body.index("Changes since")]
     assert "At risk" in section, "the status badge still shows"
     assert "No update in 40 days" in section, "a stale row must say why it is listed"
@@ -250,7 +250,7 @@ def test_the_reason_is_shown_only_when_it_adds_something(logged_in, fresh_db):
 def test_empty_attention_says_so(logged_in, fresh_db):
     _quiet(fresh_db)
 
-    body = logged_in("Bill").get("/meeting").text
+    body = logged_in("Bill Gaudelli").get("/meeting").text
     assert "Nothing is off track, at risk, or stale" in body
 
 
@@ -260,7 +260,7 @@ def test_empty_attention_says_so(logged_in, fresh_db):
 def test_print_output_carries_only_the_agenda(logged_in):
     """print.css hides the chrome; the page must therefore contain only the
     attention list and the change list as its sections."""
-    body = logged_in("Bill").get("/meeting").text
+    body = logged_in("Bill Gaudelli").get("/meeting").text
     assert 'class="since-form no-print"' in body, "the date control must be marked no-print"
     print_css = open("app/static/print.css", encoding="utf-8").read()
     assert ".no-print" in print_css
@@ -273,7 +273,7 @@ def test_print_output_carries_only_the_agenda(logged_in):
 
 
 def test_checks_page_renders(logged_in):
-    response = logged_in("Bill").get("/checks")
+    response = logged_in("Bill Gaudelli").get("/checks")
     assert response.status_code == 200
 
 
@@ -288,7 +288,7 @@ def test_checks_lists_each_issue_with_its_initiative(logged_in, fresh_db):
 
     issues = queries.data_checks()
     assert issues, "removing the link must produce a data-check issue"
-    body = logged_in("Bill").get("/checks").text
+    body = logged_in("Bill Gaudelli").get("/checks").text
     for issue in issues:
         assert issue["Code"] in body
         assert issue["Issue"] in body
@@ -310,7 +310,7 @@ def test_checks_uses_the_spec_wording_for_a_missing_dean_link(logged_in, fresh_d
 def test_checks_is_clear_on_clean_sample_data(logged_in):
     """build_db.py reports 0 issues, so the page must say so rather than
     showing an empty table."""
-    body = logged_in("Bill").get("/checks").text
+    body = logged_in("Bill Gaudelli").get("/checks").text
     assert queries.data_checks() == []
     assert "No issues" in body
 
@@ -324,7 +324,7 @@ def test_checks_rows_link_to_the_initiative(logged_in, fresh_db):
     conn.commit()
     conn.close()
 
-    body = logged_in("Bill").get("/checks").text
+    body = logged_in("Bill Gaudelli").get("/checks").text
     assert 'hx-get="/initiatives/ELIZ-1"' in body
 
 

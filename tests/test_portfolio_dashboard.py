@@ -13,11 +13,11 @@ APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _home(logged_in):
-    return _html.unescape(logged_in("Bill").get("/").text)
+    return _html.unescape(logged_in("Bill Gaudelli").get("/").text)
 
 
 def _page(logged_in, path):
-    return _html.unescape(logged_in("Bill").get(path).text)
+    return _html.unescape(logged_in("Bill Gaudelli").get(path).text)
 
 
 # --- the dashboard, not the prototype's stage -------------------------------

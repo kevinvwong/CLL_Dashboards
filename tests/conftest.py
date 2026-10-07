@@ -99,7 +99,7 @@ def request_for(fresh_db):
 
 @pytest.fixture
 def logged_in(fresh_db):
-    """Return a factory: logged_in("Bill") -> TestClient signed in as Bill."""
+    """Return a factory: logged_in("Bill Gaudelli") -> TestClient signed in as Bill Gaudelli."""
 
     def _login(name: str) -> TestClient:
         client = TestClient(app)

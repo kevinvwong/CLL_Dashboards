@@ -39,7 +39,7 @@ def test_search_finds_a_person(logged_in):
 def test_search_spans_all_four_kinds(logged_in):
     from app import queries
     kinds = set()
-    for term in ("D-A", "Bill", "Research", "Data"):
+    for term in ("D-A", "Bill Gaudelli", "Research", "Data"):
         for r in queries.search(term):
             kinds.add(r["kind"])
     assert {"initiative", "person", "goal", "priority"} <= kinds, kinds
@@ -53,7 +53,7 @@ def test_search_returns_nothing_for_empty_or_no_match(logged_in):
 
 def test_the_search_endpoint_renders_the_fragment_for_the_palette(logged_in):
     """An htmx request from the palette gets the bare fragment to swap in."""
-    body = logged_in("Bill").get("/search?q=MAR-3",
+    body = logged_in("Bill Gaudelli").get("/search?q=MAR-3",
                                  headers={"HX-Request": "true"}).text
     assert "search-results" in body
     assert "<html" not in body.lower(), "the palette wants a fragment"
@@ -63,14 +63,14 @@ def test_a_direct_search_load_is_a_full_page(logged_in):
     """A direct load - what pressing Enter in the palette does - must be a real
     page, not the raw fragment. It previously rendered with no chrome at all
     (Times New Roman, no header), which looked like a crash."""
-    body = logged_in("Bill").get("/search?q=faculty").text
+    body = logged_in("Bill Gaudelli").get("/search?q=faculty").text
     assert "<html" in body.lower()
     assert "site-header" in body, "the direct page has no chrome"
 
 
 def test_a_single_search_result_redirects_straight_to_it(logged_in):
     """Enter on an unambiguous query should land on the thing, not a list of one."""
-    r = logged_in("Bill").get("/search?q=MI-001", follow_redirects=False)
+    r = logged_in("Bill Gaudelli").get("/search?q=MI-001", follow_redirects=False)
     assert r.status_code == 307
     assert r.headers["location"] == "/major-initiatives/MI-001"
 
@@ -83,7 +83,7 @@ def test_search_finds_a_major_initiative_by_its_id(logged_in):
 
 
 def test_the_search_palette_is_in_the_layout(logged_in):
-    body = logged_in("Bill").get("/").text
+    body = logged_in("Bill Gaudelli").get("/").text
     assert 'id="search-palette"' in body
     assert "data-search-open" in body
     # Opened with Cmd/Ctrl+K.
@@ -94,7 +94,7 @@ def test_the_search_palette_is_in_the_layout(logged_in):
 
 
 def test_the_meeting_offers_quick_ranges(logged_in):
-    body = _html.unescape(logged_in("Bill").get("/meeting").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/meeting").text)
     assert "range=7d" in body
     assert "range=14d" in body
     assert "Last meeting" in body
@@ -104,7 +104,7 @@ def test_a_range_sets_the_window(logged_in):
     """?range=14d moves the window 14 days back, not 7."""
     from app import queries
     import datetime as dt
-    body = logged_in("Bill").get("/meeting?range=14d").text
+    body = logged_in("Bill Gaudelli").get("/meeting?range=14d").text
     expected = queries.default_since(14)
     assert expected in body
     # And the chip is marked active.
@@ -135,7 +135,7 @@ def test_a_first_update_is_marked_not_invented_as_zero(logged_in):
 
 
 def test_the_meeting_renders_the_delta_arrow(logged_in):
-    body = logged_in("Bill").get("/meeting?since=2000-01-01").text
+    body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
     # The arrow is rendered as text (→), so a delta is visible without colour.
     assert "→" in body or "&rarr;" in body
 
@@ -147,7 +147,7 @@ def test_changes_stay_grouped_by_owner(logged_in, fresh_db):
     conn.execute("UPDATE ProgressUpdates SET UpdateDate = date('now')")
     conn.commit()
     conn.close()
-    body = logged_in("Bill").get("/meeting?since=2000-01-01").text
+    body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
     assert 'class="list-group-label"' in body
 
 
@@ -155,7 +155,7 @@ def test_changes_stay_grouped_by_owner(logged_in, fresh_db):
 
 
 def test_the_meeting_offers_presenter_mode(logged_in):
-    body = logged_in("Bill").get("/meeting").text
+    body = logged_in("Bill Gaudelli").get("/meeting").text
     assert "meeting-presenter" in body
     assert "data-presenter-start" in body
 
@@ -166,7 +166,7 @@ def test_presenter_groups_exist_for_arrow_navigation(logged_in, fresh_db):
     conn.execute("UPDATE ProgressUpdates SET UpdateDate = date('now')")
     conn.commit()
     conn.close()
-    body = logged_in("Bill").get("/meeting?since=2000-01-01").text
+    body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
     assert "presenter-position" in body
     # The arrow keys are wired.
     assert "ArrowRight" in body and "ArrowLeft" in body
