@@ -37,15 +37,17 @@
     <label for="nav-toggle" class="nav-toggle-label">Menu</label>
     <nav class="site-nav" aria-label="Primary">
       {# The hybrid nav (blueprint-redesign 5.1): the blueprint home, the two
-         indexes, the meeting, and the outcomes. Active derived from the path. #}
-      <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>Overview</a>
-      <a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>Initiatives</a>
-      <a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>People</a>
+         indexes, the meeting, and the outcomes. Active derived from the path.
+         Each carries a small currentColor icon (blueprint Global), decorative:
+         the label is the accessible name. #}
+      <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>{{ "overview" | nav_icon }}Overview</a>
+      <a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}Initiatives</a>
+      <a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>{{ "people" | nav_icon }}People</a>
       {# Meeting is ICED (2026-10-06): hidden unless MEETING_ENABLED is set. #}
       {% if meeting_enabled %}
-      <a href="/meeting"{% if section == "meeting" %} aria-current="page"{% endif %}>Meeting</a>
+      <a href="/meeting"{% if section == "meeting" %} aria-current="page"{% endif %}>{{ "meeting" | nav_icon }}Meeting</a>
       {% endif %}
-      <a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>Outcomes</a>
+      <a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>{{ "outcomes" | nav_icon }}Outcomes</a>
       {# Data checks is an ADMIN entry now, not primary nav (5.4/3.4), with the
          count of failing checks as a badge. It never appears for a non-admin. #}
       {% if may_admin %}

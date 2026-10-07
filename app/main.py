@@ -82,6 +82,7 @@ templates.env.filters["priority_colour_token"] = status.priority_colour_token
 templates.env.filters["goal_colour_token"] = identity.goal_colour_token
 templates.env.filters["team_colour_token"] = identity.team_colour_token
 templates.env.filters["goal_icon"] = identity.goal_icon
+templates.env.filters["nav_icon"] = identity.nav_icon
 # The one label a priority is called by, everywhere: "P01 One Shared Identity"
 # (#7). Without it a priority read three ways across the app.
 templates.env.filters["priority_label"] = priorities.label

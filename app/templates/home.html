@@ -58,8 +58,14 @@
     <span class="stat-label">Teams</span>
   </a>
   <a class="stat-tile stat-warn" href="/team-initiatives?target=needs_review">
-    <span class="stat-value">{{ stats.needs_review }}</span>
+    <span class="stat-value"><span class="stat-icon" aria-hidden="true">&#9888;</span>{{ stats.needs_review }}</span>
     <span class="stat-label">Need review</span>
+    {# The proportion, at a glance (blueprint Overview): the alarming number next
+       to the total it is a fraction of. The number is still the text. #}
+    <span class="stat-fill"
+          style="--fill: {{ (100 * stats.needs_review // stats.team_initiatives) if stats.team_initiatives else 0 }}%"
+          role="img"
+          aria-label="{{ stats.needs_review }} of {{ stats.team_initiatives }} Team Initiatives need review"></span>
   </a>
 </section>
 
@@ -170,10 +176,15 @@
       <a href="/dean-initiatives">View all →</a>
     </p>
   </div>
-  <p class="section-note">
-    {{ dean_initiatives | selectattr('fiscal_year', 'equalto', 26) | list | length }} complete in FY26 ·
-    {{ dean_initiatives | selectattr('fiscal_year', 'equalto', 27) | list | length }} in flight in FY27
-  </p>
+  {% set fy26 = dean_initiatives | selectattr('fiscal_year', 'equalto', 26) | list | length %}
+  {% set fy27 = dean_initiatives | selectattr('fiscal_year', 'equalto', 27) | list | length %}
+  <p class="section-note">{{ fy26 }} complete in FY26 · {{ fy27 }} in flight in FY27</p>
+  {# The FY timeline, as a bar (blueprint: "highest executive visibility"). The
+     sentence above carries the figures; the bar is decorative. #}
+  <div class="fy-timeline" aria-hidden="true">
+    {% if fy26 %}<span class="fy-seg fy-26" style="flex: {{ fy26 }}"></span>{% endif %}
+    {% if fy27 %}<span class="fy-seg fy-27" style="flex: {{ fy27 }}"></span>{% endif %}
+  </div>
 </section>
 {% endif %}
 {% endblock %}

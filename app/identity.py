@@ -81,3 +81,31 @@ def goal_icon(goal_number) -> str:
             'fill="none" stroke="currentColor" stroke-width="2" '
             'stroke-linecap="round" stroke-linejoin="round" '
             'aria-hidden="true" focusable="false">%s</svg>' % body)
+
+
+#: nav key -> the inner markup of a 24x24 stroke icon. Decorative: the nav label
+#: is the accessible name, so the icon is aria-hidden and inherits currentColor.
+_NAV_ICONS = {
+    "overview": ('<path d="M4 11.5 12 5l8 6.5"/>'
+                 '<path d="M6 10.5V19h12v-8.5"/>'),  # house
+    "initiatives": ('<path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5"/>'
+                    '<path d="M8 13h8M8 16h8"/>'),  # document
+    "people": ('<circle cx="9" cy="8" r="3.2"/>'
+               '<path d="M3.5 19c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/>'
+               '<path d="M16 6.5a3 3 0 0 1 0 5.8M17 13.6c2.2.5 3.5 2.3 3.5 4.4"/>'),  # people
+    "outcomes": ('<path d="M4 19V5"/><path d="M4 19h16"/>'
+                 '<path d="M8 19v-6M12 19V9M16 19v-3"/>'),  # bar chart
+    "meeting": ('<rect x="4" y="5" width="16" height="15" rx="2"/>'
+                '<path d="M4 9h16M8 3v4M16 3v4"/>'),  # calendar
+}
+
+
+def nav_icon(name: str) -> str:
+    """The inline SVG for a nav item, or "" if it has none."""
+    body = _NAV_ICONS.get((name or "").strip().lower())
+    if not body:
+        return ""
+    return ('<svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" '
+            'fill="none" stroke="currentColor" stroke-width="1.8" '
+            'stroke-linecap="round" stroke-linejoin="round" '
+            'aria-hidden="true" focusable="false">%s</svg>' % body)

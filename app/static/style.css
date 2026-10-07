@@ -397,6 +397,28 @@ a { color: var(--accent); }
 .legend-item { display: inline-flex; align-items: center; }
 .goal-legend .goal-icon { width: 14px; height: 14px; }
 
+/* --- stat-tile proportion fill (blueprint Overview) ----------------------- */
+.stat-icon { margin-right: 0.25em; }
+.stat-fill {
+  display: block; position: relative; height: 0.32rem; margin-top: 0.45rem;
+  border-radius: 2px; background: var(--line-track); overflow: hidden;
+}
+.stat-fill::after {
+  content: ""; display: block; height: 100%; width: var(--fill, 0%);
+  background: var(--status-at-risk);
+}
+
+/* --- the Dean FY timeline bar (blueprint Overview) ------------------------ */
+.fy-timeline { display: flex; gap: 2px; margin-top: 0.5rem; height: 0.6rem; max-width: 32rem; }
+.fy-seg { display: block; min-width: 0.4rem; border-radius: 2px; }
+.fy-26 { background: var(--status-complete); }
+.fy-27 { background: var(--accent); }
+
+/* --- nav icons (blueprint Global) ----------------------------------------- */
+/* Decorative marks beside a label that is the accessible name; they inherit the
+   link's colour, so an active or hovered item colours its icon too. */
+.nav-icon { width: 1em; height: 1em; vertical-align: -0.15em; margin-right: 0.3em; flex: none; }
+
 main { padding: var(--space-5); max-width: var(--content-max); }
 
 h1 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-2xl);
