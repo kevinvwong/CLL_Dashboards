@@ -137,7 +137,7 @@ def test_status_classes_are_emitted_by_the_filters():
 # --- the same status renders the same everywhere ---------------------------
 
 
-def test_the_same_status_uses_one_class_on_every_screen(logged_in):
+def test_the_same_status_uses_one_class_on_every_screen(logged_in, diary):
     """One status, one class string, on every screen that shows it.
 
     Renders a page that shows statuses and asserts the class the module produces
@@ -146,7 +146,8 @@ def test_the_same_status_uses_one_class_on_every_screen(logged_in):
     """
     from app import status
 
-    # MI-002 is On track in the sample data; its bar uses the module's class.
+    # MI-001 sits on goal 1; give it a diary entry so its row renders a status.
+    diary("MI-001", 30, "On track", on="2026-10-05")
     listing = logged_in("Bill Gaudelli").get("/goals/1").text
     assert status.status_class("On track") in listing, (
         "the list screen did not render the module's status class"

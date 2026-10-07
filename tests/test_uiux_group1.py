@@ -103,12 +103,8 @@ def test_empty_sides_render_no_orphan_chrome():
     assert "Solo" in d1_only, "the D-1 group vanished"
 
 
-def test_both_populated_still_renders_the_divider(logged_in):
-    """The normal case must keep the divider between the two tiers."""
-    body = logged_in("Bill Gaudelli").get("/goals/1").text
-    assert 'class="divider"' in body
-    assert body.index('class="divider"') > body.index("dean-rows")
-
+# test_both_populated_still_renders_the_divider: retired 2026-10-07
+# - the merged list has one tier and no Dean/D-1 divider.
 
 def test_a_group_with_no_rows_renders_no_label():
     """A group header with no rows under it is an orphan label."""
@@ -176,7 +172,7 @@ def test_one_day_is_singular(logged_in, fresh_db):
         # Seed on the clock production writes with: MajorInitiativeUpdates.UpdateDate
         # defaults to SQLite's date('now'), which is UTC. Seeding from Python's
         # local date.today() drifts a day apart from UTC every evening.
-        iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = 'MI-004'").fetchone()[0]
+        iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
         yesterday = conn.execute("SELECT date('now', '-1 day')").fetchone()[0]
         conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
         conn.execute(
@@ -197,7 +193,7 @@ def test_many_days_is_plural(logged_in, fresh_db):
     conn = sqlite3.connect(str(fresh_db))
     try:
         # Same clock as production: date('now') is UTC (see schema.sql).
-        iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = 'MI-002'").fetchone()[0]
+        iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = 'MI-002'").fetchone()[0]
         old = conn.execute("SELECT date('now', '-15 days')").fetchone()[0]
         conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
         conn.execute(
