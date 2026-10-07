@@ -74,18 +74,31 @@ _PREFIX = re.compile(r"^([a-z]+)(\([^)]*\))?:\s*", re.I)
 
 
 def _git_log():
-    """[(date, short-sha, subject)] oldest first, author dates."""
+    """[(date, short-sha, subject)] oldest first, author dates.
+
+    Commits that ONLY touch this log are skipped. Without that, refreshing the
+    log is itself a change to history, so the file can never become current: the
+    commit that refreshes it immediately makes it stale again (an infinite
+    off-by-one). A log that lists "refresh the progress log" is noise to the
+    reader anyway.
+    """
     out = subprocess.run(
         ["git", "-C", ROOT, "log", "--date=short", "--reverse",
-         "--no-merges", "--pretty=format:%ad|%h|%s"],
+         "--no-merges", "--name-only", "--pretty=format:%ad|%h|%s"],
         capture_output=True, text=True, encoding="utf-8", errors="replace")
     if out.returncode != 0:
         raise SystemExit("git log failed: " + out.stderr)
+
+    REL = os.path.join("docs", "ops", "PROGRESS_LOG.md").replace(os.sep, "/")
     rows = []
-    for line in out.stdout.splitlines():
-        if line.count("|") < 2:
+    for block in out.stdout.split("\n\n"):
+        lines = [ln for ln in block.splitlines() if ln.strip()]
+        if not lines or lines[0].count("|") < 2:
             continue
-        d, h, s = line.split("|", 2)
+        d, h, s = lines[0].split("|", 2)
+        touched = [ln.strip().replace("\\", "/") for ln in lines[1:]]
+        if touched and all(f == REL for f in touched):
+            continue          # a log-only commit: skip it
         rows.append((d.strip(), h.strip(), _JUNK.sub("", s.strip())))
     return rows
 
