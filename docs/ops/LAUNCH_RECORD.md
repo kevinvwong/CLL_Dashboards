@@ -176,3 +176,45 @@ demonstration on sample data — the banner reads "Sample data — these initiat
 are invented for this prototype". The GT data-policy position is unchanged, and
 the owners are the register's named leads, not institutionally confirmed.
 
+## 2026-10-07 — Deployed: the two initiative models merged
+
+**Marker `merge-20261007T114347Z` confirmed live on the first `/healthz` poll.**
+
+The database held TWO initiative models and the home showed both at once
+("22 initiatives tracked" beside "29 Major Initiatives"), which read as a
+contradiction. The register is canon, so they are merged onto its model:
+
+- The five prototype tables (`Initiatives`, `InitiativeGoals`,
+  `InitiativePriorities`, `InitiativeLinks`, `ProgressUpdates`) are **dropped**.
+- The progress diary moves to `MajorInitiativeUpdates`, on the register's 29.
+- `repo.py`, `auth.py`, `queries.py` and every route now read/write the register
+  model, keyed by `MIId`.
+- `/initiatives/*` **308-redirects** to `/major-initiatives/*`; the interactive
+  card (drawer, update form, edit forms) is now the register's page.
+- The 24 prototype diary rows were discarded, not migrated: every one named a
+  sample initiative, and none named a real Major Initiative.
+
+Verified live after deploy:
+
+| Check | Result |
+|---|---|
+| `/healthz` | 200, marker matched on the first poll |
+| Home | **29 initiatives tracked** (one portfolio number, was 22-vs-29) |
+| Stat tiles | 29 / 6 / 4 / 29 / 21 |
+| `/initiatives` | 308 to `/major-initiatives` |
+| `/major-initiatives`, `/{mi_id}` | 200 |
+| `/changes` (admin) | 200 |
+
+Also fixed in this change: `scripts/import_xlsx.py` and `scripts/make_template.py`
+retargeted to the register model (the importer wrote to the dropped tables and
+would have failed); `vw_DataChecks` dropped its "No progress update yet" check
+(an initiative with no diary is the normal state, and the importer refuses any
+import that leaves a check outstanding, so that check would have blocked every
+import); and `/major-initiatives/new` was declared after `/{mi_id}` and 404'd.
+
+**Suite: 546 passing, 0 failing. Database byte-reproducible.**
+
+**Still not launched in the governance sense.** This remains a labelled
+demonstration on sample data - the banner reads "Sample data - these initiatives
+are invented for this prototype". The GT data-policy position is unchanged.
+
