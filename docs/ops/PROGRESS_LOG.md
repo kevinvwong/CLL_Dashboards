@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **129** changes in total.
+- **3** days of work recorded, **130** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 36 what we added; 26 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
+- Across all days: 37 what we added; 26 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -47,6 +47,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Generate the progress log from git, written for a non-technical reader
 - Show the last push and deploy time as a discreet stamp
 - Add the Milestones model, priority outcome state, and dataset provenance
+- Collect milestones and outcome state by workbook, and confirm on import
 
 **What we fixed**
 
