@@ -846,7 +846,9 @@ async def outcomes(request: Request):
     from app import oct16_data
 
     return templates.TemplateResponse(
-        request, "oct16.html", _ctx(request, d=oct16_data)
+        request, "oct16.html", _ctx(request, d=oct16_data,
+                                    outcomes=queries.priority_outcomes(),
+                                    provenance=queries.dataset_provenance())
     )
 
 

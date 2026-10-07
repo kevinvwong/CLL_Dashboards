@@ -145,21 +145,22 @@ def test_the_swap_does_not_change_layout(pristine, tmp_path):
         )
 
 
-def test_a_swap_keeps_the_page_renderable(pristine, tmp_path, logged_in, monkeypatch):
-    """The generated module must render, not merely import."""
-    import html as _html
+def test_the_page_renders_from_the_database(fresh_db, logged_in):
+    """The page is DB-backed: it renders the model's milestones, and a database
+    change is reflected on the next load.
 
-    owners = _owners_file(tmp_path, {"P01": {"owner": "A Person"}})
-    staged = os.path.join(tempfile.mkdtemp(), "staged.py")
-    generator = os.path.join(SCRIPTS, "build_oct16_data.py")
-    subprocess.run([sys.executable, generator, "--owners", owners, "--out", staged],
-                   capture_output=True, text=True)
+    Supersedes the module-swap render check (2026-10-07): the content now comes
+    from the Milestones model, not from a regenerated oct16_data module.
+    """
+    import sqlite3
 
-    from app import oct16_data as live
-    mod = _load(staged)
-    monkeypatch.setattr(live, "OUTCOMES", mod.OUTCOMES, raising=True)
-    monkeypatch.setattr(live, "CONFIRMED", mod.CONFIRMED, raising=True)
+    body = logged_in("Bill Gaudelli").get("/outcomes").text
+    assert "milestones reached" in body
 
-    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
-    assert "A Person" in body
-    assert len(body) > 5000, "the page rendered but looks empty"
+    conn = sqlite3.connect(fresh_db)
+    conn.execute("UPDATE Milestones SET Status='Met' WHERE Name='First asset audit'")
+    conn.commit()
+    conn.close()
+
+    after = logged_in("Bill Gaudelli").get("/outcomes").text
+    assert after != body, "the page did not follow the database"

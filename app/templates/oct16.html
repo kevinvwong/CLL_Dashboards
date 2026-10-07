@@ -17,69 +17,64 @@
 <p class="oct16-sub">{{ d.SUBTITLE }}</p>
 <p class="oct16-explainer">{{ d.EXPLAINER }}</p>
 
-{# The milestone-status legend (#6). The milestone states are the wireframes' own
-   set, distinct from an initiative's status; a reader met "Met", "In progress",
-   "Not started", "Due Dec" and "Confirm" with nothing saying what they meant. #}
+{# The milestone-status legend (#6). The states are the Milestones model's own
+   ACTIVE vocabulary (ADR-0002) - "Met", "In progress", "Not started", "Missed" -
+   not the initiative set, and not the wireframes' pseudo-states. #}
 <p class="oct16-legend">
   <span class="oct16-legend-label">Milestone states:</span>
   <span class="oct16-mstatus m-met">Met</span>
   <span class="oct16-mstatus m-in-progress">In progress</span>
   <span class="oct16-mstatus m-not-started">Not started</span>
-  <span class="oct16-mstatus m-due-dec">Due Dec</span>
-  <span class="oct16-mstatus m-confirm">Confirm</span>
+  <span class="oct16-mstatus m-missed">Missed</span>
 </p>
-<p class="oct16-status" role="status">{{ d.data_status() }}{% if d.AS_OF %} &middot; as of {{ d.AS_OF }}{% endif %}</p>
 
-{# The one-line roll-up (#12): a board reader wants the portfolio in a sentence
-   before the cards. Counts by status, never an aggregate score. #}
+{# Provenance decides the label, never the content (plan D5): imported,
+   owner-confirmed data reads "Confirmed"; seeded working data reads
+   "Illustrative". #}
+<p class="oct16-status" role="status">
+  {%- if provenance == "confirmed" -%}
+  Confirmed by each owner
+  {%- else -%}
+  {{ d.DATA_STATUS_ILLUSTRATIVE }} &mdash; seeded working data, pending owner confirmation
+  {%- endif -%}
+</p>
+
+{# The one-line roll-up (#12): the portfolio in a sentence before the cards.
+   Counts by status, never an aggregate score. #}
 <p class="oct16-rollup">
-  {{ d.OUTCOMES | length }} outcomes:
-  {% for status, n in d.OUTCOMES | groupby("status") %}{{ n | length }} {{ status | lower }}{% if not loop.last %} &middot; {% endif %}{% endfor %}
+  {{ outcomes | length }} priorities:
+  {% for status, n in outcomes | groupby("Status") %}{{ n | length }} {{ status | lower }}{% if not loop.last %} &middot; {% endif %}{% endfor %}
 </p>
 
 <ul class="oct16-grid">
-  {% for o in d.OUTCOMES %}
-  <li class="oct16-card oct16-{{ o.id|lower }}">
+  {% for o in outcomes %}
+  <li class="oct16-card oct16-{{ o.Code|lower }}">
     <div class="oct16-head">
-      <span class="oct16-id">{{ o.id }}</span>
-      <span class="oct16-outcome-status badge {{ o.status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ o.status | status_icon }}</span> {{ o.status }}</span>
+      <span class="oct16-id">{{ o.Code }}</span>
+      {% if o.Status %}<span class="oct16-outcome-status badge {{ o.Status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ o.Status | status_icon }}</span> {{ o.Status }}</span>{% endif %}
     </div>
-    <h2 class="oct16-name">{{ o.name }}</h2>
-    <p class="oct16-target">{{ o.summary }}</p>
+    <h2 class="oct16-name">{{ o.FullTitle }}</h2>
+    <p class="oct16-target">{{ o.Target }}</p>
     {# The wireframes' own phrasing: "1 of 4 milestones reached". #}
-    <p class="oct16-count">{{ o.reached }} of {{ o.planned }} milestones reached</p>
+    <p class="oct16-count">{{ o.Reached }} of {{ o.Planned }} milestones reached</p>
     <div class="oct16-bar" role="img"
-         aria-label="{{ o.reached }} of {{ o.planned }} milestones reached">
+         aria-label="{{ o.Reached }} of {{ o.Planned }} milestones reached">
       <span class="oct16-fill"
-            style="width: {{ d.percent(o) }}%"></span>
+            style="width: {{ o.Percent }}%"></span>
     </div>
     <ul class="oct16-milestones">
-      {% for name, status in o.milestones %}
+      {% for m in o.milestones %}
       <li class="oct16-milestone">
-        <span class="oct16-mname">{{ name }}</span>
-        <span class="oct16-mstatus {{ status | milestone_class }}">{{ status }}</span>
+        <span class="oct16-mname">{{ m.Name }}</span>
+        <span class="oct16-mstatus {{ m.Status | milestone_class }}">{{ m.Status }}</span>
       </li>
       {% endfor %}
     </ul>
-    {# Owner, in one of three states, all distinguishable at a glance:
-         a real name          -> shown as a name
-         withheld pending the  -> a marked placeholder, never mistaken for a name
-           data-policy decision
-         nobody named yet     -> an explicit absence
-       The data plan marks "Outcome owner" as "No", so the committed data is the
-       third state. Real names are withheld until the data-policy question is
-       answered, per the decision of 2026-10-07.
-
-       The line READ AS BROKEN when it sat on the Dean's cards as
-       "Owner: [no owner named] · updated [date]" - a template variable on screen.
-       It is now a single sentence that names the state: an owner has not been
-       named YET, and the date is when one is expected, not an unfilled slot. The
-       underlying three states and their strings are unchanged. #}
-    <p class="oct16-owner{% if not d.owner_is_confirmed(o.owner) %} unconfirmed{% endif %}">
-      {% if d.owner_is_confirmed(o.owner) %}Owner: <span class="owner-value">{{ d.owner_label(o.owner) }}</span>{% if o.updated %} · updated {{ o.updated }}{% endif %}
-      {% elif o.owner == d.OWNER_WITHHELD %}Owner: <span class="owner-value">{{ d.owner_label(o.owner) }}</span>
-      {% else %}Owner: <span class="owner-none">{{ d.owner_label(o.owner) }}</span> — expected by Oct 12{% endif %}
-    </p>
+    {# The outcome owner is a NAMED PERSON, and no person is named yet (the
+       workbook marks "Outcome owner" a "No"). Priorities.OwnerLabel is a group
+       assignment ("Dean + <team>"), not a person, so it is deliberately not shown
+       here as an owner. The line names the state rather than leaving a slot. #}
+    <p class="oct16-owner unconfirmed">Owner: <span class="owner-none">no owner named</span> &mdash; expected by Oct 12</p>
   </li>
   {% endfor %}
 </ul>
@@ -171,10 +166,15 @@
   <h2>About these figures</h2>
   <p>{{ d.SOURCE_NOTE }}</p>
   <p class="oct16-caveat">
-    Milestones and statuses are the wireframes' illustrative values, not CLL results.
-    No outcome owner is named yet and milestone status is not collected &mdash; the
-    data plan marks both &ldquo;No&rdquo;. They are replaced when owners confirm their
-    milestone lists and status, which the plan schedules for October 9&ndash;12.
+    {% if provenance == "confirmed" %}
+    Milestones and outcome states are confirmed by each owner and read from the
+    register database.
+    {% else %}
+    Milestones and statuses are seeded working data, not CLL results, pending owner
+    confirmation. No outcome owner is named yet. They are replaced when owners
+    confirm their milestone lists and status; importing that confirmation moves
+    this page from &ldquo;Illustrative&rdquo; to &ldquo;Confirmed&rdquo;.
+    {% endif %}
   </p>
 </section>
 {% endblock %}

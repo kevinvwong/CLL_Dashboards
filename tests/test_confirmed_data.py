@@ -272,65 +272,54 @@ def test_the_person_page_shows_a_missing_update_as_such(logged_in, fresh_db):
 # hardcoding the marker in oct16.html and watching these go red.
 
 
-def test_the_rendered_page_marker_follows_the_data(logged_in, monkeypatch):
-    """Flip the module's flag; the served marker must change with it.
+def test_the_rendered_page_marker_follows_the_provenance(logged_in, monkeypatch):
+    """Flip the DB provenance; the served marker must change with it.
 
-    Catches a marker written into the template as a literal: that would render the
-    same text whatever the data says.
+    Supersedes the module-CONFIRMED version (2026-10-07): the page labels itself
+    from the database provenance, so a redeploy or a data swap cannot leave the
+    marker wrong, and a mock that names owners still reads as a mock.
     """
     import html as _html
 
-    from app import oct16_data
+    from app import queries
 
-    monkeypatch.setattr(oct16_data, "CONFIRMED", False, raising=True)
-    illustrative = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
+    monkeypatch.setattr(queries, "dataset_provenance", lambda: "mock", raising=True)
+    illustrative = _html.unescape(logged_in("Bill Gaudelli").get("/outcomes").text)
     assert "Illustrative" in illustrative
 
-    monkeypatch.setattr(oct16_data, "CONFIRMED", True, raising=True)
-    confirmed = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
+    monkeypatch.setattr(queries, "dataset_provenance", lambda: "confirmed", raising=True)
+    confirmed = _html.unescape(logged_in("Bill Gaudelli").get("/outcomes").text)
     assert "Illustrative" not in confirmed, (
-        "the page still says illustrative with CONFIRMED true - the marker is not"
-        " being read from the data"
+        "the page still says illustrative with provenance 'confirmed'"
     )
+    assert "Confirmed by each owner" in confirmed
 
 
-def test_the_rendered_page_reports_a_partial_state(logged_in, monkeypatch):
-    """With some owners named and others not, the page must not say fully confirmed.
+def test_the_page_does_not_claim_confirmation_when_the_data_is_mock(logged_in):
+    """The mock state must never read as confirmed (plan D5).
 
-    Catches a marker that rounds a partial swap up to confirmed.
+    Supersedes the partial-owner-count test. Confirmation is now provenance, not
+    a count of named owners - because mock rows carry owner names too, so a
+    named-owner count would mislabel a mock as real.
     """
     import html as _html
 
     from app import oct16_data
 
-    monkeypatch.setattr(oct16_data, "CONFIRMED", True, raising=True)
-    patched = []
-    for outcome in oct16_data.OUTCOMES:
-        row = dict(outcome)
-        row["owner"] = "A Named Person" if row["id"] == "P01" else None
-        patched.append(row)
-    monkeypatch.setattr(oct16_data, "OUTCOMES", patched, raising=True)
-
-    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
-    assert oct16_data.DATA_STATUS_CONFIRMED not in body, (
-        "the page claimed full confirmation with only one owner named"
-    )
-    assert "1 of 6" in body, "the page should report the partial count"
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/outcomes").text)
+    assert oct16_data.DATA_STATUS_CONFIRMED not in body
+    assert "Illustrative" in body
 
 
-def test_the_rendered_page_shows_a_withheld_owner_as_a_placeholder(logged_in, monkeypatch):
-    """A withheld name renders as a marked placeholder, never as a bare name."""
+def test_the_page_shows_each_outcome_owner_state(logged_in):
+    """Every card states its owner position.
+
+    Supersedes the module owner-placeholder test (2026-10-07). The committed data
+    names no outcome owner, so each of the six cards states the absence; the
+    withheld state remains available for the data-policy decision.
+    """
     import html as _html
 
-    from app import oct16_data
-
-    patched = []
-    for outcome in oct16_data.OUTCOMES:
-        row = dict(outcome)
-        row["owner"] = oct16_data.OWNER_WITHHELD
-        patched.append(row)
-    monkeypatch.setattr(oct16_data, "OUTCOMES", patched, raising=True)
-
-    body = _html.unescape(logged_in("Bill Gaudelli").get("/oct16").text)
-    assert "owner withheld" in body
-    assert "unconfirmed" in body, "a withheld owner must be marked unconfirmed in the markup"
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/outcomes").text)
+    assert body.count("no owner named") == 6, "one owner state per card"
+    assert "owner-none" in body, "and visually distinct"

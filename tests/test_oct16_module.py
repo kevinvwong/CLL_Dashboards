@@ -49,21 +49,31 @@ def test_percent_handles_no_planned_milestones():
     assert mod.percent({"reached": 0, "planned": 0}) == 0
 
 
-def test_the_template_does_not_compute_the_percent():
-    """The formula must not be in the template."""
+def test_the_template_renders_the_percent_from_the_model():
+    """The formula lives in the model, not in the template.
+
+    Supersedes the module-percent assertion (2026-10-07): the page is DB-backed
+    now and renders `o.Percent`, computed in queries.priority_outcomes, rather
+    than calling oct16_data.percent.
+    """
     text = open(TEMPLATE, encoding="utf-8").read()
-    assert "100 * o.reached" not in text, "the template still computes the percent"
-    assert "d.percent(o)" in text, "the template does not call the module's percent"
+    assert "100 * o.Reached" not in text and "o.Reached // o.Planned" not in text, (
+        "the template computes the percent"
+    )
+    assert "o.Percent" in text, "the template does not render the model's percent"
 
 
-def test_the_template_does_not_respell_the_no_owner_string():
-    """The placeholder has one spelling, in the module."""
-    from app import oct16_data
+def test_the_page_states_an_unnamed_owner_once_per_card(logged_in):
+    """The owner position is stated on the page; there is no module indirection.
 
-    text = open(TEMPLATE, encoding="utf-8").read()
-    assert "d.owner_label(o.owner)" in text
-    # The literal must not be typed into the template a second time.
-    assert '>no owner named<' not in text, "the template re-spells the owner-none string"
+    Supersedes the module owner_label test (2026-10-07): the template used to call
+    d.owner_label(o.owner); with the page DB-backed and no owners named yet, the
+    absence is stated once per card.
+    """
+    import html as _html
+
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/outcomes").text)
+    assert body.count("no owner named") == 6, "one explicit absence per card"
 
 
 # --- the confirmed marker ---------------------------------------------------

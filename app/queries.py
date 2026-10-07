@@ -162,6 +162,9 @@ def priority_outcomes() -> list[dict]:
     for r in rows:
         d = dict(r)
         d["milestones"] = by_code.get(r["Code"], [])
+        # Floored, not rounded: a bar reading 50% when fewer than half the
+        # milestones are Met would overstate progress.
+        d["Percent"] = (100 * d["Reached"]) // d["Planned"] if d["Planned"] else 0
         out.append(d)
     return out
 
