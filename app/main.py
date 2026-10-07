@@ -497,7 +497,7 @@ async def edit_details_submit(request: Request, mi_id: str,
 @app.get("/major-initiatives/{mi_id}/edit/tags")
 async def edit_tags_form(request: Request, mi_id: str,
                          target: guards.Target = Depends(guards.admin_for)):
-    options = queries.tag_edit_options(target.card["InitiativeID"])
+    options = queries.tag_edit_options(target.card_id)
     return _fragment_or_full(
         request, "edit_tags.html", "edit_tags_full.html",
         _ctx(request, card=target.card, error=None, **options),
@@ -549,7 +549,7 @@ async def edit_tags_submit(request: Request, mi_id: str,
 @app.get("/major-initiatives/{mi_id}/edit/links")
 async def edit_links_form(request: Request, mi_id: str,
                           target: guards.Target = Depends(guards.admin_for)):
-    options = queries.link_edit_options(target.card["InitiativeID"])
+    options = queries.link_edit_options(target.card_id)
     return _fragment_or_full(
         request, "edit_links.html", "edit_links_full.html",
         _ctx(request, card=target.card, error=None, **options),
@@ -572,7 +572,7 @@ async def edit_links_submit(request: Request, mi_id: str,
         return templates.TemplateResponse(
             request, "edit_links.html",
             _ctx(request, card=queries.initiative_card(mi_id),
-                 deans=queries.link_edit_options(target.card["InitiativeID"])["deans"],
+                 deans=queries.link_edit_options(target.card_id)["deans"],
                  chosen=set(ids), error=exc.message),
             status_code=422,
         )

@@ -34,6 +34,20 @@ class Target:
     def person_id(self) -> int:
         return self.person["PersonID"]
 
+    @property
+    def card_id(self) -> int:
+        """The resolved card's id, for the routes that always carry a card.
+
+        `card` is `dict | None` because `admin_only` routes have no target, but
+        `admin_for` (tags, links, retire) ALWAYS resolves one. Reaching into
+        `card["InitiativeID"]` at those routes read as "this might be None" -
+        the type is right, the use site is what needed the invariant stated.
+        Asking a card-less target for its id is a wiring mistake, so this fails
+        loudly rather than raising a bare TypeError.
+        """
+        assert self.card is not None, "this route has no target card"
+        return self.card["InitiativeID"]
+
 
 def _person_or_500(request: Request) -> dict:
     """The signed-in person, or a hard error if the gate let a request through.
