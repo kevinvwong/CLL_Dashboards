@@ -69,7 +69,7 @@
         <td>
           {% for pr in k.priorities %}
           <a class="chip chip-priority" href="/priorities/{{ pr.PriorityName | urlencode }}"
-             style="--priority: var({{ pr.Colour | priority_colour }});" title="{{ pr.PriorityName | priority_label }}">{{ pr.Code }}</a>
+             style="--priority: var({{ pr.Code | priority_colour_token }});" title="{{ pr.PriorityName | priority_label }}">{{ pr.Code }}</a>
           {% endfor %}
         </td>
       </tr>

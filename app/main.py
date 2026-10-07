@@ -72,6 +72,11 @@ templates.env.filters["availability_class"] = status.availability_class
 # its colour across the stage, the cards and the cascade. Deliberately a
 # separate scale from status, so the two can never be confused.
 templates.env.filters["priority_colour"] = status.priority_colour_var
+# The TOKEN (e.g. "--priority-3"), for the `var({{ ... }})` pattern the chips and
+# the home card share. `priority_colour` returns the whole var() expression, so
+# wrapping it in var() again produced `var(var(--priority-3))` - invalid CSS that
+# left every priority chip uncoloured.
+templates.env.filters["priority_colour_token"] = status.priority_colour_token
 # The one label a priority is called by, everywhere: "P01 One Shared Identity"
 # (#7). Without it a priority read three ways across the app.
 templates.env.filters["priority_label"] = priorities.label

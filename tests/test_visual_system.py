@@ -169,3 +169,19 @@ def test_priority_filter_is_registered(logged_in):
     # And it renders a var() for a real code.
     from app import status
     assert status.priority_colour_var("P01").startswith("var(--")
+
+
+def test_priority_chips_render_a_colour_token_not_a_double_var(logged_in):
+    """The chips' inline colour must be valid CSS.
+
+    The defect (found 2026-10-07): the chips asked for a priority's DB hex and
+    passed it to the var()-returning filter, then wrapped it in var() again -
+    `var(var(--priority-1))`, which is invalid, so every priority chip rendered
+    uncoloured. They now ask by code for the TOKEN and wrap it once, like the
+    home card.
+    """
+    body = logged_in("Bill Gaudelli").get("/team-initiatives").text
+    assert "var(var(" not in body, "a double var() survives - the chip colour is invalid"
+    tokens = set(re.findall(r"--priority: var\((--priority-\d)\)", body))
+    assert len(tokens) >= 2, "the chips render no priority colour tokens: %s" % tokens
+    assert all(t.startswith("--priority-") for t in tokens)

@@ -78,7 +78,7 @@
     {% for pr in mi.priorities %}
     <li class="mi-chip">
       <a href="/priorities/{{ pr.PriorityName | urlencode }}"
-         style="--priority: var({{ pr.Colour | priority_colour }});">
+         style="--priority: var({{ pr.Code | priority_colour_token }});">
         <span class="mi-code">{{ pr.PriorityName | priority_number }}</span>
         <span class="mi-chip-title">{{ pr.PriorityName | priority_title }}</span>
       </a>
