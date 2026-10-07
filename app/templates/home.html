@@ -29,6 +29,15 @@
   <p class="section-note">Six priorities · four teams · 29 Major Initiatives</p>
 </div>
 
+{# The health read, first (#8): the question on opening a dashboard is "how are we
+   doing?". Counts by status, not a score. #}
+<p class="health-line">
+  <strong>{{ health.total }}</strong> initiatives tracked:
+  <span class="badge status-on-track">{{ health.on_track }} on track</span>
+  <span class="badge status-at-risk">{{ health.at_risk }} at risk</span>
+  {% if health.off_track %}<span class="badge status-off-track">{{ health.off_track }} off track</span>{% endif %}
+</p>
+
 {# --- 1. the stat band ----------------------------------------------------- #}
 <section class="stat-band" aria-label="Portfolio summary">
   <a class="stat-tile" href="/initiatives">

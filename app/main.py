@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app import auth, guards, queries, repo, status
+from app import auth, guards, priorities, queries, repo, status
 
 app = FastAPI()
 
@@ -34,6 +34,10 @@ templates.env.filters["availability_class"] = status.availability_class
 # its colour across the stage, the cards and the cascade. Deliberately a
 # separate scale from status, so the two can never be confused.
 templates.env.filters["priority_colour"] = status.priority_colour_var
+# The one label a priority is called by, everywhere: "P01 One Shared Identity"
+# (#7). Without it a priority read three ways across the app.
+templates.env.filters["priority_label"] = priorities.label
+templates.env.filters["priority_code"] = priorities.code
 
 # htmx is vendored (design.md decision 1) so the app works with no CDN access.
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
@@ -319,7 +323,7 @@ async def priority_list(request: Request, priority_name: str, group: str | None 
         "list.html",
         _ctx(
             request,
-            heading=f"{priority['PriorityName']} ({priority['PlanYear']})",
+            heading=f"{priorities.label(priority['PriorityName'])} ({priority['PlanYear']})",
             description=priority["Description"],
             entry_kind="priority",
             crumbs=[("Priorities", "/#priorities"), (priority["PriorityName"], None)],
@@ -887,6 +891,18 @@ async def root(request: Request):
         "initiatives": len(queries.all_initiatives()),
     }
 
+    # A one-line health read, above the taxonomy (#8): the first question on
+    # opening a dashboard is "how are we doing?", not "how is this organised?".
+    # Counts by status, not a composite score (the design forbids a rollup).
+    from collections import Counter
+    by_status = Counter(r["Status"] for r in queries.all_initiatives() if r["Status"])
+    health = {
+        "on_track": by_status.get("On track", 0),
+        "at_risk": by_status.get("At risk", 0),
+        "off_track": by_status.get("Off track", 0),
+        "total": sum(by_status.values()),
+    }
+
     plan_year = max((p["PlanYear"] for p in priorities), default=None)
     return templates.TemplateResponse(
         request,
@@ -897,6 +913,7 @@ async def root(request: Request):
             teams=teams,
             goals=goals,
             stats=stats,
+            health=health,
             plan_year=plan_year,
         ),
     )

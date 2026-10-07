@@ -611,6 +611,18 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 
 
 /* ---- October 16, Option A: the wireframes' page -------------------------- */
+/* The one-line health read on the Overview (#8). */
+.health-line { margin: 0 0 var(--space-5); font-size: var(--text-base); }
+.health-line .badge { margin-left: 0; margin-right: var(--space-2); }
+
+/* The milestone-state legend on /outcomes (#6). */
+.oct16-legend {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  gap: var(--space-2) var(--space-3); margin: 0 0 var(--space-5);
+  font-size: var(--text-sm);
+}
+.oct16-legend-label { color: var(--ink-muted); }
+
 .oct16-eyebrow {
   margin: 0; font-size: var(--text-xs); letter-spacing: .08em;
   text-transform: uppercase; color: var(--ink-muted);
@@ -1192,7 +1204,8 @@ body.overlay-open { overflow: hidden; }
 .coverage-panel { margin-top: var(--space-5); }
 .coverage-subhead {
   margin: var(--space-4) 0 var(--space-2);
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: var(--text-lg);
 }
 .coverage-list { list-style: none; margin: 0; padding: 0; }
@@ -1266,7 +1279,9 @@ body.overlay-open { overflow: hidden; }
 .stat-tile:hover { border-color: var(--accent); transform: translateY(-1px); }
 .stat-value {
   display: block;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   font-size: var(--text-3xl);
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -1321,7 +1336,8 @@ body.overlay-open { overflow: hidden; }
 }
 .priority-title {
   margin: var(--space-3) 0 var(--space-2);
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: var(--text-lg);
   font-weight: 500;
 }
@@ -1358,10 +1374,10 @@ body.overlay-open { overflow: hidden; }
   border-radius: var(--radius-md);
   background: var(--surface);
 }
-.team-name { margin: 0 0 var(--space-2); font-family: var(--font-serif); font-size: var(--text-lg); font-weight: 500; }
+.team-name { margin: 0 0 var(--space-2); font-family: var(--font-sans); font-size: var(--text-lg); font-weight: 600; }
 .team-desc { margin: 0 0 var(--space-3); color: var(--ink-muted); font-size: var(--text-sm); }
 .team-count { margin: 0 0 var(--space-3); font-size: var(--text-sm); }
-.team-count strong { font-size: var(--text-xl); font-family: var(--font-serif); }
+.team-count strong { font-size: var(--text-xl); font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
 .mi-code { font-weight: 700; color: var(--ink-muted); font-size: var(--text-xs); }
 .mi-title { flex: 1 1 auto; }
 
@@ -1425,7 +1441,7 @@ body.overlay-open { overflow: hidden; }
   border-radius: var(--radius-pill);
   padding: 0 var(--space-2);
 }
-.goal-name { font-family: var(--font-serif); font-size: var(--text-lg); font-weight: 500; }
+.goal-name { font-family: var(--font-sans); font-size: var(--text-lg); font-weight: 600; }
 .goal-counts { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink-muted); }
 .goal-counts a { color: var(--ink-muted); }
 

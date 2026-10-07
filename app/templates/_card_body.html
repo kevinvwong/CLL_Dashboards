@@ -76,7 +76,7 @@
     {% if card.priority_tags %}
     <p class="tags"><span class="tags-label">Priorities:</span>
       {% for t in card.priority_tags %}
-      <a href="/priorities/{{ t.PriorityName | urlencode }}">{{ t.PriorityName }}</a>{% if t.IsPrimary %} <span class="badge">Primary</span>{% endif %}{% if not loop.last %},{% endif %}
+      <a href="/priorities/{{ t.PriorityName | urlencode }}">{{ t.PriorityName | priority_label }}</a>{% if t.IsPrimary %} <span class="badge">Primary</span>{% endif %}{% if not loop.last %},{% endif %}
       {% endfor %}
     </p>
     {% endif %}

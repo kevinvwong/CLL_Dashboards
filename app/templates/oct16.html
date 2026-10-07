@@ -16,6 +16,18 @@
 <h1 class="oct16-title">{{ d.TITLE }}</h1>
 <p class="oct16-sub">{{ d.SUBTITLE }}</p>
 <p class="oct16-explainer">{{ d.EXPLAINER }}</p>
+
+{# The milestone-status legend (#6). The milestone states are the wireframes' own
+   set, distinct from an initiative's status; a reader met "Met", "In progress",
+   "Not started", "Due Dec" and "Confirm" with nothing saying what they meant. #}
+<p class="oct16-legend">
+  <span class="oct16-legend-label">Milestone states:</span>
+  <span class="oct16-mstatus m-met">Met</span>
+  <span class="oct16-mstatus m-in-progress">In progress</span>
+  <span class="oct16-mstatus m-not-started">Not started</span>
+  <span class="oct16-mstatus m-due-dec">Due Dec</span>
+  <span class="oct16-mstatus m-confirm">Confirm</span>
+</p>
 <p class="oct16-status" role="status">{{ d.data_status() }}{% if d.AS_OF %} &middot; as of {{ d.AS_OF }}{% endif %}</p>
 
 <ul class="oct16-grid">

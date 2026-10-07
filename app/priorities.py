@@ -70,3 +70,21 @@ def description(name: str) -> str:
     """The canonical description, or "" when not one of the six."""
     entry = PRIORITIES.get((name or "").strip())
     return entry[2] if entry else ""
+
+
+def label(name: str) -> str:
+    """The ONE label a priority is called by, everywhere.
+
+    "P01 One Shared Identity" - code then full title. It read three ways before
+    ("One Shared Identity" on the Overview and Outcomes, "Identity (2027)" on its
+    own page, "Identity" in tables), so a reader could not tell they were the
+    same thing (#7). A priority whose name is not one of the six, or one with no
+    code, falls back to whatever the database holds.
+    """
+    c = code(name)
+    t = title(name)
+    return ("%s %s" % (c, t)).strip() if c else t
+
+
+#: Register the template filters, so a template can write `| priority_label`.
+FILTERS = {"code": code, "title": title, "description": description, "label": label}
