@@ -56,7 +56,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app import auth, guards, priorities, queries, repo, status
+from app import auth, guards, identity, priorities, queries, repo, status
 
 app = FastAPI()
 
@@ -77,6 +77,11 @@ templates.env.filters["priority_colour"] = status.priority_colour_var
 # wrapping it in var() again produced `var(var(--priority-3))` - invalid CSS that
 # left every priority chip uncoloured.
 templates.env.filters["priority_colour_token"] = status.priority_colour_token
+# Goal and team identity (ADR-0003): a colour token and, for a goal, an icon.
+# Four axes, each keyed and legend-ed, none a status colour.
+templates.env.filters["goal_colour_token"] = identity.goal_colour_token
+templates.env.filters["team_colour_token"] = identity.team_colour_token
+templates.env.filters["goal_icon"] = identity.goal_icon
 # The one label a priority is called by, everywhere: "P01 One Shared Identity"
 # (#7). Without it a priority read three ways across the app.
 templates.env.filters["priority_label"] = priorities.label

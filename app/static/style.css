@@ -154,7 +154,18 @@
   --priority-3: #b2852e;   /* Gold (chart-2, from GT Gold) */
   --priority-4: #1762b6;   /* Blue (chart-1, from GT Bright Blue) */
   --priority-5: #d8662a;   /* Ember (chart-4, Hive addition; GT has no orange) */
-  --priority-6: #299abe;   /* Sky (chart-7, from GT Burdell) */
+    --priority-6: #299abe;   /* Sky (chart-7, from GT Burdell) */
+    /* Goal identity (ADR-0003): a keyed scale for GoalNumber 1..5. */
+    --goal-1: #166534;   /* forest  */
+    --goal-2: #1d4ed8;   /* royal   */
+    --goal-3: #7c3aed;   /* violet  */
+    --goal-4: #9a3412;   /* rust    */
+    --goal-5: #4d7c0f;   /* moss    */
+    /* Team identity (ADR-0003): keyed for TeamID 1..4. */
+    --team-1: #0369a1;   /* steel   */
+    --team-2: #b45309;   /* amber   */
+    --team-3: #4338ca;   /* indigo  */
+    --team-4: #be185d;   /* rose    */
 
   /* --- spacing: a 4px scale --- */
   --space-1: 0.25rem;   /*  4px */
@@ -260,6 +271,15 @@
        because the guard test requires a dark override. */
     --priority-5: #d8662a;
     --priority-6: #32a0c5;
+    --goal-1: #4ade80;
+    --goal-2: #60a5fa;
+    --goal-3: #a78bfa;
+    --goal-4: #fb923c;
+    --goal-5: #a3e635;
+    --team-1: #38bdf8;
+    --team-2: #fbbf24;
+    --team-3: #818cf8;
+    --team-4: #f472b6;
 
     --ink-print: #eaeff6;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -357,6 +377,25 @@ a { color: var(--accent); }
 }
 @media (max-width: 640px) { .build-stamp { display: none; } }
 @media print { .build-stamp { display: none; } }
+
+/* --- identity: goals and teams (ADR-0003) ---------------------------------- */
+/* A goal carries an icon + colour; a team carries a colour swatch. Both take
+   their colour from the --goal / --team custom property set on the element, so
+   the same identity is used by the card, the legend and (later) the list. */
+.goal-icon { color: var(--goal, var(--accent)); vertical-align: -0.15em; flex: none; }
+.goal-identity { display: inline-flex; align-items: center; gap: 0.35rem; }
+.team-swatch {
+  display: inline-block; width: 0.7rem; height: 0.7rem;
+  border-radius: 50%; margin-right: 0.4rem;
+  background: var(--team, var(--accent)); vertical-align: baseline;
+}
+.identity-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.9rem;
+  margin: 0.6rem 0 0; font-size: var(--text-xs); color: var(--ink-muted);
+}
+.identity-legend-label { font-weight: 600; color: var(--ink); }
+.legend-item { display: inline-flex; align-items: center; }
+.goal-legend .goal-icon { width: 14px; height: 14px; }
 
 main { padding: var(--space-5); max-width: var(--content-max); }
 
