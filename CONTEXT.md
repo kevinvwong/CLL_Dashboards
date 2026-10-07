@@ -61,7 +61,19 @@ Initiative's page lists the Team Initiatives that roll up to it.
 *Source:* the register's "Dean KPI 26"/"Dean KPI 27" rows. The register labels
 them "KPI"; the app calls them Dean Initiatives, and reserves "KPI" for a measure
 (the Dean's rows carry a percent, not a unit/numerator/denominator, so they are
-not indicators in this glossary's sense).
+  not indicators in this glossary's sense).
+
+**Status** — the state of a body of work at a point in time, reported by its
+owner. There are **three vocabularies, deliberately distinct**, because they
+describe three different things:
+- an **Initiative** is *Not started*, *On track*, *At risk*, *Off track*,
+  *Complete* or *Paused*;
+- a **Milestone** is *Met*, *In progress*, *Not started* or *Missed*;
+- an **Outcome** (a Priority's reported state) is *On track*, *At risk*,
+  *Behind* or *Not started*.
+*Source:* the workbook's Option A Data rows A-05, A-13; the app's initiative
+status set. **"Health" is not a synonym for status and the app does not use the
+word** — status is a judgement reported by an owner, never a computed score.
 
 ## Known tensions
 
@@ -77,7 +89,10 @@ not indicators in this glossary's sense).
   and each is measured. Prefer "Priority" for the entity, "its measure/target"
   for the indicator. On screen a priority reads "Priority 1 · One Shared
   Identity"; `P01` is only the database key.
-- **The Outcomes page is illustrative, the rest is not.** Every initiative and
+- **The Outcomes page is being replaced now (2026-10-07).** Every initiative and
   Dean row is register data. The `/outcomes` page's six cards and milestone
-  counts are hardcoded demo structure, and it says so ("Illustrative — format
-  only, not CLL results"). A future change replaces it with real measures.
+  counts were hardcoded demo structure (`app/oct16_data.py`) under an
+  "Illustrative — format only" banner. The current work introduces a
+  `Milestones` model and reads the page from the database; the banner is driven
+  by a stored **provenance** marker, so seeded mock data still reads as mock and
+  only imported, owner-confirmed data reads as confirmed.
