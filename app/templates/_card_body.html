@@ -35,7 +35,7 @@
      is presentation only - the server refuses the POST either way. #}
   {% if may_update %}
   <p class="card-actions">
-    <button class="update-button"
+    <button class="button primary update-button"
             hx-get="/initiatives/{{ card.Code }}/update"
             hx-target="#card-modal"
             hx-swap="innerHTML">Update</button>
@@ -47,19 +47,19 @@
   {% if may_edit_details or may_admin %}
   <p class="card-actions admin-actions">
     {% if may_edit_details %}
-    <button hx-get="/initiatives/{{ card.Code }}/edit/details"
+    <button class="button ghost" hx-get="/initiatives/{{ card.Code }}/edit/details"
             hx-target="#card-modal" hx-swap="innerHTML">Edit details</button>
     {% endif %}
     {% if may_admin %}
-    <button hx-get="/initiatives/{{ card.Code }}/edit/tags"
+    <button class="button ghost" hx-get="/initiatives/{{ card.Code }}/edit/tags"
             hx-target="#card-modal" hx-swap="innerHTML">Edit tags</button>
     {% if card.Level == 'D-1' %}
-    <button hx-get="/initiatives/{{ card.Code }}/edit/links"
+    <button class="button ghost" hx-get="/initiatives/{{ card.Code }}/edit/links"
             hx-target="#card-modal" hx-swap="innerHTML">Edit links</button>
     {% endif %}
     <form method="post" action="/initiatives/{{ card.Code }}/retire"
           onsubmit="return confirm('Retire {{ card.Code }}? It will disappear from every list, but its progress history is kept.')">
-      <button type="submit" class="danger">Retire</button>
+      <button type="submit" class="button ghost danger">Retire</button>
     </form>
     {% endif %}
   </p>

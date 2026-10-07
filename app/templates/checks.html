@@ -71,10 +71,13 @@
     {% for r in rows %}
     <li class="coverage-row">
       <span class="coverage-label">{{ r.label }}</span>
-      <span class="coverage-bar" role="img"
-            aria-label="{{ r.count }} initiative{{ '' if r.count == 1 else 's' }}">
-        <span class="coverage-fill{% if not r.covered %} is-empty{% endif %}"
-              style="width: {{ 100 if r.covered else 0 }}%"></span>
+      {# Coverage is covered-or-not, not a quantity. It was drawn as a bar that
+         filled to 100% or 0, which read as a proportion against the other rows.
+         A chip states it honestly: covered means at least one initiative is
+         tagged to it. #}
+      <span class="coverage-state">
+        {% if r.covered %}<span class="chip">covered</span>
+        {% else %}<span class="chip chip-warn">not covered</span>{% endif %}
       </span>
       <em>{% if r.covered %}{{ r.count }} initiative{{ '' if r.count == 1 else 's' }}{% else %}none{% endif %}</em>
     </li>

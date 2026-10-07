@@ -271,6 +271,18 @@
 
 * { box-sizing: border-box; }
 
+/* Available to assistive tech, invisible on screen. Used for the "Georgia Tech"
+   in the brand link, whose only visible mark is a CSS background logo. */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body {
   margin: 0;
   font: var(--text-base)/1.5 var(--font-sans);
@@ -412,7 +424,10 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .bar {
   position: relative;
   height: 0.6rem;
-  min-width: 6rem;
+  /* A FIXED track, not min-width: with min-width the bar grew with its grid
+     cell, so the same percentage drew at different lengths row to row (#15). */
+  width: 100%;
+  max-width: 14rem;
   border: 1px solid var(--line);
   border-radius: 3px;
   background: var(--line-track);
@@ -706,6 +721,37 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .connection-status.status-not-started { color: var(--status-not-started); }
 .connection-status.status-paused      { color: var(--status-paused); }
 .connection-status.status-complete    { color: var(--status-complete); }
+
+/* The Feeds / Fed-by list. Each entry is one row: the initiative, then its
+   owner, status and progress spaced apart - before this they ran together as a
+   single string ("D-C Dean C (sample): ... Bill At risk 15%"). */
+.connections { list-style: none; margin: var(--space-2) 0 0; padding: 0; }
+.connections li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.connections li > a:first-child { flex: 1 1 12rem; }
+.connection-owner { color: var(--ink-muted); font-size: var(--text-sm); }
+/* The status reads as a badge here, like everywhere else. */
+.connection-status {
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* The card's action row (Update, Edit…, Retire). The buttons carry .button, so
+   they already match the system; the row just spaces them. */
+.card-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: var(--space-4) 0; }
+.admin-actions { margin-top: 0; }
+.admin-actions form { display: inline; }
+.danger { color: var(--error); border-color: var(--error); }
+.danger:hover { background: var(--surface-hover); }
 
 .count.status-on-track    { color: var(--status-on-track); }
 .count.status-at-risk     { color: var(--status-at-risk); }
