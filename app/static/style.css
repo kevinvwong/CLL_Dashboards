@@ -1011,8 +1011,40 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .button.ghost:hover { background: var(--surface-hover); }
 .button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* --- motion (blueprint Global: interaction design) ------------------------ */
+/* Every move below is suppressed under prefers-reduced-motion (the block at the
+   end of this section widens the original .button-only rule). Nothing here is
+   load-bearing: each animates a value the text already states. */
+@keyframes bar-grow { from { transform: scaleX(0); } }
+@keyframes ring-in  { from { transform: scale(.6); opacity: 0; } }
+@keyframes row-in   { from { opacity: 0; transform: translateY(4px); } }
+
+/* 1. Progress bars fill on load. */
+.bar-fill, .oct16-fill { transform-origin: left center; animation: bar-grow .9s var(--ease-standard) both; }
+/* 2. Milestone rings draw in. */
+.oct16-ring { animation: ring-in .8s var(--ease-standard) both; }
+/* 3. Cascade / list rows fade in, staggered left-to-right. */
+.initiative-row, .mi-chip { animation: row-in .3s var(--ease-standard) both; }
+.list-group:nth-child(2) .initiative-row,
+.initiative-list li:nth-child(2) { animation-delay: .04s; }
+.initiative-list li:nth-child(3) { animation-delay: .08s; }
+.initiative-list li:nth-child(4) { animation-delay: .12s; }
+.initiative-list li:nth-child(5) { animation-delay: .16s; }
+/* 4. Card hover elevation (signals the card is a link). */
+.stat-tile, .priority-card, .goal-card, .team-card, .oct16-card {
+  transition: transform .15s var(--ease-standard), border-color .15s var(--ease-standard);
+}
+.stat-tile:hover, .priority-card:hover, .goal-card:hover,
+.team-card:hover, .oct16-card:hover { transform: translateY(-2px); }
+/* 5. Filter/sort: a re-rendered list's rows animate in (see 3), confirming the
+      filter fired rather than the table snapping. */
+
 @media (prefers-reduced-motion: reduce) {
   .button { transition: none; }
+  .bar-fill, .oct16-fill, .oct16-ring, .initiative-row, .mi-chip { animation: none; }
+  .stat-tile, .priority-card, .goal-card, .team-card, .oct16-card { transition: none; }
+  .stat-tile:hover, .priority-card:hover, .goal-card:hover,
+  .team-card:hover, .oct16-card:hover { transform: none; }
 }
 
 /* form field: a label, a control, and an optional hint below */

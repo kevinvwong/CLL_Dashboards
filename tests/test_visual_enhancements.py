@@ -54,3 +54,30 @@ def test_the_cascade_has_group_rails():
     css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
     assert "list-group:has(> .initiative-list)" in css, "the cascade rails are unstyles"
 
+
+def test_all_motion_is_suppressed_by_reduced_motion():
+    """Every animated selector is disabled under prefers-reduced-motion.
+
+    The block used to cover only .button (2026-10-06); the enhancement motion
+    must all join it, or a motion-sensitive reader is animated against their
+    setting.
+    """
+    css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
+    idx = css.find("@media (prefers-reduced-motion: reduce)")
+    assert idx != -1, "there is no reduced-motion block"
+    # The block runs to the first line that closes it; read a generous window.
+    block = css[idx:idx + 900]
+    for selector in (".bar-fill", ".oct16-fill", ".oct16-ring", ".initiative-row"):
+        assert selector in block, "%s is animated without a reduced-motion guard" % selector
+    assert "animation: none" in block
+    # And the keyframes the moves use all exist.
+    for kf in ("@keyframes bar-grow", "@keyframes ring-in", "@keyframes row-in"):
+        assert kf in css, "missing %s" % kf
+
+
+def test_the_count_up_script_respects_reduced_motion(logged_in):
+    body = logged_in("Bill Gaudelli").get("/").text
+    assert "prefers-reduced-motion" in body, "the count-up does not check the setting"
+    assert "stat-value" in body
+
+

@@ -290,6 +290,26 @@
         document.body.classList.remove("presenting");
       });
     })();
+
+    /* The stat numbers count up (blueprint Global: motion). Suppressed under
+       prefers-reduced-motion, and the final value is already in the markup, so
+       a reader with no JS or reduced motion simply sees the number. */
+    (function () {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      document.querySelectorAll(".stat-value").forEach(function (el) {
+        const target = parseInt(el.textContent, 10);
+        if (isNaN(target) || target <= 0) return;
+        const icon = el.querySelector(".stat-icon");
+        let n = 0;
+        const step = Math.max(1, Math.round(target / 20));
+        const t = setInterval(function () {
+          n = Math.min(target, n + step);
+          el.textContent = n;
+          if (icon) el.prepend(icon);
+          if (n >= target) clearInterval(t);
+        }, 30);
+      });
+    })();
   </script>
 </body>
 </html>
