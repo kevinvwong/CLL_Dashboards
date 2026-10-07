@@ -74,7 +74,7 @@ CREATE TABLE Priorities (
 
 -- ---------- Organizational layer (blueprint-redesign scope correction) -------
 -- The Dean's prototype carries a layer beneath the six priorities: four
--- organizational TEAMS, and 29 Major Initiatives grouped by FIVE source areas. Our
+-- organizational TEAMS, and 29 Team Initiatives grouped by FIVE source areas. Our
 -- schema held none of it.
 --
 -- NOTE: this deliberately contradicts config.yaml's "Nothing below D-1 (no
@@ -92,10 +92,10 @@ CREATE TABLE SourceAreas (
     Name         TEXT    NOT NULL UNIQUE
 );
 
--- The 29 Major Initiatives. `TeamID` is the team accountable; `SourceAreaID` is the
+-- The 29 Team Initiatives. `TeamID` is the team accountable; `SourceAreaID` is the
 -- workbook area they came from; the two are different axes.
-CREATE TABLE MajorInitiatives (
-    MajorInitiativeID          INTEGER PRIMARY KEY,
+CREATE TABLE TeamInitiatives (
+    TeamInitiativeID          INTEGER PRIMARY KEY,
     Code           TEXT    NOT NULL UNIQUE,   -- e.g. '3-02'
     -- The canon workbook's own stable key (MI-001..MI-029), so a row can be
     -- cited by the identifier the source register uses.
@@ -123,25 +123,25 @@ CREATE TABLE MajorInitiatives (
     IsActive       INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1))
 );
 
--- Which priorities a Major Initiative feeds (its `priorities` array).
+-- Which priorities a Team Initiative feeds (its `priorities` array).
 -- The register states a PRIMARY and a SECONDARY priority per row, so IsPrimary
 -- distinguishes them. One primary per initiative is enforced below.
-CREATE TABLE MajorInitiativePriorities (
-    MajorInitiativeID      INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
+CREATE TABLE TeamInitiativePriorities (
+    TeamInitiativeID      INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
     PriorityID INTEGER NOT NULL REFERENCES Priorities(PriorityID),
     IsPrimary  INTEGER NOT NULL DEFAULT 0 CHECK (IsPrimary IN (0,1)),
-    PRIMARY KEY (MajorInitiativeID, PriorityID)
+    PRIMARY KEY (TeamInitiativeID, PriorityID)
 );
 CREATE UNIQUE INDEX UX_MIP_OnePrimary
-    ON MajorInitiativePriorities(MajorInitiativeID) WHERE IsPrimary = 1;
+    ON TeamInitiativePriorities(TeamInitiativeID) WHERE IsPrimary = 1;
 
--- Which Strategy 2035 goals a Major Initiative aligns to, parsed from the
+-- Which Strategy 2035 goals a Team Initiative aligns to, parsed from the
 -- canon workbook's `Strategy Alignment` column. This is the MI -> Goal edge that
 -- register states and the schema did not hold.
-CREATE TABLE MajorInitiativeGoals (
-    MajorInitiativeID  INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
+CREATE TABLE TeamInitiativeGoals (
+    TeamInitiativeID  INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
     GoalID INTEGER NOT NULL REFERENCES Goals(GoalID),
-    PRIMARY KEY (MajorInitiativeID, GoalID)
+    PRIMARY KEY (TeamInitiativeID, GoalID)
 );
 
 
@@ -162,21 +162,21 @@ CREATE TABLE People (
 --
 -- The database used to hold TWO parallel initiative models: the prototype's
 -- `Initiatives` (22 sample rows, with the progress diary, tags, links and write
--- paths) and the register's `MajorInitiatives` (the 29 canon rows). The home page
+-- paths) and the register's `TeamInitiatives` (the 29 canon rows). The home page
 -- showed both counts at once, which read as a contradiction. The register is
 -- canon, so the two are MERGED here onto the register's model: the diary and the
--- write paths move onto `MajorInitiatives`, and the five prototype tables
+-- write paths move onto `TeamInitiatives`, and the five prototype tables
 -- (`Initiatives`, `InitiativeGoals`, `InitiativePriorities`, `InitiativeLinks`,
 -- `ProgressUpdates`) are dropped.
 --
 -- The 24 sample diary rows were NOT migrated: every one was about a sample
--- initiative and none named a real Major Initiative.
+-- initiative and none named a real Team Initiative.
 
--- The progress diary, on the 29 Major Initiatives. Append-only, attributed,
+-- The progress diary, on the 29 Team Initiatives. Append-only, attributed,
 -- exactly as the prototype's ProgressUpdates was, but keyed to the register row.
-CREATE TABLE MajorInitiativeUpdates (
+CREATE TABLE TeamInitiativeUpdates (
     UpdateID          INTEGER PRIMARY KEY,
-    MajorInitiativeID INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
+    TeamInitiativeID INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
     UpdateDate        TEXT    NOT NULL DEFAULT (date('now')),
     PercentComplete   INTEGER NOT NULL CHECK (PercentComplete BETWEEN 0 AND 100),
     Status            TEXT    NOT NULL DEFAULT 'Not started'
@@ -186,15 +186,15 @@ CREATE TABLE MajorInitiativeUpdates (
     CreatedAt         TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IX_MIU_MI_Date ON MajorInitiativeUpdates(MajorInitiativeID, UpdateDate);
+CREATE INDEX IX_MIU_MI_Date ON TeamInitiativeUpdates(TeamInitiativeID, UpdateDate);
 
--- The latest diary entry per Major Initiative, for its card and the lists.
-CREATE VIEW vw_LatestMajorInitiativeProgress AS
-SELECT MajorInitiativeID, UpdateDate, PercentComplete, Status, Note
+-- The latest diary entry per Team Initiative, for its card and the lists.
+CREATE VIEW vw_LatestTeamInitiativeProgress AS
+SELECT TeamInitiativeID, UpdateDate, PercentComplete, Status, Note
 FROM (
-    SELECT u.*, ROW_NUMBER() OVER (PARTITION BY MajorInitiativeID
+    SELECT u.*, ROW_NUMBER() OVER (PARTITION BY TeamInitiativeID
                                     ORDER BY UpdateDate DESC, UpdateID DESC) AS rn
-    FROM MajorInitiativeUpdates u
+    FROM TeamInitiativeUpdates u
 )
 WHERE rn = 1;
 
@@ -218,54 +218,54 @@ CREATE INDEX IX_AuditLog_Entity   ON AuditLog(EntityType, EntityKey);
 
 -- ---------- Read models for the organizational layer -------------------------
 -- One view per screen, matching the existing convention. These expose the
--- 29 Major Initiatives with their team, source area, and what they feed.
+-- 29 Team Initiatives with their team, source area, and what they feed.
 
-CREATE VIEW vw_MajorInitiatives AS
-SELECT k.MajorInitiativeID, k.Code, k.Title, k.StrategyAlign, k.Initiatives,
+CREATE VIEW vw_TeamInitiatives AS
+SELECT k.TeamInitiativeID, k.Code, k.Title, k.StrategyAlign, k.Initiatives,
        k.ProposedTarget, k.TargetStatus,
        k.Status, k.Note,
        t.TeamID, t.Name AS Team,
        sa.SourceAreaID, sa.Name AS SourceArea
-FROM MajorInitiatives k
+FROM TeamInitiatives k
 LEFT JOIN Teams t       ON t.TeamID = k.TeamID
 LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID;
 
--- Which priorities each Major Initiative feeds, one row per link.
-CREATE VIEW vw_MajorInitiativePriorities AS
-SELECT kp.MajorInitiativeID, k.Code AS MajorInitiativeCode, k.Title AS MajorInitiativeTitle,
+-- Which priorities each Team Initiative feeds, one row per link.
+CREATE VIEW vw_TeamInitiativePriorities AS
+SELECT kp.TeamInitiativeID, k.Code AS TeamInitiativeCode, k.Title AS TeamInitiativeTitle,
        p.PriorityID, p.PriorityName, p.Code AS PriorityCode,
        p.FullTitle AS PriorityTitle, p.Colour AS PriorityColour
-FROM MajorInitiativePriorities kp
-JOIN MajorInitiatives k       ON k.MajorInitiativeID = kp.MajorInitiativeID
+FROM TeamInitiativePriorities kp
+JOIN TeamInitiatives k       ON k.TeamInitiativeID = kp.TeamInitiativeID
 JOIN Priorities p     ON p.PriorityID = kp.PriorityID;
 
--- Team rollup: how many Major Initiatives each team carries, and how many review.
+-- Team rollup: how many Team Initiatives each team carries, and how many review.
 CREATE VIEW vw_TeamSummary AS
 SELECT t.TeamID, t.Name AS Team, t.Description,
-       COUNT(k.MajorInitiativeID) AS MajorInitiativeCount,
+       COUNT(k.TeamInitiativeID) AS TeamInitiativeCount,
        SUM(CASE WHEN k.TargetStatus = 'needs_review' THEN 1 ELSE 0 END) AS NeedsReview
 FROM Teams t
-LEFT JOIN MajorInitiatives k ON k.TeamID = t.TeamID
+LEFT JOIN TeamInitiatives k ON k.TeamID = t.TeamID
 GROUP BY t.TeamID, t.Name, t.Description;
 
 
 -- The MI -> Goal edge, one row per link, for the goal page and MI page.
-CREATE VIEW vw_MajorInitiativeGoals AS
-SELECT kg.MajorInitiativeID, k.Code AS MajorInitiativeCode, k.MIId, k.Title AS MajorInitiativeTitle,
+CREATE VIEW vw_TeamInitiativeGoals AS
+SELECT kg.TeamInitiativeID, k.Code AS TeamInitiativeCode, k.MIId, k.Title AS TeamInitiativeTitle,
        g.GoalID, g.GoalNumber, g.ShortName AS GoalShort
-FROM MajorInitiativeGoals kg
-JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
+FROM TeamInitiativeGoals kg
+JOIN TeamInitiatives k ON k.TeamInitiativeID = kg.TeamInitiativeID
 JOIN Goals g    ON g.GoalID = kg.GoalID;
 
 
--- ---------- The Dean Priorities layer (register, 2026-10-07) -----------------
+-- ---------- The Dean Initiatives layer (register, 2026-10-07) -----------------
 -- The register's "Dean KPI 26"/"Dean KPI 27" rows: the Dean's own top-level
--- priorities, distinct from the 29 team Major Initiatives. FiscalYear 26 is
+-- priorities, distinct from the 29 team Team Initiatives. FiscalYear 26 is
 -- complete; 27 is in flight. PercentComplete is 0-100 (the register's 0-1 value
--- scaled by 100). Presented in the app as "Dean Priorities", never "KPI".
+-- scaled by 100). Presented in the app as "Dean Initiatives", never "KPI".
 
-CREATE TABLE DeanPriorities (
-    DeanPriorityID  INTEGER PRIMARY KEY,
+CREATE TABLE DeanInitiatives (
+    DeanInitiativeID  INTEGER PRIMARY KEY,
     FiscalYear      INTEGER NOT NULL CHECK (FiscalYear IN (26,27)),
     Code            TEXT    NOT NULL UNIQUE,   -- 'D26-1'..'D26-3', 'D27-1'..'D27-8'
     Title           TEXT    NOT NULL,
@@ -275,43 +275,43 @@ CREATE TABLE DeanPriorities (
     Note            TEXT
 );
 
--- The X-matrix: which team Major Initiative contributes to which FY27 Dean item.
-CREATE TABLE MajorInitiativeDeanLinks (
-    MajorInitiativeID INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
-    DeanPriorityID    INTEGER NOT NULL REFERENCES DeanPriorities(DeanPriorityID),
-    PRIMARY KEY (MajorInitiativeID, DeanPriorityID)
+-- The X-matrix: which team Team Initiative contributes to which FY27 Dean item.
+CREATE TABLE TeamInitiativeDeanLinks (
+    TeamInitiativeID INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
+    DeanInitiativeID    INTEGER NOT NULL REFERENCES DeanInitiatives(DeanInitiativeID),
+    PRIMARY KEY (TeamInitiativeID, DeanInitiativeID)
 );
 
 -- Co-owners. The register names one owner per row, EXCEPT Learning Futures,
 -- whose six rows name two people in one cell ("Meltem Alemdar/Grace Flavin").
--- MajorInitiatives.OwnerID holds the accountable lead (the first-named); this
+-- TeamInitiatives.OwnerID holds the accountable lead (the first-named); this
 -- table holds the additional co-owners, so neither person is lost.
-CREATE TABLE MajorInitiativeCoOwners (
-    MajorInitiativeID INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
+CREATE TABLE TeamInitiativeCoOwners (
+    TeamInitiativeID INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
     PersonID          INTEGER NOT NULL REFERENCES People(PersonID),
-    PRIMARY KEY (MajorInitiativeID, PersonID)
+    PRIMARY KEY (TeamInitiativeID, PersonID)
 );
 
-CREATE VIEW vw_DeanPriorities AS
-SELECT d.DeanPriorityID, d.FiscalYear, d.Code, d.Title, d.Description,
+CREATE VIEW vw_DeanInitiatives AS
+SELECT d.DeanInitiativeID, d.FiscalYear, d.Code, d.Title, d.Description,
        d.PercentComplete, d.Note,
        p.PriorityID, p.Code AS PriorityCode, p.FullTitle AS PriorityTitle,
        p.Colour AS PriorityColour
-FROM DeanPriorities d
+FROM DeanInitiatives d
 LEFT JOIN Priorities p ON p.PriorityID = d.PriorityID;
 
-CREATE VIEW vw_MajorInitiativeDeanLinks AS
-SELECT kl.MajorInitiativeID, k.Code AS MajorInitiativeCode, k.MIId,
-       k.Title AS MajorInitiativeTitle,
-       d.DeanPriorityID, d.Code AS DeanCode, d.Title AS DeanTitle
-FROM MajorInitiativeDeanLinks kl
-JOIN MajorInitiatives k ON k.MajorInitiativeID = kl.MajorInitiativeID
-JOIN DeanPriorities d   ON d.DeanPriorityID = kl.DeanPriorityID;
+CREATE VIEW vw_TeamInitiativeDeanLinks AS
+SELECT kl.TeamInitiativeID, k.Code AS TeamInitiativeCode, k.MIId,
+       k.Title AS TeamInitiativeTitle,
+       d.DeanInitiativeID, d.Code AS DeanCode, d.Title AS DeanTitle
+FROM TeamInitiativeDeanLinks kl
+JOIN TeamInitiatives k ON k.TeamInitiativeID = kl.TeamInitiativeID
+JOIN DeanInitiatives d   ON d.DeanInitiativeID = kl.DeanInitiativeID;
 
 
 -- ---------- Data checks (merged model, 2026-10-07) ----------------------------
 -- The prototype's vw_DataChecks read the dropped tables. These are the same
--- checks on the register's Major Initiatives: each should be tag-complete before
+-- checks on the register's Team Initiatives: each should be tag-complete before
 -- the dashboard is trusted.
 --
 -- "No progress update yet" was dropped 2026-10-07: the register ships no diary,
@@ -321,11 +321,11 @@ JOIN DeanPriorities d   ON d.DeanPriorityID = kl.DeanPriorityID;
 
 CREATE VIEW vw_DataChecks AS
 SELECT COALESCE(k.MIId, k.Code) AS Code, 'No goal tagged' AS Issue
-FROM MajorInitiatives k
+FROM TeamInitiatives k
 WHERE k.IsActive = 1
-  AND NOT EXISTS (SELECT 1 FROM MajorInitiativeGoals g WHERE g.MajorInitiativeID = k.MajorInitiativeID)
+  AND NOT EXISTS (SELECT 1 FROM TeamInitiativeGoals g WHERE g.TeamInitiativeID = k.TeamInitiativeID)
 UNION ALL
 SELECT COALESCE(k.MIId, k.Code), 'No priority tagged'
-FROM MajorInitiatives k
+FROM TeamInitiatives k
 WHERE k.IsActive = 1
-  AND NOT EXISTS (SELECT 1 FROM MajorInitiativePriorities p WHERE p.MajorInitiativeID = k.MajorInitiativeID);
+  AND NOT EXISTS (SELECT 1 FROM TeamInitiativePriorities p WHERE p.TeamInitiativeID = k.TeamInitiativeID);

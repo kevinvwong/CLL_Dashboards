@@ -189,7 +189,7 @@ def test_the_page_content_does_not_come_from_the_prototype_tables(logged_in, fre
 
     before = logged_in("Bill Gaudelli").get("/oct16").text
     conn = sqlite3.connect(fresh_db)
-    conn.execute("DELETE FROM MajorInitiatives")
+    conn.execute("DELETE FROM TeamInitiatives")
     conn.execute("DELETE FROM Goals")
     conn.commit()
     conn.close()

@@ -22,7 +22,7 @@
     </a>
     <p class="team-desc">{{ t.Description }}</p>
     <p class="team-count">
-      <a href="/teams/{{ t.TeamID }}"><strong>{{ t.major_initiatives | length }}</strong> Major Initiative{{ '' if t.major_initiatives | length == 1 else 's' }} →</a>
+      <a href="/teams/{{ t.TeamID }}"><strong>{{ t.team_initiatives | length }}</strong> Team Initiative{{ '' if t.team_initiatives | length == 1 else 's' }} →</a>
     </p>
   </li>
   {% endfor %}

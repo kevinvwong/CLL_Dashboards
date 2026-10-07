@@ -63,8 +63,8 @@ def _ctx(request: Request, **extra) -> dict:
     section = "home"
     for prefix, name in (("/initiatives", "initiatives"), ("/people", "people"),
                          ("/goals", "initiatives"), ("/priorities", "initiatives"),
-                         ("/teams", "initiatives"), ("/major-initiatives", "initiatives"),
-                         ("/dean-priorities", "initiatives"),
+                         ("/teams", "initiatives"), ("/team-initiatives", "initiatives"),
+                         ("/dean-initiatives", "initiatives"),
                          ("/checks", "checks"),
                          ("/changes", "changes"),
                          ("/meeting", "meeting"), ("/outcomes", "outcomes")):
@@ -141,7 +141,7 @@ def _edit_result(request: Request, code: str):
     context = _ctx(request, card=card, **_edit_ctx(request, code))
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "card.html", context)
-    return RedirectResponse(url=f"/major-initiatives/{code}", status_code=303)
+    return RedirectResponse(url=f"/team-initiatives/{code}", status_code=303)
 
 
 @app.middleware("http")
@@ -308,9 +308,9 @@ async def goal_list(request: Request, goal_number: int, group: str | None = None
             groupings={k: v.capitalize() for k, v in queries.GROUPINGS.items()},
             counts=counts,
             rollup=queries.rollup_label(len(rows), counts),
-            # The Major Initiatives aligned to this goal (interconnection-
+            # The Team Initiatives aligned to this goal (interconnection-
             # redesign 3.1): the new edge, shown from the goal side.
-            major_initiatives=queries.goal_major_initiatives(goal_number),
+            team_initiatives=queries.goal_team_initiatives(goal_number),
         ),
     )
 
@@ -361,7 +361,7 @@ async def teams_index(request: Request):
 
 @app.get("/teams/{team_id}")
 async def team_page(request: Request, team_id: int):
-    """One team, with its Major Initiatives (interconnection-redesign 3.2).
+    """One team, with its Team Initiatives (interconnection-redesign 3.2).
 
     Closes the dead end: the four teams existed only inside the home table.
     """
@@ -376,9 +376,9 @@ async def team_page(request: Request, team_id: int):
     )
 
 
-# Declared before /major-initiatives/{mi_id}: otherwise "new" is captured as an
+# Declared before /team-initiatives/{mi_id}: otherwise "new" is captured as an
 # mi_id and the create form 404s.
-@app.get("/major-initiatives/new")
+@app.get("/team-initiatives/new")
 async def create_form(request: Request, _: guards.Target = Depends(guards.admin_only)):
     return templates.TemplateResponse(
         request, "edit_create.html",
@@ -386,10 +386,10 @@ async def create_form(request: Request, _: guards.Target = Depends(guards.admin_
     )
 
 
-@app.get("/major-initiatives/{mi_id}")
-async def major_initiative_page(request: Request, mi_id: str,
+@app.get("/team-initiatives/{mi_id}")
+async def team_initiative_page(request: Request, mi_id: str,
                                 target: guards.Target = Depends(guards.known_target)):
-    """One Major Initiative: the interactive card, on the register path.
+    """One Team Initiative: the interactive card, on the register path.
 
     Before the 2026-10-07 merge this was a read-only page and the interactive
     card lived on /initiatives/{code}. They are one surface now: an HTMX request
@@ -397,31 +397,31 @@ async def major_initiative_page(request: Request, mi_id: str,
     (plus the register's edges: team, source area, goals, priorities, and the Dean
     Priorities it contributes to).
     """
-    mi = queries.major_initiative_detail(mi_id)
+    mi = queries.team_initiative_detail(mi_id)
     if mi is None:
-        raise HTTPException(status_code=404, detail="No such Major Initiative")
+        raise HTTPException(status_code=404, detail="No such Team Initiative")
     context = _ctx(
         request,
         mi=mi,
         card=target.card,
-        dean_links=queries.major_initiative_dean_links(mi["MIId"] or mi_id),
-        crumbs=[("Major Initiatives", "/major-initiatives"), (mi["MIId"] or mi_id, None)],
+        dean_links=queries.team_initiative_dean_links(mi["MIId"] or mi_id),
+        crumbs=[("Team Initiatives", "/team-initiatives"), (mi["MIId"] or mi_id, None)],
         may_update=auth.can_update(request, mi_id),
         may_edit_details=auth.can_edit_details(request, mi_id),
         may_admin=auth.is_admin_request(request),
     )
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "card.html", context)
-    return templates.TemplateResponse(request, "major_initiative.html", context)
+    return templates.TemplateResponse(request, "team_initiative.html", context)
 
 
 # --- The interactive card, on the register path (2026-10-07 merge) ----------
 #
 # The prototype's /initiatives/{code} card (drawer, update form, edit forms)
-# moves onto /major-initiatives/{mi_id}. Everything is keyed by the canon's
+# moves onto /team-initiatives/{mi_id}. Everything is keyed by the canon's
 # MIId; the old /initiatives/* paths 308-redirect here so bookmarks keep working.
 
-@app.get("/major-initiatives/{mi_id}/update")
+@app.get("/team-initiatives/{mi_id}/update")
 async def update_form(request: Request, mi_id: str,
                       target: guards.Target = Depends(guards.may_update)):
     """The update form. 403 for anyone who may not update."""
@@ -431,7 +431,7 @@ async def update_form(request: Request, mi_id: str,
     )
 
 
-@app.post("/major-initiatives/{mi_id}/updates")
+@app.post("/team-initiatives/{mi_id}/updates")
 async def submit_update(request: Request, mi_id: str,
                         target: guards.Target = Depends(guards.may_update)):
     """Append a progress update, then re-render the card.
@@ -464,7 +464,7 @@ async def submit_update(request: Request, mi_id: str,
     return response
 
 
-@app.get("/major-initiatives/{mi_id}/edit/details")
+@app.get("/team-initiatives/{mi_id}/edit/details")
 async def edit_details_form(request: Request, mi_id: str,
                             target: guards.Target = Depends(guards.may_edit_details)):
     return _fragment_or_full(
@@ -473,7 +473,7 @@ async def edit_details_form(request: Request, mi_id: str,
     )
 
 
-@app.post("/major-initiatives/{mi_id}/edit/details")
+@app.post("/team-initiatives/{mi_id}/edit/details")
 async def edit_details_submit(request: Request, mi_id: str,
                               target: guards.Target = Depends(guards.may_edit_details)):
     form = await request.form()
@@ -493,7 +493,7 @@ async def edit_details_submit(request: Request, mi_id: str,
     return _edit_result(request, mi_id)
 
 
-@app.get("/major-initiatives/{mi_id}/edit/tags")
+@app.get("/team-initiatives/{mi_id}/edit/tags")
 async def edit_tags_form(request: Request, mi_id: str,
                          target: guards.Target = Depends(guards.admin_for)):
     options = queries.tag_edit_options(target.card_id)
@@ -503,7 +503,7 @@ async def edit_tags_form(request: Request, mi_id: str,
     )
 
 
-@app.post("/major-initiatives/{mi_id}/edit/tags")
+@app.post("/team-initiatives/{mi_id}/edit/tags")
 async def edit_tags_submit(request: Request, mi_id: str,
                            target: guards.Target = Depends(guards.admin_for)):
     form = await request.form()
@@ -545,7 +545,7 @@ async def edit_tags_submit(request: Request, mi_id: str,
     return _edit_result(request, mi_id)
 
 
-@app.get("/major-initiatives/{mi_id}/edit/links")
+@app.get("/team-initiatives/{mi_id}/edit/links")
 async def edit_links_form(request: Request, mi_id: str,
                           target: guards.Target = Depends(guards.admin_for)):
     options = queries.link_edit_options(target.card_id)
@@ -555,7 +555,7 @@ async def edit_links_form(request: Request, mi_id: str,
     )
 
 
-@app.post("/major-initiatives/{mi_id}/edit/links")
+@app.post("/team-initiatives/{mi_id}/edit/links")
 async def edit_links_submit(request: Request, mi_id: str,
                             target: guards.Target = Depends(guards.admin_for)):
     form = await request.form()
@@ -566,7 +566,7 @@ async def edit_links_submit(request: Request, mi_id: str,
         except (TypeError, ValueError):
             continue
     try:
-        repo.replace_links(mi_id=mi_id, dean_priority_ids=ids, person_id=target.person_id)
+        repo.replace_links(mi_id=mi_id, dean_initiative_ids=ids, person_id=target.person_id)
     except repo.RuleError as exc:
         return templates.TemplateResponse(
             request, "edit_links.html",
@@ -578,7 +578,7 @@ async def edit_links_submit(request: Request, mi_id: str,
     return _edit_result(request, mi_id)
 
 
-@app.post("/major-initiatives/{mi_id}/retire")
+@app.post("/team-initiatives/{mi_id}/retire")
 async def retire_submit(request: Request, mi_id: str,
                         target: guards.Target = Depends(guards.admin_for)):
     try:
@@ -588,7 +588,7 @@ async def retire_submit(request: Request, mi_id: str,
     return RedirectResponse(url="/checks", status_code=303)
 
 
-@app.post("/major-initiatives")
+@app.post("/team-initiatives")
 async def create_submit(request: Request,
                         target: guards.Target = Depends(guards.admin_only)):
     form = await request.form()
@@ -616,32 +616,32 @@ async def create_submit(request: Request,
 @app.get("/initiatives/{code}")
 async def initiative_retired(code: str):
     """The prototype card path retires to the register path."""
-    return RedirectResponse(url="/major-initiatives/" + code, status_code=308)
+    return RedirectResponse(url="/team-initiatives/" + code, status_code=308)
 
 
 @app.get("/initiatives/{code}/{rest:path}")
 async def initiative_sub_retired(code: str, rest: str):
-    return RedirectResponse(url="/major-initiatives/%s/%s" % (code, rest), status_code=308)
+    return RedirectResponse(url="/team-initiatives/%s/%s" % (code, rest), status_code=308)
 
 
 @app.post("/initiatives/{code}/{rest:path}")
 async def initiative_sub_retired_post(code: str, rest: str):
-    return RedirectResponse(url="/major-initiatives/%s/%s" % (code, rest), status_code=308)
+    return RedirectResponse(url="/team-initiatives/%s/%s" % (code, rest), status_code=308)
 
 
 @app.get("/initiatives/new")
 async def create_form_retired():
-    return RedirectResponse(url="/major-initiatives/new", status_code=308)
+    return RedirectResponse(url="/team-initiatives/new", status_code=308)
 
 
 @app.post("/initiatives")
 async def create_submit_retired():
-    return RedirectResponse(url="/major-initiatives", status_code=308)
+    return RedirectResponse(url="/team-initiatives", status_code=308)
 
 
 @app.get("/initiatives")
 async def initiatives_index_retired():
-    return RedirectResponse(url="/major-initiatives", status_code=308)
+    return RedirectResponse(url="/team-initiatives", status_code=308)
 
 
 @app.get("/meeting")
@@ -848,25 +848,25 @@ async def root(request: Request):
     An overview, not four full catalogs (interconnection-redesign group 5).
     Measured before the cut: 56 KB, 67% of it the 29-row table, and every
     initiative rendered twice. The table now has its own page,
-    /major-initiatives; the sections here are compact entry points that state a
+    /team-initiatives; the sections here are compact entry points that state a
     count and link to detail.
     """
     priorities = queries.blueprint_priorities()
     teams = queries.team_overview()
-    all_mis = queries.major_initiative_cards()
-    # The five goals, with their Major Initiative reach (interconnection 4.1).
+    all_mis = queries.team_initiative_cards()
+    # The five goals, with their Team Initiative reach (interconnection 4.1).
     goals = queries.goal_tiles()
     for g in goals:
-        g["MajorInitiativeCount"] = len(queries.goal_major_initiatives(g["GoalNumber"]))
+        g["TeamInitiativeCount"] = len(queries.goal_team_initiatives(g["GoalNumber"]))
 
     # The stat band: counts, not a performance score. One "Initiatives" count
     # was dropped here (review round, 2026-10-07): after the two-layer merge it
-    # was the same 29 as "Major Initiatives", printed twice.
+    # was the same 29 as "Team Initiatives", printed twice.
     stats = {
         "priorities": len(priorities),
         "goals": len(goals),
         "teams": len(teams),
-        "major_initiatives": len(all_mis),
+        "team_initiatives": len(all_mis),
         "needs_review": sum(1 for k in all_mis if k["TargetStatus"] == "needs_review"),
     }
 
@@ -902,31 +902,31 @@ async def root(request: Request):
             stats=stats,
             health=health,
             plan_year=plan_year,
-            dean_priorities=queries.dean_priorities(),
+            dean_initiatives=queries.dean_initiatives(),
         ),
     )
 
 
 def _mi_index_ctx(request: Request, target: str | None, group: str | None) -> dict:
-    """Context for the /major-initiatives index.
+    """Context for the /team-initiatives index.
 
     The counts in the controls describe the whole set, not the filtered view,
     so "All 29" stays 29 under any filter.
     """
-    all_mis = queries.major_initiative_cards()
+    all_mis = queries.team_initiative_cards()
     mi_filter = target if target in ("needs_review",) else None
     mi_group = group if group in ("team", "source_area") else None
-    mis = queries.filter_and_group_major_initiatives(all_mis, mi_filter, mi_group)
+    mis = queries.filter_and_group_team_initiatives(all_mis, mi_filter, mi_group)
     params = []
     if mi_filter:
         params.append("target=" + mi_filter)
     if mi_group:
         params.append("group=" + mi_group)
-    mi_base = "/major-initiatives" + ("?" + "&".join(params) if params else "")
+    mi_base = "/team-initiatives" + ("?" + "&".join(params) if params else "")
     return _ctx(
         request,
-        major_initiatives=mis,
-        all_major_initiatives=all_mis,
+        team_initiatives=mis,
+        all_team_initiatives=all_mis,
         needs_review_count=sum(1 for k in all_mis if k["TargetStatus"] == "needs_review"),
         mi_filter=mi_filter,
         mi_group=mi_group,
@@ -935,26 +935,26 @@ def _mi_index_ctx(request: Request, target: str | None, group: str | None) -> di
     )
 
 
-@app.get("/dean-priorities")
-async def dean_priorities_page(request: Request):
+@app.get("/dean-initiatives")
+async def dean_initiatives_page(request: Request):
     """The Dean's own priorities (register, 2026-10-07): FY26 complete, FY27 in
     flight. Moved off the home page, which is an overview; 11 rows with progress
     bars is a full view."""
     return templates.TemplateResponse(
-        request, "dean_priorities.html",
-        _ctx(request, dean_priorities=queries.dean_priorities(),
-             crumbs=[("Dean Priorities", None)]),
+        request, "dean_initiatives.html",
+        _ctx(request, dean_initiatives=queries.dean_initiatives(),
+             crumbs=[("Dean Initiatives", None)]),
     )
 
 
-@app.get("/major-initiatives")
-async def major_initiative_index(request: Request, target: str | None = None, group: str | None = None):
-    """The Major Initiatives index: all 29, filterable and groupable.
+@app.get("/team-initiatives")
+async def team_initiative_index(request: Request, target: str | None = None, group: str | None = None):
+    """The Team Initiatives index: all 29, filterable and groupable.
 
     Moved here from the overview, which measured 56 KB with this table as
     two-thirds of it (interconnection-redesign 5).
     """
     return templates.TemplateResponse(
-        request, "major_initiatives.html",
+        request, "team_initiatives.html",
         _mi_index_ctx(request, target, group),
     )

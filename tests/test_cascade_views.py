@@ -57,8 +57,8 @@ def test_an_unknown_grouping_falls_back_without_error(logged_in):
 
 
 def test_relationships_render_the_contributes_to_direction(logged_in):
-    """The merged model has ONE direction: a Major Initiative contributes to the
-    Dean Priorities it is linked to. The prototype's Feeds/Fed-by pair is gone."""
+    """The merged model has ONE direction: a Team Initiative contributes to the
+    Dean Initiatives it is linked to. The prototype's Feeds/Fed-by pair is gone."""
     from app import queries
     rel = queries.relationships_for(["MI-002", "MI-004"])
     assert rel, "no relationships found"
@@ -71,27 +71,27 @@ def test_relationships_for_an_empty_list_is_empty():
     assert queries.relationships_for([]) == {}
 
 
-def test_a_major_initiative_contributing_to_two_deans_shows_both(logged_in, fresh_db):
+def test_a_team_initiative_contributing_to_two_deans_shows_both(logged_in, fresh_db):
     """The relationship read does not collapse multiple targets into one."""
     import sqlite3
 
     from app import queries
     conn = sqlite3.connect(fresh_db)
     iid = conn.execute(
-        "SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0]
-    conn.execute("INSERT OR IGNORE INTO MajorInitiativeDeanLinks (MajorInitiativeID, DeanPriorityID) "
+        "SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId='MI-004'").fetchone()[0]
+    conn.execute("INSERT OR IGNORE INTO TeamInitiativeDeanLinks (TeamInitiativeID, DeanInitiativeID) "
                  "VALUES (?, 1), (?, 2)", (iid, iid))
     conn.commit()
     conn.close()
     rel = queries.relationships_for(["MI-004"])
-    assert len(rel.get("MI-004", [])) >= 2, "expected MI-004 to contribute to more than one Dean Priority"
+    assert len(rel.get("MI-004", [])) >= 2, "expected MI-004 to contribute to more than one Dean Initiative"
 
 
 # --- 3.4 the index filters ---------------------------------------------------
 
 
 def test_the_index_shows_a_filter_bar(logged_in):
-    body = _html.unescape(logged_in("Bill Gaudelli").get("/major-initiatives").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/team-initiatives").text)
     assert "mi-table" in body or "filter-bar" in body
 
 
@@ -103,7 +103,7 @@ def test_a_status_filter_narrows_the_list(logged_in):
 
 
 # The /initiatives owner-filter index was removed in the 2026-10-07 merge: its
-# page is superseded by /major-initiatives, which groups by team and source area
+# page is superseded by /team-initiatives, which groups by team and source area
 # rather than offering an owner dropdown. The filter tests below pinned that page,
 # so they are retired (the underlying all_initiatives filter is still covered by
 # test_a_status_filter_narrows_the_list above).

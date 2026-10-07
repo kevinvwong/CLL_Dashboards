@@ -18,7 +18,7 @@ def _con():
 def test_diary_table_exists():
     con = _con()
     t = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    assert "MajorInitiativeUpdates" in t
+    assert "TeamInitiativeUpdates" in t
     con.close()
 
 
@@ -38,19 +38,19 @@ def test_prototype_tables_are_gone():
     con.close()
 
 
-def test_major_initiatives_has_isactive():
+def test_team_initiatives_has_isactive():
     con = _con()
-    cols = {d[1] for d in con.execute("PRAGMA table_info(MajorInitiatives)")}
+    cols = {d[1] for d in con.execute("PRAGMA table_info(TeamInitiatives)")}
     assert "IsActive" in cols
     con.close()
 
 
 def test_diary_status_check():
     con = _con()
-    con.execute("INSERT INTO MajorInitiatives (Code, Title) VALUES ('x','t')")
+    con.execute("INSERT INTO TeamInitiatives (Code, Title) VALUES ('x','t')")
     with pytest.raises(sqlite3.IntegrityError):
         con.execute(
-            "INSERT INTO MajorInitiativeUpdates (MajorInitiativeID, PercentComplete, Status) "
+            "INSERT INTO TeamInitiativeUpdates (TeamInitiativeID, PercentComplete, Status) "
             "VALUES (1, 10, 'Nonsense')")
     con.close()
 
@@ -58,5 +58,5 @@ def test_diary_status_check():
 def test_latest_progress_view_exists():
     con = _con()
     v = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='view'")}
-    assert "vw_LatestMajorInitiativeProgress" in v
+    assert "vw_LatestTeamInitiativeProgress" in v
     con.close()

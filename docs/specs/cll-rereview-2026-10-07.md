@@ -18,7 +18,7 @@ full-page image.
 
 | # | Fix | Verdict | Evidence |
 |---|---|---|---|
-| 1 | Search + Enter opened a raw fragment | **PASS** | Enter opens the highlighted result ("MI-001" goes to `/major-initiatives/MI-001`). `/search?q=pathways` is a fully styled results page. A one-match query redirects straight through. |
+| 1 | Search + Enter opened a raw fragment | **PASS** | Enter opens the highlighted result ("MI-001" goes to `/team-initiatives/MI-001`). `/search?q=pathways` is a fully styled results page. A one-match query redirects straight through. |
 | 2 | Outcome-card placeholders | **PARTIAL** | `updated [date]` is gone. Every card read *`[no owner named] — to be named by Oct 12`*; the square-bracketed italic still read as an unfilled template variable. |
 | 3 | Literal `&minus;` | **PASS** | Trade-off lines render a real "−", no overlap; 0 literal entities in the DOM. |
 | 4 | Build memo in the Dean's view | **PASS** (residual) | Scope, data-requirements and trade-offs sit in a collapsed `<details>`; closed by default. Residual: "About these figures" stays visible with workbook file names — defensible provenance. |
@@ -27,7 +27,7 @@ full-page image.
 | 7 | One name per priority | **PARTIAL** | The new pattern appears on the priority h1, Outcomes, the drawer and MI pages. Short names remained in the Initiatives table, `/checks`, search results and the priority breadcrumb. The fix also introduced a doubled code on MI pages (N3). |
 | 8 | Overview shows health | **PARTIAL** | A strip read "22 initiatives tracked: 16 on track · 3 at risk · 1 off track" — those add up to 20; the 2 "Not started" were missing (N4). |
 | 9 | Search index and keyboard | **PASS** (functional), a11y gap | MI-001 and the "faculty" MIs are found; arrows move a highlight; Enter follows it. A11y gap: no combobox roles. |
-| 10 | Wayfinding | **PASS** | Breadcrumb gutter aligned; MI parent is Major Initiatives; `/teams` returns 200; `aria-current` correct; breadcrumbs added on goal/priority/team/MI pages. |
+| 10 | Wayfinding | **PASS** | Breadcrumb gutter aligned; MI parent is Team Initiatives; `/teams` returns 200; `aria-current` correct; breadcrumbs added on goal/priority/team/MI pages. |
 | 11 | Drawer restyle | **PARTIAL** | The Update button and Feeds badge are styled. But the form behind Update was entirely unstyled (N1). |
 
 **Score: 5 PASS, 5 PARTIAL, 0 FAIL.**
@@ -103,7 +103,7 @@ Folder `cll-rereview-screens/`, all at 1518 × 921 (visible viewport only).
 | 05a-outcomes-memo-open.jpg / 05b-outcomes-memo-tradeoffs.jpg | Memo open; trade-offs with real "−" |
 | 06a-initiative-drawer.jpg / 06b-drawer-update-form.jpg | Restyled drawer; unstyled Update form |
 | 07-search-palette-results.jpg | Palette with "faculty" results, second row highlighted |
-| 08-major-initiatives-list.jpg | MI table at desktop width (wrapping from the 960 px cap) |
+| 08-team-initiatives-list.jpg | MI table at desktop width (wrapping from the 960 px cap) |
 | 09-mi-001-detail.jpg | Breadcrumb fix; doubled "P03 P03" |
 | 10-team-learning-experiences.jpg | Breadcrumb aligned; Teams link |
 | 11a / 11b / 11c | Kevin: admin nav; New initiative form; /checks |

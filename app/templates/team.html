@@ -2,7 +2,7 @@
 {% block title %}{{ team.Name }} — CLL Initiative Dashboard{% endblock %}
 {% block content %}
 {#
-  One team, with its Major Initiatives (interconnection-redesign 3.2). Closes
+  One team, with its Team Initiatives (interconnection-redesign 3.2). Closes
   the dead end: the four teams existed only inside the home table. A team is a
   different axis from a source area, so the page names both.
 #}
@@ -11,7 +11,7 @@
     <p class="eyebrow">Team</p>
     <h1>{{ team.Name }}</h1>
   </div>
-  <p class="section-note">{{ team.major_initiatives | length }} Major Initiative{{ '' if team.major_initiatives | length == 1 else 's' }}</p>
+  <p class="section-note">{{ team.team_initiatives | length }} Team Initiative{{ '' if team.team_initiatives | length == 1 else 's' }}</p>
 </div>
 
 {% if team.Description %}<p class="entry-description">{{ team.Description }}</p>{% endif %}
@@ -24,13 +24,13 @@
 {% endif %}
 
 <section aria-labelledby="team-mis-heading">
-  <h2 id="team-mis-heading" class="list-group-label">This team's Major Initiatives</h2>
+  <h2 id="team-mis-heading" class="list-group-label">This team's Team Initiatives</h2>
   <div class="index-table-wrap">
     <table class="index-table mi-table">
       <thead>
         <tr>
           <th scope="col">ID</th>
-          <th scope="col">Major Initiative</th>
+          <th scope="col">Team Initiative</th>
           <th scope="col">Source area</th>
           <th scope="col">Strategy alignment</th>
           <th scope="col">Target</th>
@@ -38,10 +38,10 @@
         </tr>
       </thead>
       <tbody>
-        {% for k in team.major_initiatives %}
+        {% for k in team.team_initiatives %}
         <tr class="mi-row">
-          <td class="code"><a href="/major-initiatives/{{ k.MIId or k.Code }}">{{ k.MIId or k.Code }}</a></td>
-          <td><a href="/major-initiatives/{{ k.MIId or k.Code }}">{{ k.Title }}</a></td>
+          <td class="code"><a href="/team-initiatives/{{ k.MIId or k.Code }}">{{ k.MIId or k.Code }}</a></td>
+          <td><a href="/team-initiatives/{{ k.MIId or k.Code }}">{{ k.Title }}</a></td>
           <td>{{ k.SourceArea or "—" }}</td>
           <td class="muted-cell">{{ k.StrategyAlign or "—" }}</td>
           <td class="target-cell">{{ k.ProposedTarget or "—" }}</td>

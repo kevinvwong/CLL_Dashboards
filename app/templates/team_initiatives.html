@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Major Initiatives — CLL Initiative Dashboard{% endblock %}
+{% block title %}Team Initiatives — CLL Initiative Dashboard{% endblock %}
 {% block content %}
 {#
-  The Major Initiatives index (interconnection-redesign 5). The 29-row table
+  The Team Initiatives index (interconnection-redesign 5). The 29-row table
   moved here from the overview, which had grown to 56 KB with two-thirds of it
   this table and every row rendered twice. Here it is the page, with the filter
   and the grouping, and the overview links in.
@@ -10,9 +10,9 @@
 <div class="section-heading">
   <div>
     <p class="eyebrow">The portfolio of work</p>
-    <h1>Major Initiatives</h1>
+    <h1>Team Initiatives</h1>
   </div>
-  <p class="section-note">{{ all_major_initiatives | length }} Major Initiatives · every field from the source register</p>
+  <p class="section-note">{{ all_team_initiatives | length }} Team Initiatives · every field from the source register</p>
 </div>
 
 {% include "_mi_table.html" %}

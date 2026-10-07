@@ -7,17 +7,17 @@ Supersedes: nothing; completes the `register-canon-and-dean-layer` change.
 ## Problem
 
 The database holds **two organizational models**, and the home page now shows
-both at once — "22 initiatives tracked" beside "29 Major Initiatives" — which
+both at once — "22 initiatives tracked" beside "29 Team Initiatives" — which
 reads as a contradiction to anyone looking at it.
 
 | | Prototype model | Register model |
 |---|---|---|
-| Table | `Initiatives` (22 rows) | `MajorInitiatives` (29 rows) |
+| Table | `Initiatives` (22 rows) | `TeamInitiatives` (29 rows) |
 | Contents | **all named `(sample)`** | the canon (`MI-001..MI-029`) |
 | Levels | 16 D-1 + 6 Dean | 29, grouped by 4 teams |
 | Owner / team / description | via joins | on the row |
-| Goal / priority edges | `InitiativeGoals`, `InitiativePriorities` | `MajorInitiativeGoals`, `MajorInitiativePriorities` |
-| Dean link | `InitiativeLinks` (D-1 → Dean) | `MajorInitiativeDeanLinks` |
+| Goal / priority edges | `InitiativeGoals`, `InitiativePriorities` | `TeamInitiativeGoals`, `TeamInitiativePriorities` |
+| Dean link | `InitiativeLinks` (D-1 → Dean) | `TeamInitiativeDeanLinks` |
 | **Progress diary** | `ProgressUpdates` (24 rows) | **absent** |
 | **Write path** | `repo.py` (update, tags, links, create, retire) | seeds only |
 | Routes | ~22 | ~4 |
@@ -30,13 +30,13 @@ those but is not canon.
 
 **The 24 existing diary rows are discarded, not migrated.** Every one is about a
 sample initiative (`D-A (sample): Transparent ROI reporting`, `ELIZ-1 …`) and
-none names a real Major Initiative. Verified: no `ProgressUpdates` row references
-a row in `MajorInitiatives`. The register's initiatives start with a clean diary.
+none names a real Team Initiative. Verified: no `ProgressUpdates` row references
+a row in `TeamInitiatives`. The register's initiatives start with a clean diary.
 
 ## Approaches considered
 
 - **A (chosen)** — register-driven: add the diary and write paths to the
-  `MajorInitiatives` layer; rewrite `repo.py`, `auth.py`, the queries and the
+  `TeamInitiatives` layer; rewrite `repo.py`, `auth.py`, the queries and the
   routes against it; drop the five prototype tables.
 - **B (rejected)** — same end state with compatibility `VIEW`s over the retired
   table names during a transition. Rejected: an alias layer invites exactly the
@@ -48,15 +48,15 @@ a row in `MajorInitiatives`. The register's initiatives start with a clean diary
 
 ## §1 — Schema
 
-**Add to `MajorInitiatives`:** `IsActive INTEGER NOT NULL DEFAULT 1 CHECK
+**Add to `TeamInitiatives`:** `IsActive INTEGER NOT NULL DEFAULT 1 CHECK
 (IsActive IN (0,1))`, so retire-not-delete works as it did on the prototype.
 
 **Add the diary, on the 29:**
 
 ```sql
-CREATE TABLE MajorInitiativeUpdates (
+CREATE TABLE TeamInitiativeUpdates (
     UpdateID          INTEGER PRIMARY KEY,
-    MajorInitiativeID INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
+    TeamInitiativeID INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
     UpdateDate        TEXT    NOT NULL DEFAULT (date('now')),
     PercentComplete   INTEGER NOT NULL CHECK (PercentComplete BETWEEN 0 AND 100),
     Status            TEXT    NOT NULL DEFAULT 'Not started'
@@ -66,12 +66,12 @@ CREATE TABLE MajorInitiativeUpdates (
     EnteredByID       INTEGER REFERENCES People(PersonID),
     CreatedAt         TEXT    NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX IX_MIU_MI_Date ON MajorInitiativeUpdates(MajorInitiativeID, UpdateDate);
-CREATE VIEW vw_LatestMajorInitiativeProgress AS
-SELECT MajorInitiativeID, UpdateDate, PercentComplete, Status, Note FROM (
-    SELECT u.*, ROW_NUMBER() OVER (PARTITION BY MajorInitiativeID
+CREATE INDEX IX_MIU_MI_Date ON TeamInitiativeUpdates(TeamInitiativeID, UpdateDate);
+CREATE VIEW vw_LatestTeamInitiativeProgress AS
+SELECT TeamInitiativeID, UpdateDate, PercentComplete, Status, Note FROM (
+    SELECT u.*, ROW_NUMBER() OVER (PARTITION BY TeamInitiativeID
                                    ORDER BY UpdateDate DESC, UpdateID DESC) AS rn
-    FROM MajorInitiativeUpdates u)
+    FROM TeamInitiativeUpdates u)
 WHERE rn = 1;
 ```
 
@@ -79,11 +79,11 @@ WHERE rn = 1;
 `InitiativeLinks`, `ProgressUpdates`, and the `trg_Links_LevelCheck*` triggers and
 their indexes.
 
-**Reused unchanged:** `MajorInitiativeGoals`, `MajorInitiativePriorities`
-(with `IsPrimary`), `MajorInitiativeDeanLinks`, `MajorInitiativeCoOwners`,
-`DeanPriorities`, `AuditLog`.
+**Reused unchanged:** `TeamInitiativeGoals`, `TeamInitiativePriorities`
+(with `IsPrimary`), `TeamInitiativeDeanLinks`, `TeamInitiativeCoOwners`,
+`DeanInitiatives`, `AuditLog`.
 
-The D-1→Dean link is expressed by `MajorInitiativeDeanLinks` (a team initiative
+The D-1→Dean link is expressed by `TeamInitiativeDeanLinks` (a team initiative
 contributing to a Dean FY27 item). The prototype's rigid "D-1 → Dean, level
 checked by trigger" rule is replaced by the register's many-to-many matrix.
 
@@ -93,40 +93,40 @@ checked by trigger" rule is replaced by the register's many-to-many matrix.
 
 | function | was | becomes |
 |---|---|---|
-| `add_progress_update` | `ProgressUpdates` | `MajorInitiativeUpdates` |
-| `replace_tags` | `InitiativeGoals`/`InitiativePriorities` | `MajorInitiativeGoals`/`MajorInitiativePriorities` |
-| `replace_links` | `InitiativeLinks` | `MajorInitiativeDeanLinks` |
-| `create_initiative` | `Initiatives` | `MajorInitiatives` |
-| `retire_initiative` | `Initiatives.IsActive` | `MajorInitiatives.IsActive` |
-| `update_initiative_details` | `Initiatives` | `MajorInitiatives` |
+| `add_progress_update` | `ProgressUpdates` | `TeamInitiativeUpdates` |
+| `replace_tags` | `InitiativeGoals`/`InitiativePriorities` | `TeamInitiativeGoals`/`TeamInitiativePriorities` |
+| `replace_links` | `InitiativeLinks` | `TeamInitiativeDeanLinks` |
+| `create_initiative` | `Initiatives` | `TeamInitiatives` |
+| `retire_initiative` | `Initiatives.IsActive` | `TeamInitiatives.IsActive` |
+| `update_initiative_details` | `Initiatives` | `TeamInitiatives` |
 | `update_entry_description` | unchanged (Goals/Priorities) | unchanged |
 | `_audit` | unchanged | unchanged |
 
 The key changes from **Code** (`'ELIZ-1'`) to **MIId** (`'MI-002'`).
 
 `auth.py` — `get_initiative`, `is_dean`, `can_update`, `can_edit_details` read
-`MajorInitiatives.OwnerID`. Ownership is the register's `OwnerID`; team-lead scope
+`TeamInitiatives.OwnerID`. Ownership is the register's `OwnerID`; team-lead scope
 comes from `People.TeamID`. `is_dean` is the person with no `ReportsToID` who owns
-a `MajorInitiative` — the Dean (Bill Gaudelli).
+a `TeamInitiative` — the Dean (Bill Gaudelli).
 
 ## §3 — Routes
 
 The interactive card (HTMX fragment + drawer + update/edit forms), which lived
 on the prototype's `/initiatives/{code}`, moves onto the register's
-`/major-initiatives/{mi_id}`. `major_initiative.html` gains the card body,
+`/team-initiatives/{mi_id}`. `team_initiative.html` gains the card body,
 the update form and the edit forms that `card.html` / `update_form.html` /
 `edit_*.html` held.
 
 | Route | Disposition |
 |---|---|
-| `/initiatives/{code}` | **retire** → 308 to `/major-initiatives/{mi_id}` |
-| `/initiatives` (index) | **retire** → 308 to `/major-initiatives` |
-| `/initiatives/new` | re-point to create a `MajorInitiative` |
-| `/initiatives/{code}/update` | re-point to `/major-initiatives/{mi_id}/update` |
-| `/initiatives/{code}/edit/{details,tags,links}` | re-point under `/major-initiatives/` |
-| `/initiatives/{code}/retire` | re-point under `/major-initiatives/` |
-| `/people`, `/people/{id}` | read `MajorInitiatives` owners |
-| `/meeting` | read `MajorInitiativeUpdates` |
+| `/initiatives/{code}` | **retire** → 308 to `/team-initiatives/{mi_id}` |
+| `/initiatives` (index) | **retire** → 308 to `/team-initiatives` |
+| `/initiatives/new` | re-point to create a `TeamInitiative` |
+| `/initiatives/{code}/update` | re-point to `/team-initiatives/{mi_id}/update` |
+| `/initiatives/{code}/edit/{details,tags,links}` | re-point under `/team-initiatives/` |
+| `/initiatives/{code}/retire` | re-point under `/team-initiatives/` |
+| `/people`, `/people/{id}` | read `TeamInitiatives` owners |
+| `/meeting` | read `TeamInitiativeUpdates` |
 | `/outcomes` | **untouched** — a static generated module, reads no table |
 
 Retired routes return a **308 permanent redirect** to the register path, so a
@@ -137,8 +137,8 @@ bookmark keeps working and the move is visible in a request log.
 The 10 test files that reference the prototype tables move with the routes.
 New tests:
 
-- the diary write path on `MajorInitiatives` (append, latest wins, permissions);
-- the retired `/initiatives/*` routes 308 to their `/major-initiatives/*` targets;
+- the diary write path on `TeamInitiatives` (append, latest wins, permissions);
+- the retired `/initiatives/*` routes 308 to their `/team-initiatives/*` targets;
 - **no query references a dropped table** — a sweep over `app/` for the five
   retired names, so a half-done merge fails loudly;
 - the home counts **one** portfolio number (the 29), not two.
@@ -155,6 +155,6 @@ the launch record states the model is now single.
 ## Out of scope
 
 - `/outcomes` and `oct16_data.py` (static, no table reads).
-- The Dean Priorities layer (already on the register model).
+- The Dean Initiatives layer (already on the register model).
 - Revision 2 adoption.
 - Any change to the six priorities' definitions.

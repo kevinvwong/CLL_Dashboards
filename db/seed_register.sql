@@ -11,102 +11,102 @@ INSERT INTO People (PersonID, Name, Title, TeamID) VALUES (6, 'Meltem Alemdar', 
 INSERT INTO People (PersonID, Name, Title, TeamID) VALUES (7, 'Grace Flavin', NULL, (SELECT TeamID FROM Teams WHERE Name='Learning Futures')) ON CONFLICT(PersonID) DO UPDATE SET Name=excluded.Name, Title=excluded.Title, TeamID=excluded.TeamID;
 
 -- Title, description, owner, team and target from the register.
-UPDATE MajorInitiatives SET Title='Reusable content', Description='Build a library of approved, modular learning objects that can be reused across offerings to accelerate development and improve efficiency. Success means more than 1,000 objects are available, at least 20% are reused, and average non-degree development time is 28 days or less.', ProposedTarget='More than 1,000 approved objects; at least 20% reuse; non-degree development average of 28 days or less', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='1-02';
-UPDATE MajorInitiatives SET Title='Data, EdTech & Infinity', Description='Launch Infinity 2.0 and integrate data and education technology to support a connected, personalized learner journey. Success means the public launch is complete and three priority data domains are connected.', ProposedTarget='Infinity 2.0 public launch; 3 data domains connected; personalized journey', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='1-03';
-UPDATE MajorInitiatives SET Title='Growth Engine Readiness', Description='Establish a scalable B2B growth engine supported by a clear strategy, a technology-enabled operating model, and repeatable sales and strategic account management processes.', ProposedTarget='B2B strategy launched; tech-enabled operating model implemented; repeatable sales and strategic account management processes implemented', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='3-01';
-UPDATE MajorInitiatives SET Title='Strategic Partnership & Revenue Growth', Description='Build and convert a qualified B2B pipeline into sustained partnerships and revenue. Success means engaging more than 100 qualified leads, securing at least five new partners, launching at least two, and generating more than $1 million in annual recurring revenue.', ProposedTarget='100+ qualified and engaged B2B leads; 5+ new partners secured; 2+ new partners launched; $1M+ ARR', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='3-02';
-UPDATE MajorInitiatives SET Title='Geographic Expansion', Description='Create a scalable Atria expansion model and use a complete inventory of non-main-campus assets to evaluate new markets. Success means exploring 10 locations, piloting two, and activating two new sites.', ProposedTarget='Scalable Atria business model established; non-main-campus assets inventoried; 10 locations under exploration; 2 piloted; 2 new sites activated', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='3-03';
-UPDATE MajorInitiatives SET Title='Asset Utilization', Description='Increase the value and use of CLL locations by improving Peachtree Corners utilization by more than 25% and developing or advancing a long-term strategy for Savannah.', ProposedTarget='Increase Peachtree Corners utilization by 25%+; develop or advance the long-term Savannah strategy', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='3-04';
-UPDATE MajorInitiatives SET Title='Portfolio & pathways', Description='Develop recognized learning pathways that connect credentials and badges in AI and Durable Skills, informed by market demand and financial analysis. Success means at least two pathways are defined and supported by a clear portfolio rationale.', ProposedTarget='At least 2 recognized pathways plus badges; AI and Durable Skills; market and financial analysis', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='1-01';
-UPDATE MajorInitiatives SET Title='Establish and Implement Faculty Governance Process', Description='Develop and approve bylaws to provide guidance to the faculty governance system in the college.', ProposedTarget='Approve the faculty governance charter and process by Q1; route 100% of applicable faculty actions through it by Q3.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-01';
-UPDATE MajorInitiatives SET Title='Develop and Implement a Faculty Evaluation and Promotion System', Description='In consultation with faculty governance, develop a rubric for faculty evaluation that is aligned with the goals of the college.', ProposedTarget='Approve the evaluation and promotion framework by Q2; orient 100% of eligible faculty; complete one pilot cycle and incorporate feedback.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-02';
-UPDATE MajorInitiatives SET Title='Develop approval/governance process for academic programs and digital credentials', Description='Develop a workflow that creates a process to consider requests for new programs to ensure new initiatives are aligned with the goals of the college. Move away from individual projects that are reactive to requests.', ProposedTarget='Launch one approval process for credit, non-credit, and digital credentials by Q2; route 100% of new offerings through it; reach a median decision time of 45 days or less.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-03';
-UPDATE MajorInitiatives SET Title='Fill open-rank faculty positions and align faculty work with Strategy 2035', Description='Conduct a national search and engage in the search process in a manner that engages faculty as outlined in the Faculty Bylaws.', ProposedTarget='Fill 100% of authorized FY2027 faculty searches; align 90-day plans for all new hires to Strategy 2035; establish mentoring plans for all continuing faculty.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-04';
-UPDATE MajorInitiatives SET Title='Empower faculty to engage in innovative program development and align work functions', Description='Develop an understanding of current faculty workloads and use this information to engage in conversations about time with faculty. This analysis will likely lead toward re-assigning faculty to work on new initiatives aligned with the goals of the college.', ProposedTarget='Complete faculty work-function reviews by Q2; engage at least 75% of faculty in program innovation or research; document all redeployment decisions.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-05';
-UPDATE MajorInitiatives SET Title='Grow the institute-wide faculty network engaged in CLL programs', Description='Work with Content and Product Strategy to engage faculty across campus. This will begin by creating a process to consider new programs and continue through identifying faculty across the institute who could contribute toward the goals of the college. This will also include develop a revised payment schedule for faculty engagement that is mutually beneficial to the college and to the faculty. Finally, the products will be developed in a manner that allows for individual pieces of content to be reused and repackaged without additional compensation to faculty for its use. The intellectual property will belong to GT and CLL.', ProposedTarget='Engage at least 25 faculty collaborators from at least 6 colleges; secure contributions from at least 10 to CLL offerings or initiatives.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-06';
-UPDATE MajorInitiatives SET Title='Recruit students into traditional academic programs', Description='Develop a marketing plan to enroll students in the courses and programs offered by the College of Lifetime Learning. This will focus on recruiting students to enroll in the Minor that is jointly offered by the School of Psychology and the College of Lifetime Learning along with the courses focused on Project Management.', ProposedTarget='Approve program-level enrollment targets by Q1; achieve at least 90% of the FY2027 enrollment plan; review yield and retention each term.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-07';
-UPDATE MajorInitiatives SET Title='Stand up innovative traditional academic programs', Description='The goals for this year include submitting for undergraduate and graduate majors in Project Management as well as graduate certificates in Learning.', ProposedTarget='Approve or launch at least 2 programs; move 3 additional concepts through market and academic review; meet at least 90% of approved milestones.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-08';
-UPDATE MajorInitiatives SET Title='Build coursework as reusable learning experiences', Description='Work with Content and Product Strategy to engage faculty in the College of Lifetime Learning and across the Institute to develop content for their courses in a manner that will allow for materials to be used in multiple ways.', ProposedTarget='Build 100% of new coursework as reusable learning modules; achieve at least 20% reuse across offerings; apply metadata and quality standards to every module.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-09';
-UPDATE MajorInitiatives SET Title='RDI Baseline & Dashboard', Description='Establish a baseline of CLL’s research and innovation portfolio and create a dashboard to track activity, growth, and progress over time.', ProposedTarget='Complete the RDI baseline by Q1; capture 100% of active RDI projects; publish a quarterly dashboard beginning in Q2.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-01';
-UPDATE MajorInitiatives SET Title='Research & Innovation Agenda', Description='Define the priority research themes and larger questions that will guide CLL’s research and innovation portfolio across the lifespan.', ProposedTarget='Approve 3–5 research and innovation themes by Q1; map 100% of priority investments; activate at least 2 cross-unit collaborations.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-02';
-UPDATE MajorInitiatives SET Title='Research & Innovation Capacity & Infrastructure', Description='Map and strengthen the people, expertise, partnerships, resources, and systems needed to support a sustainable RDI enterprise.', ProposedTarget='Approve a roles, funding, tools, and infrastructure plan by Q2; resolve at least 80% of critical capacity gaps by Q4.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-03';
-UPDATE MajorInitiatives SET Title='Research & Innovation Mechanism', Description='Establish mechanisms to embed research, experimentation, evidence generation, and continuous learning within CLL strategic initiatives.', ProposedTarget='Launch at least 2 innovation mechanisms or calls; initiate 6 pilots; complete stage-gate reviews for 100% and at least 3 scale, adapt, or stop decisions.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-04';
-UPDATE MajorInitiatives SET Title='CLL Learning & Impact Measures', Description='Develop and validate CLL-specific measures for assessing learning, translation, adoption, and longer-term impact.', ProposedTarget='Approve a core learning and impact measure set by Q2; instrument at least 80% of priority offerings; publish quarterly impact results.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-05';
-UPDATE MajorInitiatives SET Title='Learning Studio/Makerspace Model', Description='Develop a model for a learning studio/makerspace that supports experimentation, research, collaboration, and scalable learning innovation.', ProposedTarget='Approve the operating model and business case by Q2; run at least 3 pilots with 150 participants and at least 80% participant satisfaction.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-06';
-UPDATE MajorInitiatives SET Title='Team operating models', Description='Design, document, approve, and test team operating models that align roles, workflows, and resources with strategic priorities. Success means every unit adopts a tested model that supports an adaptive and efficient organization.', ProposedTarget='100% of units; new models documented, approved, and tested', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='1-04';
-UPDATE MajorInitiatives SET Title='Financial, Operational, and Initiative Dashboards', Description='Create shared dashboards that give leaders and teams timely visibility into financial performance, operational health, and priority initiatives so decisions are based on consistent information. Success means key measures are reliable, easy to access, regularly updated, and actively used to identify risks, track progress, and direct resources.', ProposedTarget='One college dashboard and 4 team dashboards live by Q2; monthly review held; data refreshed within 10 business days of period close.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-01';
-UPDATE MajorInitiatives SET Title='Unified branding and messaging frameworks', Description='Establish unified branding and messaging frameworks that present the college and its initiatives with a clear, consistent voice across audiences and channels. Success means 100% of external presence aligns with a college image/voice, teams use approved standards and reusable resources, communications reinforce strategic priorities, and stakeholders readily understand the college’s identity and value.', ProposedTarget='Message architecture approved by Q1; all 4 teams implement by Q3; at least 90% of reviewed public-facing assets align by Q4.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-02';
-UPDATE MajorInitiatives SET Title='Centralized Process & Procedure workflows', Description='Centralize core processes and procedures to make work easier to navigate, execute, and improve across the college. Success means cross-functional workflows have clear owners and documentation, reduce duplication and delays, and are routinely assessed, iterated on, and optimized using performance data.', ProposedTarget='Document the 10 highest-impact cross-college processes; standardize at least 80% by Q3; reduce median cycle time by 20% by Q4.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-03';
-UPDATE MajorInitiatives SET Title='Admin & Ops LLM Agent', Description='Develop an Administration & Operations LLM agent that helps staff quickly find guidance, complete routine tasks, and make informed decisions using trusted internal information. Success means the agent provides accurate and useful responses, reduces time spent searching or handling repetitive work, and is adopted safely within established governance practices.', ProposedTarget='Launch a governed MVP by Q2; support 5 priority workflows by Q3; achieve at least 80% user satisfaction in the pilot.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-04';
-UPDATE MajorInitiatives SET Title='Build Organizational Learning Capability', Description='Build the systems, habits, and leadership practices that enable the organization to learn continuously and translate insight into better ways of working. Success means staff share knowledge, develop relevant capabilities, test and apply improvements, and demonstrate stronger engagement and adaptability over time.', ProposedTarget='All 4 teams run quarterly learning cycles; at least 80% of priority-role staff participate; each team implements 2 capability improvements.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-05';
-UPDATE MajorInitiatives SET Title='Optimized Org Structure & Resource Onboarding', Description='Align the organizational structure, roles, resources, and onboarding experience across human and procurement needs with the college’s strategic priorities so people and partners can contribute effectively from the start. Success means accountabilities and handoffs are clear, compliant pathways are optimally leveraged, staffing and resources match priority work, and new team members reach productivity through a consistent, supportive onboarding process.', ProposedTarget='Approve the target organization by Q1; map 100% of key roles; reach at least 90% role clarity and 60 days or less to productivity for new hires.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-06';
+UPDATE TeamInitiatives SET Title='Reusable content', Description='Build a library of approved, modular learning objects that can be reused across offerings to accelerate development and improve efficiency. Success means more than 1,000 objects are available, at least 20% are reused, and average non-degree development time is 28 days or less.', ProposedTarget='More than 1,000 approved objects; at least 20% reuse; non-degree development average of 28 days or less', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='1-02';
+UPDATE TeamInitiatives SET Title='Data, EdTech & Infinity', Description='Launch Infinity 2.0 and integrate data and education technology to support a connected, personalized learner journey. Success means the public launch is complete and three priority data domains are connected.', ProposedTarget='Infinity 2.0 public launch; 3 data domains connected; personalized journey', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='1-03';
+UPDATE TeamInitiatives SET Title='Growth Engine Readiness', Description='Establish a scalable B2B growth engine supported by a clear strategy, a technology-enabled operating model, and repeatable sales and strategic account management processes.', ProposedTarget='B2B strategy launched; tech-enabled operating model implemented; repeatable sales and strategic account management processes implemented', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='3-01';
+UPDATE TeamInitiatives SET Title='Strategic Partnership & Revenue Growth', Description='Build and convert a qualified B2B pipeline into sustained partnerships and revenue. Success means engaging more than 100 qualified leads, securing at least five new partners, launching at least two, and generating more than $1 million in annual recurring revenue.', ProposedTarget='100+ qualified and engaged B2B leads; 5+ new partners secured; 2+ new partners launched; $1M+ ARR', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='3-02';
+UPDATE TeamInitiatives SET Title='Geographic Expansion', Description='Create a scalable Atria expansion model and use a complete inventory of non-main-campus assets to evaluate new markets. Success means exploring 10 locations, piloting two, and activating two new sites.', ProposedTarget='Scalable Atria business model established; non-main-campus assets inventoried; 10 locations under exploration; 2 piloted; 2 new sites activated', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='3-03';
+UPDATE TeamInitiatives SET Title='Asset Utilization', Description='Increase the value and use of CLL locations by improving Peachtree Corners utilization by more than 25% and developing or advancing a long-term strategy for Savannah.', ProposedTarget='Increase Peachtree Corners utilization by 25%+; develop or advance the long-term Savannah strategy', OwnerID=(SELECT PersonID FROM People WHERE Name='Mario Herane'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Ecosystems') WHERE Code='3-04';
+UPDATE TeamInitiatives SET Title='Portfolio & pathways', Description='Develop recognized learning pathways that connect credentials and badges in AI and Durable Skills, informed by market demand and financial analysis. Success means at least two pathways are defined and supported by a clear portfolio rationale.', ProposedTarget='At least 2 recognized pathways plus badges; AI and Durable Skills; market and financial analysis', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='1-01';
+UPDATE TeamInitiatives SET Title='Establish and Implement Faculty Governance Process', Description='Develop and approve bylaws to provide guidance to the faculty governance system in the college.', ProposedTarget='Approve the faculty governance charter and process by Q1; route 100% of applicable faculty actions through it by Q3.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-01';
+UPDATE TeamInitiatives SET Title='Develop and Implement a Faculty Evaluation and Promotion System', Description='In consultation with faculty governance, develop a rubric for faculty evaluation that is aligned with the goals of the college.', ProposedTarget='Approve the evaluation and promotion framework by Q2; orient 100% of eligible faculty; complete one pilot cycle and incorporate feedback.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-02';
+UPDATE TeamInitiatives SET Title='Develop approval/governance process for academic programs and digital credentials', Description='Develop a workflow that creates a process to consider requests for new programs to ensure new initiatives are aligned with the goals of the college. Move away from individual projects that are reactive to requests.', ProposedTarget='Launch one approval process for credit, non-credit, and digital credentials by Q2; route 100% of new offerings through it; reach a median decision time of 45 days or less.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-03';
+UPDATE TeamInitiatives SET Title='Fill open-rank faculty positions and align faculty work with Strategy 2035', Description='Conduct a national search and engage in the search process in a manner that engages faculty as outlined in the Faculty Bylaws.', ProposedTarget='Fill 100% of authorized FY2027 faculty searches; align 90-day plans for all new hires to Strategy 2035; establish mentoring plans for all continuing faculty.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-04';
+UPDATE TeamInitiatives SET Title='Empower faculty to engage in innovative program development and align work functions', Description='Develop an understanding of current faculty workloads and use this information to engage in conversations about time with faculty. This analysis will likely lead toward re-assigning faculty to work on new initiatives aligned with the goals of the college.', ProposedTarget='Complete faculty work-function reviews by Q2; engage at least 75% of faculty in program innovation or research; document all redeployment decisions.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-05';
+UPDATE TeamInitiatives SET Title='Grow the institute-wide faculty network engaged in CLL programs', Description='Work with Content and Product Strategy to engage faculty across campus. This will begin by creating a process to consider new programs and continue through identifying faculty across the institute who could contribute toward the goals of the college. This will also include develop a revised payment schedule for faculty engagement that is mutually beneficial to the college and to the faculty. Finally, the products will be developed in a manner that allows for individual pieces of content to be reused and repackaged without additional compensation to faculty for its use. The intellectual property will belong to GT and CLL.', ProposedTarget='Engage at least 25 faculty collaborators from at least 6 colleges; secure contributions from at least 10 to CLL offerings or initiatives.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-06';
+UPDATE TeamInitiatives SET Title='Recruit students into traditional academic programs', Description='Develop a marketing plan to enroll students in the courses and programs offered by the College of Lifetime Learning. This will focus on recruiting students to enroll in the Minor that is jointly offered by the School of Psychology and the College of Lifetime Learning along with the courses focused on Project Management.', ProposedTarget='Approve program-level enrollment targets by Q1; achieve at least 90% of the FY2027 enrollment plan; review yield and retention each term.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-07';
+UPDATE TeamInitiatives SET Title='Stand up innovative traditional academic programs', Description='The goals for this year include submitting for undergraduate and graduate majors in Project Management as well as graduate certificates in Learning.', ProposedTarget='Approve or launch at least 2 programs; move 3 additional concepts through market and academic review; meet at least 90% of approved milestones.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-08';
+UPDATE TeamInitiatives SET Title='Build coursework as reusable learning experiences', Description='Work with Content and Product Strategy to engage faculty in the College of Lifetime Learning and across the Institute to develop content for their courses in a manner that will allow for materials to be used in multiple ways.', ProposedTarget='Build 100% of new coursework as reusable learning modules; achieve at least 20% reuse across offerings; apply metadata and quality standards to every module.', OwnerID=(SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Experiences') WHERE Code='5-09';
+UPDATE TeamInitiatives SET Title='RDI Baseline & Dashboard', Description='Establish a baseline of CLL’s research and innovation portfolio and create a dashboard to track activity, growth, and progress over time.', ProposedTarget='Complete the RDI baseline by Q1; capture 100% of active RDI projects; publish a quarterly dashboard beginning in Q2.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-01';
+UPDATE TeamInitiatives SET Title='Research & Innovation Agenda', Description='Define the priority research themes and larger questions that will guide CLL’s research and innovation portfolio across the lifespan.', ProposedTarget='Approve 3–5 research and innovation themes by Q1; map 100% of priority investments; activate at least 2 cross-unit collaborations.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-02';
+UPDATE TeamInitiatives SET Title='Research & Innovation Capacity & Infrastructure', Description='Map and strengthen the people, expertise, partnerships, resources, and systems needed to support a sustainable RDI enterprise.', ProposedTarget='Approve a roles, funding, tools, and infrastructure plan by Q2; resolve at least 80% of critical capacity gaps by Q4.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-03';
+UPDATE TeamInitiatives SET Title='Research & Innovation Mechanism', Description='Establish mechanisms to embed research, experimentation, evidence generation, and continuous learning within CLL strategic initiatives.', ProposedTarget='Launch at least 2 innovation mechanisms or calls; initiate 6 pilots; complete stage-gate reviews for 100% and at least 3 scale, adapt, or stop decisions.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-04';
+UPDATE TeamInitiatives SET Title='CLL Learning & Impact Measures', Description='Develop and validate CLL-specific measures for assessing learning, translation, adoption, and longer-term impact.', ProposedTarget='Approve a core learning and impact measure set by Q2; instrument at least 80% of priority offerings; publish quarterly impact results.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-05';
+UPDATE TeamInitiatives SET Title='Learning Studio/Makerspace Model', Description='Develop a model for a learning studio/makerspace that supports experimentation, research, collaboration, and scalable learning innovation.', ProposedTarget='Approve the operating model and business case by Q2; run at least 3 pilots with 150 participants and at least 80% participant satisfaction.', OwnerID=(SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Futures') WHERE Code='4-06';
+UPDATE TeamInitiatives SET Title='Team operating models', Description='Design, document, approve, and test team operating models that align roles, workflows, and resources with strategic priorities. Success means every unit adopts a tested model that supports an adaptive and efficient organization.', ProposedTarget='100% of units; new models documented, approved, and tested', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='1-04';
+UPDATE TeamInitiatives SET Title='Financial, Operational, and Initiative Dashboards', Description='Create shared dashboards that give leaders and teams timely visibility into financial performance, operational health, and priority initiatives so decisions are based on consistent information. Success means key measures are reliable, easy to access, regularly updated, and actively used to identify risks, track progress, and direct resources.', ProposedTarget='One college dashboard and 4 team dashboards live by Q2; monthly review held; data refreshed within 10 business days of period close.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-01';
+UPDATE TeamInitiatives SET Title='Unified branding and messaging frameworks', Description='Establish unified branding and messaging frameworks that present the college and its initiatives with a clear, consistent voice across audiences and channels. Success means 100% of external presence aligns with a college image/voice, teams use approved standards and reusable resources, communications reinforce strategic priorities, and stakeholders readily understand the college’s identity and value.', ProposedTarget='Message architecture approved by Q1; all 4 teams implement by Q3; at least 90% of reviewed public-facing assets align by Q4.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-02';
+UPDATE TeamInitiatives SET Title='Centralized Process & Procedure workflows', Description='Centralize core processes and procedures to make work easier to navigate, execute, and improve across the college. Success means cross-functional workflows have clear owners and documentation, reduce duplication and delays, and are routinely assessed, iterated on, and optimized using performance data.', ProposedTarget='Document the 10 highest-impact cross-college processes; standardize at least 80% by Q3; reduce median cycle time by 20% by Q4.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-03';
+UPDATE TeamInitiatives SET Title='Admin & Ops LLM Agent', Description='Develop an Administration & Operations LLM agent that helps staff quickly find guidance, complete routine tasks, and make informed decisions using trusted internal information. Success means the agent provides accurate and useful responses, reduces time spent searching or handling repetitive work, and is adopted safely within established governance practices.', ProposedTarget='Launch a governed MVP by Q2; support 5 priority workflows by Q3; achieve at least 80% user satisfaction in the pilot.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-04';
+UPDATE TeamInitiatives SET Title='Build Organizational Learning Capability', Description='Build the systems, habits, and leadership practices that enable the organization to learn continuously and translate insight into better ways of working. Success means staff share knowledge, develop relevant capabilities, test and apply improvements, and demonstrate stronger engagement and adaptability over time.', ProposedTarget='All 4 teams run quarterly learning cycles; at least 80% of priority-role staff participate; each team implements 2 capability improvements.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-05';
+UPDATE TeamInitiatives SET Title='Optimized Org Structure & Resource Onboarding', Description='Align the organizational structure, roles, resources, and onboarding experience across human and procurement needs with the college’s strategic priorities so people and partners can contribute effectively from the start. Success means accountabilities and handoffs are clear, compliant pathways are optimally leveraged, staffing and resources match priority work, and new team members reach productivity through a consistent, supportive onboarding process.', ProposedTarget='Approve the target organization by Q1; map 100% of key roles; reach at least 90% role clarity and 60 days or less to productivity for new hires.', OwnerID=(SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), TeamID=(SELECT TeamID FROM Teams WHERE Name='Learning Infrastructure') WHERE Code='2-06';
 
 -- Additional co-owners (rows naming more than one person).
-DELETE FROM MajorInitiativeCoOwners;
-INSERT INTO MajorInitiativeCoOwners (MajorInitiativeID, PersonID) VALUES
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-01'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-04'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-06'), (SELECT PersonID FROM People WHERE Name='Grace Flavin'));
+DELETE FROM TeamInitiativeCoOwners;
+INSERT INTO TeamInitiativeCoOwners (TeamInitiativeID, PersonID) VALUES
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-01'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-04'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT PersonID FROM People WHERE Name='Grace Flavin')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-06'), (SELECT PersonID FROM People WHERE Name='Grace Flavin'));
 
-DELETE FROM MajorInitiativePriorities;
-INSERT INTO MajorInitiativePriorities (MajorInitiativeID, PriorityID, IsPrimary) VALUES
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-02'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-02'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-01'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-01'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-04'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-04'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-01'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-01'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-01'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-02'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-02'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-03'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-03'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-04'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-05'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-05'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-06'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-06'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-07'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-07'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-01'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-04'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-06'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-06'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-04'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-04'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-01'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-03'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-03'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-04'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-04'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-05'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0);
+DELETE FROM TeamInitiativePriorities;
+INSERT INTO TeamInitiativePriorities (TeamInitiativeID, PriorityID, IsPrimary) VALUES
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-02'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-02'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-01'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-01'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-04'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-04'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-01'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-01'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-02'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-02'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-03'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-03'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-04'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-05'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-05'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-06'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-06'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-07'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-07'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT PriorityID FROM Priorities WHERE Code='P03'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-01'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-04'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-06'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-06'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-04'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-04'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-01'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT PriorityID FROM Priorities WHERE Code='P01'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-03'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-03'), (SELECT PriorityID FROM Priorities WHERE Code='P05'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-04'), (SELECT PriorityID FROM Priorities WHERE Code='P02'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-04'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-05'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT PriorityID FROM Priorities WHERE Code='P06'), 1),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT PriorityID FROM Priorities WHERE Code='P04'), 0);
 
--- Dean Priorities (FY26 complete, FY27 in flight).
-INSERT INTO DeanPriorities (FiscalYear, Code, Title, Description, PriorityID, PercentComplete) VALUES
+-- Dean Initiatives (FY26 complete, FY27 in flight).
+INSERT INTO DeanInitiatives (FiscalYear, Code, Title, Description, PriorityID, PercentComplete) VALUES
   (26, 'D26-1', 'Strategy ''35 Develop', 'Complete the development of Strategy ''35, establishing a clear strategic direction and framework for CLL''s long-term priorities.', (SELECT PriorityID FROM Priorities WHERE Code='P06'), 100),
   (26, 'D26-2', 'GT Infinity 1.0 Prototype', 'Complete the GT Infinity 1.0 prototype to demonstrate the core learner experience and validate the foundation for future development.', (SELECT PriorityID FROM Priorities WHERE Code='P02'), 100),
   (26, 'D26-3', 'Restruct / Budget Model', 'Complete the organizational restructuring and budget model to align roles, resources, and financial decisions with CLL''s strategic priorities.', (SELECT PriorityID FROM Priorities WHERE Code='P05'), 100),
@@ -119,128 +119,128 @@ INSERT INTO DeanPriorities (FiscalYear, Code, Title, Description, PriorityID, Pe
   (27, 'D27-7', 'Restructure — 4 Learning Teams', 'Design and implement the four learning-team operating model across Learning Infrastructure, Learning Ecosystems, Learning Experiences, and Learning Futures.', (SELECT PriorityID FROM Priorities WHERE Code='P01'), 10),
   (27, 'D27-8', 'Consult GT', 'Create a consulting mechanism that enables CLL to share its expertise with higher education institutions seeking support with transformation and improvement.', (SELECT PriorityID FROM Priorities WHERE Code='P06'), 5);
 
--- Major Initiative -> Strategy Goal edges (register Goals columns).
-DELETE FROM MajorInitiativeGoals;
-INSERT INTO MajorInitiativeGoals (MajorInitiativeID, GoalID) VALUES
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-07'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=5));
+-- Team Initiative -> Strategy Goal edges (register Goals columns).
+DELETE FROM TeamInitiativeGoals;
+INSERT INTO TeamInitiativeGoals (TeamInitiativeID, GoalID) VALUES
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-07'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=5));
 
--- Major Initiative -> Dean FY27 edges (the register's X-matrix).
-INSERT INTO MajorInitiativeDeanLinks (MajorInitiativeID, DeanPriorityID) VALUES
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-3')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-2')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-3')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-5')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-3')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-5')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-5')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-04'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-5')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-2')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-4')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-04'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-05'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-05'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-7')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-06'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-07'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-4')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-2')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-3')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-4')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-5')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-4')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-7')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-7')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-3')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-4')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-8')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-06'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-04'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-04'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-7')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-04'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-8')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-2')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-01'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-4')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-1')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-3')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-4')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-8')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-7')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-03'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-8')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-04'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-04'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-7')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-04'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-8')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-05'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-7')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-05'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-8')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-6')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-7')),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-8'));
+-- Team Initiative -> Dean FY27 edges (the register's X-matrix).
+INSERT INTO TeamInitiativeDeanLinks (TeamInitiativeID, DeanInitiativeID) VALUES
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-3')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-2')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-3')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-5')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-3')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-5')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-5')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-04'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-5')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-2')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-4')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-04'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-05'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-05'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-7')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-06'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-07'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-4')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-2')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-3')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-4')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-5')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-4')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-7')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-7')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-3')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-4')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-8')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-06'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-04'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-04'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-7')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-04'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-8')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-2')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-01'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-4')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-1')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-3')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-4')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-8')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-7')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-03'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-8')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-04'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-04'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-7')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-04'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-8')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-05'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-7')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-05'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-8')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-6')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-7')),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-8'));

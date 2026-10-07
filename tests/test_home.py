@@ -34,11 +34,11 @@ def _raw_goal_counts(fresh_db):
     try:
         rows = conn.execute(
             """
-            SELECT g.GoalNumber, COUNT(DISTINCT i.MajorInitiativeID) AS n
+            SELECT g.GoalNumber, COUNT(DISTINCT i.TeamInitiativeID) AS n
             FROM Goals g
-            LEFT JOIN MajorInitiativeGoals ig ON ig.GoalID = g.GoalID
-            LEFT JOIN MajorInitiatives i
-                   ON i.MajorInitiativeID = ig.MajorInitiativeID AND i.IsActive = 1
+            LEFT JOIN TeamInitiativeGoals ig ON ig.GoalID = g.GoalID
+            LEFT JOIN TeamInitiatives i
+                   ON i.TeamInitiativeID = ig.TeamInitiativeID AND i.IsActive = 1
             GROUP BY g.GoalID, g.GoalNumber
             """
         ).fetchall()
@@ -52,11 +52,11 @@ def _raw_priority_counts(fresh_db):
     try:
         rows = conn.execute(
             """
-            SELECT p.PriorityName, COUNT(DISTINCT i.MajorInitiativeID) AS n
+            SELECT p.PriorityName, COUNT(DISTINCT i.TeamInitiativeID) AS n
             FROM Priorities p
-            LEFT JOIN MajorInitiativePriorities ip ON ip.PriorityID = p.PriorityID
-            LEFT JOIN MajorInitiatives i
-                   ON i.MajorInitiativeID = ip.MajorInitiativeID AND i.IsActive = 1
+            LEFT JOIN TeamInitiativePriorities ip ON ip.PriorityID = p.PriorityID
+            LEFT JOIN TeamInitiatives i
+                   ON i.TeamInitiativeID = ip.TeamInitiativeID AND i.IsActive = 1
             GROUP BY p.PriorityID, p.PriorityName
             """
         ).fetchall()
@@ -91,7 +91,7 @@ def test_home_shows_the_dashboard_and_keeps_everything_reachable(logged_in):
         assert f"/priorities/{priority['PriorityName']}" in body or \
                priority["PriorityName"] in body
     # The goals are reachable from the dashboard's tables and nav.
-    assert "/major-initiatives" in body
+    assert "/team-initiatives" in body
 
 
 def test_goal_tile_counts_match_an_independent_count(logged_in, fresh_db):
@@ -155,7 +155,7 @@ def test_nav_and_print_assets_are_present(logged_in):
     is asserted in the coverage-checks test.
     """
     body = logged_in("Bill Gaudelli").get("/").text
-    for dest in ("/", "/major-initiatives", "/people", "/outcomes"):
+    for dest in ("/", "/team-initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body, "missing nav destination %s" % dest
     assert 'media="print"' in body
     assert "<dialog" in body

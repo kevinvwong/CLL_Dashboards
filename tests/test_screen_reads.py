@@ -83,7 +83,7 @@ def test_no_update_is_distinct_from_zero_percent(fresh_db):
     # Delete every update for this initiative, so it has none.
     conn = sqlite3.connect(fresh_db)
     try:
-        conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM TeamInitiativeUpdates WHERE TeamInitiativeID = ?", (iid,))
         conn.commit()
     finally:
         conn.close()
@@ -105,9 +105,9 @@ def test_zero_percent_with_an_update_is_present_not_missing(fresh_db):
     iid = _initiative_id(fresh_db, "MI-004")
     conn = sqlite3.connect(fresh_db)
     try:
-        conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM TeamInitiativeUpdates WHERE TeamInitiativeID = ?", (iid,))
         conn.execute(
-            "INSERT INTO MajorInitiativeUpdates (MajorInitiativeID, PercentComplete, Status, Note, EnteredByID) "
+            "INSERT INTO TeamInitiativeUpdates (TeamInitiativeID, PercentComplete, Status, Note, EnteredByID) "
             "VALUES (?, 0, 'Not started', 'just beginning', ?)",
             (iid, _person_id(fresh_db, "Elizabeth Smith")),
         )
@@ -123,8 +123,8 @@ def test_zero_percent_with_an_update_is_present_not_missing(fresh_db):
 
 
 def _initiative_id(fresh_db, code):
-    return _rows(fresh_db, "SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?",
-                 (code,))[0]["MajorInitiativeID"]
+    return _rows(fresh_db, "SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId = ?",
+                 (code,))[0]["TeamInitiativeID"]
 
 
 def _person_id(fresh_db, name):

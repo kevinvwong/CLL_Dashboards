@@ -63,7 +63,7 @@ def parse_priorities(t):
 
 
 def parse_goals(t):
-    """The 29 Major Initiatives, from the goal() factory calls."""
+    """The 29 Team Initiatives, from the goal() factory calls."""
     calls = re.findall(
         r'goal\(SOURCE_AREAS\[(\d+)\],\s*"(\d+)",\s*"((?:[^"\\]|\\.)*)",\s*'
         r'"((?:[^"\\]|\\.)*)",\s*"((?:[^"\\]|\\.)*)",\s*'
@@ -147,8 +147,8 @@ def build(src=DEFAULT_SRC):
                _sq(p["target"]), _sq(p["cadence"]), _sq(p["owner"]),
                _sq(p["color"]), _sq(_correct(p["description"])), _sq(db_name)))
     L.append("")
-    L.append("-- The 29 Major Initiatives")
-    L.append("INSERT INTO MajorInitiatives (Code, Title, TeamID, SourceAreaID, StrategyAlign, "
+    L.append("-- The 29 Team Initiatives")
+    L.append("INSERT INTO TeamInitiatives (Code, Title, TeamID, SourceAreaID, StrategyAlign, "
              "Initiatives, ProposedTarget, TargetStatus) VALUES")
     vals = []
     for g in goals:
@@ -163,8 +163,8 @@ def build(src=DEFAULT_SRC):
                        _sq(g["proposedTarget"]), _sq(g["targetStatus"])))
     L.append(",\n".join(vals) + ";")
     L.append("")
-    L.append("-- Which priorities each Major Initiative feeds")
-    L.append("INSERT INTO MajorInitiativePriorities (MajorInitiativeID, PriorityID) VALUES")
+    L.append("-- Which priorities each Team Initiative feeds")
+    L.append("INSERT INTO TeamInitiativePriorities (TeamInitiativeID, PriorityID) VALUES")
     # The prototype's `priorities` array holds its internal ids ("pathways",
     # "data", ...), which map onto the database's short names by capitalising -
     # except where they differ. Resolve through the same code map.
@@ -178,7 +178,7 @@ def build(src=DEFAULT_SRC):
             db_name = PROTOTYPE_ID_TO_DB.get(pr.lower())
             if db_name is None:
                 raise SystemExit("unmapped prototype priority id: %r" % pr)
-            pvals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
+            pvals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
                          "(SELECT PriorityID FROM Priorities WHERE PriorityName=%s))"
                          % (_sq(g["code"]), _sq(db_name)))
     L.append(",\n".join(pvals) + ";")

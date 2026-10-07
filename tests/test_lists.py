@@ -1,6 +1,6 @@
 """Goal and priority list screens, on the merged register model (2026-10-07).
 
-The merged model has ONE initiative tier: the register's Major Initiatives,
+The merged model has ONE initiative tier: the register's Team Initiatives,
 grouped by owner. The prototype's Dean-first / D-1-by-owner ordering and its
 sample counts are gone. The register ships no diary, so tests that need progress
 seed it with the `diary` fixture.
@@ -84,7 +84,7 @@ def test_rows_carry_the_htmx_attributes_for_the_card(logged_in):
     number = _goal_number("Research")
     code = queries.goal_rows(number)[0]["Code"]
     body = logged_in("Bill Gaudelli").get("/goals/%d" % number).text
-    assert f'hx-get="/major-initiatives/{code}"' in body
+    assert f'hx-get="/team-initiatives/{code}"' in body
     assert 'hx-target="#card-modal"' in body
     assert 'hx-swap="innerHTML"' in body
 

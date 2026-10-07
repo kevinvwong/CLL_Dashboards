@@ -7,17 +7,17 @@
 
   An OVERVIEW, not four full catalogs. Measured before the cut: 56 KB, of which
   67% was the 29-row table, and every row rendered twice (inside the team cards
-  and again in the table). The table now has its own page, /major-initiatives,
+  and again in the table). The table now has its own page, /team-initiatives,
   and the sections here are compact entry points that state a count and link to
   detail:
 
     1. the stat band   - the portfolio at a glance (counts, not a score)
     2. the five goals  - each linking to its cascade
     3. the six priorities - code, title, count, link
-    4. the four teams  - name, Major Initiative count, link
+    4. the four teams  - name, Team Initiative count, link
 
   The governed fields (measure, target, cadence, owner) live on the priority
-  page; every Major Initiative lives on /major-initiatives. Nothing is lost, it
+  page; every Team Initiative lives on /team-initiatives. Nothing is lost, it
   is one click away.
 #}
 
@@ -26,7 +26,7 @@
     <p class="eyebrow">{{ plan_year }} Strategy Portfolio</p>
     <h1>How the College's work is organized</h1>
   </div>
-  <p class="section-note">Six priorities · four teams · 29 Major Initiatives</p>
+  <p class="section-note">Six priorities · four teams · 29 Team Initiatives</p>
 </div>
 
 {# The health read, first (#8): the question on opening a dashboard is "how are we
@@ -34,7 +34,7 @@
    so plainly - "29 not started" reads as a scorecard of failure when it only means
    the diary is empty. #}
 <p class="health-line">
-  <strong>{{ health.total }}</strong> Major Initiatives{% if not health.has_progress %} · no progress reported yet{% else %}:
+  <strong>{{ health.total }}</strong> Team Initiatives{% if not health.has_progress %} · no progress reported yet{% else %}:
   <span class="badge status-on-track">{{ health.on_track }} on track</span>
   <span class="badge status-at-risk">{{ health.at_risk }} at risk</span>
   {% if health.off_track %}<span class="badge status-off-track">{{ health.off_track }} off track</span>{% endif %}
@@ -43,11 +43,11 @@
 
 {# --- 1. the stat band ----------------------------------------------------- #}
 {# One "Initiatives" tile, not two (review round, 2026-10-07): after the merge
-   "Initiatives" and "Major Initiatives" were the same 29. #}
+   "Initiatives" and "Team Initiatives" were the same 29. #}
 <section class="stat-band" aria-label="Portfolio summary">
-  <a class="stat-tile" href="/major-initiatives">
-    <span class="stat-value">{{ stats.major_initiatives }}</span>
-    <span class="stat-label">Major Initiatives</span>
+  <a class="stat-tile" href="/team-initiatives">
+    <span class="stat-value">{{ stats.team_initiatives }}</span>
+    <span class="stat-label">Team Initiatives</span>
   </a>
   <a class="stat-tile" href="#priorities">
     <span class="stat-value">{{ stats.priorities }}</span>
@@ -57,7 +57,7 @@
     <span class="stat-value">{{ stats.teams }}</span>
     <span class="stat-label">Teams</span>
   </a>
-  <a class="stat-tile stat-warn" href="/major-initiatives?target=needs_review">
+  <a class="stat-tile stat-warn" href="/team-initiatives?target=needs_review">
     <span class="stat-value">{{ stats.needs_review }}</span>
     <span class="stat-label">Need review</span>
   </a>
@@ -82,7 +82,7 @@
         <span class="goal-number">Goal {{ g.GoalNumber }}</span>
         <span class="goal-name">{{ g.ShortName }}</span>
       </a>
-      <p class="goal-counts">{{ g.MajorInitiativeCount }} Major Initiative{{ '' if g.MajorInitiativeCount == 1 else 's' }}</p>
+      <p class="goal-counts">{{ g.TeamInitiativeCount }} Team Initiative{{ '' if g.TeamInitiativeCount == 1 else 's' }}</p>
     </li>
     {% endfor %}
   </ul>
@@ -124,7 +124,7 @@
       <p class="eyebrow">Organizational layer</p>
       <h2 id="teams-heading">The four teams</h2>
     </div>
-    <p class="section-note">{{ stats.major_initiatives }} Major Initiatives across them</p>
+    <p class="section-note">{{ stats.team_initiatives }} Team Initiatives across them</p>
   </div>
 
   <ul class="team-grid">
@@ -135,7 +135,7 @@
       </a>
       <p class="team-desc">{{ t.Description }}</p>
       <p class="team-count">
-        <a href="/teams/{{ t.TeamID }}"><strong>{{ t.major_initiatives | length }}</strong> Major Initiative{{ '' if t.major_initiatives | length == 1 else 's' }} →</a>
+        <a href="/teams/{{ t.TeamID }}"><strong>{{ t.team_initiatives | length }}</strong> Team Initiative{{ '' if t.team_initiatives | length == 1 else 's' }} →</a>
       </p>
     </li>
     {% endfor %}
@@ -143,23 +143,23 @@
 </section>
 
 {# The Dean's own priorities (register, 2026-10-07). A one-line roll-up here; the
-   full FY26/FY27 list with progress bars has its own page, /dean-priorities, the
+   full FY26/FY27 list with progress bars has its own page, /dean-initiatives, the
    same way the 29-row table moved off the overview. #}
-{% if dean_priorities %}
-<section id="dean-priorities" aria-labelledby="dean-priorities-heading">
+{% if dean_initiatives %}
+<section id="dean-initiatives" aria-labelledby="dean-initiatives-heading">
   <div class="section-heading">
     <div>
       <p class="eyebrow">Above the initiative layer</p>
-      <h2 id="dean-priorities-heading">Dean Priorities</h2>
+      <h2 id="dean-initiatives-heading">Dean Initiatives</h2>
     </div>
     <p class="section-note">
-      {{ dean_priorities | length }} priorities ·
-      <a href="/dean-priorities">View all →</a>
+      {{ dean_initiatives | length }} priorities ·
+      <a href="/dean-initiatives">View all →</a>
     </p>
   </div>
   <p class="section-note">
-    {{ dean_priorities | selectattr('fiscal_year', 'equalto', 26) | list | length }} complete in FY26 ·
-    {{ dean_priorities | selectattr('fiscal_year', 'equalto', 27) | list | length }} in flight in FY27
+    {{ dean_initiatives | selectattr('fiscal_year', 'equalto', 26) | list | length }} complete in FY26 ·
+    {{ dean_initiatives | selectattr('fiscal_year', 'equalto', 27) | list | length }} in flight in FY27
   </p>
 </section>
 {% endif %}

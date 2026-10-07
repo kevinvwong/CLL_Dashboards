@@ -8,7 +8,7 @@
      Without this the person sees their input vanish and learns nothing. #}
   {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
 
-  <form hx-post="/major-initiatives/{{ card.Code }}/updates"
+  <form hx-post="/team-initiatives/{{ card.Code }}/updates"
         hx-target="#card-modal"
         hx-swap="innerHTML"
         class="update-form">

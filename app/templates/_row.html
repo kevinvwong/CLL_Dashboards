@@ -11,8 +11,8 @@
 <li class="initiative-row">
   <div class="row-main">
     <span class="code">{{ row.Code }}</span>
-    <a class="row-open" href="/major-initiatives/{{ row.Code }}"
-       hx-get="/major-initiatives/{{ row.Code }}"
+    <a class="row-open" href="/team-initiatives/{{ row.Code }}"
+       hx-get="/team-initiatives/{{ row.Code }}"
        hx-target="#card-modal"
        hx-swap="innerHTML">{{ row.InitiativeName }}</a>
     {% if row.IsPrimary %}<span class="badge">Primary</span>{% endif %}

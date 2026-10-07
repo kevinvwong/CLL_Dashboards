@@ -1,17 +1,17 @@
 {#
-  The Major Initiatives table with its filter and grouping (interconnection 5).
+  The Team Initiatives table with its filter and grouping (interconnection 5).
   A shared partial so the overview need not carry the table: only
-  /major-initiatives renders it. The caller supplies `major_initiatives` (the
-  rows to show), `all_major_initiatives` (the full set, for counts), `mi_base`,
+  /team-initiatives renders it. The caller supplies `team_initiatives` (the
+  rows to show), `all_team_initiatives` (the full set, for counts), `mi_base`,
   `mi_filter`, `mi_group`, `mi_groupings`, and `needs_review_count`.
 
   Links, not script, so the filter and grouping are shareable in the URL and
   work before hydration.
 #}
-<nav class="mi-controls" aria-label="Filter and group Major Initiatives">
+<nav class="mi-controls" aria-label="Filter and group Team Initiatives">
   <span class="toggle-label">Filter</span>
   <a class="chip{% if not mi_filter %} is-active{% endif %}"
-     href="{{ mi_base }}">All {{ all_major_initiatives | length }}</a>
+     href="{{ mi_base }}">All {{ all_team_initiatives | length }}</a>
   <a class="chip chip-warn{% if mi_filter == 'needs_review' %} is-active{% endif %}"
      href="{{ mi_base }}{{ '&' if '?' in mi_base else '?' }}target=needs_review"
      {% if mi_filter == 'needs_review' %}aria-current="true"{% endif %}>
@@ -31,7 +31,7 @@
     <thead>
       <tr>
         <th scope="col">ID</th>
-        <th scope="col">Major Initiative</th>
+        <th scope="col">Team Initiative</th>
         <th scope="col">Team</th>
         <th scope="col">Source area</th>
         <th scope="col">Strategy alignment</th>
@@ -42,13 +42,13 @@
       </tr>
     </thead>
     <tbody>
-      {% for k in major_initiatives %}
+      {% for k in team_initiatives %}
       {% if mi_group and k._GroupLabel %}
       <tr class="group-row"><th colspan="9" scope="colgroup">{{ k._GroupLabel }}</th></tr>
       {% endif %}
       <tr class="mi-row">
-        <td class="code"><a href="/major-initiatives/{{ k.MIId or k.Code }}">{{ k.MIId or k.Code }}</a></td>
-        <td><a href="/major-initiatives/{{ k.MIId or k.Code }}">{{ k.Title }}</a>{% if k.Note %} <span class="note-mark" title="{{ k.Note }}">ⓘ</span>{% endif %}</td>
+        <td class="code"><a href="/team-initiatives/{{ k.MIId or k.Code }}">{{ k.MIId or k.Code }}</a></td>
+        <td><a href="/team-initiatives/{{ k.MIId or k.Code }}">{{ k.Title }}</a>{% if k.Note %} <span class="note-mark" title="{{ k.Note }}">ⓘ</span>{% endif %}</td>
         <td>{% if k.Team %}<a href="/teams/{{ k.TeamID }}">{{ k.Team }}</a>{% else %}—{% endif %}</td>
         <td>{{ k.SourceArea or "—" }}</td>
         <td class="muted-cell">
@@ -77,6 +77,6 @@
     </tbody>
   </table>
 </div>
-{% if not major_initiatives %}
-<p class="empty">No Major Initiatives match this filter.</p>
+{% if not team_initiatives %}
+<p class="empty">No Team Initiatives match this filter.</p>
 {% endif %}

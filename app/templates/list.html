@@ -36,15 +36,15 @@
 </dl>
 {% endif %}
 
-{# The Major Initiatives that feed this priority (priority_detail's
-   major_initiatives). #}
-{% if governed is defined and governed.major_initiatives %}
+{# The Team Initiatives that feed this priority (priority_detail's
+   team_initiatives). #}
+{% if governed is defined and governed.team_initiatives %}
 <section class="goal-mis" aria-labelledby="priority-mis-heading">
-  <h2 id="priority-mis-heading" class="list-group-label">Major Initiatives feeding this priority</h2>
+  <h2 id="priority-mis-heading" class="list-group-label">Team Initiatives feeding this priority</h2>
   <ul class="mi-chip-list">
-    {% for k in governed.major_initiatives %}
+    {% for k in governed.team_initiatives %}
     <li class="mi-chip">
-      <a href="/major-initiatives/{{ k.MIId or k.Code }}">
+      <a href="/team-initiatives/{{ k.MIId or k.Code }}">
         <span class="mi-code">{{ k.MIId or k.Code }}</span>
         <span class="mi-chip-title">{{ k.Title }}</span>
       </a>
@@ -55,16 +55,16 @@
 </section>
 {% endif %}
 
-{# The Major Initiatives aligned to this goal (interconnection-redesign 3.1).
+{# The Team Initiatives aligned to this goal (interconnection-redesign 3.1).
    The new edge, shown from the goal side. Only a goal view passes
-   major_initiatives. #}
-{% if major_initiatives is defined and major_initiatives %}
+   team_initiatives. #}
+{% if team_initiatives is defined and team_initiatives %}
 <section class="goal-mis" aria-labelledby="goal-mis-heading">
-  <h2 id="goal-mis-heading" class="list-group-label">Major Initiatives aligned to this goal</h2>
+  <h2 id="goal-mis-heading" class="list-group-label">Team Initiatives aligned to this goal</h2>
   <ul class="mi-chip-list">
-    {% for k in major_initiatives %}
+    {% for k in team_initiatives %}
     <li class="mi-chip">
-      <a href="/major-initiatives/{{ k.MIId or k.Code }}">
+      <a href="/team-initiatives/{{ k.MIId or k.Code }}">
         <span class="mi-code">{{ k.MIId or k.Code }}</span>
         <span class="mi-chip-title">{{ k.Title }}</span>
       </a>

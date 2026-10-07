@@ -4,7 +4,7 @@ One module, one transaction per write, and SQLite constraint errors mapped to
 messages a person can act on rather than surfaced as driver exceptions.
 
 After the 2026-10-07 merge there is ONE initiative model: the register's
-`MajorInitiatives` (the 29) and its `MajorInitiativeUpdates` diary. The
+`TeamInitiatives` (the 29) and its `TeamInitiativeUpdates` diary. The
 prototype's `Initiatives`/`ProgressUpdates` are gone. Writes are append-only:
 a progress update never modifies its initiative.
 """
@@ -13,7 +13,7 @@ import sqlite3
 
 from app.db import connect
 
-# The vocabulary the MajorInitiativeUpdates CHECK constraint enforces.
+# The vocabulary the TeamInitiativeUpdates CHECK constraint enforces.
 STATUSES = (
     "Not started",
     "On track",
@@ -67,7 +67,7 @@ def _friendly(exc: sqlite3.IntegrityError) -> RuleError:
         return RuleError(f"Status must be one of: {', '.join(STATUSES)}.")
     if "EnteredByID" in text:
         return RuleError("That person is not in the directory.")
-    if "MajorInitiativeID" in text:
+    if "TeamInitiativeID" in text:
         return RuleError("That initiative does not exist or has been retired.")
     return RuleError("That change does not follow the initiative rules.")
 
@@ -113,7 +113,7 @@ def add_progress_update(
     note: str,
     entered_by_id: int,
 ):
-    """Append one diary entry to a Major Initiative. Returns the new UpdateID.
+    """Append one diary entry to a Team Initiative. Returns the new UpdateID.
 
     `percent` accepts a string because form data arrives as one; anything
     uncoercible is refused with a RuleError rather than raising.
@@ -132,17 +132,17 @@ def add_progress_update(
 
     def body(conn):
         row = conn.execute(
-            "SELECT MajorInitiativeID FROM MajorInitiatives "
+            "SELECT TeamInitiativeID FROM TeamInitiatives "
             "WHERE MIId = ? AND IsActive = 1",
             (mi_id,),
         ).fetchone()
         if row is None:
             raise RuleError("That initiative does not exist or has been retired.")
         cur = conn.execute(
-            "INSERT INTO MajorInitiativeUpdates "
-            "(MajorInitiativeID, PercentComplete, Status, Note, EnteredByID) "
+            "INSERT INTO TeamInitiativeUpdates "
+            "(TeamInitiativeID, PercentComplete, Status, Note, EnteredByID) "
             "VALUES (?, ?, ?, ?, ?)",
-            (row["MajorInitiativeID"], percent, status, note or None, entered_by_id),
+            (row["TeamInitiativeID"], percent, status, note or None, entered_by_id),
         )
         return cur.lastrowid
 
@@ -150,23 +150,23 @@ def add_progress_update(
 
 
 def update_initiative_details(mi_id: str, name: str, description: str, person_id: int):
-    """Rename/re-describe a Major Initiative and record it in AuditLog."""
+    """Rename/re-describe a Team Initiative and record it in AuditLog."""
     name = (name or "").strip()
     if not name:
         raise RuleError("An initiative needs a name.")
 
     def body(conn):
         row = conn.execute(
-            "SELECT MajorInitiativeID, Title, Description FROM MajorInitiatives "
+            "SELECT TeamInitiativeID, Title, Description FROM TeamInitiatives "
             "WHERE MIId = ? AND IsActive = 1",
             (mi_id,),
         ).fetchone()
         if row is None:
             raise RuleError("That initiative does not exist or has been retired.")
         conn.execute(
-            "UPDATE MajorInitiatives SET Title = ?, Description = ? "
-            "WHERE MajorInitiativeID = ?",
-            (name, (description or "").strip() or None, row["MajorInitiativeID"]),
+            "UPDATE TeamInitiatives SET Title = ?, Description = ? "
+            "WHERE TeamInitiativeID = ?",
+            (name, (description or "").strip() or None, row["TeamInitiativeID"]),
         )
         _audit(
             conn, person_id, "update_initiative", mi_id,
@@ -189,7 +189,7 @@ def _json_str(value) -> str:
 
 
 def replace_tags(mi_id: str, goal_tags: list, priority_tags: list, person_id: int):
-    """Replace a Major Initiative's goal and priority tags in one transaction.
+    """Replace a Team Initiative's goal and priority tags in one transaction.
 
     `goal_tags` and `priority_tags` are lists of {"id": int, "primary": bool}.
     Goal tags carry no primary on the register model (its goal columns are plain
@@ -203,26 +203,26 @@ def replace_tags(mi_id: str, goal_tags: list, priority_tags: list, person_id: in
 
     def body(conn):
         row = conn.execute(
-            "SELECT MajorInitiativeID FROM MajorInitiatives "
+            "SELECT TeamInitiativeID FROM TeamInitiatives "
             "WHERE MIId = ? AND IsActive = 1",
             (mi_id,),
         ).fetchone()
         if row is None:
             raise RuleError("That initiative does not exist or has been retired.")
-        iid = row["MajorInitiativeID"]
+        iid = row["TeamInitiativeID"]
 
-        conn.execute("DELETE FROM MajorInitiativeGoals WHERE MajorInitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM TeamInitiativeGoals WHERE TeamInitiativeID = ?", (iid,))
         # executemany with an empty list raises ProgrammingError ("Incorrect
         # number of bindings"), so clearing every tag is a delete and no insert.
         if goal_tags:
             conn.executemany(
-                "INSERT INTO MajorInitiativeGoals (MajorInitiativeID, GoalID) VALUES (?, ?)",
+                "INSERT INTO TeamInitiativeGoals (TeamInitiativeID, GoalID) VALUES (?, ?)",
                 [(iid, t["id"]) for t in goal_tags],
             )
-        conn.execute("DELETE FROM MajorInitiativePriorities WHERE MajorInitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM TeamInitiativePriorities WHERE TeamInitiativeID = ?", (iid,))
         if priority_tags:
             conn.executemany(
-                "INSERT INTO MajorInitiativePriorities (MajorInitiativeID, PriorityID, IsPrimary) "
+                "INSERT INTO TeamInitiativePriorities (TeamInitiativeID, PriorityID, IsPrimary) "
                 "VALUES (?, ?, ?)",
                 [(iid, t["id"], 1 if t.get("primary") else 0) for t in priority_tags],
             )
@@ -234,47 +234,47 @@ def replace_tags(mi_id: str, goal_tags: list, priority_tags: list, person_id: in
     write(body)
 
 
-def replace_links(mi_id: str, dean_priority_ids: list, person_id: int):
-    """Replace the Dean FY27 priorities a Major Initiative contributes to.
+def replace_links(mi_id: str, dean_initiative_ids: list, person_id: int):
+    """Replace the Dean FY27 priorities a Team Initiative contributes to.
 
-    The register's X-matrix: a team Major Initiative contributes to one or more
-    Dean Priorities (the register's "Dean KPI 27" items). Every target must be a
-    real DeanPriority row.
+    The register's X-matrix: a team Team Initiative contributes to one or more
+    Dean Initiatives (the register's "Dean KPI 27" items). Every target must be a
+    real DeanInitiative row.
     """
     def body(conn):
         row = conn.execute(
-            "SELECT MajorInitiativeID FROM MajorInitiatives "
+            "SELECT TeamInitiativeID FROM TeamInitiatives "
             "WHERE MIId = ? AND IsActive = 1",
             (mi_id,),
         ).fetchone()
         if row is None:
             raise RuleError("That initiative does not exist or has been retired.")
-        iid = row["MajorInitiativeID"]
+        iid = row["TeamInitiativeID"]
 
-        if dean_priority_ids:
-            placeholders = ",".join("?" * len(dean_priority_ids))
+        if dean_initiative_ids:
+            placeholders = ",".join("?" * len(dean_initiative_ids))
             bad = conn.execute(
-                f"SELECT DeanPriorityID FROM DeanPriorities WHERE DeanPriorityID IN ({placeholders})",
-                dean_priority_ids,
+                f"SELECT DeanInitiativeID FROM DeanInitiatives WHERE DeanInitiativeID IN ({placeholders})",
+                dean_initiative_ids,
             ).fetchall()
-            if len(bad) != len(set(dean_priority_ids)):
-                raise RuleError("Links must point at real Dean Priorities.")
+            if len(bad) != len(set(dean_initiative_ids)):
+                raise RuleError("Links must point at real Dean Initiatives.")
 
-        conn.execute("DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = ?", (iid,))
-        if dean_priority_ids:
+        conn.execute("DELETE FROM TeamInitiativeDeanLinks WHERE TeamInitiativeID = ?", (iid,))
+        if dean_initiative_ids:
             conn.executemany(
-                "INSERT INTO MajorInitiativeDeanLinks (MajorInitiativeID, DeanPriorityID) "
+                "INSERT INTO TeamInitiativeDeanLinks (TeamInitiativeID, DeanInitiativeID) "
                 "VALUES (?, ?)",
-                [(iid, d) for d in dean_priority_ids],
+                [(iid, d) for d in dean_initiative_ids],
             )
         _audit(conn, person_id, "replace_links", mi_id,
-               {"dean_priority_ids": dean_priority_ids})
+               {"dean_initiative_ids": dean_initiative_ids})
 
     write(body)
 
 
 def create_initiative(code: str, name: str, owner_id: int, description: str, person_id: int):
-    """Create a Major Initiative. New initiatives have no tags and no links, so
+    """Create a Team Initiative. New initiatives have no tags and no links, so
     they appear on /checks until an admin gives them both.
 
     `Code` is the internal stable key the register's own rows carry
@@ -289,7 +289,7 @@ def create_initiative(code: str, name: str, owner_id: int, description: str, per
 
     def body(conn):
         conn.execute(
-            "INSERT INTO MajorInitiatives (Code, Title, Description, OwnerID) "
+            "INSERT INTO TeamInitiatives (Code, Title, Description, OwnerID) "
             "VALUES (?, ?, ?, ?)",
             (code, name, (description or "").strip() or None, owner_id),
         )
@@ -298,7 +298,7 @@ def create_initiative(code: str, name: str, owner_id: int, description: str, per
     def on_integrity(exc):
         # A duplicate code arrives as UNIQUE; an unknown owner arrives as a bare
         # "FOREIGN KEY constraint failed" -- SQLite does not name the column.
-        # MajorInitiatives has exactly one foreign key on this INSERT (OwnerID ->
+        # TeamInitiatives has exactly one foreign key on this INSERT (OwnerID ->
         # People), so a foreign-key failure here is unambiguously the owner.
         text = str(exc)
         if "Code" in text or "UNIQUE" in text.upper():
@@ -315,15 +315,15 @@ def retire_initiative(mi_id: str, person_id: int):
     disappears from every list and card."""
     def body(conn):
         row = conn.execute(
-            "SELECT MajorInitiativeID, IsActive FROM MajorInitiatives WHERE MIId = ?",
+            "SELECT TeamInitiativeID, IsActive FROM TeamInitiatives WHERE MIId = ?",
             (mi_id,),
         ).fetchone()
         if row is None:
             raise RuleError("That initiative does not exist.")
         if not row["IsActive"]:
             raise RuleError(f"{mi_id} is already retired.")
-        conn.execute("UPDATE MajorInitiatives SET IsActive = 0 WHERE MajorInitiativeID = ?",
-                     (row["MajorInitiativeID"],))
+        conn.execute("UPDATE TeamInitiatives SET IsActive = 0 WHERE TeamInitiativeID = ?",
+                     (row["TeamInitiativeID"],))
         _audit(conn, person_id, "retire_initiative", mi_id, {})
 
     write(body)

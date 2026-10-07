@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Dean Initiatives{% endblock %}
+{% block content %}
+{#
+  The Dean's own initiatives (register, 2026-10-07). FY26 is complete; FY27 is in
+  flight. PercentComplete is the register's 0-1 value scaled to 0-100. Each Dean
+  initiative names the Team Initiatives that roll up to it.
+
+  Its own page, not a home-page section: 11 rows with progress bars is a full
+  view, and the home page is an overview (same reasoning that moved the 29-row
+  table to /team-initiatives).
+#}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Above the initiative layer</p>
+    <h1>Dean Initiatives</h1>
+  </div>
+  <p class="section-note">{{ dean_initiatives | length }} across FY26 and FY27</p>
+</div>
+
+<p class="section-note">
+  Progress is the Dean's own estimate of completion. Each one names the Team
+  Initiatives that roll up to it.
+</p>
+
+{% for fy, label in [(26, 'FY26 — complete'), (27, 'FY27 — in flight')] %}
+  {% set group = dean_initiatives | selectattr('fiscal_year', 'equalto', fy) | list %}
+  {% if group %}
+  <h2 class="list-group-label">{{ label }}</h2>
+  <ul class="dean-list">
+    {% for d in group %}
+    <li class="dean-row">
+      <span class="dean-title">
+        <a href="/team-initiatives?dean={{ d.code }}">{{ d.title }}</a>
+        {% if d.priority_title %}<span class="dean-initiative">{{ d.priority_title | priority_label }}</span>{% endif %}
+      </span>
+      <span class="bar" role="img" aria-label="{{ d.percent_complete }} percent complete">
+        <span class="bar-fill status-on-track" style="width: {{ d.percent_complete }}%"></span>
+      </span>
+      <span class="dean-pct">{{ d.percent_complete }}%</span>
+      {# The roll-up: which Team Initiatives contribute to this Dean initiative. #}
+      {% if d.initiatives %}
+      <p class="dean-rollup">
+        {% for t in d.initiatives %}<a class="chip" href="/team-initiatives/{{ t.mi_id }}">{{ t.title }}</a>{% endfor %}
+      </p>
+      {% else %}
+      <p class="dean-rollup empty">No Team Initiatives roll up to this one.</p>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+{% endfor %}
+{% endblock %}

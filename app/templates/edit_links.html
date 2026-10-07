@@ -1,14 +1,14 @@
 {# Edit-links FRAGMENT (loaded into #card-modal by hx-get). Does not extend
    base.html; a direct GET renders edit_links_full.html.
 
-   The merged model (2026-10-07): a Major Initiative contributes to the Dean
-   Priorities it is linked to. Choices are the Dean Priority rows, aliased in
+   The merged model (2026-10-07): a Team Initiative contributes to the Dean
+   Priorities it is linked to. Choices are the Dean Initiative rows, aliased in
    link_edit_options as InitiativeID/Code/InitiativeName so this form is
    unchanged. There is no Dean/D-1 level gate any more. #}
 <div class="card-body">
   <h2>{{ card.Code }} contributes to&hellip;</h2>
   {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-  <form hx-post="/major-initiatives/{{ card.Code }}/edit/links" hx-target="#card-modal" hx-swap="innerHTML" class="card">
+  <form hx-post="/team-initiatives/{{ card.Code }}/edit/links" hx-target="#card-modal" hx-swap="innerHTML" class="card">
     {% for de in deans %}
     <label class="check">
       <input type="checkbox" name="dean_initiative_id" value="{{ de.InitiativeID }}"

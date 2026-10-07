@@ -20,7 +20,7 @@ def _enable_meeting(meeting_on):
 
 @pytest.fixture(autouse=True)
 def _seeded_portfolio(fresh_db, diary):
-    """Give every active Major Initiative a fresh "On track" diary entry.
+    """Give every active Team Initiative a fresh "On track" diary entry.
 
     The register seed ships an EMPTY diary (the prototype's sample diary was
     dropped in the 2026-10-07 merge), so without this every meeting/attention
@@ -29,7 +29,7 @@ def _seeded_portfolio(fresh_db, diary):
     """
     conn = sqlite3.connect(fresh_db)
     mIs = [r[0] for r in conn.execute(
-        "SELECT MIId FROM MajorInitiatives WHERE IsActive = 1")]
+        "SELECT MIId FROM TeamInitiatives WHERE IsActive = 1")]
     today = conn.execute("SELECT date('now')").fetchone()[0]
     conn.close()
     for mi in mIs:
@@ -54,7 +54,7 @@ def test_since_parameter_narrows_the_window(logged_in, fresh_db):
     there, and a whole-page assertion would pass for the wrong reason.
     """
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = '2020-01-01'")
+    conn.execute("UPDATE TeamInitiativeUpdates SET UpdateDate = '2020-01-01'")
     conn.commit()
     conn.close()
 
@@ -81,7 +81,7 @@ def test_bad_since_is_rejected_rather_than_crashing(logged_in):
 
 def test_changes_are_grouped_by_owner(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now')")
+    conn.execute("UPDATE TeamInitiativeUpdates SET UpdateDate = date('now')")
     conn.commit()
     conn.close()
 
@@ -101,14 +101,14 @@ def _set_progress(db, code, status, days_ago=None):
     conn = sqlite3.connect(db)
     if days_ago is None:
         conn.execute(
-            "UPDATE MajorInitiativeUpdates SET Status = ? "
-            "WHERE MajorInitiativeID = (SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)",
+            "UPDATE TeamInitiativeUpdates SET Status = ? "
+            "WHERE TeamInitiativeID = (SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId = ?)",
             (status, code),
         )
     else:
         conn.execute(
-            "UPDATE MajorInitiativeUpdates SET Status = ?, UpdateDate = date('now', ?) "
-            "WHERE MajorInitiativeID = (SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)",
+            "UPDATE TeamInitiativeUpdates SET Status = ?, UpdateDate = date('now', ?) "
+            "WHERE TeamInitiativeID = (SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId = ?)",
             (status, "-%d days" % days_ago, code),
         )
     conn.commit()
@@ -118,7 +118,7 @@ def _set_progress(db, code, status, days_ago=None):
 def _quiet(db):
     """Make the sample data a clean slate: nothing at risk, nothing stale."""
     conn = sqlite3.connect(db)
-    conn.execute("UPDATE MajorInitiativeUpdates SET Status = 'On track', UpdateDate = date('now')")
+    conn.execute("UPDATE TeamInitiativeUpdates SET Status = 'On track', UpdateDate = date('now')")
     conn.commit()
     conn.close()
 
@@ -136,12 +136,12 @@ def test_attention_list_holds_initiatives_that_are_at_risk(logged_in, fresh_db):
 
 def test_attention_entries_link_to_their_card(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE MajorInitiativeUpdates SET Status = 'At risk', UpdateDate = date('now')")
+    conn.execute("UPDATE TeamInitiativeUpdates SET Status = 'At risk', UpdateDate = date('now')")
     conn.commit()
     conn.close()
 
     body = logged_in("Bill Gaudelli").get("/meeting").text
-    assert 'hx-get="/major-initiatives/' in body
+    assert 'hx-get="/team-initiatives/' in body
     assert 'hx-target="#card-modal"' in body
 
 
@@ -188,7 +188,7 @@ def test_an_update_inside_the_window_is_not_stale(logged_in, fresh_db):
 
 def test_an_initiative_with_no_update_says_so_rather_than_a_number(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
-    conn.execute("DELETE FROM MajorInitiativeUpdates")
+    conn.execute("DELETE FROM TeamInitiativeUpdates")
     conn.commit()
     conn.close()
 
@@ -299,8 +299,8 @@ def test_checks_page_renders(logged_in):
 def test_checks_lists_each_issue_with_its_initiative(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
+        "DELETE FROM TeamInitiativeGoals WHERE TeamInitiativeID = "
+        "(SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
     conn.close()
@@ -316,8 +316,8 @@ def test_checks_lists_each_issue_with_its_initiative(logged_in, fresh_db):
 def test_checks_uses_the_spec_wording_for_a_missing_goal(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
+        "DELETE FROM TeamInitiativeGoals WHERE TeamInitiativeID = "
+        "(SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
     conn.close()
@@ -337,14 +337,14 @@ def test_checks_is_clear_on_clean_sample_data(logged_in):
 def test_checks_rows_link_to_the_initiative(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
+        "DELETE FROM TeamInitiativeGoals WHERE TeamInitiativeID = "
+        "(SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
     conn.close()
 
     body = logged_in("Bill Gaudelli").get("/checks").text
-    assert 'hx-get="/major-initiatives/MI-004"' in body
+    assert 'hx-get="/team-initiatives/MI-004"' in body
 
 
 # --- gating ---------------------------------------------------------------

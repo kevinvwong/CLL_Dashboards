@@ -25,7 +25,7 @@ declares a checkpoint.**
   landed on the live site". Verify locally instead.
 
 **Production state at the time of this policy:** marker
-`labels-20261007T123612Z` (the `/dean-priorities` + "Goal N" + status-glyph
+`labels-20261007T123612Z` (the `/dean-initiatives` + "Goal N" + status-glyph
 round). Production is therefore AHEAD of nothing and BEHIND any local work done
 after `f24cc5d` until the next declared checkpoint.
 

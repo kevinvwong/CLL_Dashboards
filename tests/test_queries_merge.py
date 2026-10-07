@@ -8,13 +8,13 @@ def test_all_initiatives_reads_the_register(fresh_db):
     assert all(r["Code"].startswith("MI-") for r in rows)
 
 
-def test_goal_tiles_count_major_initiatives(fresh_db):
+def test_goal_tiles_count_team_initiatives(fresh_db):
     tiles = queries.goal_tiles()
     assert len(tiles) == 5
     assert sum(t["InitiativeCount"] for t in tiles) >= 29
 
 
-def test_priority_tiles_count_major_initiatives(fresh_db):
+def test_priority_tiles_count_team_initiatives(fresh_db):
     tiles = queries.priority_tiles()
     assert len(tiles) == 6
     assert sum(t["InitiativeCount"] for t in tiles) >= 29
@@ -37,7 +37,7 @@ def test_initiative_card_resolves_by_mi_id(fresh_db):
     assert card["priority_tags"]
 
 
-def test_relationships_contribute_to_dean_priorities(fresh_db):
+def test_relationships_contribute_to_dean_initiatives(fresh_db):
     rel = queries.relationships_for(["MI-002"])
     assert rel
     for rows in rel.values():

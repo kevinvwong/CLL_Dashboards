@@ -27,20 +27,20 @@ def test_unknown_code_is_404_even_for_a_caller_who_could_edit(logged_in):
 
     Bill Gaudelli is the Dean and an admin, so on a real code he would be allowed. On an
     unknown code he must still get 404 - not 403, which would leak that the code
-    is special and contradict GET /major-initiatives/{code}.
+    is special and contradict GET /team-initiatives/{code}.
     """
     client = logged_in("Bill Gaudelli")
-    for path in ("/major-initiatives/NOPE-9",
-                 "/major-initiatives/NOPE-9/update",
-                 "/major-initiatives/NOPE-9/edit/details",
-                 "/major-initiatives/NOPE-9/edit/tags"):
+    for path in ("/team-initiatives/NOPE-9",
+                 "/team-initiatives/NOPE-9/update",
+                 "/team-initiatives/NOPE-9/edit/details",
+                 "/team-initiatives/NOPE-9/edit/tags"):
         r = client.get(path)
         assert r.status_code == 404, "%s returned %d, expected 404" % (path, r.status_code)
 
 
 def test_known_but_forbidden_is_403(logged_in):
     """A code that exists, that this caller may not act on, is forbidden."""
-    r = logged_in("Tim Jacobbe").get("/major-initiatives/MI-004/update")
+    r = logged_in("Tim Jacobbe").get("/team-initiatives/MI-004/update")
     assert r.status_code == 403
 
 
@@ -50,7 +50,7 @@ def test_known_but_forbidden_is_403(logged_in):
 def test_direct_post_without_permission_is_refused(logged_in, fresh_db):
     """Tim Jacobbe does not own MI-004 and is not the Dean; a direct POST is refused."""
     r = logged_in("Tim Jacobbe").post(
-        "/major-initiatives/MI-004/updates",
+        "/team-initiatives/MI-004/updates",
         data={"percent": "10", "status": "On track", "note": "sneaking in"},
         follow_redirects=False,
     )
@@ -60,7 +60,7 @@ def test_direct_post_without_permission_is_refused(logged_in, fresh_db):
 def test_admin_only_post_is_refused_for_a_non_admin(logged_in):
     """An owner who is not an admin cannot edit tags, even on their own item."""
     r = logged_in("Elizabeth Smith").post(
-        "/major-initiatives/MI-004/edit/tags",
+        "/team-initiatives/MI-004/edit/tags",
         data={"goal": ["1"]},
         follow_redirects=False,
     )

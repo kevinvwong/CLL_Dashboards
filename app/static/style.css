@@ -1387,7 +1387,7 @@ body.overlay-open { overflow: hidden; }
 }
 .chip-priority:hover { background: var(--surface-hover); }
 
-/* 4. the Major Initiatives table */
+/* 4. the Team Initiatives table */
 .mi-table { font-size: var(--text-sm); }
 .mi-table .muted-cell { color: var(--ink-muted); }
 .mi-table .target-cell { max-width: 34ch; }
@@ -1612,7 +1612,7 @@ body.presenting .no-print { display: none; }
   .search-open, .search-palette, .meeting-controls, .presenter { display: none; }
 }
 
-/* --- the Dean Priorities list (register, 2026-10-07) ----------------------- */
+/* --- the Dean Initiatives list (register, 2026-10-07) ----------------------- */
 /* title | bar | percent, one grid so every bar shares a track width. */
 .dean-list { list-style: none; margin: 0 0 var(--space-5); padding: 0; display: grid; gap: var(--space-2); }
 .dean-row {
@@ -1622,10 +1622,10 @@ body.presenting .no-print { display: none; }
   gap: var(--space-4);
 }
 .dean-title { display: flex; flex-direction: column; }
-.dean-title .dean-priority { font-size: var(--text-sm); color: var(--ink-muted); }
+.dean-title .dean-initiative { font-size: var(--text-sm); color: var(--ink-muted); }
 .dean-pct { font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-muted); }
 
-/* The Major Initiative description (register, 2026-10-07). */
+/* The Team Initiative description (register, 2026-10-07). */
 .mi-description { max-width: 60ch; margin: var(--space-4) 0 var(--space-5); }
 
 /* Review round (2026-10-07): the card's one-line progress definition, and the
@@ -1645,3 +1645,17 @@ body.presenting .no-print { display: none; }
 @media (max-width: 640px) {
   .mi-chip-list, .priority-grid, .team-grid, .oct16-grid { grid-template-columns: 1fr; }
 }
+
+/* The roll-up line under a Dean initiative: the Team Initiatives that contribute
+   to it (design review, 2026-10-07). Spans the row's three grid columns. */
+.dean-rollup {
+  grid-column: 1 / -1;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: center;
+}
+.dean-rollup .chip { font-size: var(--text-xs); }
+.dean-rollup.empty { color: var(--ink-muted); font-size: var(--text-sm); font-style: italic; }
+.dean-title a { color: inherit; }

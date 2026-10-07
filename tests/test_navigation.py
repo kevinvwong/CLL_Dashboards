@@ -19,7 +19,7 @@ def test_the_primary_nav_has_the_five_destinations(logged_in):
     """The nav's live destinations. Meeting is ICED (2026-10-06), so it is not
     among them while MEETING_ENABLED is unset."""
     body = logged_in("Bill Gaudelli").get("/").text
-    for dest in ("/", "/major-initiatives", "/people", "/outcomes"):
+    for dest in ("/", "/team-initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body, "missing %s" % dest
 
 
@@ -56,7 +56,7 @@ def test_outcomes_renders(logged_in):
 
 
 def test_an_initiative_full_page_shows_breadcrumbs(logged_in):
-    body = _html.unescape(logged_in("Bill Gaudelli").get("/major-initiatives/MI-002").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/team-initiatives/MI-002").text)
     assert "breadcrumb" in body
     assert "Overview" in body
     assert "Initiatives" in body
@@ -64,7 +64,7 @@ def test_an_initiative_full_page_shows_breadcrumbs(logged_in):
 
 def test_the_drawer_fragment_has_no_breadcrumbs(logged_in):
     """Crumbs are the full page's job; the drawer sits over a page with them."""
-    body = logged_in("Bill Gaudelli").get("/major-initiatives/MI-002",
+    body = logged_in("Bill Gaudelli").get("/team-initiatives/MI-002",
                                 headers={"HX-Request": "true"}).text
     assert "breadcrumb" not in body
 
@@ -85,7 +85,7 @@ def test_switch_user_is_not_in_the_primary_nav(logged_in):
 
 
 def test_outcomes_and_checks_are_one_step_from_any_page(logged_in):
-    for page in ("/", "/major-initiatives", "/people"):
+    for page in ("/", "/team-initiatives", "/people"):
         body = logged_in("Bill Gaudelli").get(page).text
         assert 'href="/outcomes"' in body
     # Meeting is iced, so it is not linked from anywhere.

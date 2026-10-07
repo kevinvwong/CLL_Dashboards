@@ -3,97 +3,97 @@
 -- Do not hand-edit. Read from the workbook, not retyped.
 -- Rows are matched to the prototype by NAME, not position.
 
--- The canon's stable key and exact title for each Major Initiative.
-UPDATE MajorInitiatives SET MIId='MI-001', Title='Portfolio & pathways' WHERE Code='1-01';
-UPDATE MajorInitiatives SET MIId='MI-002', Title='Reusable content' WHERE Code='1-02';
-UPDATE MajorInitiatives SET MIId='MI-003', Title='Data, EdTech & Infinity' WHERE Code='1-03';
-UPDATE MajorInitiatives SET MIId='MI-004', Title='Team operating models' WHERE Code='1-04';
-UPDATE MajorInitiatives SET MIId='MI-005', Title='Financial, Operational, and Initiative Dashboards' WHERE Code='2-01';
-UPDATE MajorInitiatives SET MIId='MI-006', Title='Unified branding and messaging frameworks' WHERE Code='2-02';
-UPDATE MajorInitiatives SET MIId='MI-007', Title='Centralized Process & Procedure workflows' WHERE Code='2-03';
-UPDATE MajorInitiatives SET MIId='MI-008', Title='Admin & Ops LLM Agent' WHERE Code='2-04';
-UPDATE MajorInitiatives SET MIId='MI-009', Title='Build Organizational Learning Capability' WHERE Code='2-05';
-UPDATE MajorInitiatives SET MIId='MI-010', Title='Optimized Org Structure & Resource Onboarding' WHERE Code='2-06';
-UPDATE MajorInitiatives SET MIId='MI-011', Title='Growth Engine Readiness' WHERE Code='3-01';
-UPDATE MajorInitiatives SET MIId='MI-012', Title='Strategic Partnership & Revenue Growth' WHERE Code='3-02';
-UPDATE MajorInitiatives SET MIId='MI-013', Title='Geographic Expansion' WHERE Code='3-03';
-UPDATE MajorInitiatives SET MIId='MI-014', Title='Asset Utilization' WHERE Code='3-04';
-UPDATE MajorInitiatives SET MIId='MI-015', Title='Research & Innovation Capacity & Infrastructure' WHERE Code='4-03';
-UPDATE MajorInitiatives SET MIId='MI-016', Title='RDI Baseline & Dashboard' WHERE Code='4-01';
-UPDATE MajorInitiatives SET MIId='MI-017', Title='Research & Innovation Mechanism' WHERE Code='4-04';
-UPDATE MajorInitiatives SET MIId='MI-018', Title='Research & Innovation Agenda' WHERE Code='4-02';
-UPDATE MajorInitiatives SET MIId='MI-019', Title='Learning Studio/Makerspace Model' WHERE Code='4-06';
-UPDATE MajorInitiatives SET MIId='MI-020', Title='CLL Learning & Impact Measures' WHERE Code='4-05';
-UPDATE MajorInitiatives SET MIId='MI-021', Title='Develop approval/governance process for academic programs and digital credentials' WHERE Code='5-03';
-UPDATE MajorInitiatives SET MIId='MI-022', Title='Establish and Implement Faculty Governance Process' WHERE Code='5-01';
-UPDATE MajorInitiatives SET MIId='MI-023', Title='Develop and Implement a Faculty Evaluation and Promotion System' WHERE Code='5-02';
-UPDATE MajorInitiatives SET MIId='MI-024', Title='Empower all Faculty to engage in innovative program development' WHERE Code='5-05';
-UPDATE MajorInitiatives SET MIId='MI-025', Title='Fill Multiple Faculty Positions and Align Existing Faculty Work' WHERE Code='5-04';
-UPDATE MajorInitiatives SET MIId='MI-026', Title='Stand up Innovative, yet Traditional, Academic Programs' WHERE Code='5-08';
-UPDATE MajorInitiatives SET MIId='MI-027', Title='Network across campus to grow Faculty participation in CLL Programs' WHERE Code='5-06';
-UPDATE MajorInitiatives SET MIId='MI-028', Title='Recruit students into traditional academic programs' WHERE Code='5-07';
-UPDATE MajorInitiatives SET MIId='MI-029', Title='Build academic coursework as reusable isolated learning experiences' WHERE Code='5-09';
+-- The canon's stable key and exact title for each Team Initiative.
+UPDATE TeamInitiatives SET MIId='MI-001', Title='Portfolio & pathways' WHERE Code='1-01';
+UPDATE TeamInitiatives SET MIId='MI-002', Title='Reusable content' WHERE Code='1-02';
+UPDATE TeamInitiatives SET MIId='MI-003', Title='Data, EdTech & Infinity' WHERE Code='1-03';
+UPDATE TeamInitiatives SET MIId='MI-004', Title='Team operating models' WHERE Code='1-04';
+UPDATE TeamInitiatives SET MIId='MI-005', Title='Financial, Operational, and Initiative Dashboards' WHERE Code='2-01';
+UPDATE TeamInitiatives SET MIId='MI-006', Title='Unified branding and messaging frameworks' WHERE Code='2-02';
+UPDATE TeamInitiatives SET MIId='MI-007', Title='Centralized Process & Procedure workflows' WHERE Code='2-03';
+UPDATE TeamInitiatives SET MIId='MI-008', Title='Admin & Ops LLM Agent' WHERE Code='2-04';
+UPDATE TeamInitiatives SET MIId='MI-009', Title='Build Organizational Learning Capability' WHERE Code='2-05';
+UPDATE TeamInitiatives SET MIId='MI-010', Title='Optimized Org Structure & Resource Onboarding' WHERE Code='2-06';
+UPDATE TeamInitiatives SET MIId='MI-011', Title='Growth Engine Readiness' WHERE Code='3-01';
+UPDATE TeamInitiatives SET MIId='MI-012', Title='Strategic Partnership & Revenue Growth' WHERE Code='3-02';
+UPDATE TeamInitiatives SET MIId='MI-013', Title='Geographic Expansion' WHERE Code='3-03';
+UPDATE TeamInitiatives SET MIId='MI-014', Title='Asset Utilization' WHERE Code='3-04';
+UPDATE TeamInitiatives SET MIId='MI-015', Title='Research & Innovation Capacity & Infrastructure' WHERE Code='4-03';
+UPDATE TeamInitiatives SET MIId='MI-016', Title='RDI Baseline & Dashboard' WHERE Code='4-01';
+UPDATE TeamInitiatives SET MIId='MI-017', Title='Research & Innovation Mechanism' WHERE Code='4-04';
+UPDATE TeamInitiatives SET MIId='MI-018', Title='Research & Innovation Agenda' WHERE Code='4-02';
+UPDATE TeamInitiatives SET MIId='MI-019', Title='Learning Studio/Makerspace Model' WHERE Code='4-06';
+UPDATE TeamInitiatives SET MIId='MI-020', Title='CLL Learning & Impact Measures' WHERE Code='4-05';
+UPDATE TeamInitiatives SET MIId='MI-021', Title='Develop approval/governance process for academic programs and digital credentials' WHERE Code='5-03';
+UPDATE TeamInitiatives SET MIId='MI-022', Title='Establish and Implement Faculty Governance Process' WHERE Code='5-01';
+UPDATE TeamInitiatives SET MIId='MI-023', Title='Develop and Implement a Faculty Evaluation and Promotion System' WHERE Code='5-02';
+UPDATE TeamInitiatives SET MIId='MI-024', Title='Empower all Faculty to engage in innovative program development' WHERE Code='5-05';
+UPDATE TeamInitiatives SET MIId='MI-025', Title='Fill Multiple Faculty Positions and Align Existing Faculty Work' WHERE Code='5-04';
+UPDATE TeamInitiatives SET MIId='MI-026', Title='Stand up Innovative, yet Traditional, Academic Programs' WHERE Code='5-08';
+UPDATE TeamInitiatives SET MIId='MI-027', Title='Network across campus to grow Faculty participation in CLL Programs' WHERE Code='5-06';
+UPDATE TeamInitiatives SET MIId='MI-028', Title='Recruit students into traditional academic programs' WHERE Code='5-07';
+UPDATE TeamInitiatives SET MIId='MI-029', Title='Build academic coursework as reusable isolated learning experiences' WHERE Code='5-09';
 
 -- The MI -> Goal edge, parsed from each alignment string.
-INSERT INTO MajorInitiativeGoals (MajorInitiativeID, GoalID) VALUES
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='1-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='3-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-07'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
-  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=5));
+INSERT INTO TeamInitiativeGoals (TeamInitiativeID, GoalID) VALUES
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='2-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='3-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='4-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-03'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-01'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-02'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-05'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-04'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-08'), (SELECT GoalID FROM Goals WHERE GoalNumber=5)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-06'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-07'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=1)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=2)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=3)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=4)),
+  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='5-09'), (SELECT GoalID FROM Goals WHERE GoalNumber=5));

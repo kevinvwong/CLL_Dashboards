@@ -15,8 +15,8 @@ here, with the reasoning, where the finding needed a product/vocabulary decision
   test added.
 - **#1 search Enter → raw page [done]** Direct load now renders `search.html`; a
   single match 307-redirects to it. htmx still gets the fragment.
-- **#9 search misses Major Initiatives, no arrow keys [done]** Added a
-  `major-initiative` kind (by MI-id and title); palette highlight + Enter.
+- **#9 search misses Team Initiatives, no arrow keys [done]** Added a
+  `team-initiative` kind (by MI-id and title); palette highlight + Enter.
 - **#3 literal `&minus;` [done]** Entity moved outside the Jinja expression.
 - **#21 `Goal ·` eyebrow [done]** Shows the goal number; drops the empty separator.
 - **#13 priority-code contrast [done]** Code text is ink; hue stays on dot + border.
@@ -27,7 +27,7 @@ here, with the reasoning, where the finding needed a product/vocabulary decision
 
 - Breadcrumb at `x = 0`: put it inside `main`'s gutter.
 - MI-001 breadcrumb says "Overview › Priorities › MI-001": wrong parent. The MI
-  page's parent is the Major Initiatives index, not Priorities.
+  page's parent is the Team Initiatives index, not Priorities.
 - Team breadcrumb links "Teams", which 404s. Point crumbs at real routes.
 - `aria-current` marks the wrong nav item on goal/priority/team/MI pages (they
   highlight "Initiatives"); `/checks` highlights "Overview".

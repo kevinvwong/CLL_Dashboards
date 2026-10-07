@@ -210,12 +210,12 @@ def test_a_missing_update_is_unknown_not_zero_on_the_person_card(fresh_db):
 
     conn = _s.connect(fresh_db)
     conn.execute(
-        "DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = 'MI-004')"
+        "DELETE FROM TeamInitiativeUpdates WHERE TeamInitiativeID = "
+        "(SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId = 'MI-004')"
     )
     conn.commit()
     pid = conn.execute(
-        "SELECT OwnerID FROM MajorInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
+        "SELECT OwnerID FROM TeamInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
     conn.close()
 
     card = queries.person_card(pid)
@@ -234,7 +234,7 @@ def test_an_existing_update_is_not_flagged_as_unknown(fresh_db, diary):
     diary("MI-004", 30, "On track", on="2026-10-05")
     conn = sqlite3.connect(fresh_db)
     pid = conn.execute(
-        "SELECT OwnerID FROM MajorInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
+        "SELECT OwnerID FROM TeamInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
     conn.close()
 
     card = queries.person_card(pid)
@@ -249,12 +249,12 @@ def test_the_person_page_shows_a_missing_update_as_such(logged_in, fresh_db):
 
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = 'MI-004')"
+        "DELETE FROM TeamInitiativeUpdates WHERE TeamInitiativeID = "
+        "(SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId = 'MI-004')"
     )
     conn.commit()
     pid = conn.execute(
-        "SELECT OwnerID FROM MajorInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
+        "SELECT OwnerID FROM TeamInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
     conn.close()
 
     body = _html.unescape(logged_in("Bill Gaudelli").get("/people/%d" % pid).text)

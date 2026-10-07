@@ -32,7 +32,7 @@ def test_the_home_is_a_dashboard_not_a_stage(logged_in):
     assert "team-grid" in body
     # The 29-row table has its own page now (interconnection-redesign 5).
     assert "mi-table" not in body, "the overview still renders the MI table"
-    assert "mi-table" in _page(logged_in, "/major-initiatives")
+    assert "mi-table" in _page(logged_in, "/team-initiatives")
     # The prototype's stage is gone.
     assert "dean-node" not in body, "the Dean node stage still renders"
     assert "priority-map" not in body, "the prototype's priority map still renders"
@@ -40,7 +40,7 @@ def test_the_home_is_a_dashboard_not_a_stage(logged_in):
 
 def test_the_stat_band_reports_the_portfolio(logged_in):
     body = _home(logged_in)
-    for label in ("Initiatives", "Priorities", "Teams", "Major Initiatives", "Need review"):
+    for label in ("Initiatives", "Priorities", "Teams", "Team Initiatives", "Need review"):
         assert label in body, "missing stat %s" % label
 
 
@@ -86,24 +86,24 @@ def test_the_four_teams_render_with_descriptions(logged_in):
         assert team in body
 
 
-def test_all_29_major_initiatives_render_with_their_fields(logged_in):
+def test_all_29_team_initiatives_render_with_their_fields(logged_in):
     from app import queries
-    body = _page(logged_in, "/major-initiatives")
-    rows = queries.major_initiative_cards()
+    body = _page(logged_in, "/team-initiatives")
+    rows = queries.team_initiative_cards()
     assert len(rows) == 29
     assert body.count('class="mi-row"') == 29
     # The table's columns cover the prototype's fields. The first column is the
     # canon's stable key (MI-###) as of interconnection-redesign 4.2: the row
     # key is now the identifier the source register uses, not our internal code.
-    for col in ("ID", "Major Initiative", "Team", "Source area", "Strategy alignment",
+    for col in ("ID", "Team Initiative", "Team", "Source area", "Strategy alignment",
                 "Initiatives", "Target", "Target status", "Feeds"):
         assert col in body, "missing column %s" % col
 
 
-def test_a_major_initiative_shows_its_team_source_area_and_priorities(logged_in):
+def test_a_team_initiative_shows_its_team_source_area_and_priorities(logged_in):
     from app import queries
-    body = _page(logged_in, "/major-initiatives")
-    k = queries.major_initiative_cards()[0]
+    body = _page(logged_in, "/team-initiatives")
+    k = queries.team_initiative_cards()[0]
     assert k["Team"] in body
     assert k["SourceArea"] in body
     # Its priority codes appear as chips.
@@ -113,9 +113,9 @@ def test_a_major_initiative_shows_its_team_source_area_and_priorities(logged_in)
 
 def test_the_needs_review_marker_is_shown(logged_in):
     from app import queries
-    body = _page(logged_in, "/major-initiatives")
-    needs = [k for k in queries.major_initiative_cards() if k["TargetStatus"] == "needs_review"]
-    assert needs, "expected some Major Initiatives needing review"
+    body = _page(logged_in, "/team-initiatives")
+    needs = [k for k in queries.team_initiative_cards() if k["TargetStatus"] == "needs_review"]
+    assert needs, "expected some Team Initiatives needing review"
     assert "needs review" in body
 
 

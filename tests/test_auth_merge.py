@@ -1,4 +1,4 @@
-"""Permissions resolve on the register's Major Initiatives."""
+"""Permissions resolve on the register's Team Initiatives."""
 from app import auth
 
 
@@ -13,7 +13,7 @@ def test_the_admin_is_not_the_dean(fresh_db, request_for, logged_in):
     assert auth.is_dean(person) is False
 
 
-def test_an_owner_may_edit_their_own_major_initiative(fresh_db, request_for, logged_in):
+def test_an_owner_may_edit_their_own_team_initiative(fresh_db, request_for, logged_in):
     # Mario Herane (Learning Ecosystems) leads MI-002 'Reusable content'.
     req = request_for(logged_in("Mario Herane"))
     assert auth.can_edit_details(req, "MI-002") is True

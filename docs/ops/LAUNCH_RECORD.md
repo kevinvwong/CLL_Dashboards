@@ -100,14 +100,14 @@ Until 1–4 hold, this service is a demonstration.
 
 `Initiative Dashboard Register.xlsx` (supplied 2026-10-07, last authored by
 `Smith, Elizabeth C`, produced by Microsoft Excel Online) supersedes the earlier
-canon workbook for the Major Initiatives. It is the first source to carry real
+canon workbook for the Team Initiatives. It is the first source to carry real
 **Named Owner** values, descriptions, a Goals 1-5 alignment matrix, and a Dean
 layer. It was adopted on the user's instruction: **"register is canon and
 overwrites."**
 
 **Team reassignments (four rows moved to _Learning Ecosystems_):**
 
-| Major Initiative | Was | Now |
+| Team Initiative | Was | Now |
 |---|---|---|
 | Growth Engine Readiness | Learning Experiences | Learning Ecosystems |
 | Strategic Partnership & Revenue Growth | Learning Experiences | Learning Ecosystems |
@@ -125,13 +125,13 @@ Mario Herane (Learning Ecosystems), Tim Jacobbe (Learning Experiences),
 Meltem Alemdar (Learning Futures), Elizabeth Smith (Learning Infrastructure).
 The register names Learning Futures' six rows with two people in one cell
 ("Meltem Alemdar/Grace Flavin"); Meltem Alemdar is the accountable lead
-(`OwnerID`) and **Grace Flavin** is held in `MajorInitiativeCoOwners`, so neither
+(`OwnerID`) and **Grace Flavin** is held in `TeamInitiativeCoOwners`, so neither
 is lost.
 
-**Dean Priorities layer (new):** 11 rows in `DeanPriorities` — FY26 (3, all
+**Dean Initiatives layer (new):** 11 rows in `DeanInitiatives` — FY26 (3, all
 complete) and FY27 (8, in flight) — each with a 0-100 `PercentComplete` scaled
-from the register's 0-1 value. Presented in the app as "Dean Priorities". 61
-Major-Initiative-to-Dean-FY27 links are held in `MajorInitiativeDeanLinks`.
+from the register's 0-1 value. Presented in the app as "Dean Initiatives". 61
+Team-Initiative-to-Dean-FY27 links are held in `TeamInitiativeDeanLinks`.
 
 **Change log:** the `AuditLog.EntityType` derivation was corrected — it was keyed
 by entity but looked up by the action's first word, so every goal, priority, tag
@@ -157,8 +157,8 @@ Verified live after deploy:
 | `/robots.txt` | 200, `Disallow: /` |
 | `/login`, `/` (anon) | 200; 303 to login |
 | `/whoami` picker | lists Bill Gaudelli, Meltem Alemdar, Grace Flavin |
-| Home | Dean Priorities FY26/FY27 with percent bars; teams 6/10/6/7 |
-| `/major-initiatives/MI-002` | description and "Contributes to" chips render |
+| Home | Dean Initiatives FY26/FY27 with percent bars; teams 6/10/6/7 |
+| `/team-initiatives/MI-002` | description and "Contributes to" chips render |
 | `/changes` | 200 for the admin (Kevin); 403 for the Dean (not an admin) |
 
 The archive shipped 70 entries (was 68): `db/seed_register.sql` and
@@ -181,18 +181,18 @@ the owners are the register's named leads, not institutionally confirmed.
 **Marker `merge-20261007T114347Z` confirmed live on the first `/healthz` poll.**
 
 The database held TWO initiative models and the home showed both at once
-("22 initiatives tracked" beside "29 Major Initiatives"), which read as a
+("22 initiatives tracked" beside "29 Team Initiatives"), which read as a
 contradiction. The register is canon, so they are merged onto its model:
 
 - The five prototype tables (`Initiatives`, `InitiativeGoals`,
   `InitiativePriorities`, `InitiativeLinks`, `ProgressUpdates`) are **dropped**.
-- The progress diary moves to `MajorInitiativeUpdates`, on the register's 29.
+- The progress diary moves to `TeamInitiativeUpdates`, on the register's 29.
 - `repo.py`, `auth.py`, `queries.py` and every route now read/write the register
   model, keyed by `MIId`.
-- `/initiatives/*` **308-redirects** to `/major-initiatives/*`; the interactive
+- `/initiatives/*` **308-redirects** to `/team-initiatives/*`; the interactive
   card (drawer, update form, edit forms) is now the register's page.
 - The 24 prototype diary rows were discarded, not migrated: every one named a
-  sample initiative, and none named a real Major Initiative.
+  sample initiative, and none named a real Team Initiative.
 
 Verified live after deploy:
 
@@ -201,8 +201,8 @@ Verified live after deploy:
 | `/healthz` | 200, marker matched on the first poll |
 | Home | **29 initiatives tracked** (one portfolio number, was 22-vs-29) |
 | Stat tiles | 29 / 6 / 4 / 29 / 21 |
-| `/initiatives` | 308 to `/major-initiatives` |
-| `/major-initiatives`, `/{mi_id}` | 200 |
+| `/initiatives` | 308 to `/team-initiatives` |
+| `/team-initiatives`, `/{mi_id}` | 200 |
 | `/changes` (admin) | 200 |
 
 Also fixed in this change: `scripts/import_xlsx.py` and `scripts/make_template.py`
@@ -210,7 +210,7 @@ retargeted to the register model (the importer wrote to the dropped tables and
 would have failed); `vw_DataChecks` dropped its "No progress update yet" check
 (an initiative with no diary is the normal state, and the importer refuses any
 import that leaves a check outstanding, so that check would have blocked every
-import); and `/major-initiatives/new` was declared after `/{mi_id}` and 404'd.
+import); and `/team-initiatives/new` was declared after `/{mi_id}` and 404'd.
 
 **Suite: 546 passing, 0 failing. Database byte-reproducible.**
 
@@ -226,7 +226,7 @@ the user declares a checkpoint, not as a step in the development loop. Recorded
 at the top of `docs/ops/DEPLOY.md`.
 
 **Production is frozen at marker `labels-20261007T123612Z` (commit `f24cc5d`)** —
-the round that added `/dean-priorities`, spelled "Goal N" in prose, and put a
+the round that added `/dean-initiatives`, spelled "Goal N" in prose, and put a
 glyph beside each status. Any commit after `f24cc5d` is local-only until the next
 declared checkpoint.
 

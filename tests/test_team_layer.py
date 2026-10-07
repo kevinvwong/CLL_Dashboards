@@ -1,4 +1,4 @@
-"""The organizational layer: teams, source areas, and the 29 Major Initiatives.
+"""The organizational layer: teams, source areas, and the 29 Team Initiatives.
 
 Covers the blueprint-redesign scope correction: the Dean's prototype's layer
 that our schema did not hold. Every field the prototype carries is asserted
@@ -38,16 +38,16 @@ def test_four_teams(fresh_db):
         assert t["Description"], "team %s has no description" % t["Name"]
 
 
-def test_twenty_nine_major_initiatives(fresh_db):
+def test_twenty_nine_team_initiatives(fresh_db):
     """The prototype's header says '35 cascading KPIs' = 6 + 29."""
-    assert len(_rows(fresh_db, "SELECT * FROM MajorInitiatives")) == 29
+    assert len(_rows(fresh_db, "SELECT * FROM TeamInitiatives")) == 29
 
 
-def test_major_initiatives_sum_by_source_area(fresh_db):
+def test_team_initiatives_sum_by_source_area(fresh_db):
     """The prototype's five areas: 4 + 6 + 4 + 6 + 9 = 29."""
     got = {r["Name"]: r["n"] for r in _rows(
         fresh_db,
-        "SELECT sa.Name, COUNT(*) AS n FROM MajorInitiatives k "
+        "SELECT sa.Name, COUNT(*) AS n FROM TeamInitiatives k "
         "JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID GROUP BY sa.Name")}
     assert got == {
         "Content & Product Strategy": 4,
@@ -61,11 +61,11 @@ def test_major_initiatives_sum_by_source_area(fresh_db):
 # --- every field the prototype carries -------------------------------------
 
 
-def test_every_major_initiative_field_is_present(fresh_db):
-    """The fields a Major Initiative carries. `SourceTarget` and `SlideRef` were
+def test_every_team_initiative_field_is_present(fresh_db):
+    """The fields a Team Initiative carries. `SourceTarget` and `SlideRef` were
     dropped 2026-10-07: the first was always equal to ProposedTarget or null, the
     second was a deck slide number the canon does not have."""
-    row = _rows(fresh_db, "SELECT * FROM vw_MajorInitiatives LIMIT 1")[0]
+    row = _rows(fresh_db, "SELECT * FROM vw_TeamInitiatives LIMIT 1")[0]
     for field in ("Code", "Title", "Team", "SourceArea", "StrategyAlign",
                   "Initiatives", "ProposedTarget", "TargetStatus", "Status", "Note"):
         assert field in row, "missing field %s" % field
@@ -73,17 +73,17 @@ def test_every_major_initiative_field_is_present(fresh_db):
 
 def test_target_status_is_one_of_two_vocabularies(fresh_db):
     """The prototype's targetStatus: 'source' or 'needs_review'."""
-    got = {r["TargetStatus"] for r in _rows(fresh_db, "SELECT TargetStatus FROM MajorInitiatives")}
+    got = {r["TargetStatus"] for r in _rows(fresh_db, "SELECT TargetStatus FROM TeamInitiatives")}
     assert got <= {"source", "needs_review"}, got
 
 
 def test_the_needs_review_count_matches_the_prototype(fresh_db):
     """The prototype's header says '21 need review' across the 35 KPIs.
 
-    The 21 split across the DEAN priorities (6) and the Major Initiatives; the MI
+    The 21 split across the DEAN priorities (6) and the Team Initiatives; the MI
     share is what is stored here, and it must be > 0 and <= 29.
     """
-    n = _rows(fresh_db, "SELECT COUNT(*) AS n FROM MajorInitiatives "
+    n = _rows(fresh_db, "SELECT COUNT(*) AS n FROM TeamInitiatives "
                         "WHERE TargetStatus = 'needs_review'")[0]["n"]
     assert 0 < n <= 29
 
@@ -106,20 +106,20 @@ def test_every_priority_has_the_governed_field(fresh_db, field):
 # --- the links ----------------------------------------------------------------
 
 
-def test_major_initiative_priorities_resolve(fresh_db):
-    """Every link joins a real Major Initiative to a real priority."""
-    links = _rows(fresh_db, "SELECT * FROM vw_MajorInitiativePriorities")
+def test_team_initiative_priorities_resolve(fresh_db):
+    """Every link joins a real Team Initiative to a real priority."""
+    links = _rows(fresh_db, "SELECT * FROM vw_TeamInitiativePriorities")
     assert len(links) == 51
     for link in links:
-        assert link["MajorInitiativeCode"] and link["PriorityName"]
+        assert link["TeamInitiativeCode"] and link["PriorityName"]
 
 
-def test_each_major_initiative_feeds_at_least_one_priority(fresh_db):
+def test_each_team_initiative_feeds_at_least_one_priority(fresh_db):
     """An initiative with no priority is invisible on every priority view."""
     orphan = _rows(fresh_db,
-        "SELECT k.Code FROM MajorInitiatives k "
-        "WHERE NOT EXISTS (SELECT 1 FROM MajorInitiativePriorities p WHERE p.MajorInitiativeID = k.MajorInitiativeID)")
-    assert not orphan, "Major Initiatives with no priority: %s" % orphan
+        "SELECT k.Code FROM TeamInitiatives k "
+        "WHERE NOT EXISTS (SELECT 1 FROM TeamInitiativePriorities p WHERE p.TeamInitiativeID = k.TeamInitiativeID)")
+    assert not orphan, "Team Initiatives with no priority: %s" % orphan
 
 
 # --- the read models ----------------------------------------------------------
@@ -128,4 +128,4 @@ def test_each_major_initiative_feeds_at_least_one_priority(fresh_db):
 def test_team_summary_via_the_view(fresh_db):
     rows = _rows(fresh_db, "SELECT * FROM vw_TeamSummary")
     assert len(rows) == 4
-    assert sum(r["MajorInitiativeCount"] for r in rows) == 29
+    assert sum(r["TeamInitiativeCount"] for r in rows) == 29

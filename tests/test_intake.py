@@ -42,10 +42,10 @@ def _counts(db):
     conn = sqlite3.connect(db)
     out = {
         table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        for table in ("MajorInitiatives", "MajorInitiativeUpdates",
-                      "MajorInitiativeGoals", "MajorInitiativeDeanLinks")
+        for table in ("TeamInitiatives", "TeamInitiativeUpdates",
+                      "TeamInitiativeGoals", "TeamInitiativeDeanLinks")
     }
-    out["active"] = conn.execute("SELECT COUNT(*) FROM MajorInitiatives WHERE IsActive = 1").fetchone()[0]
+    out["active"] = conn.execute("SELECT COUNT(*) FROM TeamInitiatives WHERE IsActive = 1").fetchone()[0]
     conn.close()
     return out
 
@@ -53,8 +53,8 @@ def _counts(db):
 def _diary(db, code):
     conn = sqlite3.connect(db)
     rows = conn.execute(
-        "SELECT pu.PercentComplete, pu.Status, pu.Note FROM MajorInitiativeUpdates pu "
-        "JOIN MajorInitiatives i ON i.MajorInitiativeID = pu.MajorInitiativeID "
+        "SELECT pu.PercentComplete, pu.Status, pu.Note FROM TeamInitiativeUpdates pu "
+        "JOIN TeamInitiatives i ON i.TeamInitiativeID = pu.TeamInitiativeID "
         "WHERE i.MIId = ? OR i.Code = ? "
         "ORDER BY pu.UpdateDate, pu.UpdateID",
         (code, code),
@@ -164,7 +164,7 @@ def test_clean_import_succeeds_and_swaps(logged_in, fresh_db, tmp_path):
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
     conn = sqlite3.connect(fresh_db)
-    assert conn.execute("SELECT Title FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0] \
+    assert conn.execute("SELECT Title FROM TeamInitiatives WHERE MIId='MI-004'").fetchone()[0] \
         == "Elizabeth Smith one"
     conn.close()
 
@@ -176,10 +176,10 @@ def test_new_initiative_from_the_workbook(logged_in, fresh_db, tmp_path):
              percent="10", status="On track"),
         _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
-    before = _counts(fresh_db)["MajorInitiatives"]
+    before = _counts(fresh_db)["TeamInitiatives"]
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
-    assert _counts(fresh_db)["MajorInitiatives"] == before + 1
+    assert _counts(fresh_db)["TeamInitiatives"] == before + 1
 
 
 # --- 8.8 diary preserved after re-import ----------------------------------
@@ -215,13 +215,13 @@ def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_pa
     assert ok, [str(p) for p in problems]
 
     after = _counts(fresh_db)
-    assert after["MajorInitiatives"] == before["MajorInitiatives"], "rows are retired, never deleted"
+    assert after["TeamInitiatives"] == before["TeamInitiatives"], "rows are retired, never deleted"
     assert after["active"] < before["active"]
     conn = sqlite3.connect(fresh_db)
-    assert conn.execute("SELECT IsActive FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0] == 0
+    assert conn.execute("SELECT IsActive FROM TeamInitiatives WHERE MIId='MI-004'").fetchone()[0] == 0
     assert conn.execute(
-        "SELECT COUNT(*) FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
+        "SELECT COUNT(*) FROM TeamInitiativeUpdates WHERE TeamInitiativeID = "
+        "(SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId='MI-004')"
     ).fetchone()[0] > 0, "a retired initiative keeps its history"
     conn.close()
 
@@ -338,26 +338,26 @@ def test_the_generated_template_carries_the_import_columns(logged_in, fresh_db, 
     formula = validations[feeds_letter].formula1
     conn = sqlite3.connect(fresh_db)
     deans = [r[0] for r in conn.execute(
-        "SELECT Code FROM DeanPriorities ORDER BY FiscalYear, Code")]
+        "SELECT Code FROM DeanInitiatives ORDER BY FiscalYear, Code")]
     conn.close()
     for code in deans:
         assert code in formula, "Feeds dropdown is missing Dean code %s" % code
 
 
 # test_a_dean_row_with_feeds_is_refused_and_says_why: retired 2026-10-07 - the merged model has no Dean/D-1
-# level and Feeds is a Dean Priority list, so neither premise holds.
+# level and Feeds is a Dean Initiative list, so neither premise holds.
 
 # test_a_d1_row_with_no_feeds_is_refused_by_the_data_check: retired 2026-10-07 - the merged model has no Dean/D-1
-# level and Feeds is a Dean Priority list, so neither premise holds.
+# level and Feeds is a Dean Initiative list, so neither premise holds.
 
 # test_the_template_cannot_mark_a_primary_and_import_leaves_none: retired 2026-10-07 - the merged register model has no goal
-# primacy (MajorInitiativeGoals has no IsPrimary), so this gap is gone.
+# primacy (TeamInitiativeGoals has no IsPrimary), so this gap is gone.
 
 # test_primacy_can_be_set_after_import_through_the_edit_screen: retired 2026-10-07 - the merged register model has no goal
-# primacy (MajorInitiativeGoals has no IsPrimary), so this gap is gone.
+# primacy (TeamInitiativeGoals has no IsPrimary), so this gap is gone.
 
 # test_imported_initiative_has_no_primary_but_a_second_is_still_refused: retired 2026-10-07 - the merged register model has no goal
-# primacy (MajorInitiativeGoals has no IsPrimary), so this gap is gone.
+# primacy (TeamInitiativeGoals has no IsPrimary), so this gap is gone.
 
 def test_the_row_helper_uses_the_templates_goal_columns(fresh_db):
     """The fixture's goal columns must be the ones the template generates.

@@ -37,13 +37,13 @@ def test_a_refused_write_leaves_nothing_behind(fresh_db):
     rollback through a body that writes and then fails: an unknown initiative
     code reaches the SELECT, then raises RuleError inside the transaction.
     """
-    before = _count(fresh_db, "MajorInitiativeUpdates")
+    before = _count(fresh_db, "TeamInitiativeUpdates")
     with pytest.raises(repo.RuleError):
         repo.add_progress_update(
             mi_id="NO-SUCH-CODE", percent=50, status="On track", note="x",
             entered_by_id=1,
         )
-    assert _count(fresh_db, "MajorInitiativeUpdates") == before, (
+    assert _count(fresh_db, "TeamInitiativeUpdates") == before, (
         "a refused write left a row behind"
     )
 
@@ -54,12 +54,12 @@ def test_a_body_that_raises_mid_write_rolls_back(fresh_db):
     Drives the seam directly with a body that inserts a real row and then
     raises, so the rollback path is exercised - not just the pre-checks.
     """
-    before = _count(fresh_db, "MajorInitiativeUpdates")
+    before = _count(fresh_db, "TeamInitiativeUpdates")
 
     def body(conn):
         conn.execute(
-            "INSERT INTO MajorInitiativeUpdates "
-            "(MajorInitiativeID, PercentComplete, Status, Note, EnteredByID) "
+            "INSERT INTO TeamInitiativeUpdates "
+            "(TeamInitiativeID, PercentComplete, Status, Note, EnteredByID) "
             "VALUES (1, 10, 'On track', 'temporary', 1)"
         )
         raise RuntimeError("boom after a write")
@@ -67,25 +67,25 @@ def test_a_body_that_raises_mid_write_rolls_back(fresh_db):
     with pytest.raises(RuntimeError):
         repo.write(body)
 
-    assert _count(fresh_db, "MajorInitiativeUpdates") == before, (
+    assert _count(fresh_db, "TeamInitiativeUpdates") == before, (
         "the seam committed a body that raised"
     )
 
 
 def test_a_successful_write_is_complete(fresh_db):
     """A body that returns commits every row it wrote."""
-    before = _count(fresh_db, "MajorInitiativeUpdates")
+    before = _count(fresh_db, "TeamInitiativeUpdates")
 
     def body(conn):
         conn.execute(
-            "INSERT INTO MajorInitiativeUpdates "
-            "(MajorInitiativeID, PercentComplete, Status, Note, EnteredByID) "
+            "INSERT INTO TeamInitiativeUpdates "
+            "(TeamInitiativeID, PercentComplete, Status, Note, EnteredByID) "
             "VALUES (1, 10, 'On track', 'kept', 1)"
         )
         return "done"
 
     assert repo.write(body) == "done"
-    assert _count(fresh_db, "MajorInitiativeUpdates") == before + 1
+    assert _count(fresh_db, "TeamInitiativeUpdates") == before + 1
 
 
 # --- refusal messages -------------------------------------------------------
@@ -109,7 +109,7 @@ def test_unknown_status_lists_the_allowed_set(fresh_db):
 def test_duplicate_code_names_the_code(fresh_db):
     import sqlite3
     existing = sqlite3.connect(fresh_db).execute(
-        "SELECT Code FROM MajorInitiatives WHERE MIId='MI-002'").fetchone()[0]
+        "SELECT Code FROM TeamInitiatives WHERE MIId='MI-002'").fetchone()[0]
     with pytest.raises(repo.RuleError) as e:
         repo.create_initiative(code=existing, name="Dup", owner_id=1,
                                description="", person_id=1)
@@ -135,7 +135,7 @@ def test_an_update_never_rewrites_earlier_updates(fresh_db):
     conn = sqlite3.connect(str(fresh_db))
     try:
         row = conn.execute(
-            "SELECT Note, PercentComplete FROM MajorInitiativeUpdates WHERE UpdateID = ?",
+            "SELECT Note, PercentComplete FROM TeamInitiativeUpdates WHERE UpdateID = ?",
             (id1,),
         ).fetchone()
     finally:

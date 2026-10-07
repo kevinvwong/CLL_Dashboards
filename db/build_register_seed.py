@@ -1,7 +1,7 @@
 """Generate db/seed_register.sql FROM the Initiative Dashboard Register.
 
 The register (`Initiative Dashboard Register.xlsx`, sheet "Team KPI Register")
-is the current canon for the Major Initiatives: it carries the named owners, a
+is the current canon for the Team Initiatives: it carries the named owners, a
 description per row, a Goals 1-5 alignment matrix, and the eight Dean KPI 27
 linkage columns, plus an 11-row Dean layer.
 
@@ -23,7 +23,7 @@ WORKBOOK = os.environ.get(
     os.path.join(os.path.expanduser("~"), "Downloads",
                  "Initiative Dashboard Register.xlsx"))
 
-#: register title (normalized) -> committed MajorInitiatives.Title (normalized),
+#: register title (normalized) -> committed TeamInitiatives.Title (normalized),
 #: for the five rows the register reworded. Chosen by word overlap, verified
 #: against the register itself (see git history).
 RENAMED = {
@@ -115,7 +115,7 @@ def build(path=WORKBOOK, out=OUT):
     import sqlite3
     con = sqlite3.connect(os.path.join(HERE, "..", "cll_initiatives.db"))
     committed = {norm(t): (code, mid) for mid, t, code in
-                 con.execute("SELECT MIId, Title, Code FROM MajorInitiatives")}
+                 con.execute("SELECT MIId, Title, Code FROM TeamInitiatives")}
     con.close()
 
     unmatched = []
@@ -168,10 +168,10 @@ def build(path=WORKBOOK, out=OUT):
                  % (pid, _sq(name), title_sql, team_sql))
     L.append("")
 
-    # MajorInitiatives: title, description, owner, team, target from the register.
+    # TeamInitiatives: title, description, owner, team, target from the register.
     L.append("-- Title, description, owner, team and target from the register.")
     for r in team_rows:
-        L.append("UPDATE MajorInitiatives SET Title=%s, Description=%s, "
+        L.append("UPDATE TeamInitiatives SET Title=%s, Description=%s, "
                  "ProposedTarget=%s, "
                  "OwnerID=(SELECT PersonID FROM People WHERE Name=%s), "
                  "TeamID=(SELECT TeamID FROM Teams WHERE Name=%s) WHERE Code=%s;"
@@ -181,24 +181,24 @@ def build(path=WORKBOOK, out=OUT):
     L.append("")
 
     # Co-owners: everyone named after the lead on a row (Learning Futures names
-    # two). The lead is MajorInitiatives.OwnerID; the rest go here.
+    # two). The lead is TeamInitiatives.OwnerID; the rest go here.
     L.append("-- Additional co-owners (rows naming more than one person).")
-    L.append("DELETE FROM MajorInitiativeCoOwners;")
+    L.append("DELETE FROM TeamInitiativeCoOwners;")
     covals = []
     for r in team_rows:
         for name in r["owners"][1:]:
-            covals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
+            covals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
                           "(SELECT PersonID FROM People WHERE Name=%s))"
                           % (_sq(r["code"]), _sq(name)))
     if covals:
-        L.append("INSERT INTO MajorInitiativeCoOwners (MajorInitiativeID, PersonID) VALUES")
+        L.append("INSERT INTO TeamInitiativeCoOwners (TeamInitiativeID, PersonID) VALUES")
         L.append(",\n".join(covals) + ";")
     L.append("")
 
     # Priorities: replace with primary + secondary, IsPrimary set.
-    L.append("DELETE FROM MajorInitiativePriorities;")
-    L.append("INSERT INTO MajorInitiativePriorities "
-             "(MajorInitiativeID, PriorityID, IsPrimary) VALUES")
+    L.append("DELETE FROM TeamInitiativePriorities;")
+    L.append("INSERT INTO TeamInitiativePriorities "
+             "(TeamInitiativeID, PriorityID, IsPrimary) VALUES")
     pvals = []
     for r in team_rows:
         for label, is_primary in ((r["prio"], 1), (r["sec"], 0)):
@@ -207,15 +207,15 @@ def build(path=WORKBOOK, out=OUT):
             code = PRIORITY_BY_TITLE.get(label)
             if code is None:
                 raise SystemExit("unmapped priority label: %r" % label)
-            pvals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
+            pvals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
                          "(SELECT PriorityID FROM Priorities WHERE Code=%s), %d)"
                          % (_sq(r["code"]), _sq(code), is_primary))
     L.append(",\n".join(pvals) + ";")
     L.append("")
 
-    # Dean Priorities.
-    L.append("-- Dean Priorities (FY26 complete, FY27 in flight).")
-    L.append("INSERT INTO DeanPriorities (FiscalYear, Code, Title, Description, "
+    # Dean Initiatives.
+    L.append("-- Dean Initiatives (FY26 complete, FY27 in flight).")
+    L.append("INSERT INTO DeanInitiatives (FiscalYear, Code, Title, Description, "
              "PriorityID, PercentComplete) VALUES")
     dvals = []
     for d in dean_rows:
@@ -228,26 +228,26 @@ def build(path=WORKBOOK, out=OUT):
     L.append("")
 
     # MI -> Goal edges.
-    L.append("-- Major Initiative -> Strategy Goal edges (register Goals columns).")
-    L.append("DELETE FROM MajorInitiativeGoals;")
-    L.append("INSERT INTO MajorInitiativeGoals (MajorInitiativeID, GoalID) VALUES")
+    L.append("-- Team Initiative -> Strategy Goal edges (register Goals columns).")
+    L.append("DELETE FROM TeamInitiativeGoals;")
+    L.append("INSERT INTO TeamInitiativeGoals (TeamInitiativeID, GoalID) VALUES")
     gvals = []
     for r in team_rows:
         for g in r["goals"]:
-            gvals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
+            gvals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
                          "(SELECT GoalID FROM Goals WHERE GoalNumber=%d))"
                          % (_sq(r["code"]), g))
     L.append(",\n".join(gvals) + ";")
     L.append("")
 
     # MI -> Dean FY27 edges.
-    L.append("-- Major Initiative -> Dean FY27 edges (the register's X-matrix).")
-    L.append("INSERT INTO MajorInitiativeDeanLinks (MajorInitiativeID, DeanPriorityID) VALUES")
+    L.append("-- Team Initiative -> Dean FY27 edges (the register's X-matrix).")
+    L.append("INSERT INTO TeamInitiativeDeanLinks (TeamInitiativeID, DeanInitiativeID) VALUES")
     lvals = []
     for r in team_rows:
         for n in r["dean27"]:
-            lvals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
-                         "(SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-%d'))"
+            lvals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
+                         "(SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-%d'))"
                          % (_sq(r["code"]), n))
     L.append(",\n".join(lvals) + ";")
     L.append("")

@@ -2,15 +2,15 @@
 {% block title %}{{ mi.MIId or mi.Code }} — {{ mi.Title }}{% endblock %}
 {% block content %}
 {#
-  One Major Initiative, as the interactive card (2026-10-07 merge). Before the
-  merge the interactive card lived on /major-initiatives/{code} and this read-only page
-  on /major-initiatives/{mi_id}; they are one surface now. The card body (status,
+  One Team Initiative, as the interactive card (2026-10-07 merge). Before the
+  merge the interactive card lived on /team-initiatives/{code} and this read-only page
+  on /team-initiatives/{mi_id}; they are one surface now. The card body (status,
   progress, update/edit controls, tags, Dean links, diary) is shared with the
   drawer fragment via _card_body.html; the register-only edges (team, source
   area, target, the source-register initiatives, note) follow below.
 #}
 <div class="card-body card-fullpage">
-  <p><a href="/major-initiatives">&larr; Back</a></p>
+  <p><a href="/team-initiatives">&larr; Back</a></p>
   {% with modal=False %}
   {% include "_card_body.html" %}
   {% endwith %}
@@ -18,7 +18,7 @@
 
 <div class="section-heading">
   <div>
-    <p class="eyebrow">{{ mi.MIId or mi.Code }} · Major Initiative</p>
+    <p class="eyebrow">{{ mi.MIId or mi.Code }} · Team Initiative</p>
     <h1>{{ mi.Title }}</h1>
   </div>
   <p class="section-note">
@@ -39,7 +39,7 @@
 
 {% if mi.Description %}<p class="mi-description">{{ mi.Description }}</p>{% endif %}
 
-{# Which FY27 Dean Priorities this initiative contributes to (register, 2026-10-07). #}
+{# Which FY27 Dean Initiatives this initiative contributes to (register, 2026-10-07). #}
 {% if dean_links %}
 <section aria-labelledby="mi-dean-heading">
   <h2 id="mi-dean-heading" class="list-group-label">Contributes to</h2>
@@ -51,7 +51,7 @@
 </section>
 {% endif %}
 
-{# The goals this Major Initiative aligns to (the new edge, from its side). #}
+{# The goals this Team Initiative aligns to (the new edge, from its side). #}
 <section aria-labelledby="mi-goals-heading">
   <h2 id="mi-goals-heading" class="list-group-label">Strategy goals</h2>
   {% if mi.goals %}
@@ -66,11 +66,11 @@
     {% endfor %}
   </ul>
   {% else %}
-  <p class="empty">No goal alignment is recorded for this Major Initiative.</p>
+  <p class="empty">No goal alignment is recorded for this Team Initiative.</p>
   {% endif %}
 </section>
 
-{# The annual priorities this Major Initiative feeds. #}
+{# The annual priorities this Team Initiative feeds. #}
 <section aria-labelledby="mi-priorities-heading">
   <h2 id="mi-priorities-heading" class="list-group-label">Feeds priorities</h2>
   {% if mi.priorities %}
@@ -86,7 +86,7 @@
     {% endfor %}
   </ul>
   {% else %}
-  <p class="empty">This Major Initiative feeds no priority in the register.</p>
+  <p class="empty">This Team Initiative feeds no priority in the register.</p>
   {% endif %}
 </section>
 

@@ -165,7 +165,7 @@ denominator, a target and a cadence (see `07_CLL_KPI_Atomic_Definitions_Master
 .xlsx`, `Metrics`; its README: "35 FY27 KPIs + 5 Strategy 2035 goals = 40
 measures"). The 29 rows carry none of those. The canon workbook
 (`CLL_FY2027_Goals_Priorities_Initiatives_and_People.xlsx`, 2026-10-06) names
-them **Major Initiatives** — its sheet is "Initiatives", its header "Major
+them **Team Initiatives** — its sheet is "Initiatives", its header "Major
 Initiatives", its columns are Initiative ID / Initiative Name / Source Area /
 Strategy Alignment / Status / Validation Category, and its own Quality Check
 reads `Initiatives 29/29 PASS`.
@@ -175,11 +175,11 @@ the schema, the routes and the UI. Corrected end to end:
 
 | Was | Now |
 |---|---|
-| `TeamKPIs` / `TeamKPIPriorities` / `TeamKPIGoals` | `MajorInitiatives` / `MajorInitiativePriorities` / `MajorInitiativeGoals` |
-| `KPIID` column, `KPICode`/`KPITitle` aliases | `MajorInitiativeID`, `MajorInitiativeCode`/`Title` |
-| `vw_TeamKPIs` and the other views | `vw_MajorInitiatives` etc. |
-| routes `/kpis`, `/kpis/{id}` | `/major-initiatives`, `/major-initiatives/{MI-id}` |
-| UI label "Team KPI" | "Major Initiative" |
+| `TeamKPIs` / `TeamKPIPriorities` / `TeamKPIGoals` | `TeamInitiatives` / `TeamInitiativePriorities` / `TeamInitiativeGoals` |
+| `KPIID` column, `KPICode`/`KPITitle` aliases | `TeamInitiativeID`, `TeamInitiativeCode`/`Title` |
+| `vw_TeamKPIs` and the other views | `vw_TeamInitiatives` etc. |
+| routes `/kpis`, `/kpis/{id}` | `/team-initiatives`, `/team-initiatives/{MI-id}` |
+| UI label "Team KPI" | "Team Initiative" |
 
 The word **KPI** is now reserved for measures that earn it: the six Priorities
 carry a real measure/target/cadence, and the outcomes page cites the real KPI

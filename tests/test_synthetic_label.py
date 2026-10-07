@@ -19,7 +19,7 @@ def test_no_false_invented_label_on_the_home(logged_in):
 
 
 def test_no_synthetic_badge_on_a_row_or_card(logged_in):
-    for path in ("/goals/3", "/major-initiatives/MI-004", "/people/2"):
+    for path in ("/goals/3", "/team-initiatives/MI-004", "/people/2"):
         body = logged_in("Bill Gaudelli").get(path).text
         assert "synthetic-label" not in body, path
         assert ">sample<" not in body, path
@@ -45,8 +45,8 @@ def test_the_approved_initiatives_have_no_sample_text():
     db = Path(__file__).resolve().parents[1] / "cll_initiatives.db"
     con = sqlite3.connect(db)
     n = con.execute(
-        "SELECT COUNT(*) FROM MajorInitiatives WHERE LOWER(Title) LIKE '%sample%'").fetchone()[0]
-    total = con.execute("SELECT COUNT(*) FROM MajorInitiatives").fetchone()[0]
+        "SELECT COUNT(*) FROM TeamInitiatives WHERE LOWER(Title) LIKE '%sample%'").fetchone()[0]
+    total = con.execute("SELECT COUNT(*) FROM TeamInitiatives").fetchone()[0]
     con.close()
     assert total == 29
     assert n == 0, "%d rows still carry 'sample' text" % n

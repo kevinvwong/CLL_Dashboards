@@ -23,25 +23,25 @@ def _con():
 
 def test_dean_layer_counts():
     con = _con()
-    assert con.execute("SELECT COUNT(*) FROM DeanPriorities").fetchone()[0] == 11
+    assert con.execute("SELECT COUNT(*) FROM DeanInitiatives").fetchone()[0] == 11
     assert con.execute(
-        "SELECT COUNT(*) FROM DeanPriorities WHERE FiscalYear=26").fetchone()[0] == 3
+        "SELECT COUNT(*) FROM DeanInitiatives WHERE FiscalYear=26").fetchone()[0] == 3
     assert con.execute(
-        "SELECT COUNT(*) FROM DeanPriorities WHERE FiscalYear=27").fetchone()[0] == 8
+        "SELECT COUNT(*) FROM DeanInitiatives WHERE FiscalYear=27").fetchone()[0] == 8
     con.close()
 
 
 def test_link_counts():
     con = _con()
-    assert con.execute("SELECT COUNT(*) FROM MajorInitiativeGoals").fetchone()[0] == 58
-    assert con.execute("SELECT COUNT(*) FROM MajorInitiativeDeanLinks").fetchone()[0] == 61
+    assert con.execute("SELECT COUNT(*) FROM TeamInitiativeGoals").fetchone()[0] == 58
+    assert con.execute("SELECT COUNT(*) FROM TeamInitiativeDeanLinks").fetchone()[0] == 61
     con.close()
 
 
-def test_every_major_initiative_has_an_owner():
+def test_every_team_initiative_has_an_owner():
     con = _con()
     missing = con.execute(
-        "SELECT COUNT(*) FROM MajorInitiatives WHERE OwnerID IS NULL").fetchone()[0]
+        "SELECT COUNT(*) FROM TeamInitiatives WHERE OwnerID IS NULL").fetchone()[0]
     assert missing == 0
     con.close()
 
@@ -61,7 +61,7 @@ def test_team_reassignments_landed():
              "Geographic Expansion", "Asset Utilization")
     for title in moved:
         team = con.execute(
-            "SELECT t.Name FROM MajorInitiatives k JOIN Teams t ON t.TeamID=k.TeamID "
+            "SELECT t.Name FROM TeamInitiatives k JOIN Teams t ON t.TeamID=k.TeamID "
             "WHERE k.Title=?", (title,)).fetchone()
         assert team and team[0] == "Learning Ecosystems", title
     con.close()
@@ -70,7 +70,7 @@ def test_team_reassignments_landed():
 def test_reworded_titles_landed():
     con = _con()
     got = {r[0]: r[1] for r in con.execute(
-        "SELECT Code, Title FROM MajorInitiatives")}
+        "SELECT Code, Title FROM TeamInitiatives")}
     assert got["5-09"] == "Build coursework as reusable learning experiences"
     assert got["5-05"] == ("Empower faculty to engage in innovative program "
                            "development and align work functions")
@@ -79,10 +79,10 @@ def test_reworded_titles_landed():
 
 def test_learning_futures_co_owner():
     """The register names two co-owners for Learning Futures; the second is held
-    in MajorInitiativeCoOwners, not lost."""
+    in TeamInitiativeCoOwners, not lost."""
     con = _con()
     co = con.execute(
-        "SELECT COUNT(*) FROM MajorInitiativeCoOwners co "
+        "SELECT COUNT(*) FROM TeamInitiativeCoOwners co "
         "JOIN People p ON p.PersonID=co.PersonID WHERE p.Name='Grace Flavin'"
     ).fetchone()[0]
     assert co == 6
@@ -92,7 +92,7 @@ def test_learning_futures_co_owner():
 def test_percent_scaling():
     con = _con()
     got = {r[0]: r[1] for r in con.execute(
-        "SELECT Title, PercentComplete FROM DeanPriorities")}
+        "SELECT Title, PercentComplete FROM DeanInitiatives")}
     assert got["OMS AI"] == 50          # register 0.5
     assert got["Strategy '35 Develop"] == 100   # register 1
     assert got["Financial & Labor Optimization"] == 0

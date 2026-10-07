@@ -47,7 +47,7 @@ NO_SUCH_MI = "MI-999"
 
 def add_update(db_path, mi_id: str, percent: int, status: str,
                note: str = "", on: str = "2026-10-05", by: int = 5):
-    """Append one diary entry to a Major Initiative, for tests that need one.
+    """Append one diary entry to a Team Initiative, for tests that need one.
 
     The register seed ships no diary (the prototype's sample diary was dropped
     in the merge), so any test that asserts on progress, staleness or the
@@ -59,10 +59,10 @@ def add_update(db_path, mi_id: str, percent: int, status: str,
     conn = sqlite3.connect(db_path)
     try:
         conn.execute(
-            "INSERT INTO MajorInitiativeUpdates "
-            "(MajorInitiativeID, UpdateDate, PercentComplete, Status, Note, EnteredByID, CreatedAt) "
-            "SELECT MajorInitiativeID, ?, ?, ?, ?, ?, ? || ' 08:00:00' "
-            "FROM MajorInitiatives WHERE MIId = ?",
+            "INSERT INTO TeamInitiativeUpdates "
+            "(TeamInitiativeID, UpdateDate, PercentComplete, Status, Note, EnteredByID, CreatedAt) "
+            "SELECT TeamInitiativeID, ?, ?, ?, ?, ?, ? || ' 08:00:00' "
+            "FROM TeamInitiatives WHERE MIId = ?",
             (on, percent, status, note or None, by, on, mi_id),
         )
         conn.commit()
@@ -84,7 +84,7 @@ def fresh_db(tmp_path, monkeypatch):
 
 @pytest.fixture
 def diary(fresh_db):
-    """Seed a Major Initiative diary entry into this test's database.
+    """Seed a Team Initiative diary entry into this test's database.
 
     Usage: diary("MI-004", 25, "On track", on="2026-09-20")
     """

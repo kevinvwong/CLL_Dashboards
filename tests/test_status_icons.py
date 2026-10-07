@@ -25,7 +25,7 @@ def test_glyphs_are_distinct():
 
 def test_the_badge_renders_the_glyph_and_the_word(logged_in, diary):
     diary("MI-002", 30, "At risk", on="2026-10-05")
-    body = logged_in("Bill Gaudelli").get("/major-initiatives/MI-002").text
+    body = logged_in("Bill Gaudelli").get("/team-initiatives/MI-002").text
     glyph = status.status_icon("At risk")
     assert glyph in body, "the At risk badge did not render its glyph"
     assert "At risk" in body, "the status word must still be present beside the glyph"

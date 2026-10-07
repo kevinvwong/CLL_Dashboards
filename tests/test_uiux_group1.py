@@ -24,10 +24,10 @@ def _signed(client, pid=1):
 
 
 @pytest.mark.parametrize("path", [
-    "/major-initiatives/MI-004/edit/details",
-    "/major-initiatives/MI-004/edit/tags",
-    "/major-initiatives/MI-004/edit/links",
-    "/major-initiatives/MI-004/update",
+    "/team-initiatives/MI-004/edit/details",
+    "/team-initiatives/MI-004/edit/tags",
+    "/team-initiatives/MI-004/edit/links",
+    "/team-initiatives/MI-004/update",
 ])
 def test_edit_forms_are_fragments_when_requested_by_htmx(logged_in, path):
     """A partial request must not carry the site layout.
@@ -42,10 +42,10 @@ def test_edit_forms_are_fragments_when_requested_by_htmx(logged_in, path):
 
 
 @pytest.mark.parametrize("path", [
-    "/major-initiatives/MI-004/edit/details",
-    "/major-initiatives/MI-004/edit/tags",
-    "/major-initiatives/MI-004/edit/links",
-    "/major-initiatives/MI-004/update",
+    "/team-initiatives/MI-004/edit/details",
+    "/team-initiatives/MI-004/edit/tags",
+    "/team-initiatives/MI-004/edit/links",
+    "/team-initiatives/MI-004/update",
 ])
 def test_edit_forms_are_full_pages_when_loaded_directly(logged_in, path):
     """A direct load must render the full layout, not a bare fragment."""
@@ -60,14 +60,14 @@ def test_edit_forms_are_full_pages_when_loaded_directly(logged_in, path):
 def test_standalone_page_has_no_modal_close_control(logged_in):
     """The full page shows "← Back"; a second "×" is a control for a dialog
     that was never opened."""
-    body = logged_in("Bill Gaudelli").get("/major-initiatives/MI-004").text
+    body = logged_in("Bill Gaudelli").get("/team-initiatives/MI-004").text
     assert 'class="card-close"' not in body, "the full page still shows the close control"
     assert "Back" in body, "the full page lost its Back link"
 
 
 def test_the_fragment_keeps_the_close_control(logged_in):
     """The modal still needs its close button."""
-    body = logged_in("Bill Gaudelli").get("/major-initiatives/MI-004",
+    body = logged_in("Bill Gaudelli").get("/team-initiatives/MI-004",
                                 headers={"HX-Request": "true"}).text
     assert 'class="card-close"' in body
 
@@ -169,14 +169,14 @@ def test_one_day_is_singular(logged_in, fresh_db):
 
     conn = sqlite3.connect(str(fresh_db))
     try:
-        # Seed on the clock production writes with: MajorInitiativeUpdates.UpdateDate
+        # Seed on the clock production writes with: TeamInitiativeUpdates.UpdateDate
         # defaults to SQLite's date('now'), which is UTC. Seeding from Python's
         # local date.today() drifts a day apart from UTC every evening.
-        iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
+        iid = conn.execute("SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId = 'MI-004'").fetchone()[0]
         yesterday = conn.execute("SELECT date('now', '-1 day')").fetchone()[0]
-        conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM TeamInitiativeUpdates WHERE TeamInitiativeID = ?", (iid,))
         conn.execute(
-            "INSERT INTO MajorInitiativeUpdates (MajorInitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
+            "INSERT INTO TeamInitiativeUpdates (TeamInitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
             "VALUES (?, ?, 10, 'On track', 2)", (iid, yesterday))
         conn.commit()
     finally:
@@ -193,11 +193,11 @@ def test_many_days_is_plural(logged_in, fresh_db):
     conn = sqlite3.connect(str(fresh_db))
     try:
         # Same clock as production: date('now') is UTC (see schema.sql).
-        iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = 'MI-002'").fetchone()[0]
+        iid = conn.execute("SELECT TeamInitiativeID FROM TeamInitiatives WHERE MIId = 'MI-002'").fetchone()[0]
         old = conn.execute("SELECT date('now', '-15 days')").fetchone()[0]
-        conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM TeamInitiativeUpdates WHERE TeamInitiativeID = ?", (iid,))
         conn.execute(
-            "INSERT INTO MajorInitiativeUpdates (MajorInitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
+            "INSERT INTO TeamInitiativeUpdates (TeamInitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
             "VALUES (?, ?, 10, 'On track', 4)", (iid, old))
         conn.commit()
     finally:
@@ -212,7 +212,7 @@ def test_many_days_is_plural(logged_in, fresh_db):
 
 def test_initiatives_index_returns_html(logged_in):
     """The defect: GET /initiatives returned a 405 JSON body."""
-    r = logged_in("Bill Gaudelli").get("/major-initiatives")
+    r = logged_in("Bill Gaudelli").get("/team-initiatives")
     assert r.status_code == 200, r.status_code
     assert "text/html" in r.headers.get("content-type", "")
     assert "<html" in r.text.lower()
@@ -252,7 +252,7 @@ def test_unknown_route_still_answers_json_for_a_non_browser(logged_in):
 def test_home_has_accessible_names(logged_in):
     body = _html.unescape(logged_in("Bill Gaudelli").get("/").text)
     # The nav destinations are named by their visible text.
-    for dest in ("/major-initiatives", "/people", "/outcomes"):
+    for dest in ("/team-initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body
     # The priority cards carry their full title as text, not a bare code.
     assert "One Shared Identity" in body

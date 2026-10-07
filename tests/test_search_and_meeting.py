@@ -42,7 +42,7 @@ def test_search_spans_all_four_kinds(logged_in):
     for term in ("MI-002", "Bill Gaudelli", "Research", "Data"):
         for r in queries.search(term):
             kinds.add(r["kind"])
-    assert {"major-initiative", "person", "goal", "priority"} <= kinds, kinds
+    assert {"team-initiative", "person", "goal", "priority"} <= kinds, kinds
 
 
 def test_search_returns_nothing_for_empty_or_no_match(logged_in):
@@ -72,14 +72,14 @@ def test_a_single_search_result_redirects_straight_to_it(logged_in):
     """Enter on an unambiguous query should land on the thing, not a list of one."""
     r = logged_in("Bill Gaudelli").get("/search?q=MI-001", follow_redirects=False)
     assert r.status_code == 307
-    assert r.headers["location"] == "/major-initiatives/MI-001"
+    assert r.headers["location"] == "/team-initiatives/MI-001"
 
 
-def test_search_finds_a_major_initiative_by_its_id(logged_in):
-    """The 29 Major Initiatives are core objects; they must be findable."""
+def test_search_finds_a_team_initiative_by_its_id(logged_in):
+    """The 29 Team Initiatives are core objects; they must be findable."""
     from app import queries
     kinds = {r["kind"] for r in queries.search("MI-001")}
-    assert "major-initiative" in kinds, kinds
+    assert "team-initiative" in kinds, kinds
 
 
 def test_the_search_palette_is_in_the_layout(logged_in):
@@ -149,7 +149,7 @@ def test_changes_stay_grouped_by_owner(logged_in, fresh_db, diary):
     """The meeting-view requirement: changes grouped by owner is unchanged."""
     import sqlite3
     conn = sqlite3.connect(str(fresh_db))
-    conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now')")
+    conn.execute("UPDATE TeamInitiativeUpdates SET UpdateDate = date('now')")
     conn.commit()
     conn.close()
     body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
@@ -168,7 +168,7 @@ def test_the_meeting_offers_presenter_mode(logged_in):
 def test_presenter_groups_exist_for_arrow_navigation(logged_in, fresh_db):
     import sqlite3
     conn = sqlite3.connect(str(fresh_db))
-    conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now')")
+    conn.execute("UPDATE TeamInitiativeUpdates SET UpdateDate = date('now')")
     conn.commit()
     conn.close()
     body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text

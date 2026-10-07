@@ -1,10 +1,10 @@
-# Register as Canon and Dean Priorities Layer — Implementation Plan
+# Register as Canon and Dean Initiatives Layer — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
-**Goal:** Make `Initiative Dashboard Register.xlsx` the authoritative source for the Major Initiatives, add real owner names, and introduce a Dean Priorities (FY26/FY27) layer with percent-complete.
+**Goal:** Make `Initiative Dashboard Register.xlsx` the authoritative source for the Team Initiatives, add real owner names, and introduce a Dean Initiatives (FY26/FY27) layer with percent-complete.
 
-**Architecture:** Two new tables (`DeanPriorities`, `MajorInitiativeDeanLinks`) plus column extensions to `MajorInitiatives`, `MajorInitiativePriorities` and `People`. A new reproducible generator reads the register workbook directly and emits `db/seed_register.sql`. Read models and UI extend the existing `vw_*`/home-page conventions.
+**Architecture:** Two new tables (`DeanInitiatives`, `TeamInitiativeDeanLinks`) plus column extensions to `TeamInitiatives`, `TeamInitiativePriorities` and `People`. A new reproducible generator reads the register workbook directly and emits `db/seed_register.sql`. Read models and UI extend the existing `vw_*`/home-page conventions.
 
 **Tech Stack:** Python 3.12, SQLite, FastAPI, Jinja2, HTMX, pytest, openpyxl.
 
@@ -20,13 +20,13 @@ by the commits: `python -m pytest` → **535 passed**; `python db/build_register
 ## Global Constraints
 
 - Register path: `C:\Users\kwong318\Downloads\Initiative Dashboard Register.xlsx` (env override `CLL_REGISTER_XLSX`), sheet `Team KPI Register`, data starts row 5 (header row 4).
-- App vocabulary: the 29 rows are **Major Initiatives**; the 11 Dean rows are **"Dean Priorities"** with **FY26** / **FY27** sections. Never label a row "KPI".
+- App vocabulary: the 29 rows are **Team Initiatives**; the 11 Dean rows are **"Dean Initiatives"** with **FY26** / **FY27** sections. Never label a row "KPI".
 - Register is canon and overwrites: its titles, team assignments, owners, descriptions, targets, priorities and goal alignment win over what is committed.
 - Seeds are **reproducible**: two consecutive `python db/build_db.py` runs must produce byte-identical `cll_initiatives.db`. The only clock-dependent column in the schema is guarded; the new seed must set every value from the workbook, never from `datetime('now')`.
 - `MIId` and `SourceArea` come from the *canon workbook* via `db/build_canon_links.py`; the register has neither.
 - Join by **normalized name**, never by position; **fail loudly** on any unmatched row.
 - Stage exact paths with `git add -- <path>`; never `git add -A`.
-- Assert counts: 29 Major Initiatives, 11 Dean Priorities (FY26 3 / FY27 8), 58 MI→Goal edges, 61 MI→Dean edges.
+- Assert counts: 29 Team Initiatives, 11 Dean Initiatives (FY26 3 / FY27 8), 58 MI→Goal edges, 61 MI→Dean edges.
 - Test DB is a copy: `tests/conftest.py` copies `REPO_DB` per test.
 
 ---
@@ -34,18 +34,18 @@ by the commits: `python -m pytest` → **535 passed**; `python db/build_register
 ### Task 1: Schema — Dean layer, extensions, and read models
 
 **Files:**
-- Modify: `db/schema.sql` (append new tables/views; edit `MajorInitiatives`, `MajorInitiativePriorities`, `People`)
+- Modify: `db/schema.sql` (append new tables/views; edit `TeamInitiatives`, `TeamInitiativePriorities`, `People`)
 - Modify: `db/build_db.py:35-37` (row-count print list)
 - Test: `tests/test_schema_register.py` (create)
 
 **Interfaces:**
-- Produces: tables `DeanPriorities(DeanPriorityID, FiscalYear, Code, Title, Description, PriorityID, PercentComplete, Note)`; `MajorInitiativeDeanLinks(MajorInitiativeID, DeanPriorityID)`; new columns `MajorInitiatives.Description`, `MajorInitiatives.OwnerID`, `MajorInitiativePriorities.IsPrimary`, `People.TeamID`; views `vw_DeanPriorities`, `vw_MajorInitiativeDeanLinks`.
+- Produces: tables `DeanInitiatives(DeanInitiativeID, FiscalYear, Code, Title, Description, PriorityID, PercentComplete, Note)`; `TeamInitiativeDeanLinks(TeamInitiativeID, DeanInitiativeID)`; new columns `TeamInitiatives.Description`, `TeamInitiatives.OwnerID`, `TeamInitiativePriorities.IsPrimary`, `People.TeamID`; views `vw_DeanInitiatives`, `vw_TeamInitiativeDeanLinks`.
 
 - [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_schema_register.py
-"""The Dean Priorities layer and the columns the register needs."""
+"""The Dean Initiatives layer and the columns the register needs."""
 import sqlite3
 import subprocess
 import sys
@@ -68,11 +68,11 @@ def test_dean_tables_and_columns_exist(tmp_path):
     con = _built(tmp_path)
     tables = {r[0] for r in con.execute(
         "SELECT name FROM sqlite_master WHERE type='table'")}
-    assert "DeanPriorities" in tables
-    assert "MajorInitiativeDeanLinks" in tables
-    mi_cols = {d[1] for d in con.execute("PRAGMA table_info(MajorInitiatives)")}
+    assert "DeanInitiatives" in tables
+    assert "TeamInitiativeDeanLinks" in tables
+    mi_cols = {d[1] for d in con.execute("PRAGMA table_info(TeamInitiatives)")}
     assert {"Description", "OwnerID"} <= mi_cols
-    ip_cols = {d[1] for d in con.execute("PRAGMA table_info(MajorInitiativePriorities)")}
+    ip_cols = {d[1] for d in con.execute("PRAGMA table_info(TeamInitiativePriorities)")}
     assert "IsPrimary" in ip_cols
     people_cols = {d[1] for d in con.execute("PRAGMA table_info(People)")}
     assert "TeamID" in people_cols
@@ -87,30 +87,30 @@ def test_one_primary_priority_per_mi(tmp_path):
 
 def test_fiscal_year_check(tmp_path):
     con = _built(tmp_path)
-    con.execute("INSERT INTO DeanPriorities (FiscalYear, Code, Title) VALUES (26,'D26-1','x')")
+    con.execute("INSERT INTO DeanInitiatives (FiscalYear, Code, Title) VALUES (26,'D26-1','x')")
     import pytest
     with pytest.raises(sqlite3.IntegrityError):
-        con.execute("INSERT INTO DeanPriorities (FiscalYear, Code, Title) VALUES (99,'D99-1','x')")
+        con.execute("INSERT INTO DeanInitiatives (FiscalYear, Code, Title) VALUES (99,'D99-1','x')")
 ```
 
 - [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_schema_register.py -v`
-Expected: FAIL — `no such table: DeanPriorities`
+Expected: FAIL — `no such table: DeanInitiatives`
 
 - [x] **Step 3: Add the schema**
 
-In `db/schema.sql`, after `MajorInitiatives` add `OwnerID INTEGER REFERENCES People(PersonID)` and `Description TEXT` to the `MajorInitiatives` column list. Add `IsPrimary` to `MajorInitiativePriorities`:
+In `db/schema.sql`, after `TeamInitiatives` add `OwnerID INTEGER REFERENCES People(PersonID)` and `Description TEXT` to the `TeamInitiatives` column list. Add `IsPrimary` to `TeamInitiativePriorities`:
 
 ```sql
-CREATE TABLE MajorInitiativePriorities (
-    MajorInitiativeID      INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
+CREATE TABLE TeamInitiativePriorities (
+    TeamInitiativeID      INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
     PriorityID INTEGER NOT NULL REFERENCES Priorities(PriorityID),
     IsPrimary INTEGER NOT NULL DEFAULT 0 CHECK (IsPrimary IN (0,1)),
-    PRIMARY KEY (MajorInitiativeID, PriorityID)
+    PRIMARY KEY (TeamInitiativeID, PriorityID)
 );
 CREATE UNIQUE INDEX UX_MIP_OnePrimary
-    ON MajorInitiativePriorities(MajorInitiativeID) WHERE IsPrimary = 1;
+    ON TeamInitiativePriorities(TeamInitiativeID) WHERE IsPrimary = 1;
 ```
 
 Add `TeamID INTEGER REFERENCES Teams(TeamID)` to `People`. Add the new tables:
@@ -119,8 +119,8 @@ Add `TeamID INTEGER REFERENCES Teams(TeamID)` to `People`. Add the new tables:
 -- The Dean's own priorities (the register's "Dean KPI 26"/"Dean KPI 27" rows).
 -- FiscalYear 26 = complete; 27 = in flight. PercentComplete is 0-100
 -- (the register's 0-1 value scaled by 100).
-CREATE TABLE DeanPriorities (
-    DeanPriorityID  INTEGER PRIMARY KEY,
+CREATE TABLE DeanInitiatives (
+    DeanInitiativeID  INTEGER PRIMARY KEY,
     FiscalYear      INTEGER NOT NULL CHECK (FiscalYear IN (26,27)),
     Code            TEXT    NOT NULL UNIQUE,
     Title           TEXT    NOT NULL,
@@ -130,35 +130,35 @@ CREATE TABLE DeanPriorities (
     Note            TEXT
 );
 
--- The X-matrix: which team Major Initiative contributes to which FY27 Dean item.
-CREATE TABLE MajorInitiativeDeanLinks (
-    MajorInitiativeID INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
-    DeanPriorityID    INTEGER NOT NULL REFERENCES DeanPriorities(DeanPriorityID),
-    PRIMARY KEY (MajorInitiativeID, DeanPriorityID)
+-- The X-matrix: which team Team Initiative contributes to which FY27 Dean item.
+CREATE TABLE TeamInitiativeDeanLinks (
+    TeamInitiativeID INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
+    DeanInitiativeID    INTEGER NOT NULL REFERENCES DeanInitiatives(DeanInitiativeID),
+    PRIMARY KEY (TeamInitiativeID, DeanInitiativeID)
 );
 ```
 
 Add the two read views at the end of `schema.sql`:
 
 ```sql
-CREATE VIEW vw_DeanPriorities AS
-SELECT d.DeanPriorityID, d.FiscalYear, d.Code, d.Title, d.Description,
+CREATE VIEW vw_DeanInitiatives AS
+SELECT d.DeanInitiativeID, d.FiscalYear, d.Code, d.Title, d.Description,
        d.PercentComplete, d.Note,
        p.PriorityID, p.Code AS PriorityCode, p.FullTitle AS PriorityTitle,
        p.Colour AS PriorityColour
-FROM DeanPriorities d
+FROM DeanInitiatives d
 LEFT JOIN Priorities p ON p.PriorityID = d.PriorityID;
 
-CREATE VIEW vw_MajorInitiativeDeanLinks AS
-SELECT kl.MajorInitiativeID, k.Code AS MajorInitiativeCode, k.MIId,
-       k.Title AS MajorInitiativeTitle,
-       d.DeanPriorityID, d.Code AS DeanCode, d.Title AS DeanTitle
-FROM MajorInitiativeDeanLinks kl
-JOIN MajorInitiatives k ON k.MajorInitiativeID = kl.MajorInitiativeID
-JOIN DeanPriorities d   ON d.DeanPriorityID = kl.DeanPriorityID;
+CREATE VIEW vw_TeamInitiativeDeanLinks AS
+SELECT kl.TeamInitiativeID, k.Code AS TeamInitiativeCode, k.MIId,
+       k.Title AS TeamInitiativeTitle,
+       d.DeanInitiativeID, d.Code AS DeanCode, d.Title AS DeanTitle
+FROM TeamInitiativeDeanLinks kl
+JOIN TeamInitiatives k ON k.TeamInitiativeID = kl.TeamInitiativeID
+JOIN DeanInitiatives d   ON d.DeanInitiativeID = kl.DeanInitiativeID;
 ```
 
-Update `db/build_db.py:35` row-count list to append `"DeanPriorities","MajorInitiativeDeanLinks"`.
+Update `db/build_db.py:35` row-count list to append `"DeanInitiatives","TeamInitiativeDeanLinks"`.
 
 - [x] **Step 4: Run test to verify it passes**
 
@@ -169,7 +169,7 @@ Expected: PASS (3 tests)
 
 ```bash
 git add -- db/schema.sql db/build_db.py tests/test_schema_register.py
-git commit -m "feat(schema): add Dean Priorities layer and register columns"
+git commit -m "feat(schema): add Dean Initiatives layer and register columns"
 ```
 
 ---
@@ -183,7 +183,7 @@ git commit -m "feat(schema): add Dean Priorities layer and register columns"
 
 **Interfaces:**
 - Consumes: the register workbook; the Task 1 tables.
-- Produces: `db/seed_register.sql`; CLI `python db/build_register_seed.py [--check]`. Sets `MajorInitiatives.{Description,OwnerID}` and `TeamID`; replaces `MajorInitiativePriorities` rows with `IsPrimary`; writes `MajorInitiativeGoals`, `DeanPriorities`, `MajorInitiativeDeanLinks`; replaces `People` names with the register owners.
+- Produces: `db/seed_register.sql`; CLI `python db/build_register_seed.py [--check]`. Sets `TeamInitiatives.{Description,OwnerID}` and `TeamID`; replaces `TeamInitiativePriorities` rows with `IsPrimary`; writes `TeamInitiativeGoals`, `DeanInitiatives`, `TeamInitiativeDeanLinks`; replaces `People` names with the register owners.
 
 - [x] **Step 1: Write the failing test**
 
@@ -202,15 +202,15 @@ def _con():
 
 def test_dean_layer_counts():
     con = _con()
-    assert con.execute("SELECT COUNT(*) FROM DeanPriorities").fetchone()[0] == 11
-    assert con.execute("SELECT COUNT(*) FROM DeanPriorities WHERE FiscalYear=26").fetchone()[0] == 3
-    assert con.execute("SELECT COUNT(*) FROM DeanPriorities WHERE FiscalYear=27").fetchone()[0] == 8
+    assert con.execute("SELECT COUNT(*) FROM DeanInitiatives").fetchone()[0] == 11
+    assert con.execute("SELECT COUNT(*) FROM DeanInitiatives WHERE FiscalYear=26").fetchone()[0] == 3
+    assert con.execute("SELECT COUNT(*) FROM DeanInitiatives WHERE FiscalYear=27").fetchone()[0] == 8
     con.close()
 
 def test_link_counts():
     con = _con()
-    assert con.execute("SELECT COUNT(*) FROM MajorInitiativeGoals").fetchone()[0] == 58
-    assert con.execute("SELECT COUNT(*) FROM MajorInitiativeDeanLinks").fetchone()[0] == 61
+    assert con.execute("SELECT COUNT(*) FROM TeamInitiativeGoals").fetchone()[0] == 58
+    assert con.execute("SELECT COUNT(*) FROM TeamInitiativeDeanLinks").fetchone()[0] == 61
     con.close()
 
 def test_owners_are_real_names():
@@ -227,7 +227,7 @@ def test_team_reassignments_landed():
              "Geographic Expansion", "Asset Utilization")
     for title in moved:
         team = con.execute(
-            "SELECT t.Name FROM MajorInitiatives k JOIN Teams t ON t.TeamID=k.TeamID "
+            "SELECT t.Name FROM TeamInitiatives k JOIN Teams t ON t.TeamID=k.TeamID "
             "WHERE k.Title=?", (title,)).fetchone()
         assert team and team[0] == "Learning Ecosystems", title
     con.close()
@@ -241,7 +241,7 @@ def test_seed_has_no_clock_default():
 - [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_register_seed.py -v`
-Expected: FAIL — `no such table: DeanPriorities` (seed does not exist yet)
+Expected: FAIL — `no such table: DeanInitiatives` (seed does not exist yet)
 
 - [x] **Step 3: Write the generator**
 
@@ -251,7 +251,7 @@ Create `db/build_register_seed.py` following the `build_canon_links.py` pattern:
 """Generate db/seed_register.sql FROM the Initiative Dashboard Register.
 
 The register (`Initiative Dashboard Register.xlsx`, sheet "Team KPI Register")
-is the current canon for the Major Initiatives: it carries the named owners, a
+is the current canon for the Team Initiatives: it carries the named owners, a
 description per row, a Goals 1-5 alignment matrix, and the eight Dean KPI 27
 linkage columns, plus an 11-row Dean layer.
 
@@ -273,7 +273,7 @@ WORKBOOK = os.environ.get(
     os.path.join(os.path.expanduser("~"), "Downloads",
                  "Initiative Dashboard Register.xlsx"))
 
-#: register title (normalized) -> committed MajorInitiatives.Title
+#: register title (normalized) -> committed TeamInitiatives.Title
 #: (normalized), for the rows the register reworded.
 RENAMED = {
     "empowerfacultytoengageininnovativeprogramdevelopmentandalignworkfunctions":
@@ -347,7 +347,7 @@ def build(path=WORKBOOK, out=OUT):
     import sqlite3
     con = sqlite3.connect(os.path.join(HERE, "..", "cll_initiatives.db"))
     committed = {norm(t): (code, mid) for mid, t, code in
-                 con.execute("SELECT MIId, Title, Code FROM MajorInitiatives")}
+                 con.execute("SELECT MIId, Title, Code FROM TeamInitiatives")}
     con.close()
 
     unmatched = []
@@ -394,10 +394,10 @@ def build(path=WORKBOOK, out=OUT):
                  % (pid, _sq(name), role, team_sql))
     L.append("")
 
-    # MajorInitiatives: description, owner, team, target.
+    # TeamInitiatives: description, owner, team, target.
     L.append("-- Description, owner, team and target from the register.")
     for r in team_rows:
-        L.append("UPDATE MajorInitiatives SET Title=%s, Description=%s, "
+        L.append("UPDATE TeamInitiatives SET Title=%s, Description=%s, "
                  "ProposedTarget=%s, "
                  "OwnerID=(SELECT PersonID FROM People WHERE Name=%s), "
                  "TeamID=(SELECT TeamID FROM Teams WHERE Name=%s) WHERE Code=%s;"
@@ -406,9 +406,9 @@ def build(path=WORKBOOK, out=OUT):
     L.append("")
 
     # Priorities: replace with primary + secondary, IsPrimary set.
-    L.append("DELETE FROM MajorInitiativePriorities;")
-    L.append("INSERT INTO MajorInitiativePriorities "
-             "(MajorInitiativeID, PriorityID, IsPrimary) VALUES")
+    L.append("DELETE FROM TeamInitiativePriorities;")
+    L.append("INSERT INTO TeamInitiativePriorities "
+             "(TeamInitiativeID, PriorityID, IsPrimary) VALUES")
     pvals = []
     for r in team_rows:
         for label, is_primary in ((r["prio"], 1), (r["sec"], 0)):
@@ -417,15 +417,15 @@ def build(path=WORKBOOK, out=OUT):
             code = PRIORITY_BY_TITLE.get(label)
             if code is None:
                 raise SystemExit("unmapped priority label: %r" % label)
-            pvals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
+            pvals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
                          "(SELECT PriorityID FROM Priorities WHERE Code=%s), %d)"
                          % (_sq(r["code"]), _sq(code), is_primary))
     L.append(",\n".join(pvals) + ";")
     L.append("")
 
     # Dean priorities.
-    L.append("-- Dean Priorities (FY26 complete, FY27 in flight).")
-    L.append("INSERT INTO DeanPriorities (FiscalYear, Code, Title, Description, "
+    L.append("-- Dean Initiatives (FY26 complete, FY27 in flight).")
+    L.append("INSERT INTO DeanInitiatives (FiscalYear, Code, Title, Description, "
              "PriorityID, PercentComplete) VALUES")
     dvals = []
     for d in dean_rows:
@@ -438,25 +438,25 @@ def build(path=WORKBOOK, out=OUT):
     L.append("")
 
     # MI -> Goal edges.
-    L.append("-- Major Initiative -> Strategy Goal edges (register Goals columns).")
-    L.append("INSERT INTO MajorInitiativeGoals (MajorInitiativeID, GoalID) VALUES")
+    L.append("-- Team Initiative -> Strategy Goal edges (register Goals columns).")
+    L.append("INSERT INTO TeamInitiativeGoals (TeamInitiativeID, GoalID) VALUES")
     gvals = []
     for r in team_rows:
         for g in r["goals"]:
-            gvals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
+            gvals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
                          "(SELECT GoalID FROM Goals WHERE GoalNumber=%d))"
                          % (_sq(r["code"]), g))
     L.append(",\n".join(gvals) + ";")
     L.append("")
 
     # MI -> Dean FY27 edges.
-    L.append("-- Major Initiative -> Dean FY27 edges (the register's X-matrix).")
-    L.append("INSERT INTO MajorInitiativeDeanLinks (MajorInitiativeID, DeanPriorityID) VALUES")
+    L.append("-- Team Initiative -> Dean FY27 edges (the register's X-matrix).")
+    L.append("INSERT INTO TeamInitiativeDeanLinks (TeamInitiativeID, DeanInitiativeID) VALUES")
     lvals = []
     for r in team_rows:
         for n in r["dean27"]:
-            lvals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
-                         "(SELECT DeanPriorityID FROM DeanPriorities WHERE Code='D27-%d'))"
+            lvals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
+                         "(SELECT DeanInitiativeID FROM DeanInitiatives WHERE Code='D27-%d'))"
                          % (_sq(r["code"]), n))
     L.append(",\n".join(lvals) + ";")
     L.append("")
@@ -566,77 +566,77 @@ git commit -m "test: sign in with the canonical owner names"
 
 ---
 
-### Task 4: Read models and Dean Priorities UI
+### Task 4: Read models and Dean Initiatives UI
 
 **Files:**
-- Modify: `app/queries.py` (add `dean_priorities()`, `major_initiative_dean_links()`; extend `major_initiative_cards()` / `major_initiative_detail()`)
-- Modify: `app/templates/home.html` (add the Dean Priorities section)
-- Modify: `app/templates/major_initiative.html` (Description + "contributes to" chips)
+- Modify: `app/queries.py` (add `dean_initiatives()`, `team_initiative_dean_links()`; extend `team_initiative_cards()` / `team_initiative_detail()`)
+- Modify: `app/templates/home.html` (add the Dean Initiatives section)
+- Modify: `app/templates/team_initiative.html` (Description + "contributes to" chips)
 - Test: `tests/test_dean_layer.py` (create)
 
 **Interfaces:**
-- Consumes: `vw_DeanPriorities`, `vw_MajorInitiativeDeanLinks`, `MajorInitiatives.Description`.
-- Produces: `dean_priorities() -> list[dict]` with keys `fiscal_year, code, title, description, percent_complete, priority_code, priority_title`; `major_initiative_dean_links(mi_id) -> list[dict]` with `dean_code, dean_title`.
+- Consumes: `vw_DeanInitiatives`, `vw_TeamInitiativeDeanLinks`, `TeamInitiatives.Description`.
+- Produces: `dean_initiatives() -> list[dict]` with keys `fiscal_year, code, title, description, percent_complete, priority_code, priority_title`; `team_initiative_dean_links(mi_id) -> list[dict]` with `dean_code, dean_title`.
 
 - [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_dean_layer.py
-"""Dean Priorities read models and rendering."""
+"""Dean Initiatives read models and rendering."""
 from app import queries
 
 
-def test_dean_priorities_grouped(fresh_db):
-    rows = queries.dean_priorities()
+def test_dean_initiatives_grouped(fresh_db):
+    rows = queries.dean_initiatives()
     assert len(rows) == 11
     assert sum(1 for r in rows if r["fiscal_year"] == 26) == 3
     assert sum(1 for r in rows if r["fiscal_year"] == 27) == 8
 
 
 def test_percent_scaling(fresh_db):
-    by_title = {r["title"]: r for r in queries.dean_priorities()}
+    by_title = {r["title"]: r for r in queries.dean_initiatives()}
     assert by_title["OMS AI"]["percent_complete"] == 50
     assert by_title["Strategy '35 Develop"]["percent_complete"] == 100
     assert by_title["Financial & Labor Optimization"]["percent_complete"] == 0
 
 
 def test_dean_links_resolve(fresh_db):
-    links = queries.major_initiative_dean_links("MI-002")
+    links = queries.team_initiative_dean_links("MI-002")
     assert links and all(l["dean_code"].startswith("D27-") for l in links)
 
 
 def test_home_shows_dean_section(logged_in):
     html = logged_in("Bill Gaudelli").get("/").text
-    assert "Dean Priorities" in html
+    assert "Dean Initiatives" in html
     assert "FY26" in html and "FY27" in html
 ```
 
 - [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_dean_layer.py -v`
-Expected: FAIL — `module 'app.queries' has no attribute 'dean_priorities'`
+Expected: FAIL — `module 'app.queries' has no attribute 'dean_initiatives'`
 
 - [x] **Step 3: Add the queries**
 
 In `app/queries.py`, add (following the existing row-dict convention):
 
 ```python
-def dean_priorities() -> list[dict]:
+def dean_initiatives() -> list[dict]:
     """The Dean's own priorities, FY26 then FY27, each with its priority."""
     with connect() as conn:
         return _dicts(conn.execute(
             "SELECT FiscalYear AS fiscal_year, Code AS code, Title AS title, "
             "Description AS description, PercentComplete AS percent_complete, "
             "PriorityCode AS priority_code, PriorityTitle AS priority_title "
-            "FROM vw_DeanPriorities ORDER BY FiscalYear, Code"))
+            "FROM vw_DeanInitiatives ORDER BY FiscalYear, Code"))
 
 
-def major_initiative_dean_links(mi_id: str) -> list[dict]:
-    """The Dean FY27 items a Major Initiative contributes to."""
+def team_initiative_dean_links(mi_id: str) -> list[dict]:
+    """The Dean FY27 items a Team Initiative contributes to."""
     with connect() as conn:
         return _dicts(conn.execute(
             "SELECT DeanCode AS dean_code, DeanTitle AS dean_title "
-            "FROM vw_MajorInitiativeDeanLinks WHERE MIId = ? ORDER BY DeanCode",
+            "FROM vw_TeamInitiativeDeanLinks WHERE MIId = ? ORDER BY DeanCode",
             (mi_id,)))
 ```
 
@@ -647,11 +647,11 @@ def major_initiative_dean_links(mi_id: str) -> list[dict]:
 In `app/templates/home.html`, add above the priorities section:
 
 ```html
-{% if dean_priorities %}
-<section class="section" aria-labelledby="dean-priorities">
-  <h2 id="dean-priorities">Dean Priorities</h2>
+{% if dean_initiatives %}
+<section class="section" aria-labelledby="dean-initiatives">
+  <h2 id="dean-initiatives">Dean Initiatives</h2>
   {% for fy, label in [(26, 'FY26'), (27, 'FY27')] %}
-    {% set group = dean_priorities | selectattr('fiscal_year', 'equalto', fy) | list %}
+    {% set group = dean_initiatives | selectattr('fiscal_year', 'equalto', fy) | list %}
     {% if group %}
     <h3>{{ label }}</h3>
     <ul class="dean-list">
@@ -671,7 +671,7 @@ In `app/templates/home.html`, add above the priorities section:
 {% endif %}
 ```
 
-In `app/templates/major_initiative.html`, after the title add:
+In `app/templates/team_initiative.html`, after the title add:
 
 ```html
 {% if mi.description %}<p class="mi-description">{{ mi.description }}</p>{% endif %}
@@ -682,7 +682,7 @@ In `app/templates/major_initiative.html`, after the title add:
 {% endif %}
 ```
 
-Pass `dean_priorities` to the home context and `dean_links` to the MI detail context in `app/main.py`.
+Pass `dean_initiatives` to the home context and `dean_links` to the MI detail context in `app/main.py`.
 
 - [x] **Step 5: Run test to verify it passes**
 
@@ -692,8 +692,8 @@ Expected: PASS (4 tests)
 - [x] **Step 6: Commit**
 
 ```bash
-git add -- app/queries.py app/main.py app/templates/home.html app/templates/major_initiative.html tests/test_dean_layer.py
-git commit -m "feat(ui): Dean Priorities section and MI contributes-to chips"
+git add -- app/queries.py app/main.py app/templates/home.html app/templates/team_initiative.html tests/test_dean_layer.py
+git commit -m "feat(ui): Dean Initiatives section and MI contributes-to chips"
 ```
 
 ---
@@ -725,7 +725,7 @@ Expected: PASS (515 tests: 510 + 3 schema + 5 seed-register replaced by build-ti
 
 - [x] **Step 3: Note the team moves in the launch record**
 
-In `docs/ops/LAUNCH_RECORD.md`, add a dated entry naming the four reassigned Major Initiatives, the five reworded titles, and the new Dean layer, citing the register as the source.
+In `docs/ops/LAUNCH_RECORD.md`, add a dated entry naming the four reassigned Team Initiatives, the five reworded titles, and the new Dean layer, citing the register as the source.
 
 - [x] **Step 4: Stage the exact paths and commit**
 
@@ -912,4 +912,4 @@ git commit -m "fix(changelog): correct EntityType; add AuditLog indexes and a /c
 
 **Placeholder scan:** no TBD/TODO; every code step shows the code. Task 4's query code says "verify against `app/db.py`" — the executor must read that one file for the real `connect()`/`_dicts` names; this is a named lookup, not a placeholder.
 
-**Type consistency:** `dean_priorities()` returns dict keys `fiscal_year/percent_complete/...` used identically in the test and the template; `Code` values `D26-n`/`D27-n` are produced in Task 2 and consumed in Task 4. `IsPrimary` is set in Task 2 and constrained in Task 1. ✅
+**Type consistency:** `dean_initiatives()` returns dict keys `fiscal_year/percent_complete/...` used identically in the test and the template; `Code` values `D26-n`/`D27-n` are produced in Task 2 and consumed in Task 4. `IsPrimary` is set in Task 2 and constrained in Task 1. ✅

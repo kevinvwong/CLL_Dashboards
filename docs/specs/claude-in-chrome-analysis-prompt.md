@@ -25,7 +25,7 @@ The site is server-rendered and needs no special setup. If a page 404s, note it
 
 A strategy-portfolio dashboard for the Georgia Tech College of Lifetime Learning
 (CLL), used by the Dean and his leadership team in a weekly meeting. It tracks
-Major Initiatives, annual Priorities, Strategy 2035 goals, and outcomes. It was
+Team Initiatives, annual Priorities, Strategy 2035 goals, and outcomes. It was
 just restyled onto a new design system called **Hive** (a Georgia Tech-derived
 visual language: GT navy, gold, Diploma cream, Barlow + IBM Plex type, an official
 GT logo in the top bar). All data on it is **invented sample data** — the yellow
@@ -40,8 +40,8 @@ Visit all of these and look at each properly (scroll, open panels):
 - `/goals/1` — a Strategy 2035 goal's cascade
 - `/priorities/Identity` — a priority detail (Measure / Target / Cadence / Owner)
 - `/teams/1` — a team page
-- `/major-initiatives` — the 29 Major Initiatives index (try the filter and grouping)
-- `/major-initiatives/MI-001` — one Major Initiative's detail page
+- `/team-initiatives` — the 29 Team Initiatives index (try the filter and grouping)
+- `/team-initiatives/MI-001` — one Team Initiative's detail page
 - `/people` and `/people/2` — the People index and a person
 - `/outcomes` — the October 16 outcomes view
 - `/checks` — the data-checks page (admin; if you cannot see it as Bill, say so)
@@ -119,7 +119,7 @@ Return **one markdown document**, structured as:
 4. **Per-lens detail** — the four sections above, written out.
 5. **The top five fixes** — if only five things were changed, which, in order.
 
-Be concrete and quoted: "on `/major-initiatives`, the third column header reads X
+Be concrete and quoted: "on `/team-initiatives`, the third column header reads X
 and is clipped" beats "some tables have issues". If something looks broken, say
 what you expected and what you saw instead. If you are unsure whether something is
 a bug or intentional, say so rather than asserting.

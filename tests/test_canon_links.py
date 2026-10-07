@@ -1,4 +1,4 @@
-"""The Major Initiative -> Goal edge and the canon's stable keys.
+"""The Team Initiative -> Goal edge and the canon's stable keys.
 
 Covers the interconnection-redesign data layer: the canon workbook's MI-ids,
 exact titles, and the MI -> Goal alignment, all verified against the workbook
@@ -66,7 +66,7 @@ def _register_rows():
     import sqlite3
     con = sqlite3.connect(os.path.join(R, "cll_initiatives.db"))
     committed = {mod.norm(t): code for code, t in
-                 con.execute("SELECT Code, Title FROM MajorInitiatives")}
+                 con.execute("SELECT Code, Title FROM TeamInitiatives")}
     con.close()
     from openpyxl import load_workbook
     wb = load_workbook(REGISTER, read_only=True, data_only=True)
@@ -88,7 +88,7 @@ def _register_goals():
         pytest.skip("register workbook not present")
     reg = _register_rows()
     con = sqlite3.connect(os.path.join(R, "cll_initiatives.db"))
-    code_to_mi = {c: m for m, c in con.execute("SELECT MIId, Code FROM MajorInitiatives")}
+    code_to_mi = {c: m for m, c in con.execute("SELECT MIId, Code FROM TeamInitiatives")}
     con.close()
     out = {}
     for code, r in reg.items():
@@ -101,21 +101,21 @@ def _register_goals():
 # --- the edge exists ---------------------------------------------------------
 
 
-def test_every_major_initiative_has_a_goal_link(fresh_db):
+def test_every_team_initiative_has_a_goal_link(fresh_db):
     """The interconnection the canon states and the schema did not hold."""
-    n = _rows(fresh_db, "SELECT COUNT(DISTINCT MajorInitiativeID) AS n FROM MajorInitiativeGoals")[0]["n"]
-    assert n == 29, "expected all 29 Major Initiatives to align to a goal"
+    n = _rows(fresh_db, "SELECT COUNT(DISTINCT TeamInitiativeID) AS n FROM TeamInitiativeGoals")[0]["n"]
+    assert n == 29, "expected all 29 Team Initiatives to align to a goal"
 
 
-def test_every_major_initiative_has_an_mi_id(fresh_db):
-    n = _rows(fresh_db, "SELECT COUNT(*) AS n FROM MajorInitiatives WHERE MIId IS NOT NULL")[0]["n"]
+def test_every_team_initiative_has_an_mi_id(fresh_db):
+    n = _rows(fresh_db, "SELECT COUNT(*) AS n FROM TeamInitiatives WHERE MIId IS NOT NULL")[0]["n"]
     assert n == 29
 
 
 def test_goal_links_reference_real_goals(fresh_db):
     from app import queries
     bad = _rows(fresh_db,
-        "SELECT kg.MajorInitiativeID FROM MajorInitiativeGoals kg "
+        "SELECT kg.TeamInitiativeID FROM TeamInitiativeGoals kg "
         "LEFT JOIN Goals g ON g.GoalID = kg.GoalID WHERE g.GoalID IS NULL")
     assert not bad, "goal links pointing at no goal: %s" % bad
 
@@ -128,7 +128,7 @@ def test_goal_numbers_parse_from_the_canon_alignments(fresh_db):
     canon = _canon()
     links = _rows(fresh_db, """
         SELECT k.MIId, GROUP_CONCAT(g.GoalNumber) AS goals
-        FROM MajorInitiativeGoals kg JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
+        FROM TeamInitiativeGoals kg JOIN TeamInitiatives k ON k.TeamInitiativeID = kg.TeamInitiativeID
         JOIN Goals g ON g.GoalID = kg.GoalID GROUP BY k.MIId""")
     got = {r["MIId"]: set(str(r["goals"]).split(",")) for r in links}
     assert len(got) == 29
@@ -140,7 +140,7 @@ def test_a_range_alignment_expands(fresh_db):
     """'Goals 1-5' means all five, not just 1 and 5."""
     rows = _rows(fresh_db, """
         SELECT GROUP_CONCAT(g.GoalNumber) AS goals
-        FROM MajorInitiativeGoals kg JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
+        FROM TeamInitiativeGoals kg JOIN TeamInitiatives k ON k.TeamInitiativeID = kg.TeamInitiativeID
         JOIN Goals g ON g.GoalID = kg.GoalID
         WHERE k.MIId = 'MI-006' GROUP BY k.MIId""")
     # MI-006 'Unified branding...' aligns to Goals 1-5 in the canon.
@@ -161,9 +161,9 @@ def test_every_mi_id_matches_the_canon_title(fresh_db):
     canon = _canon()
     reg = _register_rows()
     ours = {r["MIId"]: r["Title"] for r in
-            _rows(fresh_db, "SELECT MIId, Title FROM MajorInitiatives WHERE MIId IS NOT NULL")}
+            _rows(fresh_db, "SELECT MIId, Title FROM TeamInitiatives WHERE MIId IS NOT NULL")}
     for mid, (canon_title, _) in canon.items():
-        rows = _rows(fresh_db, "SELECT Code, Title FROM MajorInitiatives WHERE MIId = ?", (mid,))
+        rows = _rows(fresh_db, "SELECT Code, Title FROM TeamInitiatives WHERE MIId = ?", (mid,))
         if not rows:
             continue
         code = rows[0]["Code"]
@@ -187,8 +187,8 @@ def test_the_goal_links_match_the_canon_alignment(fresh_db):
         pytest.skip("register workbook not present")
     got = {}
     for r in _rows(fresh_db, """
-            SELECT k.MIId, g.GoalNumber FROM MajorInitiativeGoals kg
-            JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
+            SELECT k.MIId, g.GoalNumber FROM TeamInitiativeGoals kg
+            JOIN TeamInitiatives k ON k.TeamInitiativeID = kg.TeamInitiativeID
             JOIN Goals g ON g.GoalID = kg.GoalID"""):
         got.setdefault(r["MIId"], set()).add(str(r["GoalNumber"]))
     mismatched = []
@@ -231,19 +231,19 @@ def test_each_target_belongs_to_its_own_initiative(fresh_db):
         "MI-029": "coursework",     # reusable coursework
     }
     got = {r["MIId"]: (r["Title"] or "") + " " + (r["ProposedTarget"] or "")
-           for r in _rows(fresh_db, "SELECT MIId, Title, ProposedTarget FROM MajorInitiatives")}
+           for r in _rows(fresh_db, "SELECT MIId, Title, ProposedTarget FROM TeamInitiatives")}
     wrong = [mid for mid, word in expected.items()
              if mid in got and word not in got[mid].lower()]
     assert not wrong, "target does not match its own initiative: %s" % wrong
 
 
-def test_the_goal_view_lists_major_initiatives_per_goal(fresh_db):
+def test_the_goal_view_lists_team_initiatives_per_goal(fresh_db):
     from app import queries
     rows = _rows(fresh_db, """
-        SELECT g.GoalNumber, COUNT(DISTINCT v.MajorInitiativeID) AS n
-        FROM vw_MajorInitiativeGoals v JOIN Goals g ON g.GoalID = v.GoalID
+        SELECT g.GoalNumber, COUNT(DISTINCT v.TeamInitiativeID) AS n
+        FROM vw_TeamInitiativeGoals v JOIN Goals g ON g.GoalID = v.GoalID
         GROUP BY g.GoalNumber ORDER BY g.GoalNumber""")
-    assert len(rows) == 5, "all five goals should carry Major Initiatives"
+    assert len(rows) == 5, "all five goals should carry Team Initiatives"
     assert sum(r["n"] for r in rows) >= 29
 
 

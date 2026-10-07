@@ -43,8 +43,8 @@ clearly (e.g. `overview.png`). Capture at least:
    "build memo" reveal collapsed).
 4. `/outcomes` with the **memo reveal opened**, so the scope / data-requirements /
    trade-offs are visible.
-5. `/major-initiatives` — the index table, full page.
-6. `/major-initiatives/MI-021` — one Major Initiative detail page.
+5. `/team-initiatives` — the index table, full page.
+6. `/team-initiatives/MI-021` — one Team Initiative detail page.
 7. The **initiative drawer**: from `/initiatives`, click a row so the drawer opens,
    and capture it.
 8. `/priorities/Identity` — a priority detail page.
@@ -63,7 +63,7 @@ For each, say **PASS**, **FAIL**, or **PARTIAL**, with the evidence.
    carry a target about *approval*, MI-022 `Establish and Implement Faculty
    Governance Process` a target about *governance*, MI-023 a target about
    *evaluation*, and so on through MI-028. Before the fix MI-021 showed MI-022's
-   subject. Check MI-021…MI-029 on `/major-initiatives` or their detail pages, and
+   subject. Check MI-021…MI-029 on `/team-initiatives` or their detail pages, and
    say which (if any) still look mismatched.
 2. **Search (Ctrl-K).** Enter should land on a styled page (or go straight to a
    single match), not a raw fragment. Typing `MI-001` must find that Major
@@ -77,7 +77,7 @@ For each, say **PASS**, **FAIL**, or **PARTIAL**, with the evidence.
 5. **Milestone counts.** Each card's "N of M milestones reached" must match the
    number of milestone rows shown beneath it (they were 1-of-4 over three rows).
 6. **Wayfinding.** Breadcrumbs should sit inside the page gutter, not at the window
-   edge. On MI pages the parent should be **Major Initiatives**, not Priorities.
+   edge. On MI pages the parent should be **Team Initiatives**, not Priorities.
    `/teams` should load (it used to 404). The current-page nav item should be
    highlighted correctly.
 7. **Drawer controls.** The drawer's **Update** button (and the admin buttons as
@@ -88,7 +88,7 @@ For each, say **PASS**, **FAIL**, or **PARTIAL**, with the evidence.
    should be visible. Badges and IDs should not wrap mid-word.
 9. **One priority label.** A priority should read the same everywhere —
    e.g. `P01 One Shared Identity` on its own page, and `P01`+title in tables.
-   Check `/priorities/Identity`, `/`, `/major-initiatives/MI-001`.
+   Check `/priorities/Identity`, `/`, `/team-initiatives/MI-001`.
 10. **Overview health.** The Overview should open with a one-line health read
     ("N initiatives tracked: X on track / Y at risk …") before the taxonomy.
 11. **The goal eyebrow.** `/goals/1` should read "Goal G1", not "Goal ·".

@@ -39,9 +39,9 @@ def test_no_serious_axe_violations_on_key_pages():
         pytest.skip("axe.min.js not downloaded")
     axe = open(axe_path, encoding="utf-8").read()
 
-    pages = ["/", "/major-initiatives", "/major-initiatives/MI-002", "/people",
+    pages = ["/", "/team-initiatives", "/team-initiatives/MI-002", "/people",
              "/people/2", "/goals/1", "/priorities/Identity", "/teams",
-             "/outcomes", "/dean-priorities", "/checks", "/changes"]
+             "/outcomes", "/dean-initiatives", "/checks", "/changes"]
     bad = []
     with sync_playwright() as p:
         b = p.chromium.launch()

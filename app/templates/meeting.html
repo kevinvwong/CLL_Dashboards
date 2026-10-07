@@ -30,7 +30,7 @@
   {% if attention %}
   <ul class="initiative-list attention-list">
     {% for row in attention %}
-    <li class="initiative-row" hx-get="/major-initiatives/{{ row.Code }}"
+    <li class="initiative-row" hx-get="/team-initiatives/{{ row.Code }}"
         hx-target="#card-modal" hx-swap="innerHTML" hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']" tabindex="0" role="link">
       <div class="row-main">
         <span class="code">{{ row.Code }}</span>
@@ -70,7 +70,7 @@
     <h3 class="list-group-label">{{ owner }}</h3>
     <ul class="delta-list">
       {% for d in owner_rows %}
-      <li class="delta-row" hx-get="/major-initiatives/{{ d.Code }}"
+      <li class="delta-row" hx-get="/team-initiatives/{{ d.Code }}"
           hx-target="#card-modal" hx-swap="innerHTML" hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']" tabindex="0" role="link">
         <div class="row-main">
           <span class="code">{{ d.Code }}</span>

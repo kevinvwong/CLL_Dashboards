@@ -159,11 +159,11 @@ def person_exists(person_id) -> bool:
 
 
 def get_initiative(mi_id: str):
-    """Resolve a Major Initiative by its canon key, if active."""
+    """Resolve a Team Initiative by its canon key, if active."""
     with _conn() as conn:
         row = conn.execute(
-            "SELECT MajorInitiativeID, MIId, Title AS InitiativeName, OwnerID "
-            "FROM MajorInitiatives WHERE MIId = ? AND IsActive = 1",
+            "SELECT TeamInitiativeID, MIId, Title AS InitiativeName, OwnerID "
+            "FROM TeamInitiatives WHERE MIId = ? AND IsActive = 1",
             (mi_id,),
         ).fetchone()
     return dict(row) if row else None
@@ -178,7 +178,7 @@ def is_dean(person) -> bool:
 
     Before the 2026-10-07 merge this was "owns a Dean-level initiative", but the
     merged model has no Dean-level initiatives - the Dean's own work is the
-    separate Dean Priorities layer. The register marks Bill Gaudelli with the
+    separate Dean Initiatives layer. The register marks Bill Gaudelli with the
     Title 'Dean', so that is the marker. `ReportsToID IS NULL` alone would also
     catch the dashboard admin and any co-owner the register lists without a
     reporting line, which is why it is not used.
@@ -218,7 +218,7 @@ def is_admin_request(request: Request) -> bool:
 def database_reachable() -> bool:
     try:
         with _conn() as conn:
-            conn.execute("SELECT 1 FROM MajorInitiatives LIMIT 1").fetchone()
+            conn.execute("SELECT 1 FROM TeamInitiatives LIMIT 1").fetchone()
     except sqlite3.Error:
         return False
     return True

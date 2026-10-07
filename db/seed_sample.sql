@@ -2,7 +2,7 @@
 -- SAMPLE / BASE DATA — the lookup rows the register seed builds on.
 --
 -- After the 2026-10-07 merge there is ONE initiative model: the register's
--- `MajorInitiatives` (29 rows), seeded by `seed_team_layer.sql`,
+-- `TeamInitiatives` (29 rows), seeded by `seed_team_layer.sql`,
 -- `seed_canon_links.sql` and `seed_register.sql`. The prototype's sample
 -- `Initiatives` and its diary were removed here.
 --

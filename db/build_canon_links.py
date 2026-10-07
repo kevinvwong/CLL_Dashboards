@@ -3,7 +3,7 @@
 Source of truth: `CLL_FY2027_Goals_Priorities_Initiatives_and_People.xlsx`,
 supplied 2026-10-06 as the most recent canon. Read directly, not retyped.
 
-The canon gives each Major Initiative an id (MI-001..MI-029), an exact title, a
+The canon gives each Team Initiative an id (MI-001..MI-029), an exact title, a
 source area and a Strategy Alignment. The prototype's `data.js` gives the *same
 29 rows* a target, initiatives and priority links. We need both on one row.
 
@@ -140,17 +140,17 @@ def build(path=WORKBOOK, out=OUT, proto_path=PROTO):
          "-- Do not hand-edit. Read from the workbook, not retyped.",
          "-- Rows are matched to the prototype by NAME, not position.",
          ""]
-    L.append("-- The canon's stable key and exact title for each Major Initiative.")
+    L.append("-- The canon's stable key and exact title for each Team Initiative.")
     for r in rows:
-        L.append("UPDATE MajorInitiatives SET MIId=%s, Title=%s WHERE Code=%s;"
+        L.append("UPDATE TeamInitiatives SET MIId=%s, Title=%s WHERE Code=%s;"
                  % (_sq(r["mi_id"]), _sq(r["name"]), _sq(r["code"])))
     L.append("")
     L.append("-- The MI -> Goal edge, parsed from each alignment string.")
-    L.append("INSERT INTO MajorInitiativeGoals (MajorInitiativeID, GoalID) VALUES")
+    L.append("INSERT INTO TeamInitiativeGoals (TeamInitiativeID, GoalID) VALUES")
     vals = []
     for r in rows:
         for g in r["goals"]:
-            vals.append("  ((SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code=%s), "
+            vals.append("  ((SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code=%s), "
                         "(SELECT GoalID FROM Goals WHERE GoalNumber=%d))"
                         % (_sq(r["code"]), g))
     L.append(",\n".join(vals) + ";")

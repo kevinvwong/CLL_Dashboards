@@ -1,4 +1,4 @@
-# Design: Register as canon, and the Dean Priorities layer
+# Design: Register as canon, and the Dean Initiatives layer
 
 Date: 2026-10-07
 Status: approved (sectioned review §1-§5, 2026-10-07)
@@ -8,7 +8,7 @@ Source: `C:\Users\kwong318\Downloads\Initiative Dashboard Register.xlsx`
 
 A new workbook, **`Initiative Dashboard Register.xlsx`** (sheet "Team KPI
 Register", 40 data rows), has been supplied as the current authority for the
-Major Initiatives. Provenance check: `docProps/core.xml` names
+Team Initiatives. Provenance check: `docProps/core.xml` names
 `Smith, Elizabeth C` as last author and `app.xml` names `Microsoft Excel
 Online` — it is a genuine, human-authored register, not a generated artifact.
 It was supplied by the user with the instruction **"register is canon and
@@ -42,16 +42,16 @@ It also carries material we do not hold at all:
 
 ## Terminology (settled)
 
-The app keeps **Major Initiative** for the 29 team rows (the earlier rename
+The app keeps **Team Initiative** for the 29 team rows (the earlier rename
 stands). **KPI** is not adopted as a row label. The 11 Dean rows are presented
-as **"Dean Priorities"**, split **FY26** (complete) and **FY27** (in flight).
+as **"Dean Initiatives"**, split **FY26** (complete) and **FY27** (in flight).
 The register's own "Team KPI" / "Dean KPI 26/27" headers are working-spreadsheet
 wording, not app vocabulary.
 
 ## Approaches considered
 
-- **A (chosen)** — new `DeanPriorities` layer as its own tables; extend
-  `MajorInitiatives` and `People`; re-seed all of it from the register.
+- **A (chosen)** — new `DeanInitiatives` layer as its own tables; extend
+  `TeamInitiatives` and `People`; re-seed all of it from the register.
 - **B (rejected)** — fold the Dean 11 into the superseded prototype `Initiatives`
   table (`Level='Dean'`). Rejected: that table is the retired prototype model,
   entangled with `vw_*` views, level-check triggers and `ProgressUpdates`;
@@ -65,8 +65,8 @@ wording, not app vocabulary.
 ### New tables
 
 ```sql
-CREATE TABLE DeanPriorities (
-    DeanPriorityID  INTEGER PRIMARY KEY,
+CREATE TABLE DeanInitiatives (
+    DeanInitiativeID  INTEGER PRIMARY KEY,
     FiscalYear      INTEGER NOT NULL CHECK (FiscalYear IN (26,27)),
     Code            TEXT    NOT NULL UNIQUE,   -- 'D26-1'..'D26-3', 'D27-1'..'D27-8'
     Title           TEXT    NOT NULL,
@@ -76,19 +76,19 @@ CREATE TABLE DeanPriorities (
     Note            TEXT
 );
 
--- The X-matrix: which team Major Initiative contributes to which FY27 Dean item.
-CREATE TABLE MajorInitiativeDeanLinks (
-    MajorInitiativeID INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
-    DeanPriorityID    INTEGER NOT NULL REFERENCES DeanPriorities(DeanPriorityID),
-    PRIMARY KEY (MajorInitiativeID, DeanPriorityID)
+-- The X-matrix: which team Team Initiative contributes to which FY27 Dean item.
+CREATE TABLE TeamInitiativeDeanLinks (
+    TeamInitiativeID INTEGER NOT NULL REFERENCES TeamInitiatives(TeamInitiativeID),
+    DeanInitiativeID    INTEGER NOT NULL REFERENCES DeanInitiatives(DeanInitiativeID),
+    PRIMARY KEY (TeamInitiativeID, DeanInitiativeID)
 );
 ```
 
 ### Extensions to existing tables
 
-- `MajorInitiatives` gains `Description TEXT` and `OwnerID INTEGER REFERENCES
+- `TeamInitiatives` gains `Description TEXT` and `OwnerID INTEGER REFERENCES
   People(PersonID)`.
-- `MajorInitiativePriorities` gains `IsPrimary INTEGER NOT NULL DEFAULT 0 CHECK
+- `TeamInitiativePriorities` gains `IsPrimary INTEGER NOT NULL DEFAULT 0 CHECK
   (IsPrimary IN (0,1))`, with a partial unique index for one primary per MI,
   mirroring the prototype's `UX_IP_OnePrimary` convention. The register states a
   **primary** and a **secondary** priority for each team row.
@@ -145,7 +145,7 @@ The register seed writes all three edge sets:
    alignment-string parse in `build_canon_links.py`.
 2. **MI→Priority** (primary + secondary per team row), writing `IsPrimary`.
 3. **MI→Dean** (61 edges) from the register's eight Dean KPI 27 columns into
-   `MajorInitiativeDeanLinks`.
+   `TeamInitiativeDeanLinks`.
 
 ### Register expansion
 
@@ -156,12 +156,12 @@ present in the register.
 
 ## §4 Read models and UI
 
-- New view `vw_DeanPriorities` (Dean rows with their priority).
-- New view `vw_MajorInitiativeDeanLinks` (one row per team-initiative → Dean-FY27
+- New view `vw_DeanInitiatives` (Dean rows with their priority).
+- New view `vw_TeamInitiativeDeanLinks` (one row per team-initiative → Dean-FY27
   link).
-- **Home page**: a new "Dean Priorities — FY26 / FY27" section, percent bars
+- **Home page**: a new "Dean Initiatives — FY26 / FY27" section, percent bars
   using the Hive status tokens; FY26 grouped and marked complete.
-- **Major Initiative card**: gains its `Description` and "contributes to →"
+- **Team Initiative card**: gains its `Description` and "contributes to →"
   chips from the Dean-link matrix.
 - Team reassignments flow automatically through `vw_TeamSummary` and the team
   pages.
@@ -171,7 +171,7 @@ The 4 reassigned rows move immediately; the move is recorded in
 
 ## §5 Testing
 
-- `tests/test_register_seed.py` — asserts counts (29 Major Initiatives, 11 Dean
+- `tests/test_register_seed.py` — asserts counts (29 Team Initiatives, 11 Dean
   Priorities, 8 FY27 items, 61 MI→Dean links, 58 MI→Goal edges), name-join
   integrity, and byte-reproducibility of the built db.
 - `tests/test_dean_layer.py` — percent scaling (0.05→5, 1→100), FY26/FY27
@@ -182,8 +182,8 @@ The 4 reassigned rows move immediately; the move is recorded in
 
 | Quantity | Value |
 |----------|-------|
-| Team Major Initiatives | 29 |
-| Dean Priorities | 11 (FY26: 3, FY27: 8) |
+| Team Team Initiatives | 29 |
+| Dean Initiatives | 11 (FY26: 3, FY27: 8) |
 | Team MI → Goal edges | 58 |
 | Team MI → Dean FY27 edges | 61 |
 | Dean rows → Goal edges | 27 |
