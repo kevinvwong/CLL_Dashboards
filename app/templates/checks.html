@@ -70,7 +70,7 @@
   <ul class="coverage-list">
     {% for r in rows %}
     <li class="coverage-row">
-      <span class="coverage-label">{{ r.label }}</span>
+      <span class="coverage-label">{{ r.label | priority_label if group_name == "Priorities" else r.label }}</span>
       {# Coverage is covered-or-not, not a quantity. It was drawn as a bar that
          filled to 100% or 0, which read as a proportion against the other rows.
          A chip states it honestly: covered means at least one initiative is

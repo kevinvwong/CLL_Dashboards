@@ -266,7 +266,7 @@ def build(owners_path: str | None, out_path: str = OUT) -> str:
     L.append("# Three owner states. A withheld name is a marked placeholder and is never")
     L.append("# treated as a confirmed owner.")
     L.append('OWNER_WITHHELD = "[owner withheld]"')
-    L.append('OWNER_NONE = "[no owner named]"')
+    L.append('OWNER_NONE = "no owner named"')
     L.append("")
     L.append("")
     L.append("def owner_label(owner) -> str:")

@@ -71,7 +71,7 @@
     <p class="oct16-owner{% if not d.owner_is_confirmed(o.owner) %} unconfirmed{% endif %}">
       {% if d.owner_is_confirmed(o.owner) %}Owner: <span class="owner-value">{{ d.owner_label(o.owner) }}</span>{% if o.updated %} · updated {{ o.updated }}{% endif %}
       {% elif o.owner == d.OWNER_WITHHELD %}Owner: <span class="owner-value">{{ d.owner_label(o.owner) }}</span>
-      {% else %}<span class="owner-none">{{ d.owner_label(o.owner) }}</span> — to be named by Oct 12{% endif %}
+      {% else %}Owner: <span class="owner-none">{{ d.owner_label(o.owner) }}</span> — expected by Oct 12{% endif %}
     </p>
   </li>
   {% endfor %}

@@ -36,6 +36,7 @@
   <span class="badge status-on-track">{{ health.on_track }} on track</span>
   <span class="badge status-at-risk">{{ health.at_risk }} at risk</span>
   {% if health.off_track %}<span class="badge status-off-track">{{ health.off_track }} off track</span>{% endif %}
+  {% if health.not_started %}<span class="badge status-not-started">{{ health.not_started }} not started</span>{% endif %}
 </p>
 
 {# --- 1. the stat band ----------------------------------------------------- #}

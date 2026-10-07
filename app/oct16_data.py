@@ -38,7 +38,7 @@ def data_status() -> str:
 # Three owner states. A withheld name is a marked placeholder and is never
 # treated as a confirmed owner.
 OWNER_WITHHELD = "[owner withheld]"
-OWNER_NONE = "[no owner named]"
+OWNER_NONE = "no owner named"
 
 
 def owner_label(owner) -> str:

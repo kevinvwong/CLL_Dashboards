@@ -632,11 +632,13 @@ def all_initiatives(filters: dict | None = None) -> list[dict]:
             goals.setdefault(r["InitiativeID"], []).append(r["ShortName"])
         priorities: dict = {}
         for r in conn.execute(
-            "SELECT ip.InitiativeID, pr.PriorityName FROM InitiativePriorities ip "
+            "SELECT ip.InitiativeID, pr.PriorityName, pr.Code FROM InitiativePriorities ip "
             "JOIN Priorities pr ON pr.PriorityID = ip.PriorityID "
             "ORDER BY pr.PriorityName"
         ):
-            priorities.setdefault(r["InitiativeID"], []).append(r["PriorityName"])
+            # The short CODE, so the table reads "P03" like its other columns,
+            # rather than the bare short name ("Pathways", #7).
+            priorities.setdefault(r["InitiativeID"], []).append(r["Code"] or r["PriorityName"])
 
     today = _today()
     for row in rows:
@@ -824,7 +826,11 @@ def team_overview() -> list[dict]:
         mis = [dict(r) for r in conn.execute(
             "SELECT MajorInitiativeID, Code, MIId, Title, TeamID, SourceAreaID, StrategyAlign, "
             "       Initiatives, ProposedTarget, TargetStatus, "
-            "       Status, Note FROM MajorInitiatives ORDER BY Code")]
+            "       Status, Note FROM MajorInitiatives "
+            # Order by the canon's public key, not the internal Code: the Code
+            # follows the prototype's order, so the MI-id column read
+            # MI-014, MI-016, MI-018, MI-015… (#N8).
+            "ORDER BY MIId")]
         areas = {r["SourceAreaID"]: r["Name"]
                  for r in conn.execute("SELECT SourceAreaID, Name FROM SourceAreas")}
         for k in mis:
@@ -880,9 +886,10 @@ def filter_and_group_major_initiatives(mis: list, filter_: str | None, group: st
     if filter_ == "needs_review":
         rows = [k for k in rows if k["TargetStatus"] == "needs_review"]
     if group not in ("team", "source_area"):
-        return rows
+        # Default order is the canon's public key, matching the query.
+        return sorted(rows, key=lambda k: k.get("MIId") or k["Code"])
     field = "Team" if group == "team" else "SourceArea"
-    rows = sorted(rows, key=lambda k: (k.get(field) or "~", k["Code"]))
+    rows = sorted(rows, key=lambda k: (k.get(field) or "~", k.get("MIId") or k["Code"]))
     last = None
     for k in rows:
         label = k.get(field) or "Unassigned"
@@ -1015,7 +1022,7 @@ def search(term: str, limit: int = 10) -> list[dict]:
                 "ORDER BY GoalNumber LIMIT ?",
                 (like, like, limit))),
             ("priority", conn.execute(
-                "SELECT PriorityName AS key, PriorityName AS label, COALESCE(Code,'') AS code "
+                "SELECT PriorityName AS key, COALESCE(Code || ' ' || PriorityName, PriorityName) AS label, COALESCE(Code,'') AS code "
                 "FROM Priorities WHERE LOWER(PriorityName) LIKE ? "
                 "OR LOWER(COALESCE(FullTitle,'')) LIKE ? ORDER BY PriorityName LIMIT ?",
                 (like, like, limit))),

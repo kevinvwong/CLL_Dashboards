@@ -38,6 +38,9 @@ templates.env.filters["priority_colour"] = status.priority_colour_var
 # (#7). Without it a priority read three ways across the app.
 templates.env.filters["priority_label"] = priorities.label
 templates.env.filters["priority_code"] = priorities.code
+# The full title WITHOUT the code, for a chip that already shows the code beside
+# it (otherwise the code is printed twice: "P03 P03 Integrated…", #N3).
+templates.env.filters["priority_title"] = priorities.title
 
 # htmx is vendored (design.md decision 1) so the app works with no CDN access.
 app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
@@ -326,7 +329,7 @@ async def priority_list(request: Request, priority_name: str, group: str | None 
             heading=f"{priorities.label(priority['PriorityName'])} ({priority['PlanYear']})",
             description=priority["Description"],
             entry_kind="priority",
-            crumbs=[("Priorities", "/#priorities"), (priority["PriorityName"], None)],
+            crumbs=[("Priorities", "/#priorities"), (priorities.label(priority["PriorityName"]), None)],
             entry_key=priority["PriorityName"],
             plan_year=priority["PlanYear"],
             # The governed fields live on the priority page (interconnection-
@@ -900,6 +903,7 @@ async def root(request: Request):
         "on_track": by_status.get("On track", 0),
         "at_risk": by_status.get("At risk", 0),
         "off_track": by_status.get("Off track", 0),
+        "not_started": by_status.get("Not started", 0),
         "total": sum(by_status.values()),
     }
 
