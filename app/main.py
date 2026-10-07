@@ -644,6 +644,37 @@ async def initiatives_index_retired():
     return RedirectResponse(url="/team-initiatives", status_code=308)
 
 
+# --- The intermediate name, retired (2026-10-07) ------------------------------
+# The layers were named "Major Initiative" for one deployed round, then renamed
+# to "Team Initiative". A bookmark from that round would 404, so the old name
+# redirects too, exactly as /initiatives/* does. This is the second rename to
+# pass through, so the alias list grows with each one.
+
+@app.get("/major-initiatives/{code}")
+async def major_initiative_retired(code: str):
+    return RedirectResponse(url="/team-initiatives/" + code, status_code=308)
+
+
+@app.get("/major-initiatives/{code}/{rest:path}")
+async def major_initiative_sub_retired(code: str, rest: str):
+    return RedirectResponse(url="/team-initiatives/%s/%s" % (code, rest), status_code=308)
+
+
+@app.post("/major-initiatives/{code}/{rest:path}")
+async def major_initiative_sub_retired_post(code: str, rest: str):
+    return RedirectResponse(url="/team-initiatives/%s/%s" % (code, rest), status_code=308)
+
+
+@app.get("/major-initiatives")
+async def major_initiatives_index_retired():
+    return RedirectResponse(url="/team-initiatives", status_code=308)
+
+
+@app.get("/dean-priorities")
+async def dean_priorities_retired():
+    return RedirectResponse(url="/dean-initiatives", status_code=308)
+
+
 @app.get("/meeting")
 async def meeting(request: Request, since: str | None = None):
     """The Wednesday agenda: an attention list plus changes in a window.

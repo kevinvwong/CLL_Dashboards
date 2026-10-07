@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **121** changes in total.
+- **3** days of work recorded, **123** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 33 what we added; 24 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 11 documentation; 17 more changes.
+- Across all days: 34 what we added; 24 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 12 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -44,6 +44,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Spell out 'Goal N' in prose; add status glyphs for colour-blind/print readers
 - Move the 11 Dean Priorities to /dean-priorities; home keeps a one-line roll-up
 - Priorities read 'Priority 1 · One Shared Identity'; remove orphaned warn tokens
+- Generate the progress log from git, written for a non-technical reader
 
 **What we fixed**
 
@@ -93,6 +94,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Update the glossary for Team Initiative / Dean Initiative and the roll-up
 - Repo and Planner assessment (2026-10-07)
 - Add a daily progress log, backfilled from git history
+- Planner reconciliation - one rename, all platform tasks stay open
 
 **More changes**
 
