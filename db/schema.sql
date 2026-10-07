@@ -105,11 +105,12 @@ CREATE TABLE MajorInitiatives (
     SourceAreaID   INTEGER REFERENCES SourceAreas(SourceAreaID),
     StrategyAlign  TEXT,        -- 'Goals 1 + 3: Credentials & pathways'
     Initiatives    TEXT,        -- the initiatives named in the prototype
-    SourceTarget   TEXT,        -- target carried from the source workbook
-    ProposedTarget TEXT,        -- the blueprint's proposed target
+    -- The only target we hold. The canon workbook carries no target column, and
+    -- the prototype's separate `SourceTarget` was always equal to this or null,
+    -- so it was dropped as a duplicate (2026-10-07).
+    ProposedTarget TEXT,
     TargetStatus   TEXT NOT NULL DEFAULT 'needs_review'
                    CHECK (TargetStatus IN ('source','needs_review')),
-    SlideRef       INTEGER,
     Status         TEXT NOT NULL DEFAULT 'Not started',
     Note           TEXT
 );
@@ -342,7 +343,7 @@ LEFT JOIN People e ON e.PersonID = pu.EnteredByID;
 
 CREATE VIEW vw_MajorInitiatives AS
 SELECT k.MajorInitiativeID, k.Code, k.Title, k.StrategyAlign, k.Initiatives,
-       k.SourceTarget, k.ProposedTarget, k.TargetStatus, k.SlideRef,
+       k.ProposedTarget, k.TargetStatus,
        k.Status, k.Note,
        t.TeamID, t.Name AS Team,
        sa.SourceAreaID, sa.Name AS SourceArea

@@ -823,8 +823,8 @@ def team_overview() -> list[dict]:
             "SELECT TeamID, Name, Description FROM Teams ORDER BY Name")]
         mis = [dict(r) for r in conn.execute(
             "SELECT MajorInitiativeID, Code, MIId, Title, TeamID, SourceAreaID, StrategyAlign, "
-            "       Initiatives, SourceTarget, ProposedTarget, TargetStatus, "
-            "       SlideRef, Status, Note FROM MajorInitiatives ORDER BY Code")]
+            "       Initiatives, ProposedTarget, TargetStatus, "
+            "       Status, Note FROM MajorInitiatives ORDER BY Code")]
         areas = {r["SourceAreaID"]: r["Name"]
                  for r in conn.execute("SELECT SourceAreaID, Name FROM SourceAreas")}
         for k in mis:
@@ -843,7 +843,7 @@ def major_initiative_cards() -> list[dict]:
     with _conn() as conn:
         mis = [dict(r) for r in conn.execute(
             "SELECT k.MajorInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Initiatives, "
-            "       k.SourceTarget, k.ProposedTarget, k.TargetStatus, k.SlideRef, "
+            "       k.ProposedTarget, k.TargetStatus, "
             "       k.Status, k.Note, k.TeamID, t.Name AS Team, "
             "       sa.Name AS SourceArea "
             "FROM MajorInitiatives k LEFT JOIN Teams t ON t.TeamID = k.TeamID "
@@ -955,8 +955,8 @@ def major_initiative_detail(mi_id: str):
     with _conn() as conn:
         row = conn.execute(
             "SELECT k.MajorInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
-            "       k.Initiatives, k.SourceTarget, k.ProposedTarget, "
-            "       k.TargetStatus, k.SlideRef, k.Status, k.Note, "
+            "       k.Initiatives, k.ProposedTarget, "
+            "       k.TargetStatus, k.Status, k.Note, "
             "       t.TeamID, t.Name AS Team, sa.Name AS SourceArea "
             "FROM MajorInitiatives k "
             "LEFT JOIN Teams t ON t.TeamID = k.TeamID "

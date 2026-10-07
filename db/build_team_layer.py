@@ -79,7 +79,9 @@ def parse_goals(t):
             "code": "%s-%s" % (int(area_i) + 1, num),
             "areaIndex": int(area_i),
             "title": title, "strategy": strategy, "initiatives": initiatives,
-            "sourceTarget": unq(target), "slide": int(slide),
+            # `target` (the prototype's sourceTarget) was always equal to the
+            # proposed target or empty, so only one target is kept. `slide` is a
+            # deck slide number the canon does not have, so it is dropped too.
             "priorities": re.findall(r'"([^"]+)"', prios),
             "proposedTarget": unq(proposed) or unq(target),
             "targetStatus": "source" if unq(target) else "needs_review",
@@ -129,7 +131,7 @@ def build(src=DEFAULT_SRC):
     L.append("")
     L.append("-- The 29 Major Initiatives")
     L.append("INSERT INTO MajorInitiatives (Code, Title, TeamID, SourceAreaID, StrategyAlign, "
-             "Initiatives, SourceTarget, ProposedTarget, TargetStatus, SlideRef) VALUES")
+             "Initiatives, ProposedTarget, TargetStatus) VALUES")
     vals = []
     for g in goals:
         # Team is assigned per-initiative in the prototype (TEAM_ASSIGNMENTS); the
@@ -137,10 +139,10 @@ def build(src=DEFAULT_SRC):
         team = _team_for(g["code"], t)
         vals.append("  (%s, %s, (SELECT TeamID FROM Teams WHERE Name=%s), "
                     "(SELECT SourceAreaID FROM SourceAreas WHERE Name=%s), "
-                    "%s, %s, %s, %s, %s, %d)"
+                    "%s, %s, %s, %s)"
                     % (_sq(g["code"]), _sq(g["title"]), _sq(team), _sq(areas[g["areaIndex"]]),
-                       _sq(g["strategy"]), _sq(g["initiatives"]), _sq(g["sourceTarget"]),
-                       _sq(g["proposedTarget"]), _sq(g["targetStatus"]), g["slide"]))
+                       _sq(g["strategy"]), _sq(g["initiatives"]),
+                       _sq(g["proposedTarget"]), _sq(g["targetStatus"])))
     L.append(",\n".join(vals) + ";")
     L.append("")
     L.append("-- Which priorities each Major Initiative feeds")

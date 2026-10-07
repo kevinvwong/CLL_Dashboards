@@ -23,9 +23,7 @@
 <dl class="field-list mi-fields">
   {% if mi.Team %}<dt>Team</dt><dd><a href="/teams/{{ mi.TeamID }}">{{ mi.Team }}</a></dd>{% endif %}
   {% if mi.SourceArea %}<dt>Source area</dt><dd>{{ mi.SourceArea }}</dd>{% endif %}
-  {% if mi.SlideRef %}<dt>Slide</dt><dd>{{ mi.SlideRef }}</dd>{% endif %}
   <dt>Status</dt><dd>{{ mi.Status }}</dd>
-  {% if mi.SourceTarget %}<dt>Source target</dt><dd>{{ mi.SourceTarget }}</dd>{% endif %}
   {% if mi.ProposedTarget %}<dt>Proposed target</dt><dd>{{ mi.ProposedTarget }}</dd>{% endif %}
 </dl>
 

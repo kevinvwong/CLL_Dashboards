@@ -62,11 +62,12 @@ def test_major_initiatives_sum_by_source_area(fresh_db):
 
 
 def test_every_major_initiative_field_is_present(fresh_db):
-    """The prototype's goal() returns these keys; each must be storable."""
+    """The fields a Major Initiative carries. `SourceTarget` and `SlideRef` were
+    dropped 2026-10-07: the first was always equal to ProposedTarget or null, the
+    second was a deck slide number the canon does not have."""
     row = _rows(fresh_db, "SELECT * FROM vw_MajorInitiatives LIMIT 1")[0]
     for field in ("Code", "Title", "Team", "SourceArea", "StrategyAlign",
-                  "Initiatives", "SourceTarget", "ProposedTarget",
-                  "TargetStatus", "SlideRef", "Status", "Note"):
+                  "Initiatives", "ProposedTarget", "TargetStatus", "Status", "Note"):
         assert field in row, "missing field %s" % field
 
 
