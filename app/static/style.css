@@ -1654,3 +1654,19 @@ body.presenting .no-print { display: none; }
 @media print {
   .search-open, .search-palette, .meeting-controls, .presenter { display: none; }
 }
+
+/* --- the Dean Priorities list (register, 2026-10-07) ----------------------- */
+/* title | bar | percent, one grid so every bar shares a track width. */
+.dean-list { list-style: none; margin: 0 0 var(--space-5); padding: 0; display: grid; gap: var(--space-2); }
+.dean-row {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) 14rem 3.5rem;
+  align-items: center;
+  gap: var(--space-4);
+}
+.dean-title { display: flex; flex-direction: column; }
+.dean-title .dean-priority { font-size: var(--text-sm); color: var(--ink-muted); }
+.dean-pct { font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-muted); }
+
+/* The Major Initiative description (register, 2026-10-07). */
+.mi-description { max-width: 60ch; margin: var(--space-4) 0 var(--space-5); }

@@ -962,7 +962,7 @@ def major_initiative_detail(mi_id: str):
     with _conn() as conn:
         row = conn.execute(
             "SELECT k.MajorInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
-            "       k.Initiatives, k.ProposedTarget, "
+            "       k.Initiatives, k.ProposedTarget, k.Description, "
             "       k.TargetStatus, k.Status, k.Note, "
             "       t.TeamID, t.Name AS Team, sa.Name AS SourceArea "
             "FROM MajorInitiatives k "

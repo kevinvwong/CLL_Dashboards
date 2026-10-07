@@ -95,3 +95,51 @@ run from it; that any real figure has been confirmed by its owner.
 5. Re-run tasks 6.1–6.5 and record the result here.
 
 Until 1–4 hold, this service is a demonstration.
+
+## 2026-10-07 — Register as canon; owners, team moves, and a Dean layer
+
+`Initiative Dashboard Register.xlsx` (supplied 2026-10-07, last authored by
+`Smith, Elizabeth C`, produced by Microsoft Excel Online) supersedes the earlier
+canon workbook for the Major Initiatives. It is the first source to carry real
+**Named Owner** values, descriptions, a Goals 1-5 alignment matrix, and a Dean
+layer. It was adopted on the user's instruction: **"register is canon and
+overwrites."**
+
+**Team reassignments (four rows moved to _Learning Ecosystems_):**
+
+| Major Initiative | Was | Now |
+|---|---|---|
+| Growth Engine Readiness | Learning Experiences | Learning Ecosystems |
+| Strategic Partnership & Revenue Growth | Learning Experiences | Learning Ecosystems |
+| Geographic Expansion | Learning Experiences | Learning Ecosystems |
+| Asset Utilization | Learning Infrastructure | Learning Ecosystems |
+
+Team totals after the move: Learning Ecosystems 6, Learning Experiences 10,
+Learning Futures 6, Learning Infrastructure 7 (29 in total).
+
+**Titles reworded by the register (five):** MI-024, MI-025, MI-026, MI-027,
+MI-029 now carry the register's tighter wording.
+
+**Named owners (real, replacing placeholders):** Bill Gaudelli (Dean),
+Mario Herane (Learning Ecosystems), Tim Jacobbe (Learning Experiences),
+Meltem Alemdar (Learning Futures), Elizabeth Smith (Learning Infrastructure).
+The register names Learning Futures' six rows with two people in one cell
+("Meltem Alemdar/Grace Flavin"); Meltem Alemdar is the accountable lead
+(`OwnerID`) and **Grace Flavin** is held in `MajorInitiativeCoOwners`, so neither
+is lost.
+
+**Dean Priorities layer (new):** 11 rows in `DeanPriorities` — FY26 (3, all
+complete) and FY27 (8, in flight) — each with a 0-100 `PercentComplete` scaled
+from the register's 0-1 value. Presented in the app as "Dean Priorities". 61
+Major-Initiative-to-Dean-FY27 links are held in `MajorInitiativeDeanLinks`.
+
+**Change log:** the `AuditLog.EntityType` derivation was corrected — it was keyed
+by entity but looked up by the action's first word, so every goal, priority, tag
+and link edit was recorded as an "Initiative". Two indexes were added and a
+readable admin **`/changes`** page now lists the log.
+
+**Still not launched.** This remains a labelled demonstration: hosting is on the
+author's personal `Azure for Students` subscription and the GT data-policy
+position is unchanged. The register's owners are the register's named leads, not
+institutionally confirmed ownership.
+
