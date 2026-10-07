@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **123** changes in total.
+- **3** days of work recorded, **125** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 34 what we added; 24 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 12 documentation; 17 more changes.
+- Across all days: 34 what we added; 25 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 13 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -58,6 +58,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Add Target.card_id so admin_for routes stop indexing a maybe-None card
 - Bar contrast, breadcrumb underline, real-anchor rows (list semantics), 320px overflow
 - The register is approved, so remove the 'invented / not governance-approved' labels
+- Alias the intermediate /major-initiatives and /dean-priorities names
 
 **Appearance and design**
 
@@ -95,6 +96,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Repo and Planner assessment (2026-10-07)
 - Add a daily progress log, backfilled from git history
 - Planner reconciliation - one rename, all platform tasks stay open
+- Power Pages feasibility brief
 
 **More changes**
 
