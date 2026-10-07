@@ -106,6 +106,9 @@
   --surface-hover: #ebe8df;   /* surface-hover */
   --line: #d8d4c8;         /* border-subtle */
   --line-strong: #87806c;  /* border-control (>=3:1, for inputs) */
+  /* A progress bar's empty track. Needs >=3:1 against its surface for WCAG
+     1.4.11; --line is 1.48:1 and reads as no bar at all. 3.02:1 on white. */
+  --line-track: #9c9480;
   --backdrop: rgba(5, 30, 57, 0.55);  /* navy scrim */
 
   /* --- colour: accent and feedback --- */
@@ -216,6 +219,7 @@
     --surface-hover: #1e2a38;
     --line: #323e4e;
     --line-strong: #7a8798;
+    --line-track: #4a5768;
     --backdrop: rgba(0, 0, 0, 0.6);
 
     --accent: #508ed9;
@@ -411,7 +415,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   min-width: 6rem;
   border: 1px solid var(--line);
   border-radius: 3px;
-  background: var(--line);
+  background: var(--line-track);
   overflow: hidden;
 }
 
@@ -446,6 +450,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   font-weight: 500;
   letter-spacing: 0.03em;
   vertical-align: middle;
+  white-space: nowrap;   /* "At risk" must not break to "At / risk" */
 }
 
 /* --- initiative card modal ----------------------------------------------- */
@@ -557,7 +562,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .oct16-target { margin: 0 0 .5rem; font-size: var(--text-sm); color: var(--ink-muted); }
 .oct16-count { margin: 0 0 .35rem; font-size: var(--text-sm); }
 .oct16-bar {
-  height: 10px; border-radius: 5px; background: var(--line); border: 1px solid var(--line-strong); overflow: hidden;
+  height: 10px; border-radius: 5px; background: var(--line-track); border: 1px solid var(--line-strong); overflow: hidden;
 }
 .oct16-fill { display: block; height: 100%; background: var(--status-on-track); }
 .oct16-milestones { list-style: none; margin: .6rem 0 0; padding: 0; }
@@ -1124,7 +1129,7 @@ body.overlay-open { overflow: hidden; }
   text-transform: none;
 }
 .field-inline input[type=checkbox] { margin-right: var(--space-1); }
-.index-row .code { font-weight: 700; }
+.index-row .code { font-weight: 700; white-space: nowrap; }
 
 /* ---- Coverage (blueprint-redesign 5.4) ------------------------------------ */
 .coverage-panel { margin-top: var(--space-5); }
@@ -1246,7 +1251,10 @@ body.overlay-open { overflow: hidden; }
   font-size: var(--text-xs);
   font-weight: 900;
   letter-spacing: 0.16em;
-  color: var(--priority, var(--accent));
+  /* Ink, not the priority hue: several hues (gold, orange, cyan) are below
+     AA at 12px. The colour is still carried by the dot and the card's top
+     border, so the identification survives and the text stays readable. */
+  color: var(--ink);
 }
 .priority-colour {
   width: 14px;
@@ -1495,6 +1503,14 @@ body.overlay-open { overflow: hidden; }
   color: var(--ink);
 }
 .search-results a:hover { background: var(--surface-hover); }
+/* The arrow-key highlight in the palette (same visual as hover). */
+.search-results a.is-highlighted { background: var(--surface-selected); }
+
+/* The full search page a direct load gets (Enter in the palette lands here, or
+   redirects straight to a single result). */
+.search-page-form { display: flex; gap: var(--space-3); align-items: flex-end; margin-bottom: var(--space-5); }
+.search-page-form .field { flex: 1 1 auto; margin-bottom: 0; }
+.search-page-results { max-width: 60ch; }
 .search-kind { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--ink-subtle); min-width: 5rem; }
 .search-code { font-weight: 700; }
 .search-hint, .search-empty { color: var(--ink-muted); font-size: var(--text-sm); margin: var(--space-2); }

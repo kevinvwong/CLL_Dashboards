@@ -510,11 +510,22 @@ async def meeting(request: Request, since: str | None = None):
 
 @app.get("/search")
 async def search(request: Request, q: str = ""):
-    """Global search (overhaul 3.5). Returns a fragment for the palette."""
+    """Global search (overhaul 3.5).
+
+    An htmx request from the palette gets the bare fragment. A direct load -
+    which is what pressing Enter in the palette does - previously got the same
+    fragment with no page around it: Times New Roman, no header. A direct load
+    now gets a real page; with a single result it redirects straight to it, so
+    Enter always lands somewhere useful.
+    """
     results = queries.search(q) if q else []
+    if not request.headers.get("HX-Request") and q and len(results) == 1:
+        return RedirectResponse(url=results[0]["href"], status_code=307)
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(
+            request, "_search_results.html", _ctx(request, q=q, results=results))
     return templates.TemplateResponse(
-        request, "_search_results.html", _ctx(request, q=q, results=results)
-    )
+        request, "search.html", _ctx(request, q=q, results=results))
 
 
 @app.get("/checks")

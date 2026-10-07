@@ -123,7 +123,9 @@
   <ul class="oct16-tradeoff-list">
     {% for good, text in d.TRADE_OFFS %}
     <li class="oct16-tradeoff {{ 'pro' if good else 'con' }}">
-      <span class="oct16-mark" aria-hidden="true">{{ '+' if good else '&minus;' }}</span>
+      {# The mark is an HTML entity OUTSIDE a Jinja expression: inside one, Jinja
+         escapes the ampersand and the page prints the literal text "&minus;". #}
+      <span class="oct16-mark" aria-hidden="true">{% if good %}+{% else %}&minus;{% endif %}</span>
       <span class="oct16-tradeoff-text">{{ text }}</span>
     </li>
     {% endfor %}

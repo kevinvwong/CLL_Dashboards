@@ -1019,6 +1019,14 @@ def search(term: str, limit: int = 10) -> list[dict]:
                 "FROM Priorities WHERE LOWER(PriorityName) LIKE ? "
                 "OR LOWER(COALESCE(FullTitle,'')) LIKE ? ORDER BY PriorityName LIMIT ?",
                 (like, like, limit))),
+            # Major Initiatives, matched by their canon id (MI-001) or their
+            # title. Without this the 29 core objects could not be found at all.
+            ("major-initiative", conn.execute(
+                "SELECT MIId AS key, Title AS label, COALESCE(MIId,'') AS code "
+                "FROM MajorInitiatives "
+                "WHERE LOWER(COALESCE(MIId,'')) LIKE ? OR LOWER(Title) LIKE ? "
+                "ORDER BY (LOWER(COALESCE(MIId,'')) LIKE ?) DESC, Code LIMIT ?",
+                (like, like, code_like, limit))),
         ):
             for r in rows:
                 r = dict(r)
@@ -1028,6 +1036,8 @@ def search(term: str, limit: int = 10) -> list[dict]:
                     href = "/people/" + str(r["key"])
                 elif kind == "goal":
                     href = "/goals/" + str(r["key"])
+                elif kind == "major-initiative":
+                    href = "/major-initiatives/" + str(r["key"])
                 else:
                     href = "/priorities/" + urlencode({"": r["key"]})[1:]
                 out.append({"kind": kind, "label": r["label"],

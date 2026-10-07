@@ -224,6 +224,44 @@
         }
         if (evt.key === "Escape" && dlg.hasAttribute("open")) close();
       });
+
+      // Keyboard driving of the results (the whole point of Ctrl-K). Arrow keys
+      // move a highlight through the result links; Enter follows it. Without
+      // this the input was the only focusable thing and Enter fell through to a
+      // native form submit.
+      const form = dlg.querySelector(".search-form");
+      const input = dlg.querySelector("input[type=search]");
+      function links() {
+        return Array.from(dlg.querySelectorAll(".search-results a"));
+      }
+      function highlight(n) {
+        const items = links();
+        if (!items.length) return;
+        const i = Math.max(0, Math.min(items.length - 1, n));
+        items.forEach(function (a, k) { a.classList.toggle("is-highlighted", k === i); });
+        items[i].scrollIntoView({ block: "nearest" });
+        dlg._hi = i;
+      }
+      // Enter opens the highlighted result, or the first one if none is chosen.
+      if (form) form.addEventListener("submit", function (evt) {
+        const items = links();
+        if (!items.length) return;              // let the native GET run
+        evt.preventDefault();
+        const i = typeof dlg._hi === "number" ? dlg._hi : 0;
+        window.location.href = items[i].href;
+      });
+      if (input) input.addEventListener("keydown", function (evt) {
+        const items = links();
+        if (!items.length) return;
+        if (evt.key === "ArrowDown") { evt.preventDefault(); highlight((dlg._hi ?? -1) + 1); }
+        else if (evt.key === "ArrowUp") { evt.preventDefault(); highlight((dlg._hi ?? 1) - 1); }
+      });
+      // Reset the highlight whenever fresh results arrive.
+      document.body.addEventListener("htmx:afterSwap", function (evt) {
+        if (evt.detail && evt.detail.target && evt.detail.target.id === "search-results") {
+          highlight(0);
+        }
+      });
     })();
 
     // Presenter mode (overhaul 6.4): large type, one owner group at a time,

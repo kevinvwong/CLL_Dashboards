@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Search{% if q %} — {{ q }}{% endif %}{% endblock %}
+{% block content %}
+{#
+  The full search page. The palette swaps in the bare fragment as you type; this
+  is what a direct load gets - pressing Enter in the palette, or following a
+  bookmarked /search?q=... - so the result is a styled page rather than a raw
+  fragment with no chrome.
+#}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Search</p>
+    <h1>{% if q %}Results for “{{ q }}”{% else %}Search{% endif %}</h1>
+  </div>
+  {% if results %}<p class="section-note">{{ results | length }} result{{ '' if results | length == 1 else 's' }}</p>{% endif %}
+</div>
+
+<form method="get" action="/search" class="search-page-form">
+  <label class="field">
+    <span>Search initiatives, people, goals, priorities and Major Initiatives</span>
+    <input type="search" name="q" value="{{ q }}" autocomplete="off" autofocus>
+  </label>
+  <button class="button primary" type="submit">Search</button>
+</form>
+
+<div class="search-page-results">
+  {% include "_search_results.html" %}
+</div>
+{% endblock %}

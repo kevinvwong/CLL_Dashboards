@@ -14,7 +14,9 @@
 
 <div class="section-heading">
   <div>
-    <p class="eyebrow">{{ entry_kind | capitalize if entry_kind else "View" }} · {{ plan_year or "" }}</p>
+    {# The eyebrow: kind, then the code when there is one, then the year. A goal
+       has no plan year, so without the code it printed a bare "Goal ·". #}
+    <p class="eyebrow">{{ entry_kind | capitalize if entry_kind else "View" }}{% if entry_kind == 'goal' %} G{{ entry_key }}{% endif %}{% if plan_year %} · {{ plan_year }}{% endif %}</p>
     <h1>{{ heading }}</h1>
   </div>
   {% if rollup %}<p class="section-note">{{ rollup }}</p>{% endif %}

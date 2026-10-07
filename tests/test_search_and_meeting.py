@@ -51,10 +51,35 @@ def test_search_returns_nothing_for_empty_or_no_match(logged_in):
     assert queries.search("zzzznotathing") == []
 
 
-def test_the_search_endpoint_renders_the_fragment(logged_in):
-    body = logged_in("Bill").get("/search?q=MAR-3").text
+def test_the_search_endpoint_renders_the_fragment_for_the_palette(logged_in):
+    """An htmx request from the palette gets the bare fragment to swap in."""
+    body = logged_in("Bill").get("/search?q=MAR-3",
+                                 headers={"HX-Request": "true"}).text
     assert "search-results" in body
     assert "<html" not in body.lower(), "the palette wants a fragment"
+
+
+def test_a_direct_search_load_is_a_full_page(logged_in):
+    """A direct load - what pressing Enter in the palette does - must be a real
+    page, not the raw fragment. It previously rendered with no chrome at all
+    (Times New Roman, no header), which looked like a crash."""
+    body = logged_in("Bill").get("/search?q=faculty").text
+    assert "<html" in body.lower()
+    assert "site-header" in body, "the direct page has no chrome"
+
+
+def test_a_single_search_result_redirects_straight_to_it(logged_in):
+    """Enter on an unambiguous query should land on the thing, not a list of one."""
+    r = logged_in("Bill").get("/search?q=MI-001", follow_redirects=False)
+    assert r.status_code == 307
+    assert r.headers["location"] == "/major-initiatives/MI-001"
+
+
+def test_search_finds_a_major_initiative_by_its_id(logged_in):
+    """The 29 Major Initiatives are core objects; they must be findable."""
+    from app import queries
+    kinds = {r["kind"] for r in queries.search("MI-001")}
+    assert "major-initiative" in kinds, kinds
 
 
 def test_the_search_palette_is_in_the_layout(logged_in):
