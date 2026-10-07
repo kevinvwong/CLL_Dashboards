@@ -9,7 +9,7 @@ routes returned a bare fragment, which replaced the whole page with a
 
 import pytest
 
-D1 = "ELIZ-1"
+D1 = "MI-004"
 ADMIN = "Kevin"
 
 
@@ -19,9 +19,9 @@ ADMIN = "Kevin"
 @pytest.mark.parametrize(
     "path,form",
     [
-        (f"/initiatives/{D1}/edit/details", {"name": "Renamed", "description": "d"}),
-        (f"/initiatives/{D1}/edit/tags", {"goal": "3", "goal_primary": "3"}),
-        (f"/initiatives/{D1}/edit/links", {}),
+        (f"/major-initiatives/{D1}/edit/details", {"name": "Renamed", "description": "d"}),
+        (f"/major-initiatives/{D1}/edit/tags", {"goal": "3", "goal_primary": "3"}),
+        (f"/major-initiatives/{D1}/edit/links", {}),
     ],
 )
 def test_edit_over_htmx_swaps_the_card_in_place(logged_in, path, form):
@@ -35,9 +35,9 @@ def test_edit_over_htmx_swaps_the_card_in_place(logged_in, path, form):
 @pytest.mark.parametrize(
     "path,form",
     [
-        (f"/initiatives/{D1}/edit/details", {"name": "Renamed", "description": "d"}),
-        (f"/initiatives/{D1}/edit/tags", {"goal": "3", "goal_primary": "3"}),
-        (f"/initiatives/{D1}/edit/links", {}),
+        (f"/major-initiatives/{D1}/edit/details", {"name": "Renamed", "description": "d"}),
+        (f"/major-initiatives/{D1}/edit/tags", {"goal": "3", "goal_primary": "3"}),
+        (f"/major-initiatives/{D1}/edit/links", {}),
     ],
 )
 def test_edit_without_javascript_lands_on_a_real_page(logged_in, path, form):
@@ -46,9 +46,9 @@ def test_edit_without_javascript_lands_on_a_real_page(logged_in, path, form):
     client = logged_in(ADMIN)
     response = client.post(path, data=form, follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == f"/initiatives/{D1}"
+    assert response.headers["location"] == f"/major-initiatives/{D1}"
 
-    page = client.get(f"/initiatives/{D1}")
+    page = client.get(f"/major-initiatives/{D1}")
     assert "<html" in page.text
     assert "site-header" in page.text
     assert "site-nav" in page.text
@@ -57,8 +57,8 @@ def test_edit_without_javascript_lands_on_a_real_page(logged_in, path, form):
 def test_the_edit_forms_actually_submit_over_htmx(logged_in):
     """Belt and braces: assert the markup, so a stray method="post" cannot
     come back unnoticed."""
-    body = logged_in(ADMIN).get(f"/initiatives/{D1}/edit/details").text
-    assert 'hx-post="/initiatives/ELIZ-1/edit/details"' in body
+    body = logged_in(ADMIN).get(f"/major-initiatives/{D1}/edit/details").text
+    assert 'hx-post="/major-initiatives/ELIZ-1/edit/details"' in body
     assert 'method="post"' not in body
 
 
@@ -68,15 +68,15 @@ def test_the_edit_forms_actually_submit_over_htmx(logged_in):
 def test_admin_sees_a_link_to_the_create_form(logged_in):
     # The admin create link moved into the user menu (blueprint-redesign 5.1);
     # the primary nav no longer carries admin actions.
-    assert 'href="/initiatives/new"' in logged_in(ADMIN).get("/").text
+    assert 'href="/major-initiatives/new"' in logged_in(ADMIN).get("/").text
 
 
 def test_non_admin_does_not_see_the_create_link(logged_in):
-    assert 'href="/initiatives/new"' not in logged_in("Elizabeth Smith").get("/").text
+    assert 'href="/major-initiatives/new"' not in logged_in("Elizabeth Smith").get("/").text
 
 
 def test_the_create_link_lands_on_the_form(logged_in):
-    response = logged_in(ADMIN).get("/initiatives/new")
+    response = logged_in(ADMIN).get("/major-initiatives/new")
     assert response.status_code == 200
     assert 'name="code"' in response.text
 

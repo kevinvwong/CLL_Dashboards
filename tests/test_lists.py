@@ -46,14 +46,14 @@ def test_goal_list_renders(logged_in):
 def test_dean_rows_come_first_ordered_by_code(logged_in):
     codes = _codes(logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")))
     dean = [c for c in codes if c.startswith("D-")]
-    assert dean == ["D-A", "D-C", "D-D"]
+    assert dean == ["MI-002", "D-C", "D-D"]
 
 
 def test_divider_sits_between_dean_and_d1(logged_in):
     body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
     divider_at = body.index('class="divider"')
-    dean_at = body.index("D-A")
-    eliz_at = body.index("ELIZ-1")
+    dean_at = body.index("MI-002")
+    eliz_at = body.index("MI-004")
     assert dean_at < divider_at < eliz_at
 
 
@@ -62,7 +62,7 @@ def test_d1_rows_are_grouped_by_owner(logged_in):
     groups = [g for g in ("Elizabeth Smith", "Mario Herane") if f'class="list-group-label">{g}<' in body]
     assert groups == ["Elizabeth Smith", "Mario Herane"]
     # grouped, not interleaved: each owner's rows sit inside their own group
-    assert body.index("ELIZ-1") < body.index("MAR-4")
+    assert body.index("MI-004") < body.index("MAR-4")
 
 
 def test_primary_tag_shows_a_badge(logged_in):
@@ -126,8 +126,8 @@ def test_no_update_yet_is_shown_when_an_initiative_has_no_progress(logged_in, fr
 
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM ProgressUpdates WHERE InitiativeID = "
-        "(SELECT InitiativeID FROM Initiatives WHERE Code = 'ELIZ-1')"
+        "DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = 'MI-004')"
     )
     conn.commit()
     conn.close()
@@ -137,7 +137,7 @@ def test_no_update_yet_is_shown_when_an_initiative_has_no_progress(logged_in, fr
     # ELIZ-1 sits on the Research goal; query and render must agree on which goal
     # that is, so the number is resolved rather than assumed.
     number = _goal_number("Research")
-    row = [r for r in queries.goal_rows(number) if r["Code"] == "ELIZ-1"][0]
+    row = [r for r in queries.goal_rows(number) if r["Code"] == "MI-004"][0]
     assert row["PercentComplete"] is None
 
     body = logged_in("Bill Gaudelli").get("/goals/%d" % number).text
@@ -156,7 +156,7 @@ def test_progress_bar_length_and_status_class(logged_in):
 
 def test_rows_carry_the_htmx_attributes_for_the_card(logged_in):
     body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
-    assert 'hx-get="/initiatives/D-A"' in body
+    assert 'hx-get="/major-initiatives/D-A"' in body
     assert 'hx-target="#card-modal"' in body
     assert 'hx-swap="innerHTML"' in body
 

@@ -134,7 +134,7 @@ def test_a_read_and_a_write_in_one_request_see_the_same_file(fresh_db):
 
     # A write through repo (write=True) ...
     new_id = repo.add_progress_update(
-        code="D-A", percent=42, status="On track", note="read/write agree",
+        code="MI-002", percent=42, status="On track", note="read/write agree",
         entered_by_id=1,
     )
     assert new_id is not None
@@ -142,7 +142,7 @@ def test_a_read_and_a_write_in_one_request_see_the_same_file(fresh_db):
     # ... is visible to a read through db.connect() (the read path).
     with db.connect() as conn:
         row = conn.execute(
-            "SELECT PercentComplete FROM ProgressUpdates WHERE UpdateID = ?", (new_id,)
+            "SELECT PercentComplete FROM MajorInitiativeUpdates WHERE UpdateID = ?", (new_id,)
         ).fetchone()
     assert row is not None and row["PercentComplete"] == 42
 

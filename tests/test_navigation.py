@@ -56,7 +56,7 @@ def test_outcomes_renders(logged_in):
 
 
 def test_an_initiative_full_page_shows_breadcrumbs(logged_in):
-    body = _html.unescape(logged_in("Bill Gaudelli").get("/initiatives/D-A").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/major-initiatives/D-A").text)
     assert "breadcrumb" in body
     assert "Overview" in body
     assert "Initiatives" in body
@@ -64,7 +64,7 @@ def test_an_initiative_full_page_shows_breadcrumbs(logged_in):
 
 def test_the_drawer_fragment_has_no_breadcrumbs(logged_in):
     """Crumbs are the full page's job; the drawer sits over a page with them."""
-    body = logged_in("Bill Gaudelli").get("/initiatives/D-A",
+    body = logged_in("Bill Gaudelli").get("/major-initiatives/D-A",
                                 headers={"HX-Request": "true"}).text
     assert "breadcrumb" not in body
 

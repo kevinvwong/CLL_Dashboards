@@ -42,9 +42,9 @@ def _counts(db):
     conn = sqlite3.connect(db)
     out = {
         table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        for table in ("Initiatives", "ProgressUpdates", "InitiativeGoals", "InitiativeLinks")
+        for table in ("Initiatives", "MajorInitiativeUpdates", "MajorInitiativeGoals", "MajorInitiativeDeanLinks")
     }
-    out["active"] = conn.execute("SELECT COUNT(*) FROM Initiatives WHERE IsActive = 1").fetchone()[0]
+    out["active"] = conn.execute("SELECT COUNT(*) FROM MajorInitiatives WHERE IsActive = 1").fetchone()[0]
     conn.close()
     return out
 
@@ -52,8 +52,8 @@ def _counts(db):
 def _diary(db, code):
     conn = sqlite3.connect(db)
     rows = conn.execute(
-        "SELECT pu.PercentComplete, pu.Status, pu.Note FROM ProgressUpdates pu "
-        "JOIN Initiatives i ON i.InitiativeID = pu.InitiativeID WHERE i.Code = ? "
+        "SELECT pu.PercentComplete, pu.Status, pu.Note FROM MajorInitiativeUpdates pu "
+        "JOIN Initiatives i ON i.MajorInitiativeID = pu.MajorInitiativeID WHERE i.Code = ? "
         "ORDER BY pu.UpdateDate, pu.UpdateID",
         (code,),
     ).fetchall()
@@ -153,24 +153,24 @@ def _row(code, name, level, owner, goals=(), priorities=(), feeds="",
 
 def test_clean_import_succeeds_and_swaps(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
-        _row("ELIZ-1", "Elizabeth Smith one", "D-1", "Elizabeth Smith",
-             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D-A"),
+        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-004", "Elizabeth Smith one", "D-1", "Elizabeth Smith",
+             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002"),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
     conn = sqlite3.connect(fresh_db)
-    assert conn.execute("SELECT InitiativeName FROM Initiatives WHERE Code='ELIZ-1'").fetchone()[0] \
+    assert conn.execute("SELECT Title AS InitiativeName FROM MajorInitiatives WHERE Code='MI-004'").fetchone()[0] \
         == "Elizabeth Smith one"
     conn.close()
 
 
 def test_new_initiative_from_the_workbook(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("ELIZ-9", "Brand new", "D-1", "Elizabeth Smith",
-             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D-A",
+        _row("MI-900", "Brand new", "D-1", "Elizabeth Smith",
+             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002",
              percent="10", status="On track"),
-        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
     before = _counts(fresh_db)["Initiatives"]
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
@@ -184,17 +184,17 @@ def test_new_initiative_from_the_workbook(logged_in, fresh_db, tmp_path):
 def test_diary_survives_a_re_import(logged_in, fresh_db, tmp_path):
     """The data-intake spec: every initiative that kept its code still shows
     its full diary."""
-    diary_before = _diary(fresh_db, "ELIZ-1")
+    diary_before = _diary(fresh_db, "MI-004")
     assert diary_before
 
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("ELIZ-1", "Renamed but same code", "D-1", "Elizabeth Smith",
-             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D-A"),
-        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-004", "Renamed but same code", "D-1", "Elizabeth Smith",
+             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002"),
+        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
-    assert _diary(fresh_db, "ELIZ-1") == diary_before
+    assert _diary(fresh_db, "MI-004") == diary_before
 
 
 # --- 8.8 retire missing, never delete -------------------------------------
@@ -203,7 +203,7 @@ def test_diary_survives_a_re_import(logged_in, fresh_db, tmp_path):
 def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_path):
     before = _counts(fresh_db)
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
@@ -212,10 +212,10 @@ def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_pa
     assert after["Initiatives"] == before["Initiatives"], "rows are retired, never deleted"
     assert after["active"] < before["active"]
     conn = sqlite3.connect(fresh_db)
-    assert conn.execute("SELECT IsActive FROM Initiatives WHERE Code='ELIZ-1'").fetchone()[0] == 0
+    assert conn.execute("SELECT IsActive FROM MajorInitiatives WHERE Code='MI-004'").fetchone()[0] == 0
     assert conn.execute(
-        "SELECT COUNT(*) FROM ProgressUpdates WHERE InitiativeID = "
-        "(SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1')"
+        "SELECT COUNT(*) FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004')"
     ).fetchone()[0] > 0, "a retired initiative keeps its history"
     conn.close()
 
@@ -225,11 +225,11 @@ def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_pa
 
 def test_a_failing_import_changes_nothing(logged_in, fresh_db, tmp_path):
     before = _counts(fresh_db)
-    diary_before = _diary(fresh_db, "ELIZ-1")
+    diary_before = _diary(fresh_db, "MI-004")
 
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
-        _row("ELIZ-1", "Fine row", "D-1", "Elizabeth Smith",
+        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-004", "Fine row", "D-1", "Elizabeth Smith",
              goals=("3 Research",), priorities=("Data", "Innovation")),
         _row("BAD-1", "Broken", "Sideways", "Nobody", goals=("3 Research",)),
     ])
@@ -237,12 +237,12 @@ def test_a_failing_import_changes_nothing(logged_in, fresh_db, tmp_path):
     assert ok is False
     assert problems, "a failing import must report at least one problem"
     assert _counts(fresh_db) == before, "the live database must be untouched"
-    assert _diary(fresh_db, "ELIZ-1") == diary_before
+    assert _diary(fresh_db, "MI-004") == diary_before
 
 
 def test_failure_names_the_sheet_row(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
         _row("BAD-1", "Broken", "Sideways", "Nobody", goals=("3 Research",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
@@ -255,7 +255,7 @@ def test_failure_names_the_sheet_row(logged_in, fresh_db, tmp_path):
 
 def test_unknown_owner_is_reported(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
         _row("NEW-1", "New", "D-1", "Someone Not Here", goals=("3 Research",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
@@ -266,9 +266,9 @@ def test_unknown_owner_is_reported(logged_in, fresh_db, tmp_path):
 def test_dry_run_reports_clean_without_swapping(logged_in, fresh_db, tmp_path):
     before = _counts(fresh_db)
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("D-A", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
-        _row("ELIZ-1", "Elizabeth Smith one", "D-1", "Elizabeth Smith",
-             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D-A"),
+        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-004", "Elizabeth Smith one", "D-1", "Elizabeth Smith",
+             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002"),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path, dry_run=True)
     assert ok, [str(p) for p in problems]
@@ -332,7 +332,7 @@ def test_the_generated_template_carries_the_import_columns(logged_in, fresh_db, 
     formula = validations[feeds_letter].formula1
     conn = sqlite3.connect(fresh_db)
     deans = [r[0] for r in conn.execute(
-        "SELECT Code FROM Initiatives WHERE Level='Dean' AND IsActive=1")]
+        "SELECT Code FROM MajorInitiatives WHERE Level='Dean' AND IsActive=1")]
     conn.close()
     for code in deans:
         assert code in formula, "Feeds dropdown is missing Dean code %s" % code
@@ -354,14 +354,14 @@ def test_a_dean_row_with_feeds_is_refused_and_says_why(logged_in, fresh_db, tmp_
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
                "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["D-Z", "A dean row", "d", "Dean", "Bill Gaudelli", "D-A", "", "", "X", "X"])
+    ws.append(["D-Z", "A dean row", "d", "Dean", "Bill Gaudelli", "MI-002", "", "", "X", "X"])
     wb.save(out)
 
     ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
     assert ok is False
     text = " ".join(str(p) for p in problems)
     assert "cannot feed another initiative" in text, text
-    assert "D-A" in text, "the report should quote what the row actually said"
+    assert "MI-002" in text, "the report should quote what the row actually said"
     assert "feeds nothing" not in text, (
         "the old wording claimed the value was missing while rejecting a row that had one"
     )
@@ -376,7 +376,7 @@ def test_a_d1_row_with_no_feeds_is_refused_by_the_data_check(logged_in, fresh_db
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
                "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["ELIZ-9", "No link", "d", "D-1", "Elizabeth Smith", "", "20", "On track", "X", "X"])
+    ws.append(["MI-900", "No link", "d", "D-1", "Elizabeth Smith", "", "20", "On track", "X", "X"])
     wb.save(out)
 
     ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
@@ -411,15 +411,15 @@ def test_the_template_cannot_mark_a_primary_and_import_leaves_none(logged_in, fr
     ws.title = "Initiatives"
     ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
                "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["ELIZ-9", "Fresh", "d", "D-1", "Elizabeth Smith", "D-A", "20", "On track", "X", "X"])
+    ws.append(["MI-900", "Fresh", "d", "D-1", "Elizabeth Smith", "MI-002", "20", "On track", "X", "X"])
     wb.save(out)
     ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
     assert ok, problems
 
     conn = sqlite3.connect(fresh_db)
     n = conn.execute(
-        "SELECT COUNT(*) FROM InitiativeGoals ig JOIN Initiatives i "
-        "ON i.InitiativeID = ig.InitiativeID WHERE i.Code = 'ELIZ-9' AND ig.IsPrimary = 1"
+        "SELECT COUNT(*) FROM MajorInitiativeGoals ig JOIN Initiatives i "
+        "ON i.MajorInitiativeID = ig.MajorInitiativeID WHERE i.Code = 'MI-900' AND ig.IsPrimary = 1"
     ).fetchone()[0]
     conn.close()
     assert n == 0, "an imported initiative has no primary goal, by design of the template"
@@ -433,22 +433,22 @@ def test_primacy_can_be_set_after_import_through_the_edit_screen(logged_in, fres
     """
     from app import repo
 
-    goal_number = queries.initiative_card("ELIZ-1")["goal_tags"][0]["GoalNumber"]
+    goal_number = queries.initiative_card("MI-004")["goal_tags"][0]["GoalNumber"]
     conn = sqlite3.connect(fresh_db)
     goal_id = conn.execute("SELECT GoalID FROM Goals WHERE GoalNumber = ?",
                            (goal_number,)).fetchone()[0]
     conn.close()
 
     repo.replace_tags(
-        "ELIZ-1",
+        "MI-004",
         goal_tags=[{"id": goal_id, "primary": True}],
         priority_tags=[],
         person_id=1,
     )
 
     conn = sqlite3.connect(fresh_db)
-    iid = conn.execute("SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1'").fetchone()[0]
-    n = conn.execute("SELECT COUNT(*) FROM InitiativeGoals WHERE InitiativeID=? AND IsPrimary=1",
+    iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004'").fetchone()[0]
+    n = conn.execute("SELECT COUNT(*) FROM MajorInitiativeGoals WHERE MajorInitiativeID=? AND IsPrimary=1",
                      (iid,)).fetchone()[0]
     conn.close()
     assert n == 1, "primacy set through the edit screen must persist"
@@ -462,16 +462,16 @@ def test_imported_initiative_has_no_primary_but_a_second_is_still_refused(logged
     conn = sqlite3.connect(fresh_db)
     goal_ids = [r[0] for r in conn.execute(
         "SELECT GoalID FROM Goals ORDER BY GoalNumber LIMIT 2")]
-    iid = conn.execute("SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1'").fetchone()[0]
+    iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004'").fetchone()[0]
     imported_none = conn.execute(
-        "SELECT COUNT(*) FROM InitiativeGoals WHERE InitiativeID=? AND IsPrimary=1",
+        "SELECT COUNT(*) FROM MajorInitiativeGoals WHERE MajorInitiativeID=? AND IsPrimary=1",
         (iid,)).fetchone()[0]
     conn.close()
 
     # the edit screen offers both goals, so a second primary is reachable
     with pytest.raises(repo.RuleError) as exc:
         repo.replace_tags(
-            "ELIZ-1",
+            "MI-004",
             goal_tags=[{"id": goal_ids[0], "primary": True},
                        {"id": goal_ids[1], "primary": True}],
             priority_tags=[],
@@ -480,7 +480,7 @@ def test_imported_initiative_has_no_primary_but_a_second_is_still_refused(logged
     assert "Only one primary goal is allowed" in str(exc.value)
 
     conn = sqlite3.connect(fresh_db)
-    after = conn.execute("SELECT COUNT(*) FROM InitiativeGoals WHERE InitiativeID=? AND IsPrimary=1",
+    after = conn.execute("SELECT COUNT(*) FROM MajorInitiativeGoals WHERE MajorInitiativeID=? AND IsPrimary=1",
                          (iid,)).fetchone()[0]
     conn.close()
     assert after == 0 or after == 1, "the refusal must not leave two primaries behind"

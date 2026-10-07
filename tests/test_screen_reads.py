@@ -20,7 +20,7 @@ SRC = os.path.join(APP, "app")
 def test_tag_edit_options_returns_lists_and_chosen(fresh_db):
     from app import queries
 
-    iid = _initiative_id(fresh_db, "ELIZ-1")
+    iid = _initiative_id(fresh_db, "MI-004")
     options = queries.tag_edit_options(iid)
 
     assert set(options) == {"goals", "priorities", "chosen_goals", "chosen_priorities"}
@@ -35,7 +35,7 @@ def test_tag_edit_options_returns_lists_and_chosen(fresh_db):
 def test_link_edit_options_returns_deans_and_chosen(fresh_db):
     from app import queries
 
-    iid = _initiative_id(fresh_db, "ELIZ-1")
+    iid = _initiative_id(fresh_db, "MI-004")
     options = queries.link_edit_options(iid)
 
     assert set(options) == {"deans", "chosen"}
@@ -62,7 +62,7 @@ def test_the_card_reads_tags_once(fresh_db):
     """
     from app import queries
 
-    card = queries.initiative_card("ELIZ-1")
+    card = queries.initiative_card("MI-004")
     assert "goal_tags" in card and "priority_tags" in card
 
 
@@ -79,18 +79,18 @@ def test_no_update_is_distinct_from_zero_percent(fresh_db):
 
     from app import queries
 
-    iid = _initiative_id(fresh_db, "ELIZ-1")
+    iid = _initiative_id(fresh_db, "MI-004")
     # Delete every update for this initiative, so it has none.
     conn = sqlite3.connect(fresh_db)
     try:
-        conn.execute("DELETE FROM ProgressUpdates WHERE InitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
         conn.commit()
     finally:
         conn.close()
 
     owner_id = _person_id(fresh_db, "Elizabeth Smith")
     card = queries.person_card(owner_id)
-    row = next(r for r in card["initiatives"] if r["Code"] == "ELIZ-1")
+    row = next(r for r in card["initiatives"] if r["Code"] == "MI-004")
 
     assert row["HasUpdate"] is False, "an initiative with no update should say so"
     assert row["NeedsUpdate"] is True
@@ -102,12 +102,12 @@ def test_zero_percent_with_an_update_is_present_not_missing(fresh_db):
 
     from app import queries
 
-    iid = _initiative_id(fresh_db, "ELIZ-1")
+    iid = _initiative_id(fresh_db, "MI-004")
     conn = sqlite3.connect(fresh_db)
     try:
-        conn.execute("DELETE FROM ProgressUpdates WHERE InitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
         conn.execute(
-            "INSERT INTO ProgressUpdates (InitiativeID, PercentComplete, Status, Note, EnteredByID) "
+            "INSERT INTO MajorInitiativeUpdates (MajorInitiativeID, PercentComplete, Status, Note, EnteredByID) "
             "VALUES (?, 0, 'Not started', 'just beginning', ?)",
             (iid, _person_id(fresh_db, "Elizabeth Smith")),
         )
@@ -116,15 +116,15 @@ def test_zero_percent_with_an_update_is_present_not_missing(fresh_db):
         conn.close()
 
     card = queries.person_card(_person_id(fresh_db, "Elizabeth Smith"))
-    row = next(r for r in card["initiatives"] if r["Code"] == "ELIZ-1")
+    row = next(r for r in card["initiatives"] if r["Code"] == "MI-004")
     assert row["HasUpdate"] is True, "a recorded 0% is still an update"
     # A freshly recorded update is not stale.
     assert row["NeedsUpdate"] is False
 
 
 def _initiative_id(fresh_db, code):
-    return _rows(fresh_db, "SELECT InitiativeID FROM Initiatives WHERE Code = ?",
-                 (code,))[0]["InitiativeID"]
+    return _rows(fresh_db, "SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?",
+                 (code,))[0]["MajorInitiativeID"]
 
 
 def _person_id(fresh_db, name):

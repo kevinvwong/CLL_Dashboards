@@ -35,7 +35,7 @@ def test_since_parameter_narrows_the_window(logged_in, fresh_db):
     there, and a whole-page assertion would pass for the wrong reason.
     """
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE ProgressUpdates SET UpdateDate = '2020-01-01'")
+    conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = '2020-01-01'")
     conn.commit()
     conn.close()
 
@@ -62,7 +62,7 @@ def test_bad_since_is_rejected_rather_than_crashing(logged_in):
 
 def test_changes_are_grouped_by_owner(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE ProgressUpdates SET UpdateDate = date('now')")
+    conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now')")
     conn.commit()
     conn.close()
 
@@ -82,14 +82,14 @@ def _set_progress(db, code, status, days_ago=None):
     conn = sqlite3.connect(db)
     if days_ago is None:
         conn.execute(
-            "UPDATE ProgressUpdates SET Status = ? "
-            "WHERE InitiativeID = (SELECT InitiativeID FROM Initiatives WHERE Code = ?)",
+            "UPDATE MajorInitiativeUpdates SET Status = ? "
+            "WHERE MajorInitiativeID = (SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)",
             (status, code),
         )
     else:
         conn.execute(
-            "UPDATE ProgressUpdates SET Status = ?, UpdateDate = date('now', ?) "
-            "WHERE InitiativeID = (SELECT InitiativeID FROM Initiatives WHERE Code = ?)",
+            "UPDATE MajorInitiativeUpdates SET Status = ?, UpdateDate = date('now', ?) "
+            "WHERE MajorInitiativeID = (SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)",
             (status, "-%d days" % days_ago, code),
         )
     conn.commit()
@@ -99,7 +99,7 @@ def _set_progress(db, code, status, days_ago=None):
 def _quiet(db):
     """Make the sample data a clean slate: nothing at risk, nothing stale."""
     conn = sqlite3.connect(db)
-    conn.execute("UPDATE ProgressUpdates SET Status = 'On track', UpdateDate = date('now')")
+    conn.execute("UPDATE MajorInitiativeUpdates SET Status = 'On track', UpdateDate = date('now')")
     conn.commit()
     conn.close()
 
@@ -108,21 +108,21 @@ def test_attention_list_holds_initiatives_that_are_at_risk(logged_in, fresh_db):
     """At risk is still listed. The spec now also names Off track and staleness,
     which are covered separately below."""
     _quiet(fresh_db)
-    _set_progress(fresh_db, "ELIZ-1", "At risk")
+    _set_progress(fresh_db, "MI-004", "At risk")
 
     attention = queries.attention_list()
-    assert [r["Code"] for r in attention] == ["ELIZ-1"], "only ELIZ-1 should qualify"
-    assert "ELIZ-1" in logged_in("Bill Gaudelli").get("/meeting").text
+    assert [r["Code"] for r in attention] == ["MI-004"], "only ELIZ-1 should qualify"
+    assert "MI-004" in logged_in("Bill Gaudelli").get("/meeting").text
 
 
 def test_attention_entries_link_to_their_card(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE ProgressUpdates SET Status = 'At risk', UpdateDate = date('now')")
+    conn.execute("UPDATE MajorInitiativeUpdates SET Status = 'At risk', UpdateDate = date('now')")
     conn.commit()
     conn.close()
 
     body = logged_in("Bill Gaudelli").get("/meeting").text
-    assert 'hx-get="/initiatives/' in body
+    assert 'hx-get="/major-initiatives/' in body
     assert 'hx-target="#card-modal"' in body
 
 
@@ -138,38 +138,38 @@ def test_off_track_leads_the_attention_list(logged_in, fresh_db):
     needs to see, so Off track leads the list rather than disappearing from it.
     """
     _quiet(fresh_db)
-    _set_progress(fresh_db, "TIM-4", "Off track")
-    _set_progress(fresh_db, "ELIZ-1", "At risk")
+    _set_progress(fresh_db, "MI-001", "Off track")
+    _set_progress(fresh_db, "MI-004", "At risk")
 
     codes = [r["Code"] for r in queries.attention_list()]
-    assert "TIM-4" in codes, "Off track must be listed"
-    assert codes[0] == "TIM-4", "Off track must outrank At risk"
-    assert "TIM-4" in logged_in("Bill Gaudelli").get("/meeting").text
+    assert "MI-001" in codes, "Off track must be listed"
+    assert codes[0] == "MI-001", "Off track must outrank At risk"
+    assert "MI-001" in logged_in("Bill Gaudelli").get("/meeting").text
 
 
 def test_a_stale_initiative_is_listed_with_its_age(logged_in, fresh_db):
     _quiet(fresh_db)
-    _set_progress(fresh_db, "D-A", "On track", days_ago=30)
+    _set_progress(fresh_db, "MI-002", "On track", days_ago=30)
 
     rows = {r["Code"]: r for r in queries.attention_list()}
-    assert "D-A" in rows, "an update 30 days old is stale"
-    assert rows["D-A"]["Reason"] == "No update in 30 days"
+    assert "MI-002" in rows, "an update 30 days old is stale"
+    assert rows["MI-002"]["Reason"] == "No update in 30 days"
     assert "30 days" in logged_in("Bill Gaudelli").get("/meeting").text
 
 
 def test_an_update_inside_the_window_is_not_stale(logged_in, fresh_db):
     """The boundary. The spec says *older than* 14, so 14 itself is inside."""
     _quiet(fresh_db)
-    _set_progress(fresh_db, "D-A", "On track", days_ago=14)
-    assert "D-A" not in [r["Code"] for r in queries.attention_list()], "14 is not older than 14"
+    _set_progress(fresh_db, "MI-002", "On track", days_ago=14)
+    assert "MI-002" not in [r["Code"] for r in queries.attention_list()], "14 is not older than 14"
 
-    _set_progress(fresh_db, "D-A", "On track", days_ago=15)
-    assert "D-A" in [r["Code"] for r in queries.attention_list()], "15 is older than 14"
+    _set_progress(fresh_db, "MI-002", "On track", days_ago=15)
+    assert "MI-002" in [r["Code"] for r in queries.attention_list()], "15 is older than 14"
 
 
 def test_an_initiative_with_no_update_says_so_rather_than_a_number(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
-    conn.execute("DELETE FROM ProgressUpdates")
+    conn.execute("DELETE FROM MajorInitiativeUpdates")
     conn.commit()
     conn.close()
 
@@ -181,23 +181,23 @@ def test_an_initiative_with_no_update_says_so_rather_than_a_number(logged_in, fr
 
 def test_one_initiative_with_two_reasons_appears_once(logged_in, fresh_db):
     _quiet(fresh_db)
-    _set_progress(fresh_db, "ELIZ-1", "At risk", days_ago=30)   # both reasons at once
+    _set_progress(fresh_db, "MI-004", "At risk", days_ago=30)   # both reasons at once
 
     codes = [r["Code"] for r in queries.attention_list()]
-    assert codes.count("ELIZ-1") == 1, "a one-page agenda cannot afford a duplicate"
+    assert codes.count("MI-004") == 1, "a one-page agenda cannot afford a duplicate"
     rows = {r["Code"]: r for r in queries.attention_list()}
-    assert rows["ELIZ-1"]["Reason"] == "At risk", "the more severe reason wins"
+    assert rows["MI-004"]["Reason"] == "At risk", "the more severe reason wins"
 
 
 def test_the_order_is_severity_then_oldest_first(logged_in, fresh_db):
     _quiet(fresh_db)
-    _set_progress(fresh_db, "D-A", "On track", days_ago=40)     # stale, oldest
-    _set_progress(fresh_db, "D-B", "On track", days_ago=20)     # stale
-    _set_progress(fresh_db, "ELIZ-1", "At risk", days_ago=5)    # at risk
-    _set_progress(fresh_db, "TIM-4", "Off track", days_ago=9)   # off track
+    _set_progress(fresh_db, "MI-002", "On track", days_ago=40)     # stale, oldest
+    _set_progress(fresh_db, "MI-003", "On track", days_ago=20)     # stale
+    _set_progress(fresh_db, "MI-004", "At risk", days_ago=5)    # at risk
+    _set_progress(fresh_db, "MI-001", "Off track", days_ago=9)   # off track
 
     codes = [r["Code"] for r in queries.attention_list()]
-    assert codes == ["TIM-4", "ELIZ-1", "D-A", "D-B"], (
+    assert codes == ["MI-001", "MI-004", "MI-002", "MI-003"], (
         "severity first (Off track, At risk, stale), then oldest first: got %s" % codes
     )
 
@@ -214,13 +214,13 @@ def test_the_order_is_stable_when_ages_tie(logged_in, fresh_db):
     MAR-1, MAR-2, TIM-1.
     """
     _quiet(fresh_db)
-    for code in ("TIM-1", "MAR-1", "MAR-2"):
+    for code in ("TIM-1", "MI-002", "MAR-2"):
         _set_progress(fresh_db, code, "At risk", days_ago=3)
 
     first = [r["Code"] for r in queries.attention_list()]
     second = [r["Code"] for r in queries.attention_list()]
     assert first == second, "the order must not vary between renders"
-    assert first == ["MAR-1", "MAR-2", "TIM-1"], (
+    assert first == ["MI-002", "MAR-2", "TIM-1"], (
         "equal ages must fall back to code order, not insertion order: got %s" % first
     )
 
@@ -233,12 +233,12 @@ def test_the_reason_is_shown_only_when_it_adds_something(logged_in, fresh_db):
     that the query does not depend on how the template chooses to render it.
     """
     _quiet(fresh_db)
-    _set_progress(fresh_db, "ELIZ-1", "At risk", days_ago=2)      # status only
-    _set_progress(fresh_db, "D-A", "On track", days_ago=40)       # stale only
+    _set_progress(fresh_db, "MI-004", "At risk", days_ago=2)      # status only
+    _set_progress(fresh_db, "MI-002", "On track", days_ago=40)       # stale only
 
     rows = {r["Code"]: r for r in queries.attention_list()}
-    assert rows["ELIZ-1"]["Reason"] == "At risk"
-    assert rows["D-A"]["Reason"] == "No update in 40 days"
+    assert rows["MI-004"]["Reason"] == "At risk"
+    assert rows["MI-002"]["Reason"] == "No update in 40 days"
 
     body = logged_in("Bill Gaudelli").get("/meeting").text
     section = body[body.index("Needs attention"):body.index("Changes since")]
@@ -280,8 +280,8 @@ def test_checks_page_renders(logged_in):
 def test_checks_lists_each_issue_with_its_initiative(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM InitiativeLinks WHERE InitiativeID = "
-        "(SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1')"
+        "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004')"
     )
     conn.commit()
     conn.close()
@@ -297,8 +297,8 @@ def test_checks_lists_each_issue_with_its_initiative(logged_in, fresh_db):
 def test_checks_uses_the_spec_wording_for_a_missing_dean_link(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM InitiativeLinks WHERE InitiativeID = "
-        "(SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1')"
+        "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004')"
     )
     conn.commit()
     conn.close()
@@ -318,14 +318,14 @@ def test_checks_is_clear_on_clean_sample_data(logged_in):
 def test_checks_rows_link_to_the_initiative(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
-        "DELETE FROM InitiativeLinks WHERE InitiativeID = "
-        "(SELECT InitiativeID FROM Initiatives WHERE Code='ELIZ-1')"
+        "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004')"
     )
     conn.commit()
     conn.close()
 
     body = logged_in("Bill Gaudelli").get("/checks").text
-    assert 'hx-get="/initiatives/ELIZ-1"' in body
+    assert 'hx-get="/major-initiatives/ELIZ-1"' in body
 
 
 # --- gating ---------------------------------------------------------------

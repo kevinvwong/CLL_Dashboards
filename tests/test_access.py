@@ -89,7 +89,7 @@ def test_healthz_is_outside_the_passcode_gate(anon):
 
 def test_healthz_returns_no_initiative_data(anon):
     body = anon.get("/healthz").text
-    for leak in ("ELIZ-", "D-A", "Elizabeth Smith", "Initiative"):
+    for leak in ("ELIZ-", "MI-002", "Elizabeth Smith", "Initiative"):
         assert leak not in body
 
 
@@ -151,16 +151,16 @@ def test_can_update_for_a_d1_initiative(logged_in, request_for, name, expected):
     from app.auth import can_update
 
     request = request_for(logged_in(name))
-    assert can_update(request, "ELIZ-1") is expected
+    assert can_update(request, "MI-004") is expected
 
 
 def test_non_owner_cannot_edit_details(logged_in, request_for):
     from app.auth import can_edit_details
 
-    assert can_edit_details(request_for(logged_in("Elizabeth Smith")), "ELIZ-1") is True
-    assert can_edit_details(request_for(logged_in("Tim Jacobbe")), "ELIZ-1") is False
+    assert can_edit_details(request_for(logged_in("Elizabeth Smith")), "MI-004") is True
+    assert can_edit_details(request_for(logged_in("Tim Jacobbe")), "MI-004") is False
     # admin may edit details even without ownership
-    assert can_edit_details(request_for(logged_in("Kevin")), "ELIZ-1") is True
+    assert can_edit_details(request_for(logged_in("Kevin")), "MI-004") is True
 
 
 def test_unknown_initiative_grants_nothing(logged_in, request_for):
@@ -176,5 +176,5 @@ def test_no_person_grants_nothing(anon, request_for):
 
     request = request_for(anon)
     assert current_person(request) is None
-    assert can_update(request, "ELIZ-1") is False
-    assert can_edit_details(request, "ELIZ-1") is False
+    assert can_update(request, "MI-004") is False
+    assert can_edit_details(request, "MI-004") is False

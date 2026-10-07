@@ -29,7 +29,7 @@ def test_a_list_row_is_labelled(logged_in):
 
 
 def test_the_card_is_labelled(logged_in):
-    body = logged_in("Bill Gaudelli").get("/initiatives/ELIZ-1").text
+    body = logged_in("Bill Gaudelli").get("/major-initiatives/ELIZ-1").text
     assert "synthetic-label" in body, "the card must carry the label too"
 
 

@@ -24,10 +24,10 @@ def _signed(client, pid=1):
 
 
 @pytest.mark.parametrize("path", [
-    "/initiatives/ELIZ-1/edit/details",
-    "/initiatives/ELIZ-1/edit/tags",
-    "/initiatives/ELIZ-1/edit/links",
-    "/initiatives/ELIZ-1/update",
+    "/major-initiatives/ELIZ-1/edit/details",
+    "/major-initiatives/ELIZ-1/edit/tags",
+    "/major-initiatives/ELIZ-1/edit/links",
+    "/major-initiatives/ELIZ-1/update",
 ])
 def test_edit_forms_are_fragments_when_requested_by_htmx(logged_in, path):
     """A partial request must not carry the site layout.
@@ -42,10 +42,10 @@ def test_edit_forms_are_fragments_when_requested_by_htmx(logged_in, path):
 
 
 @pytest.mark.parametrize("path", [
-    "/initiatives/ELIZ-1/edit/details",
-    "/initiatives/ELIZ-1/edit/tags",
-    "/initiatives/ELIZ-1/edit/links",
-    "/initiatives/ELIZ-1/update",
+    "/major-initiatives/ELIZ-1/edit/details",
+    "/major-initiatives/ELIZ-1/edit/tags",
+    "/major-initiatives/ELIZ-1/edit/links",
+    "/major-initiatives/ELIZ-1/update",
 ])
 def test_edit_forms_are_full_pages_when_loaded_directly(logged_in, path):
     """A direct load must render the full layout, not a bare fragment."""
@@ -60,14 +60,14 @@ def test_edit_forms_are_full_pages_when_loaded_directly(logged_in, path):
 def test_standalone_page_has_no_modal_close_control(logged_in):
     """The full page shows "← Back"; a second "×" is a control for a dialog
     that was never opened."""
-    body = logged_in("Bill Gaudelli").get("/initiatives/ELIZ-1").text
+    body = logged_in("Bill Gaudelli").get("/major-initiatives/ELIZ-1").text
     assert 'class="card-close"' not in body, "the full page still shows the close control"
     assert "Back" in body, "the full page lost its Back link"
 
 
 def test_the_fragment_keeps_the_close_control(logged_in):
     """The modal still needs its close button."""
-    body = logged_in("Bill Gaudelli").get("/initiatives/ELIZ-1",
+    body = logged_in("Bill Gaudelli").get("/major-initiatives/ELIZ-1",
                                 headers={"HX-Request": "true"}).text
     assert 'class="card-close"' in body
 
@@ -97,7 +97,7 @@ def test_empty_sides_render_no_orphan_chrome():
     assert 'class="divider"' not in both_empty, "the D-1 divider rendered with no groups"
 
     d1_only = render([], [{"owner": "Solo", "rows": [
-        {"Code": "X-1", "InitiativeName": "n", "Level": "D-1", "Owner": "o",
+        {"Code": "X-1", "InitiativeName": "n", "Owner": "o",
          "OwnerID": 1, "PercentComplete": 10, "Status": "On track", "IsPrimary": 0}]}])
     assert "dean-rows" not in d1_only, "empty Dean list still rendered beside a D-1 group"
     assert "Solo" in d1_only, "the D-1 group vanished"
@@ -173,14 +173,14 @@ def test_one_day_is_singular(logged_in, fresh_db):
 
     conn = sqlite3.connect(str(fresh_db))
     try:
-        # Seed on the clock production writes with: ProgressUpdates.UpdateDate
+        # Seed on the clock production writes with: MajorInitiativeUpdates.UpdateDate
         # defaults to SQLite's date('now'), which is UTC. Seeding from Python's
         # local date.today() drifts a day apart from UTC every evening.
-        iid = conn.execute("SELECT InitiativeID FROM Initiatives WHERE Code = 'ELIZ-1'").fetchone()[0]
+        iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = 'MI-004'").fetchone()[0]
         yesterday = conn.execute("SELECT date('now', '-1 day')").fetchone()[0]
-        conn.execute("DELETE FROM ProgressUpdates WHERE InitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
         conn.execute(
-            "INSERT INTO ProgressUpdates (InitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
+            "INSERT INTO MajorInitiativeUpdates (MajorInitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
             "VALUES (?, ?, 10, 'On track', 2)", (iid, yesterday))
         conn.commit()
     finally:
@@ -197,11 +197,11 @@ def test_many_days_is_plural(logged_in, fresh_db):
     conn = sqlite3.connect(str(fresh_db))
     try:
         # Same clock as production: date('now') is UTC (see schema.sql).
-        iid = conn.execute("SELECT InitiativeID FROM Initiatives WHERE Code = 'MAR-1'").fetchone()[0]
+        iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = 'MI-002'").fetchone()[0]
         old = conn.execute("SELECT date('now', '-15 days')").fetchone()[0]
-        conn.execute("DELETE FROM ProgressUpdates WHERE InitiativeID = ?", (iid,))
+        conn.execute("DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = ?", (iid,))
         conn.execute(
-            "INSERT INTO ProgressUpdates (InitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
+            "INSERT INTO MajorInitiativeUpdates (MajorInitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
             "VALUES (?, ?, 10, 'On track', 4)", (iid, old))
         conn.commit()
     finally:

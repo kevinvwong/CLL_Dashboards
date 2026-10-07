@@ -9,8 +9,8 @@ import sqlite3
 
 import pytest
 
-D1 = "ELIZ-1"
-DEAN = "D-A"
+D1 = "MI-004"
+DEAN = "MI-002"
 ADMIN = "Kevin"      # the only admin in the sample data
 NOT_ADMIN = "Elizabeth Smith"
 
@@ -24,20 +24,20 @@ def _rows(fresh_db, sql, params=()):
 
 
 def _initiative_id(fresh_db, code):
-    """The InitiativeID for a code, so a screen-read test can call the read.
+    """The MajorInitiativeID for a code, so a screen-read test can call the read.
 
     The screen-shaped reads (link_edit_options, tag_edit_options) take an
     initiative id; the tests know codes. Rather than re-implementing the read's
     own lookup, this resolves the id from the seeded database.
     """
-    return _rows(fresh_db, "SELECT InitiativeID FROM Initiatives WHERE Code = ?",
-                 (code,))[0]["InitiativeID"]
+    return _rows(fresh_db, "SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?",
+                 (code,))[0]["MajorInitiativeID"]
 
 
 ADMIN_ROUTES = [
-    ("get", "/initiatives/ELIZ-1/edit/tags"),
-    ("get", "/initiatives/ELIZ-1/edit/links"),
-    ("get", "/initiatives/new"),
+    ("get", "/major-initiatives/ELIZ-1/edit/tags"),
+    ("get", "/major-initiatives/ELIZ-1/edit/links"),
+    ("get", "/major-initiatives/new"),
     ("get", "/entries/goal/3/edit"),
     ("get", "/entries/priority/Data/edit"),
 ]
@@ -58,25 +58,25 @@ def test_non_owner_post_gets_403_not_a_silent_success(logged_in, fresh_db):
     Tim Jacobbe is used rather than NOT_ADMIN because Elizabeth Smith *owns* ELIZ-1 and is
     therefore allowed to edit it - owner-or-admin, per design decision 5.
     """
-    before = _rows(fresh_db, "SELECT InitiativeName FROM Initiatives WHERE Code = ?", (D1,))
+    before = _rows(fresh_db, "SELECT Title AS InitiativeName FROM MajorInitiatives WHERE MIId = ?", (D1,))
     response = logged_in("Tim Jacobbe").post(
-        f"/initiatives/{D1}/edit/details", data={"name": "Hijacked"}
+        f"/major-initiatives/{D1}/edit/details", data={"name": "Hijacked"}
     )
     assert response.status_code == 403
-    after = _rows(fresh_db, "SELECT InitiativeName FROM Initiatives WHERE Code = ?", (D1,))
+    after = _rows(fresh_db, "SELECT Title AS InitiativeName FROM MajorInitiatives WHERE MIId = ?", (D1,))
     assert after == before
 
 
 def test_admin_is_allowed_on_the_same_routes(logged_in):
     client = logged_in(ADMIN)
-    assert client.get(f"/initiatives/{D1}/edit/tags").status_code == 200
-    assert client.get(f"/initiatives/{D1}/edit/links").status_code == 200
-    assert client.get("/initiatives/new").status_code == 200
+    assert client.get(f"/major-initiatives/{D1}/edit/tags").status_code == 200
+    assert client.get(f"/major-initiatives/{D1}/edit/links").status_code == 200
+    assert client.get("/major-initiatives/new").status_code == 200
 
 
 def test_owner_may_edit_details_but_not_tags(logged_in):
-    assert logged_in("Elizabeth Smith").get(f"/initiatives/{D1}/edit/details").status_code == 200
-    assert logged_in("Elizabeth Smith").get(f"/initiatives/{D1}/edit/tags").status_code == 403
+    assert logged_in("Elizabeth Smith").get(f"/major-initiatives/{D1}/edit/details").status_code == 200
+    assert logged_in("Elizabeth Smith").get(f"/major-initiatives/{D1}/edit/tags").status_code == 403
 
 
 # --- 8.9: primary-tag error message ---------------------------------------
@@ -87,22 +87,22 @@ def test_second_primary_goal_is_refused_with_the_spec_message(logged_in, fresh_d
     reachable only by a hand-crafted POST. The server must refuse it rather
     than quietly keep the first value, which is what reading a single radio
     would have done."""
-    before = _rows(fresh_db, "SELECT * FROM InitiativeGoals WHERE InitiativeID = "
-                             "(SELECT InitiativeID FROM Initiatives WHERE Code=?)", (D1,))
+    before = _rows(fresh_db, "SELECT * FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
+                             "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId=?)", (D1,))
     response = logged_in(ADMIN).post(
-        f"/initiatives/{D1}/edit/tags",
+        f"/major-initiatives/{D1}/edit/tags",
         data={"goal": ["1", "2"], "goal_primary": ["1", "2"]},
     )
     assert response.status_code == 422
     assert "Only one primary goal is allowed" in response.text
-    after = _rows(fresh_db, "SELECT * FROM InitiativeGoals WHERE InitiativeID = "
-                            "(SELECT InitiativeID FROM Initiatives WHERE Code=?)", (D1,))
+    after = _rows(fresh_db, "SELECT * FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
+                            "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId=?)", (D1,))
     assert after == before, "a refused tag write must change nothing"
 
 
 def test_second_primary_priority_is_refused(logged_in):
     response = logged_in(ADMIN).post(
-        f"/initiatives/{D1}/edit/tags",
+        f"/major-initiatives/{D1}/edit/tags",
         data={"priority": ["1", "2"], "priority_primary": ["1", "2"]},
     )
     assert response.status_code == 422
@@ -111,25 +111,25 @@ def test_second_primary_priority_is_refused(logged_in):
 
 def test_one_primary_is_accepted(logged_in, fresh_db):
     response = logged_in(ADMIN).post(
-        f"/initiatives/{D1}/edit/tags",
+        f"/major-initiatives/{D1}/edit/tags",
         data={"goal": ["1", "2"], "goal_primary": "1"},
     )
     assert response.status_code == 200
     primaries = _rows(
         fresh_db,
-        "SELECT GoalID FROM InitiativeGoals WHERE IsPrimary = 1 AND InitiativeID = "
-        "(SELECT InitiativeID FROM Initiatives WHERE Code = ?)",
+        "SELECT GoalID FROM MajorInitiativeGoals WHERE IsPrimary = 1 AND MajorInitiativeID = "
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)",
         (D1,),
     )
     assert len(primaries) == 1
 
 
 def test_tags_are_replaced_not_appended(logged_in, fresh_db):
-    logged_in(ADMIN).post(f"/initiatives/{D1}/edit/tags", data={"goal": "3"})
+    logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/tags", data={"goal": "3"})
     rows = _rows(
         fresh_db,
-        "SELECT GoalID FROM InitiativeGoals WHERE InitiativeID = "
-        "(SELECT InitiativeID FROM Initiatives WHERE Code = ?)",
+        "SELECT GoalID FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)",
         (D1,),
     )
     assert [r["GoalID"] for r in rows] == [3], "only the submitted tag should remain"
@@ -139,7 +139,7 @@ def test_tags_are_replaced_not_appended(logged_in, fresh_db):
 
 
 def test_edit_details_writes_an_audit_row(logged_in, fresh_db):
-    logged_in(ADMIN).post(f"/initiatives/{D1}/edit/details",
+    logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/details",
                           data={"name": "Renamed initiative", "description": "new text"})
     rows = _rows(fresh_db, "SELECT * FROM AuditLog WHERE EntityKey = ? ORDER BY AuditID DESC", (D1,))
     assert rows, "an edit must be audited"
@@ -150,29 +150,29 @@ def test_edit_details_writes_an_audit_row(logged_in, fresh_db):
 
 def test_audit_row_records_the_person_who_made_the_change(logged_in, fresh_db):
     kevin = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Kevin'")[0]["PersonID"]
-    logged_in(ADMIN).post(f"/initiatives/{D1}/edit/details",
+    logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/details",
                           data={"name": "Renamed again", "description": ""})
     rows = _rows(fresh_db, "SELECT PersonID FROM AuditLog WHERE EntityKey = ?", (D1,))
     assert rows[0]["PersonID"] == kevin
 
 
 def test_tag_edit_is_audited(logged_in, fresh_db):
-    logged_in(ADMIN).post(f"/initiatives/{D1}/edit/tags", data={"goal": "1"})
+    logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/tags", data={"goal": "1"})
     rows = _rows(fresh_db, "SELECT Action FROM AuditLog WHERE EntityKey = ?", (D1,))
     assert "replace_tags" in [r["Action"] for r in rows]
 
 
 def test_rename_changes_details_immediately(logged_in):
-    body = logged_in(ADMIN).post(f"/initiatives/{D1}/edit/details",
+    body = logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/details",
                                  data={"name": "Brand new name", "description": "d"}).text
     assert "Brand new name" in body
 
 
 def test_empty_name_is_refused(logged_in, fresh_db):
-    before = _rows(fresh_db, "SELECT InitiativeName FROM Initiatives WHERE Code = ?", (D1,))
-    response = logged_in(ADMIN).post(f"/initiatives/{D1}/edit/details", data={"name": "   "})
+    before = _rows(fresh_db, "SELECT Title AS InitiativeName FROM MajorInitiatives WHERE MIId = ?", (D1,))
+    response = logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/details", data={"name": "   "})
     assert response.status_code == 422
-    after = _rows(fresh_db, "SELECT InitiativeName FROM Initiatives WHERE Code = ?", (D1,))
+    after = _rows(fresh_db, "SELECT Title AS InitiativeName FROM MajorInitiatives WHERE MIId = ?", (D1,))
     assert after == before
 
 
@@ -190,12 +190,12 @@ def test_links_only_list_dean_initiatives(logged_in, fresh_db):
 def test_link_edit_saves_the_selection(logged_in, fresh_db):
     from app import queries
 
-    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["InitiativeID"]
-    response = logged_in(ADMIN).post(f"/initiatives/{D1}/edit/links",
+    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["MajorInitiativeID"]
+    response = logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/links",
                                      data={"dean_initiative_id": str(dean_id)})
     assert response.status_code == 200
-    links = _rows(fresh_db, "SELECT DeanInitiativeID FROM InitiativeLinks WHERE InitiativeID = "
-                            "(SELECT InitiativeID FROM Initiatives WHERE Code = ?)", (D1,))
+    links = _rows(fresh_db, "SELECT DeanInitiativeID FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
+                            "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)", (D1,))
     assert [r["DeanInitiativeID"] for r in links] == [dean_id]
 
 
@@ -203,8 +203,8 @@ def test_links_are_refused_on_a_dean_initiative(logged_in, fresh_db):
     """Only a D-1 initiative feeds a Dean one."""
     from app import queries
 
-    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["InitiativeID"]
-    response = logged_in(ADMIN).post(f"/initiatives/{DEAN}/edit/links",
+    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["MajorInitiativeID"]
+    response = logged_in(ADMIN).post(f"/major-initiatives/{DEAN}/edit/links",
                                      data={"dean_initiative_id": str(dean_id)})
     assert response.status_code == 422
     assert "Only a D-1 initiative" in response.text
@@ -214,8 +214,8 @@ def test_linking_to_a_non_dean_initiative_is_refused(logged_in, fresh_db):
     """The spec's exact message, enforced by the database as well."""
     from app import queries
 
-    d1_id = _rows(fresh_db, "SELECT InitiativeID FROM Initiatives WHERE Code = ?", (D1,))[0]["InitiativeID"]
-    response = logged_in(ADMIN).post(f"/initiatives/{D1}/edit/links",
+    d1_id = _rows(fresh_db, "SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?", (D1,))[0]["MajorInitiativeID"]
+    response = logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/links",
                                      data={"dean_initiative_id": str(d1_id)})
     assert response.status_code == 422
     assert "Links must connect a D-1 initiative to a Dean initiative" in response.text
@@ -229,14 +229,14 @@ def test_create_makes_an_untagged_initiative_that_shows_on_checks(logged_in, fre
 
     owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
     response = logged_in(ADMIN).post("/initiatives", data={
-        "code": "ELIZ-9", "name": "Brand new", "level": "D-1",
+        "code": "MI-900", "name": "Brand new", "level": "D-1",
         "owner_id": str(owner), "description": "",
     }, follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"] == "/checks"
 
     issues = {i["Code"] for i in queries.data_checks()}
-    assert "ELIZ-9" in issues, "a new initiative has no tags or links yet"
+    assert "MI-900" in issues, "a new initiative has no tags or links yet"
 
 
 def test_duplicate_code_is_refused_with_a_readable_message(logged_in, fresh_db):
@@ -258,15 +258,15 @@ def test_non_admin_cannot_create(logged_in, fresh_db):
 
 
 def test_retire_hides_the_initiative_but_keeps_its_history(logged_in, fresh_db):
-    before = _rows(fresh_db, "SELECT COUNT(*) c FROM ProgressUpdates WHERE InitiativeID = "
-                             "(SELECT InitiativeID FROM Initiatives WHERE Code=?)", (D1,))[0]["c"]
-    response = logged_in(ADMIN).post(f"/initiatives/{D1}/retire", follow_redirects=False)
+    before = _rows(fresh_db, "SELECT COUNT(*) c FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
+                             "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId=?)", (D1,))[0]["c"]
+    response = logged_in(ADMIN).post(f"/major-initiatives/{D1}/retire", follow_redirects=False)
     assert response.status_code == 303
 
-    row = _rows(fresh_db, "SELECT IsActive FROM Initiatives WHERE Code = ?", (D1,))[0]
+    row = _rows(fresh_db, "SELECT IsActive FROM MajorInitiatives WHERE MIId = ?", (D1,))[0]
     assert row["IsActive"] == 0
-    after = _rows(fresh_db, "SELECT COUNT(*) c FROM ProgressUpdates WHERE InitiativeID = "
-                            "(SELECT InitiativeID FROM Initiatives WHERE Code=?)", (D1,))[0]["c"]
+    after = _rows(fresh_db, "SELECT COUNT(*) c FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
+                            "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId=?)", (D1,))[0]["c"]
     assert after == before, "retire must keep the diary"
 
     # and it disappears from the list screens
@@ -274,22 +274,22 @@ def test_retire_hides_the_initiative_but_keeps_its_history(logged_in, fresh_db):
 
 
 def test_retired_initiative_card_is_404(logged_in):
-    logged_in(ADMIN).post(f"/initiatives/{D1}/retire", follow_redirects=False)
-    assert logged_in("Bill Gaudelli").get(f"/initiatives/{D1}").status_code == 404
+    logged_in(ADMIN).post(f"/major-initiatives/{D1}/retire", follow_redirects=False)
+    assert logged_in("Bill Gaudelli").get(f"/major-initiatives/{D1}").status_code == 404
 
 
 def test_non_admin_cannot_retire(logged_in, fresh_db):
-    response = logged_in(NOT_ADMIN).post(f"/initiatives/{D1}/retire", follow_redirects=False)
+    response = logged_in(NOT_ADMIN).post(f"/major-initiatives/{D1}/retire", follow_redirects=False)
     assert response.status_code == 403
-    assert _rows(fresh_db, "SELECT IsActive FROM Initiatives WHERE Code = ?", (D1,))[0]["IsActive"] == 1
+    assert _rows(fresh_db, "SELECT IsActive FROM MajorInitiatives WHERE MIId = ?", (D1,))[0]["IsActive"] == 1
 
 
 def test_retiring_twice_is_a_404(logged_in):
     """Once retired the initiative is no longer active, so the route's
     existence check answers 404 rather than reaching the already-retired
     branch in repo. Pinned so the behaviour is deliberate."""
-    logged_in(ADMIN).post(f"/initiatives/{D1}/retire", follow_redirects=False)
-    assert logged_in(ADMIN).post(f"/initiatives/{D1}/retire").status_code == 404
+    logged_in(ADMIN).post(f"/major-initiatives/{D1}/retire", follow_redirects=False)
+    assert logged_in(ADMIN).post(f"/major-initiatives/{D1}/retire").status_code == 404
 
 
 # --- 8.4 goal and priority descriptions -----------------------------------
@@ -326,13 +326,13 @@ def test_non_admin_cannot_edit_descriptions(logged_in, fresh_db):
 
 
 def test_admin_controls_are_hidden_from_a_non_admin(logged_in):
-    body = logged_in(NOT_ADMIN).get(f"/initiatives/{D1}").text
+    body = logged_in(NOT_ADMIN).get(f"/major-initiatives/{D1}").text
     assert "Edit tags" not in body
     assert "Retire" not in body
 
 
 def test_admin_controls_are_shown_to_an_admin(logged_in):
-    body = logged_in(ADMIN).get(f"/initiatives/{D1}").text
+    body = logged_in(ADMIN).get(f"/major-initiatives/{D1}").text
     assert "Edit tags" in body
     assert "Edit links" in body
     assert "Retire" in body

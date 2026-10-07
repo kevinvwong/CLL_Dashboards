@@ -2,7 +2,8 @@
 
 
 def test_retired_card_path_308s(logged_in):
-    r = logged_in("Kevin").get("/initiatives/MI-002", follow_redirects=False)
+    old = "/initia" + "tives/MI-002"     # not rewritten by the rename pass
+    r = logged_in("Kevin").get(old, follow_redirects=False)
     assert r.status_code == 308
     assert r.headers["location"].endswith("/major-initiatives/MI-002")
 

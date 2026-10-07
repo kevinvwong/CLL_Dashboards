@@ -58,18 +58,18 @@ def test_an_unknown_grouping_falls_back_without_error(logged_in):
 def test_relationships_render_both_directions(logged_in):
     """A D-1 initiative shows what it feeds; a Dean one what feeds it."""
     from app import queries
-    rel = queries.relationships_for(["D-A", "ELIZ-1"])
+    rel = queries.relationships_for(["MI-002", "MI-004"])
     assert rel, "no relationships found"
     # ELIZ-1 feeds a Dean initiative.
-    assert any(x["Direction"] == "Feeds" for x in rel.get("ELIZ-1", [])), rel.get("ELIZ-1")
+    assert any(x["Direction"] == "Feeds" for x in rel.get("MI-004", [])), rel.get("MI-004")
     # D-A is fed by one.
-    assert any(x["Direction"] == "Fed by" for x in rel.get("D-A", [])), rel.get("D-A")
+    assert any(x["Direction"] == "Fed by" for x in rel.get("MI-002", [])), rel.get("MI-002")
 
 
 def test_relationships_carry_status_and_progress():
     from app import queries
-    rel = queries.relationships_for(["ELIZ-1"])
-    for x in rel["ELIZ-1"]:
+    rel = queries.relationships_for(["MI-004"])
+    for x in rel["MI-004"]:
         assert "Status" in x and "PercentComplete" in x
 
 
@@ -81,8 +81,8 @@ def test_relationships_for_an_empty_list_is_empty():
 def test_a_d1_supporting_two_deans_shows_both():
     """The relationship read does not collapse multiple parents into one."""
     from app import queries
-    rel = queries.relationships_for(["ELIZ-1"])
-    feeds = [x for x in rel.get("ELIZ-1", []) if x["Direction"] == "Feeds"]
+    rel = queries.relationships_for(["MI-004"])
+    feeds = [x for x in rel.get("MI-004", []) if x["Direction"] == "Feeds"]
     assert len(feeds) >= 2, "expected ELIZ-1 to feed more than one Dean initiative"
 
 

@@ -23,10 +23,17 @@ def test_diary_table_exists():
 
 
 def test_prototype_tables_are_gone():
+    """The five prototype tables are dropped; only the register model survives.
+
+    The names are written as joins so a well-meaning rename pass cannot rewrite
+    them out of this guard.
+    """
     con = _con()
     t = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    for gone in ("Initiatives", "InitiativeGoals", "InitiativePriorities",
-                 "InitiativeLinks", "ProgressUpdates"):
+    dropped = ["Initia" + "tives", "Initia" + "tiveGoals",
+               "Initia" + "tivePriorities", "Initia" + "tiveLinks",
+               "Progress" + "Updates"]
+    for gone in dropped:
         assert gone not in t, gone
     con.close()
 

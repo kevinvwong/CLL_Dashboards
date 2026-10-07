@@ -25,7 +25,7 @@ def _enable_meeting(meeting_on):
 
 def test_search_finds_an_initiative_by_code(logged_in):
     from app import queries
-    results = queries.search("MAR-3")
+    results = queries.search("MI-003")
     assert results, "no result for a code"
     assert results[0]["label"].startswith("Mario"), results[0]
 
@@ -39,7 +39,7 @@ def test_search_finds_a_person(logged_in):
 def test_search_spans_all_four_kinds(logged_in):
     from app import queries
     kinds = set()
-    for term in ("D-A", "Bill Gaudelli", "Research", "Data"):
+    for term in ("MI-002", "Bill Gaudelli", "Research", "Data"):
         for r in queries.search(term):
             kinds.add(r["kind"])
     assert {"initiative", "person", "goal", "priority"} <= kinds, kinds
@@ -144,7 +144,7 @@ def test_changes_stay_grouped_by_owner(logged_in, fresh_db):
     """The meeting-view requirement: changes grouped by owner is unchanged."""
     import sqlite3
     conn = sqlite3.connect(str(fresh_db))
-    conn.execute("UPDATE ProgressUpdates SET UpdateDate = date('now')")
+    conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now')")
     conn.commit()
     conn.close()
     body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
@@ -163,7 +163,7 @@ def test_the_meeting_offers_presenter_mode(logged_in):
 def test_presenter_groups_exist_for_arrow_navigation(logged_in, fresh_db):
     import sqlite3
     conn = sqlite3.connect(str(fresh_db))
-    conn.execute("UPDATE ProgressUpdates SET UpdateDate = date('now')")
+    conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now')")
     conn.commit()
     conn.close()
     body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
