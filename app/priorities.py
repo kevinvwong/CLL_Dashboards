@@ -16,7 +16,7 @@ PRIORITIES = {
     "Identity": (
         "P01",
         "One Shared Identity",
-        "Build a clear, cohesive sense of who we are as one College and "
+        "Build a clear, cohesive sense of who we are as a College and "
         "consistently communicate the distinctive value of CLL.",
     ),
     "Innovation": (
@@ -49,7 +49,7 @@ PRIORITIES = {
         "Culture & Learning",
         "Strengthen a culture of continuous learning, collaboration, and "
         "shared accountability that brings our modeled behaviors to life and "
-        "builds the capabilities needed for CLL's future.",
+        "builds the capabilities needed for CLL\u2019s future.",
     ),
 }
 

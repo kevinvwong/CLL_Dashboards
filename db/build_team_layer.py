@@ -89,6 +89,24 @@ def parse_goals(t):
     return out
 
 
+#: Corrections applied to a prototype value before it is emitted. The prototype
+#: is an external artifact we do not edit; where the user has confirmed its text
+#: is wrong, the fix is made HERE so it survives a regeneration.
+#:
+#: P01: the prototype says "as one College"; the confirmed canonical wording is
+#: "as a College" (2026-10-07).
+DESCRIPTION_CORRECTIONS = {
+    "Build a clear, cohesive sense of who we are as one College and "
+    "consistently communicate the distinctive value of CLL.":
+    "Build a clear, cohesive sense of who we are as a College and "
+    "consistently communicate the distinctive value of CLL.",
+}
+
+
+def _correct(text):
+    return DESCRIPTION_CORRECTIONS.get(text, text)
+
+
 def build(src=DEFAULT_SRC):
     t = _read(src)
     areas = parse_source_areas(t)
@@ -127,7 +145,7 @@ def build(src=DEFAULT_SRC):
             "WHERE PriorityName=%s;"
             % (_sq(p["code"]), _sq(p["title"]), _sq(p["measure"]),
                _sq(p["target"]), _sq(p["cadence"]), _sq(p["owner"]),
-               _sq(p["color"]), _sq(p["description"]), _sq(db_name)))
+               _sq(p["color"]), _sq(_correct(p["description"])), _sq(db_name)))
     L.append("")
     L.append("-- The 29 Major Initiatives")
     L.append("INSERT INTO MajorInitiatives (Code, Title, TeamID, SourceAreaID, StrategyAlign, "
