@@ -9,7 +9,8 @@ def test_retired_card_path_308s(logged_in):
 
 
 def test_retired_index_308s(logged_in):
-    r = logged_in("Kevin").get("/initiatives", follow_redirects=False)
+    old = "/initia" + "tives"            # not rewritten by any rename pass
+    r = logged_in("Kevin").get(old, follow_redirects=False)
     assert r.status_code == 308
     assert r.headers["location"].endswith("/major-initiatives")
 

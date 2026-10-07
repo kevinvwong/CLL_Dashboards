@@ -91,7 +91,7 @@ def test_home_shows_the_dashboard_and_keeps_everything_reachable(logged_in):
         assert f"/priorities/{priority['PriorityName']}" in body or \
                priority["PriorityName"] in body
     # The goals are reachable from the dashboard's tables and nav.
-    assert "/initiatives" in body
+    assert "/major-initiatives" in body
 
 
 def test_goal_tile_counts_match_an_independent_count(logged_in, fresh_db):
@@ -155,7 +155,7 @@ def test_nav_and_print_assets_are_present(logged_in):
     is asserted in the coverage-checks test.
     """
     body = logged_in("Bill Gaudelli").get("/").text
-    for dest in ("/", "/initiatives", "/people", "/outcomes"):
+    for dest in ("/", "/major-initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body, "missing nav destination %s" % dest
     assert 'media="print"' in body
     assert "<dialog" in body

@@ -19,7 +19,7 @@ def test_the_primary_nav_has_the_five_destinations(logged_in):
     """The nav's live destinations. Meeting is ICED (2026-10-06), so it is not
     among them while MEETING_ENABLED is unset."""
     body = logged_in("Bill Gaudelli").get("/").text
-    for dest in ("/", "/initiatives", "/people", "/outcomes"):
+    for dest in ("/", "/major-initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body, "missing %s" % dest
 
 
@@ -85,7 +85,7 @@ def test_switch_user_is_not_in_the_primary_nav(logged_in):
 
 
 def test_outcomes_and_checks_are_one_step_from_any_page(logged_in):
-    for page in ("/", "/initiatives", "/people"):
+    for page in ("/", "/major-initiatives", "/people"):
         body = logged_in("Bill Gaudelli").get(page).text
         assert 'href="/outcomes"' in body
     # Meeting is iced, so it is not linked from anywhere.

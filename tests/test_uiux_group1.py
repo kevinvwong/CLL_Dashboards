@@ -216,7 +216,7 @@ def test_many_days_is_plural(logged_in, fresh_db):
 
 def test_initiatives_index_returns_html(logged_in):
     """The defect: GET /initiatives returned a 405 JSON body."""
-    r = logged_in("Bill Gaudelli").get("/initiatives")
+    r = logged_in("Bill Gaudelli").get("/major-initiatives")
     assert r.status_code == 200, r.status_code
     assert "text/html" in r.headers.get("content-type", "")
     assert "<html" in r.text.lower()
@@ -256,7 +256,7 @@ def test_unknown_route_still_answers_json_for_a_non_browser(logged_in):
 def test_home_has_accessible_names(logged_in):
     body = _html.unescape(logged_in("Bill Gaudelli").get("/").text)
     # The nav destinations are named by their visible text.
-    for dest in ("/initiatives", "/people", "/outcomes"):
+    for dest in ("/major-initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body
     # The priority cards carry their full title as text, not a bare code.
     assert "One Shared Identity" in body

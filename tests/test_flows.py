@@ -125,4 +125,4 @@ def test_person_and_initiative_rows_are_keyboard_reachable(logged_in):
     """Meeting rows were the other half; the meeting is iced (2026-10-06), so
     the initiative list carries the same keyboard contract instead."""
     assert "keyup[key=='Enter']" in logged_in("Bill Gaudelli").get("/people/2").text
-    assert "keyup[key=='Enter']" in logged_in("Bill Gaudelli").get("/initiatives").text
+    assert "keyup[key=='Enter']" in logged_in("Bill Gaudelli").get("/major-initiatives").text
