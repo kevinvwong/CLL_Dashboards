@@ -30,20 +30,24 @@
 </div>
 
 {# The health read, first (#8): the question on opening a dashboard is "how are we
-   doing?". Counts by status, not a score. #}
+   doing?". Counts by status, not a score. When no update has been logged yet, say
+   so plainly - "29 not started" reads as a scorecard of failure when it only means
+   the diary is empty. #}
 <p class="health-line">
-  <strong>{{ health.total }}</strong> initiatives tracked:
+  <strong>{{ health.total }}</strong> Major Initiatives{% if not health.has_progress %} · no progress reported yet{% else %}:
   <span class="badge status-on-track">{{ health.on_track }} on track</span>
   <span class="badge status-at-risk">{{ health.at_risk }} at risk</span>
   {% if health.off_track %}<span class="badge status-off-track">{{ health.off_track }} off track</span>{% endif %}
-  {% if health.not_started %}<span class="badge status-not-started">{{ health.not_started }} not started</span>{% endif %}
+  {% if health.not_started %}<span class="badge status-not-started">{{ health.not_started }} not started</span>{% endif %}{% endif %}
 </p>
 
 {# --- 1. the stat band ----------------------------------------------------- #}
+{# One "Initiatives" tile, not two (review round, 2026-10-07): after the merge
+   "Initiatives" and "Major Initiatives" were the same 29. #}
 <section class="stat-band" aria-label="Portfolio summary">
   <a class="stat-tile" href="/major-initiatives">
-    <span class="stat-value">{{ stats.initiatives }}</span>
-    <span class="stat-label">Initiatives</span>
+    <span class="stat-value">{{ stats.major_initiatives }}</span>
+    <span class="stat-label">Major Initiatives</span>
   </a>
   <a class="stat-tile" href="#priorities">
     <span class="stat-value">{{ stats.priorities }}</span>
@@ -52,10 +56,6 @@
   <a class="stat-tile" href="#teams">
     <span class="stat-value">{{ stats.teams }}</span>
     <span class="stat-label">Teams</span>
-  </a>
-  <a class="stat-tile" href="/major-initiatives">
-    <span class="stat-value">{{ stats.major_initiatives }}</span>
-    <span class="stat-label">Major Initiatives</span>
   </a>
   <a class="stat-tile stat-warn" href="/major-initiatives?target=needs_review">
     <span class="stat-value">{{ stats.needs_review }}</span>
@@ -82,7 +82,7 @@
         <span class="goal-number">Goal {{ g.GoalNumber }}</span>
         <span class="goal-name">{{ g.ShortName }}</span>
       </a>
-      <p class="goal-counts">{{ g.InitiativeCount }} initiative{{ '' if g.InitiativeCount == 1 else 's' }} · {{ g.MajorInitiativeCount }} Major Initiative{{ '' if g.MajorInitiativeCount == 1 else 's' }}</p>
+      <p class="goal-counts">{{ g.MajorInitiativeCount }} Major Initiative{{ '' if g.MajorInitiativeCount == 1 else 's' }}</p>
     </li>
     {% endfor %}
   </ul>

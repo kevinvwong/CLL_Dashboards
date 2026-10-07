@@ -860,22 +860,26 @@ async def root(request: Request):
     for g in goals:
         g["MajorInitiativeCount"] = len(queries.goal_major_initiatives(g["GoalNumber"]))
 
-    # The stat band: counts, not a performance score. The Major Initiative and
-    # needs-review tiles link into the /major-initiatives index.
+    # The stat band: counts, not a performance score. One "Initiatives" count
+    # was dropped here (review round, 2026-10-07): after the two-layer merge it
+    # was the same 29 as "Major Initiatives", printed twice.
     stats = {
         "priorities": len(priorities),
         "goals": len(goals),
         "teams": len(teams),
         "major_initiatives": len(all_mis),
         "needs_review": sum(1 for k in all_mis if k["TargetStatus"] == "needs_review"),
-        "initiatives": len(queries.all_initiatives()),
     }
 
     # A one-line health read, above the taxonomy (#8): the first question on
     # opening a dashboard is "how are we doing?", not "how is this organised?".
     # Counts by status, not a composite score (the design forbids a rollup).
-    # An initiative with no progress update yet counts as Not started, so the
-    # health line counts the whole portfolio (all 29), matching status_counts.
+    #
+    # The register ships an EMPTY diary, so every initiative reads "Not started".
+    # Printed as a status breakdown that reads "0 on track . 0 at risk . 29 not
+    # started" - literally true but it looks like the College has done nothing.
+    # When NOTHING has been reported, say so plainly instead; the breakdown
+    # appears once an owner logs the first update.
     from collections import Counter
     by_status = Counter((r["Status"] or "Not started") for r in queries.all_initiatives())
     health = {
@@ -884,6 +888,7 @@ async def root(request: Request):
         "off_track": by_status.get("Off track", 0),
         "not_started": by_status.get("Not started", 0),
         "total": sum(by_status.values()),
+        "has_progress": any(r["HasUpdate"] for r in queries.all_initiatives()),
     }
 
     plan_year = max((p["PlanYear"] for p in priorities), default=None)
