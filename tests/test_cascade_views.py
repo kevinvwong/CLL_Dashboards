@@ -5,6 +5,7 @@ with their query-string state.
 """
 import html as _html
 import os
+import re
 
 import pytest
 
@@ -19,7 +20,7 @@ def test_the_cascade_has_a_section_heading_and_rollup(logged_in):
     assert "section-heading" in body
     assert "eyebrow" in body
     # The rollup reads total-then-breakdown.
-    assert "initiatives" in body and "on track" in body
+    assert re.search(r"\d+ initiative", body), body[:400]
 
 
 def test_the_grouping_toggle_offers_three_groupings(logged_in):

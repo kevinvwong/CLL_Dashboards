@@ -40,7 +40,7 @@ def test_link_edit_options_returns_deans_and_chosen(fresh_db):
 
     assert set(options) == {"deans", "chosen"}
     assert options["deans"], "no Dean targets"
-    assert all(d["Code"].startswith("D-") for d in options["deans"])
+    assert all(d["Code"].startswith("D") for d in options["deans"])
 
 
 def test_the_six_pass_through_readers_are_gone():

@@ -140,7 +140,7 @@ def _edit_result(request: Request, code: str):
     context = _ctx(request, card=card, **_edit_ctx(request, code))
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "card.html", context)
-    return RedirectResponse(url=f"/initiatives/{code}", status_code=303)
+    return RedirectResponse(url=f"/major-initiatives/{code}", status_code=303)
 
 
 @app.middleware("http")
