@@ -375,6 +375,16 @@ async def team_page(request: Request, team_id: int):
     )
 
 
+# Declared before /major-initiatives/{mi_id}: otherwise "new" is captured as an
+# mi_id and the create form 404s.
+@app.get("/major-initiatives/new")
+async def create_form(request: Request, _: guards.Target = Depends(guards.admin_only)):
+    return templates.TemplateResponse(
+        request, "edit_create.html",
+        _ctx(request, people=auth.active_people(), error=None),
+    )
+
+
 @app.get("/major-initiatives/{mi_id}")
 async def major_initiative_page(request: Request, mi_id: str,
                                 target: guards.Target = Depends(guards.known_target)):
@@ -575,14 +585,6 @@ async def retire_submit(request: Request, mi_id: str,
     except repo.RuleError as exc:
         raise HTTPException(status_code=422, detail=exc.message)
     return RedirectResponse(url="/checks", status_code=303)
-
-
-@app.get("/major-initiatives/new")
-async def create_form(request: Request, _: guards.Target = Depends(guards.admin_only)):
-    return templates.TemplateResponse(
-        request, "edit_create.html",
-        _ctx(request, people=auth.active_people(), error=None),
-    )
 
 
 @app.post("/major-initiatives")
