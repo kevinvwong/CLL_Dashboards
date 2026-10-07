@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Change log{% endblock %}
+{% block content %}
+{#
+  The change log (register work, 2026-10-07): every audited write, newest first.
+  AuditLog records who made a change, the action, the entity it touched and when.
+  Admin-only: the route returns 403 for anyone else.
+#}
+
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>Change log</h1>
+  </div>
+  <p class="section-note">
+    {% if rows %}{{ rows | length }} change{{ '' if rows | length == 1 else 's' }}{% else %}no changes recorded yet{% endif %}
+  </p>
+</div>
+
+{% if rows %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th scope="col">When</th>
+      <th scope="col">Who</th>
+      <th scope="col">Action</th>
+      <th scope="col">Entity</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.created_at }}</td>
+      <td>{{ r.person or '—' }}</td>
+      <td>{{ r.action }}</td>
+      <td>{{ r.entity_type }} <span class="mono">{{ r.entity_key }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No changes have been recorded yet. Edits to initiatives, tags,
+links and descriptions are logged here as they happen.</p>
+{% endif %}
+{% endblock %}

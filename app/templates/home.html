@@ -141,4 +141,39 @@
     {% endfor %}
   </ul>
 </section>
+
+{# The Dean's own priorities (register, 2026-10-07). FY26 is complete; FY27 is in
+   flight. PercentComplete is the register's 0-1 value scaled to 0-100. #}
+{% if dean_priorities %}
+<section id="dean-priorities" aria-labelledby="dean-priorities-heading">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Above the initiative layer</p>
+      <h2 id="dean-priorities-heading">Dean Priorities</h2>
+    </div>
+    <p class="section-note">{{ dean_priorities | length }} priorities across FY26 and FY27</p>
+  </div>
+
+  {% for fy, label in [(26, 'FY26 — complete'), (27, 'FY27 — in flight')] %}
+    {% set group = dean_priorities | selectattr('fiscal_year', 'equalto', fy) | list %}
+    {% if group %}
+    <h3 class="list-group-label">{{ label }}</h3>
+    <ul class="dean-list">
+      {% for d in group %}
+      <li class="dean-row">
+        <span class="dean-title">
+          {{ d.title }}
+          {% if d.priority_title %}<span class="dean-priority">{{ d.priority_title }}</span>{% endif %}
+        </span>
+        <span class="bar" role="img" aria-label="{{ d.percent_complete }} percent complete">
+          <span class="bar-fill status-on-track" style="width: {{ d.percent_complete }}%"></span>
+        </span>
+        <span class="dean-pct">{{ d.percent_complete }}%</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  {% endfor %}
+</section>
+{% endif %}
 {% endblock %}

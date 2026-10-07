@@ -1096,3 +1096,41 @@ def update_deltas(since: str) -> list[dict]:
     for r in rows:
         r["IsFirst"] = r["PrevPercent"] is None and r["PrevStatus"] is None
     return rows
+
+
+# --- the Dean Priorities layer and the change log (register, 2026-10-07) -------
+
+
+def dean_priorities() -> list[dict]:
+    """The Dean's own priorities, FY26 then FY27, each with its priority.
+
+    The register's "Dean KPI 26"/"Dean KPI 27" rows. FiscalYear 26 is complete,
+    27 is in flight; PercentComplete is 0-100. Presented as "Dean Priorities".
+    """
+    with _conn() as conn:
+        rows = [dict(r) for r in conn.execute(
+            "SELECT FiscalYear AS fiscal_year, Code AS code, Title AS title, "
+            "       Description AS description, PercentComplete AS percent_complete, "
+            "       PriorityCode AS priority_code, PriorityTitle AS priority_title, "
+            "       PriorityColour AS priority_colour "
+            "FROM vw_DeanPriorities ORDER BY FiscalYear, Code")]
+    return rows
+
+
+def major_initiative_dean_links(mi_id: str) -> list[dict]:
+    """The Dean FY27 items a Major Initiative contributes to."""
+    with _conn() as conn:
+        return [dict(r) for r in conn.execute(
+            "SELECT DeanCode AS dean_code, DeanTitle AS dean_title "
+            "FROM vw_MajorInitiativeDeanLinks WHERE MIId = ? ORDER BY DeanCode",
+            (mi_id,))]
+
+
+def recent_changes(limit: int = 100) -> list[dict]:
+    """The change log, newest first, with who made each change."""
+    with _conn() as conn:
+        return [dict(r) for r in conn.execute(
+            "SELECT a.CreatedAt AS created_at, p.Name AS person, a.Action AS action, "
+            "       a.EntityType AS entity_type, a.EntityKey AS entity_key "
+            "FROM AuditLog a LEFT JOIN People p ON p.PersonID = a.PersonID "
+            "ORDER BY a.CreatedAt DESC, a.AuditID DESC LIMIT ?", (limit,))]

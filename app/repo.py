@@ -27,6 +27,21 @@ STATUSES = (
 # (task 6.2). Kept here so the form and the write path cannot disagree.
 NOTE_MAX = 500
 
+#: Action -> the kind of thing it changed. KEYED BY ACTION, not by entity. The
+#: first version looked up a dict keyed by entity ("Initiative","Goal",...) with
+#: action.split("_")[0].capitalize() -- "update"/"replace"/"create" -- none of
+#: which are keys, so the default "Initiative" was written for EVERY change,
+#: mislabelling goal, priority, tag and link edits (found 2026-10-07).
+_ACTION_ENTITY = {
+    "update_initiative": "Initiative",
+    "create_initiative": "Initiative",
+    "retire_initiative": "Initiative",
+    "replace_tags": "Tag",
+    "replace_links": "Link",
+    "update_goal_description": "Goal",
+    "update_priority_description": "Priority",
+}
+
 
 class RuleError(Exception):
     """A write was refused by a rule, in terms worth showing a person."""
@@ -362,13 +377,7 @@ def update_entry_description(
 def _audit(conn, person_id: int, action: str, entity_key: str, details: dict):
     import json
 
-    entity = {
-        "Initiative": "Initiative",
-        "Goal": "Goal",
-        "Priority": "Priority",
-        "Tag": "Tag",
-        "Link": "Link",
-    }.get(action.split("_")[0].capitalize(), "Initiative")
+    entity = _ACTION_ENTITY.get(action, "Unknown")
     conn.execute(
         "INSERT INTO AuditLog (PersonID, Action, EntityType, EntityKey, Details) "
         "VALUES (?, ?, ?, ?, ?)",

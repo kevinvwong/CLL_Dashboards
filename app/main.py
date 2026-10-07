@@ -63,6 +63,7 @@ def _ctx(request: Request, **extra) -> dict:
                          ("/goals", "initiatives"), ("/priorities", "initiatives"),
                          ("/teams", "initiatives"), ("/major-initiatives", "initiatives"),
                          ("/checks", "checks"),
+                         ("/changes", "changes"),
                          ("/meeting", "meeting"), ("/outcomes", "outcomes")):
         if path == prefix or path.startswith(prefix + "/"):
             section = name
@@ -387,6 +388,7 @@ async def major_initiative_page(request: Request, mi_id: str):
         request,
         "major_initiative.html",
         _ctx(request, mi=mi,
+             dean_links=queries.major_initiative_dean_links(mi["MIId"] or mi_id),
              crumbs=[("Major Initiatives", "/major-initiatives"),
                      (mi["MIId"] or mi["Code"], None)]),
     )
@@ -568,6 +570,19 @@ async def checks(request: Request):
         request,
         "checks.html",
         _ctx(request, checks=queries.data_checks(), coverage=queries.coverage_summary()),
+    )
+
+
+@app.get("/changes")
+async def changes_route(request: Request,
+                        _: guards.Target = Depends(guards.admin_only)):
+    """The change log: who changed what, newest first.
+
+    Admin-only, enforced by the admin_only guard (403 for anyone else).
+    """
+    return templates.TemplateResponse(
+        request, "changes.html",
+        _ctx(request, rows=queries.recent_changes()),
     )
 
 
@@ -919,6 +934,7 @@ async def root(request: Request):
             stats=stats,
             health=health,
             plan_year=plan_year,
+            dean_priorities=queries.dean_priorities(),
         ),
     )
 

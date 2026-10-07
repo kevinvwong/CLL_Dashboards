@@ -27,6 +27,20 @@
   {% if mi.ProposedTarget %}<dt>Proposed target</dt><dd>{{ mi.ProposedTarget }}</dd>{% endif %}
 </dl>
 
+{% if mi.Description %}<p class="mi-description">{{ mi.Description }}</p>{% endif %}
+
+{# Which FY27 Dean Priorities this initiative contributes to (register, 2026-10-07). #}
+{% if dean_links %}
+<section aria-labelledby="mi-dean-heading">
+  <h2 id="mi-dean-heading" class="list-group-label">Contributes to</h2>
+  <ul class="mi-chip-list">
+    {% for l in dean_links %}
+    <li class="mi-chip"><span class="mi-chip-title">{{ l.dean_title }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 {# The goals this Major Initiative aligns to (the new edge, from its side). #}
 <section aria-labelledby="mi-goals-heading">
   <h2 id="mi-goals-heading" class="list-group-label">Strategy goals</h2>

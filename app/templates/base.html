@@ -57,6 +57,7 @@
          count of failing checks as a badge. It never appears for a non-admin. #}
       {% if may_admin %}
       <a class="nav-admin" href="/checks">Checks{% if failing_checks %} <span class="badge badge-warn">{{ failing_checks }}</span>{% endif %}</a>
+      <a class="nav-admin" href="/changes"{% if section == "changes" %} aria-current="page"{% endif %}>Change log</a>
       {% endif %}
     </nav>
     <div class="whoami">
