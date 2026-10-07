@@ -419,6 +419,34 @@ a { color: var(--accent); }
    link's colour, so an active or hovered item colours its icon too. */
 .nav-icon { width: 1em; height: 1em; vertical-align: -0.15em; margin-right: 0.3em; flex: none; }
 
+/* --- the milestone ring (blueprint Outcomes) ------------------------------ */
+/* A conic-gradient donut: reached/planned as an arc, with the count in the
+   middle. No SVG or JS; --pct is the percent the model computed. */
+.oct16-ring {
+  display: inline-grid; place-items: center; width: 2.9rem; height: 2.9rem;
+  border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;
+  background: conic-gradient(var(--status-on-track) calc(var(--pct, 0) * 1%),
+                             var(--line-track) 0);
+}
+.oct16-ring::before {
+  content: ""; grid-area: 1 / 1; width: 2.15rem; height: 2.15rem;
+  border-radius: 50%; background: var(--surface);
+}
+.oct16-ring-val {
+  grid-area: 1 / 1; position: relative; z-index: 1;
+  font-size: var(--text-sm); font-weight: 700; color: var(--ink);
+}
+.oct16-ring-of { color: var(--ink-muted); font-weight: 500; }
+
+/* --- cascade connector rails (blueprint Cascade) -------------------------- */
+/* A grouping becomes a legible hierarchy: each labelled owner group is a rail
+   the initiatives branch from. Purely visual - the list semantics are unchanged. */
+.list-group:has(> .initiative-list) { position: relative; padding-left: 0.85rem; }
+.list-group:has(> .initiative-list)::before {
+  content: ""; position: absolute; left: 0; top: 0.1rem; bottom: 0.1rem;
+  width: 2px; border-radius: 2px; background: var(--line-track);
+}
+
 main { padding: var(--space-5); max-width: var(--content-max); }
 
 h1 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-2xl);

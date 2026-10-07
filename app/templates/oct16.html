@@ -55,8 +55,17 @@
     </div>
     <h2 class="oct16-name">{{ o.FullTitle }}</h2>
     <p class="oct16-target">{{ o.Target }}</p>
-    {# The wireframes' own phrasing: "1 of 4 milestones reached". #}
-    <p class="oct16-count">{{ o.Reached }} of {{ o.Planned }} milestones reached</p>
+    {# The ring (blueprint Outcomes): reached/planned as a drawn proportion, so
+       the figure reads at a glance. The "N of M milestones reached" line below
+       still carries it as text. #}
+    <p class="oct16-count">
+      <span class="oct16-ring" role="img"
+            aria-label="{{ o.Reached }} of {{ o.Planned }} milestones reached"
+            style="--pct: {{ o.Percent }};">
+        <span class="oct16-ring-val">{{ o.Reached }}<span class="oct16-ring-of">/{{ o.Planned }}</span></span>
+      </span>
+      {{ o.Reached }} of {{ o.Planned }} milestones reached
+    </p>
     <div class="oct16-bar" role="img"
          aria-label="{{ o.Reached }} of {{ o.Planned }} milestones reached">
       <span class="oct16-fill"
@@ -66,7 +75,7 @@
       {% for m in o.milestones %}
       <li class="oct16-milestone">
         <span class="oct16-mname">{{ m.Name }}</span>
-        <span class="oct16-mstatus {{ m.Status | milestone_class }}">{{ m.Status }}</span>
+        <span class="oct16-mstatus {{ m.Status | milestone_class }}"><span class="status-glyph" aria-hidden="true">{{ m.Status | milestone_icon }}</span> {{ m.Status }}</span>
       </li>
       {% endfor %}
     </ul>

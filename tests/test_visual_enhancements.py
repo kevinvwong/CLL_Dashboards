@@ -39,3 +39,18 @@ def test_the_new_components_have_styles_and_no_colour_literal():
     css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
     for cls in (".stat-fill", ".fy-timeline", ".nav-icon", ".identity-legend"):
         assert cls in css, "no style for %s" % cls
+
+
+def test_the_outcomes_ring_and_milestone_icons_render(logged_in):
+    body = logged_in("Bill Gaudelli").get("/outcomes").text
+    assert body.count('class="oct16-ring"') == 6, "one ring per outcome card"
+    # The ring carries the count as text too, not only as an arc.
+    assert body.count("oct16-ring-val") == 6
+    # Each milestone chip carries a glyph beside its word.
+    assert body.count("status-glyph") >= 18, "milestone chips have no icons"
+
+
+def test_the_cascade_has_group_rails():
+    css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
+    assert "list-group:has(> .initiative-list)" in css, "the cascade rails are unstyles"
+

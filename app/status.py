@@ -130,6 +130,21 @@ def milestone_class(value: str) -> str:
     return "m-" + slug(value)
 
 
+#: A glyph per milestone status, so a milestone reads without colour (WCAG
+#: 1.4.1). Distinct from the initiative glyphs where the words differ.
+_MILESTONE_ICON = {
+    "met": "\u2713",           # tick
+    "in progress": "\u21bb",   # clockwise arrow
+    "not started": "\u25cb",   # hollow circle
+    "missed": "\u2717",        # ballot x
+}
+
+
+def milestone_icon(value: str) -> str:
+    """The glyph for a milestone status, or "" for one not in the set."""
+    return _MILESTONE_ICON.get((value or "").strip().lower(), "")
+
+
 def availability_class(value: str) -> str:
     """The class for a data-requirements availability cell."""
     return "availability-" + slug(value)
