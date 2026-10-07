@@ -125,6 +125,7 @@
   --accent-hover: #003f7c;     /* navy-10 */
   --chrome: #051e39;           /* surface-brand: the app bar */
   --on-chrome: #ffffff;        /* text-on-brand */
+  --chrome-divider: rgba(255, 255, 255, 0.24);  /* hairline beside the app-bar logo */
   --focus-on-chrome: #eaaa00;  /* focus-ring-inverse (Buzz) on the navy bar */
   --surface-selected: #f5e6cd; /* selected row / active nav tint */
 
@@ -232,6 +233,7 @@
     --accent-hover: #5f9eea;
     --chrome: #0c213a;
     --on-chrome: #eaeff6;
+    --chrome-divider: rgba(255, 255, 255, 0.24);
     --focus-on-chrome: #eaaa00;
     --surface-selected: #322713;
 
@@ -294,8 +296,24 @@ a { color: var(--accent); }
 
 .site-header :focus-visible { outline-color: var(--focus-on-chrome); }
 
-.brand { font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg);
+/* The app-bar brand: the official GT logo (GoldWhite on navy) at 32px tall,
+   then a hairline divider, then the product name. The logo is decorative - the
+   link already carries the accessible name "Initiative Dashboard" - so it is a
+   CSS pseudo-element and the templates stay untouched. GT rules: never below
+   24px tall; clear space equal to the height of the word "Tech" (the gap and
+   divider give it). The file is used as delivered, never recolored. */
+.brand { display: inline-flex; align-items: center; gap: var(--space-4);
+         font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg);
          color: var(--on-chrome); text-decoration: none; }
+.brand::before {
+  content: ""; flex: none; width: 90px; height: 32px;
+  background: url("/static/brand/GTLogo_GoldWhite.svg") no-repeat left center / contain;
+  padding-right: var(--space-4); border-right: 1px solid var(--chrome-divider);
+}
+/* Hide the logo when the bar gets crowded; the name carries it. */
+@media (max-width: 640px) {
+  .brand::before { display: none; }
+}
 
 .site-nav { display: flex; gap: 0.9rem; }
 .site-nav a { font-family: var(--font-sans); font-weight: 500; color: var(--on-chrome);

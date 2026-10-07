@@ -137,6 +137,9 @@ body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--
 .hv-appbar :focus-visible { outline-color: var(--focus-ring-inverse); }
 .hv-appbar-menu { display: grid; place-items: center; width: 40px; height: 40px; background: none; border: 0; color: inherit; border-radius: var(--radius-md); cursor: pointer; }
 .hv-appbar-menu:hover { background: rgba(255, 255, 255, 0.08); }
+.hv-appbar-logo { display: flex; align-items: center; flex: none; padding-right: var(--space-4); }
+.hv-appbar-logo img { display: block; height: 32px; width: auto; }
+.hv-appbar-id-sep { padding-left: var(--space-4); border-left: 1px solid rgba(255, 255, 255, 0.24); }
 .hv-appbar-id { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
 .hv-appbar-unit { font: 600 12px/16px var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--gt-light-gold); white-space: nowrap; }
 .hv-appbar-title { font: 600 18px/24px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

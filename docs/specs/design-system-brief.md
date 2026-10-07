@@ -58,6 +58,7 @@ current?" If no, the modernity is lost. Both must hold.
 | 2 | `app/static/print.css` | Print overrides (keep current behaviour, apply Hive print rules). |
 | 3 | `app/static/fonts/*.woff2` | Copy the ten files from `docs/specs/hive/fonts/`, plus their `LICENSE-*.txt`. |
 | 4 | `docs/specs/hive/style-guide.html` | A standalone review page rendering every token and component class. Not linked from the app. |
+| 5 | `app/static/brand/GTLogo_GoldWhite.svg` | The official GT logo for the app bar, copied unaltered from `docs/specs/hive/assets/logos/`. |
 
 **Approach: edit the current sheet, do not rewrite it.** The current
 `style.css` already passes every guard test and styles every class the
@@ -83,6 +84,25 @@ external request of any kind: the app runs on Azure and is printed offline.
   Sans 500, white at rest; the current page (`.site-nav a[aria-current=page]`)
   gets a 3px gold underline and full-white text. On the bar, focus rings use
   `--focus-on-chrome` (Buzz), because Bright Blue disappears on navy.
+- **Official logo in the app bar.** Show `GTLogo_GoldWhite.svg` (gold and white
+  on navy, a GT-approved combination) before the product name, using CSS only,
+  so templates stay untouched:
+
+  ```css
+  .brand { display: inline-flex; align-items: center; gap: var(--space-4); }
+  .brand::before {
+    content: ""; flex: none; width: 90px; height: 32px;
+    background: url("/static/brand/GTLogo_GoldWhite.svg") no-repeat left center / contain;
+    padding-right: var(--space-4); border-right: 1px solid var(--chrome-divider);
+  }
+  ```
+
+  Add `--chrome-divider` (Day and Night `rgba(255, 255, 255, 0.24)`) to both token
+  blocks. GT rules: never below 24px tall, clear space equal to the height of
+  "Tech" (the 16px gap and divider give it), never recolored or placed on a
+  pattern. The `.brand` text keeps its accessible name ("Initiative Dashboard");
+  the logo is decorative here because the link already names the app. Hide the
+  logo below 641px if the bar gets crowded, but keep it at desktop widths.
 - **Page:** `--surface` (white by day). Alternate bands and table headers use
   `--surface-sunken`, which is **GT Diploma** by day: this is where the warmth
   comes from. Cards are `--surface-raised` (white) with a 1px `--line` border and
@@ -415,6 +435,7 @@ scanned for literals, but prefer tokens where they resolve.
   Campanile, Buzz and Azalea with neutral and navy, each tuned for 4.5:1.
 - **Ember** (`#d8662a`, `--priority-5`) is a Hive addition; GT has no orange.
 - **Gradients** are retired in product UI.
+- Every `gt-*` value matches GT's own 2026 swatch file (`GeorgiaTech-2026-Colors.ase`) exactly. Some official Navy logo files ship with `#0a1f38` or `#081f38`; use the logo files as delivered, never recolor them.
 - The old navy `#003057` and the prototype priority colours (`#53d7e8`,
   `#f2b84b`, `#9a8cff`, `#ff7f6e`, `#42d39b`, `#ef8ad2`) are gone.
 
@@ -426,15 +447,15 @@ scanned for literals, but prefer tokens where they resolve.
 - [ ] `grep -nE '#[0-9a-fA-F]{3,8}|rgba?\(' app/static/style.css` matches only
       inside the two token blocks or comments.
 - [ ] Every colour token in §3–§4 exists in both blocks with the values given.
-- [ ] Ten woff2 files in `app/static/fonts/`; no `http` URL anywhere in either sheet.
+- [ ] Ten woff2 files in `app/static/fonts/` and `GTLogo_GoldWhite.svg` in `app/static/brand/`; no `http` URL anywhere in either sheet.
 - [ ] Georgia, Roboto Slab, `#003057` and the old priority hexes are gone.
 - [ ] `docs/specs/hive/style-guide.html` renders every token, the six status
       badges, the six priority keys, buttons, fields, cards, tables, the app bar,
       in Day and Night (toggle `data-theme` or use the OS setting).
 - [ ] Screenshots of `/`, `/goals/1`, `/oct16` and a card modal in both themes,
       attached to the PR.
-- [ ] **Lineage:** with no logo, a GT person recognises it: navy bar with the gold
-      rule, gold eyebrows, Diploma bands, Barlow headings, one chamfered gold
-      button.
+- [ ] **Lineage:** cover the logo and a GT person still recognises it: navy bar
+      with the gold rule, gold eyebrows, Diploma bands, Barlow headings, one
+      chamfered gold button.
 - [ ] **Modernity:** it reads as software made in 2026.
 - [ ] Any further deviation from this brief is listed in the PR description.

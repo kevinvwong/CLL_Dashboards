@@ -9,7 +9,7 @@ Decks and reports carry the same tokens as the app, so a chart or number looks t
 - Headlines state the takeaway as a sentence. One idea per slide, at most three bullets.
 - Every data slide has a source line bottom-left and a folio bottom-right.
 - Charts use the same `chart-*` order as the dashboard; export charts from the app rather than redrawing them.
-- Title and closing slides may carry the official GT logo per GT rules. Hive provides no logo file.
+- Title and closing slides carry the official GT logo from the Logos group: `GTLogo_GoldWhite.svg` or `GTLogo_White.svg` on navy, `GTLogo_RGB.svg` on white or Diploma. Start from GT's PowerPoint template (2022 rev) when one is required.
 
 ## Documents
 

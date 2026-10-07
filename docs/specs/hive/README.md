@@ -27,8 +27,10 @@ How each GT brand element maps into Hive. **Exact** = same value; **Evolved** = 
 | DIN 2014 / DIN Next Slab | `display` family: Barlow | Evolved | Open-source grotesk with the same signage and engineering roots; DIN 2014 is listed as the first fallback for licensed machines. |
 | Adelle / Adelle Sans | `serif`: IBM Plex Serif, `sans`: IBM Plex Sans | Exact (GT's free alternates) | GT names Plex as Adelle's web alternate. Plex Sans replaces Roboto as the UI face. |
 | Roboto / Roboto Slab | fallback only | Evolved | Kept in the stacks for continuity; not loaded. |
-| Hexagon, mosaic tiles | `chamfer-*`, `angle-facet`, Patterns | Evolved | The hex facet becomes a 30° cut corner on primary buttons and feature cards. |
-| Hive, dot matrix, pinstripe patterns | Patterns asset group | New construction | Original Hive drawings of the shapes GT describes. |
+| Hexagon, mosaic tiles | `chamfer-*`, `angle-facet` | Evolved | The hex facet becomes a 30° cut corner on primary buttons and feature cards. |
+| Hexes, mosaic, dot matrix, pinstripe patterns | Patterns asset group | Exact (official files) | GT's 2026 pattern files, copied unaltered. |
+| Logos | Logos asset group | Exact (official files) | GT's four lockups in five colorways, copied unaltered. |
+| 2026 swatches (`GeorgiaTech-2026-Colors.ase`) | every `gt-*` token | Exact | All ten RGB swatches match the `gt-*` values byte for byte. |
 | Night theme | `dark` theme | New | Navy ground, gold and Buzz accents. |
 | Chart palette | `chart-1`–`chart-8`, `seq-*`, `div-*` | Evolved | GT hues re-stepped to equal weight and validated for color-vision deficiency; Ember added. |
 | Icons | Lucide subset (Icons group, `Hive.Icon`) | New | GT has no UI icon set. |
@@ -83,7 +85,13 @@ Lucide line icons (ISC license): 24px grid, 2px stroke, round caps, in `currentC
 
 ## Logos and patterns
 
-Hive ships no logo. Use official files from brand.gatech.edu/brand-assets/logos and follow GT's logo rules; never redraw or recolor them. The Patterns group holds original Hive constructions (hive, dot matrix, 30° pinstripe) in GT Gold; use them behind content at no more than 20% of a layout.
+Use only the official files in the Logos and Patterns groups; never redraw, recolor or approximate them.
+
+- In apps, the GT logo sits at the left of the AppHeader: `GTLogo_GoldWhite.svg` at 32px tall, then a hairline divider and the product name. On white grounds use `GTLogo_RGB.svg` (gold and navy).
+- Pick the lockup by space: GT Logo (primary) by default, Extended where the audience needs the full Institute name (report covers, title slides), Vertical for square spaces, One Line for narrow bands.
+- Keep clear space equal to the height of the word "Tech"; never below 24px tall; never on a pattern or photo texture.
+- Patterns (Hexes, Mosaic, Pinstripes, Dot Matrix) are for slides, report covers and empty states, not dense dashboards, at no more than 20% of a layout.
+- GT's PowerPoint template (2022 rev) and letterhead live in the GT brand asset library; apply Hive's slide and document rules inside them.
 
 ## Evolution and governance
 
