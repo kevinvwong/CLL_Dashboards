@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **133** changes in total.
+- **3** days of work recorded, **134** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 39 what we added; 27 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
+- Across all days: 40 what we added; 27 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -50,6 +50,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Collect milestones and outcome state by workbook, and confirm on import
 - Read the Outcomes page from the Milestones model, not the module
 - Give goals and teams a keyed colour and icon, with a legend
+- Nav icons, stat-tile proportion fill, and the Dean FY timeline bar
 
 **What we fixed**
 
