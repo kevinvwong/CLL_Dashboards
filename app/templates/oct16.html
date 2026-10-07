@@ -42,7 +42,7 @@
   <li class="oct16-card oct16-{{ o.id|lower }}">
     <div class="oct16-head">
       <span class="oct16-id">{{ o.id }}</span>
-      <span class="oct16-outcome-status badge {{ o.status | status_class }}">{{ o.status }}</span>
+      <span class="oct16-outcome-status badge {{ o.status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ o.status | status_icon }}</span> {{ o.status }}</span>
     </div>
     <h2 class="oct16-name">{{ o.name }}</h2>
     <p class="oct16-target">{{ o.summary }}</p>

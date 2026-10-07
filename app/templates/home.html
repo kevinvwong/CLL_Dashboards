@@ -79,7 +79,7 @@
     {% for g in goals %}
     <li class="goal-card">
       <a class="goal-link" href="/goals/{{ g.GoalNumber }}">
-        <span class="goal-number">G{{ g.GoalNumber }}</span>
+        <span class="goal-number">Goal {{ g.GoalNumber }}</span>
         <span class="goal-name">{{ g.ShortName }}</span>
       </a>
       <p class="goal-counts">{{ g.InitiativeCount }} initiative{{ '' if g.InitiativeCount == 1 else 's' }} · {{ g.MajorInitiativeCount }} Major Initiative{{ '' if g.MajorInitiativeCount == 1 else 's' }}</p>

@@ -24,7 +24,7 @@
       <div class="bar-fill {{ row.Status | status_class }}"
            style="width: {{ row.PercentComplete }}%"></div>
     </div>
-    <span class="bar-label">{{ row.PercentComplete }}% {{ row.Status }}</span>
+    <span class="bar-label">{{ row.PercentComplete }}% <span class="status-glyph" aria-hidden="true">{{ row.Status | status_icon }}</span> {{ row.Status }}</span>
     {% endif %}
   </div>
   {% if row.OwnerID %}

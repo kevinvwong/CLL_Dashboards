@@ -18,7 +18,7 @@
      facts the reader came for (blueprint-redesign 4.3). #}
   <div class="detail-header">
     {% if card.latest %}
-    <span class="badge {{ card.latest.Status | status_class }}">{{ card.latest.Status }}</span>
+    <span class="badge {{ card.latest.Status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ card.latest.Status | status_icon }}</span> {{ card.latest.Status }}</span>
     <div class="progress-track" role="progressbar"
          aria-valuenow="{{ card.latest.PercentComplete }}" aria-valuemin="0" aria-valuemax="100"
          aria-label="{{ card.latest.Status }}, {{ card.latest.PercentComplete }} percent">

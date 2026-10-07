@@ -91,7 +91,7 @@
         </td>
         <td>
           {% if row.Status %}
-          <span class="badge {{ row.Status | status_class }}">{{ row.Status }}</span>
+          <span class="badge {{ row.Status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ row.Status | status_icon }}</span> {{ row.Status }}</span>
           {% else %}
           <span class="badge status-not-started">Not started</span>
           {% endif %}

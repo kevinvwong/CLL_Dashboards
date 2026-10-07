@@ -60,6 +60,29 @@ def status_class(value: str) -> str:
     return "status-" + slug(value)
 
 
+#: A glyph per status, so status is not carried by colour alone (WCAG 1.4.1).
+#: A shape + colour + the word itself survives colourblindness, greyscale print
+#: and a forced-colours mode. Chosen to read at small sizes: a filled/hollow
+#: circle, a triangle for risk, a square for a hard stop, a tick for complete.
+_STATUS_ICON = {
+    "not started": "\u25cb",   # ○ hollow circle
+    "on track": "\u25cf",      # ● filled circle
+    "at risk": "\u25b2",       # ▲ triangle
+    "off track": "\u25a0",     # ■ square
+    "complete": "\u2713",      # ✓ tick
+    "paused": "\u2016",        # ‖ pause bars
+}
+
+
+def status_icon(value: str) -> str:
+    """The glyph for a status, or "" for one not in the vocabulary.
+
+    The glyph is decoration; the status word is always rendered beside it, so a
+    screen reader still hears the status text. Empty in, empty out.
+    """
+    return _STATUS_ICON.get((value or "").strip().lower(), "")
+
+
 def milestone_class(value: str) -> str:
     """The class for a milestone status, e.g. "m-in-progress"."""
     return "m-" + slug(value)

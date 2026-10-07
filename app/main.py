@@ -28,6 +28,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 # One status presentation (design D4, the `status-presentation` spec). Templates
 # call these instead of re-implementing `| lower | replace(' ', '-')` six times.
 templates.env.filters["status_class"] = status.status_class
+templates.env.filters["status_icon"] = status.status_icon
 templates.env.filters["milestone_class"] = status.milestone_class
 templates.env.filters["availability_class"] = status.availability_class
 # The per-priority key colour (blueprint-redesign 1.1/1.3). A priority keeps
