@@ -132,6 +132,53 @@ def build(db_path: str, out_path: str):
     for p in people:
         people_ws.append([p["Name"], p["Title"] or "", p["Email"] or "", p["ReportsTo"] or ""])
 
+    # --- Milestones sheet (enhancement, 2026-10-07) -------------------------
+    # The collection vehicle for the Milestones model (ADR-0001). Pre-filled with
+    # the DRAFT milestones so the team leads confirm rather than author from
+    # nothing (workbook A-08: "Draft from definitions ... confirm with team
+    # leads"). Importing a workbook that supplies these rows is the confirmation
+    # act, and flips the dataset provenance from 'mock' to 'confirmed'.
+    ms_ws = wb.create_sheet("Milestones")
+    ms_cols = ["Priority", "Milestone", "Status", "Planned date", "Date met", "Owner", "Evidence URL"]
+    _header(ms_ws, ms_cols,
+            {"Priority": 10, "Milestone": 52, "Status": 14, "Planned date": 14,
+             "Date met": 14, "Owner": 20, "Evidence URL": 40})
+    prio_codes = [r["Code"] for r in conn.execute(
+        "SELECT Code FROM Priorities WHERE Code IS NOT NULL ORDER BY Code")]
+    dv_ms_prio = DataValidation(type="list", formula1='"' + ",".join(prio_codes) + '"', allow_blank=True)
+    ms_ws.add_data_validation(dv_ms_prio)
+    dv_ms_prio.add("A2:A500")
+    dv_ms_status = DataValidation(
+        type="list", formula1='"Met,In progress,Not started,Missed"', allow_blank=True)
+    ms_ws.add_data_validation(dv_ms_status)
+    dv_ms_status.add("C2:C500")
+    dv_ms_met = DataValidation(
+        type="list", formula1='"' + ",".join(p["Name"] for p in people) + '"', allow_blank=True)
+    ms_ws.add_data_validation(dv_ms_met)
+    dv_ms_met.add("F2:F500")
+    for m in conn.execute(
+            "SELECT PriorityCode, Name, Status, PlannedDate, DateMet, OwnerLabel, EvidenceURL "
+            "FROM Milestones WHERE IsActive = 1 ORDER BY PriorityCode, SortOrder, MilestoneID"):
+        ms_ws.append([m["PriorityCode"], m["Name"], m["Status"], m["PlannedDate"] or "",
+                      m["DateMet"] or "", m["OwnerLabel"] or "", m["EvidenceURL"] or ""])
+
+    # --- Outcomes sheet (enhancement, 2026-10-07) ---------------------------
+    # The reported outcome state per priority (workbook A-05/A-06). One row per
+    # priority; the owner's judgement, its own vocabulary (ADR-0002).
+    out_ws = wb.create_sheet("Outcomes")
+    _header(out_ws, ["Priority", "Outcome status", "Last updated"],
+            {"Priority": 10, "Outcome status": 16, "Last updated": 16})
+    dv_out_prio = DataValidation(type="list", formula1='"' + ",".join(prio_codes) + '"', allow_blank=True)
+    out_ws.add_data_validation(dv_out_prio)
+    dv_out_prio.add("A2:A100")
+    dv_out_status = DataValidation(
+        type="list", formula1='"On track,At risk,Behind,Not started"', allow_blank=True)
+    out_ws.add_data_validation(dv_out_status)
+    dv_out_status.add("B2:B100")
+    for p in conn.execute(
+            "SELECT Code, Status, LastUpdated FROM Priorities WHERE Code IS NOT NULL ORDER BY Code"):
+        out_ws.append([p["Code"], p["Status"] or "", p["LastUpdated"] or ""])
+
     wb.save(out_path)
     conn.close()
     return out_path, len(goals), len(priorities), len(people)

@@ -66,13 +66,57 @@ def _diary(db, code):
 # --- 8.7 template ---------------------------------------------------------
 
 
-def test_template_has_the_four_sheets(logged_in, fresh_db, tmp_path):
+def test_template_has_the_six_sheets(logged_in, fresh_db, tmp_path):
     out = tmp_path / "intake.xlsx"
     path, n_goals, n_priors, n_people = make_template.build(fresh_db, str(out))
     assert os.path.exists(path)
     wb = load_workbook(path)
-    assert set(wb.sheetnames) == {"Initiatives", "Goals", "Priorities", "People"}
+    assert set(wb.sheetnames) == {
+        "Initiatives", "Goals", "Priorities", "People", "Milestones", "Outcomes"}
     assert (n_goals, n_priors) == (5, 6)
+
+
+def test_the_milestone_sheet_prefills_the_draft_and_importing_it_confirms(logged_in, fresh_db, tmp_path):
+    """The sheet is pre-filled to CONFIRM; importing it flips provenance.
+
+    This is the collection path for the Milestones model (ADR-0001): the team
+    leads confirm the draft rather than author from nothing, and the act of
+    importing is what moves the dataset from mock to confirmed.
+    """
+    out = tmp_path / "intake.xlsx"
+    make_template.build(fresh_db, str(out))
+    wb = load_workbook(out)
+    assert wb["Milestones"].max_row >= 19, "the Milestones sheet was not pre-filled"
+    assert [c.value for c in wb["Milestones"][1]][:3] == ["Priority", "Milestone", "Status"]
+
+    assert sqlite3.connect(fresh_db).execute(
+        "SELECT Value FROM AppMeta WHERE Key='dataset_provenance'").fetchone()[0] == "mock"
+
+    ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
+    assert ok, [str(p) for p in problems]
+    conn = sqlite3.connect(fresh_db)
+    assert conn.execute("SELECT COUNT(*) FROM Milestones").fetchone()[0] == 18
+    assert conn.execute(
+        "SELECT Value FROM AppMeta WHERE Key='dataset_provenance'").fetchone()[0] == "confirmed"
+
+
+def test_a_milestone_status_from_the_wrong_vocabulary_is_refused(logged_in, fresh_db, tmp_path):
+    """'On track' is an initiative status, never a milestone status (ADR-0002)."""
+    out = tmp_path / "intake.xlsx"
+    make_template.build(fresh_db, str(out))
+    wb = load_workbook(out)
+    wb["Milestones"].cell(row=2, column=3).value = "On track"
+    bad = tmp_path / "bad.xlsx"
+    wb.save(bad)
+
+    ok, problems = import_xlsx.import_workbook(fresh_db, str(bad))
+    assert ok is False
+    assert any("milestone status" in str(p) for p in problems)
+    # All-or-nothing: the refusal leaves the live database unchanged.
+    assert sqlite3.connect(fresh_db).execute(
+        "SELECT COUNT(*) FROM Milestones").fetchone()[0] == 18
+    assert sqlite3.connect(fresh_db).execute(
+        "SELECT Value FROM AppMeta WHERE Key='dataset_provenance'").fetchone()[0] == "mock"
 
 
 def test_initiatives_sheet_has_x_columns_for_every_goal_and_priority(logged_in, fresh_db, tmp_path):

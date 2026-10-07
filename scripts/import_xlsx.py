@@ -40,6 +40,11 @@ VALID_STATUSES = (
     "Paused",
 )
 
+# The Milestones.Status vocabulary (ADR-0002).
+MILESTONE_STATUSES = ("Met", "In progress", "Not started", "Missed")
+# The reported outcome vocabulary on Priorities.Status (ADR-0002).
+OUTCOME_STATUSES = ("On track", "At risk", "Behind", "Not started")
+
 
 class Problem(Exception):
     def __init__(self, sheet, row, message):
@@ -67,6 +72,83 @@ def _connect(path):
     conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _sheet_rows(ws):
+    """(excel_row, {header: value}) for each non-blank row of a sheet."""
+    header = [_text(c.value) for c in ws[1]]
+    for r in range(2, ws.max_row + 1):
+        values = [_text(c.value) for c in ws[r]]
+        if any(values):
+            yield r, dict(zip(header, values))
+
+
+def _import_milestones(conn, wb, problems) -> int:
+    """Replace the Milestones from the Milestones sheet; return how many.
+
+    A PRESENT sheet replaces the milestone set: supplying the confirmed rows IS
+    the confirmation act (ADR-0001). An empty sheet is ignored, so an admin who
+    leaves it blank does not wipe the model by accident.
+    """
+    if "Milestones" not in wb.sheetnames:
+        return 0
+    rows = list(_sheet_rows(wb["Milestones"]))
+    if not rows:
+        return 0
+    known = {r["Code"] for r in conn.execute(
+        "SELECT Code FROM Priorities WHERE Code IS NOT NULL")}
+    conn.execute("DELETE FROM Milestones")
+    n = 0
+    for excel_row, r in rows:
+        code = r.get("Priority", "")
+        name = r.get("Milestone", "")
+        status = r.get("Status", "") or "Not started"
+        if not name:
+            problems.append(Problem("Milestones", excel_row, "missing Milestone"))
+            continue
+        if code not in known:
+            problems.append(Problem("Milestones", excel_row,
+                                    f"{name!r}: priority {code!r} is not a known priority"))
+            continue
+        if status not in MILESTONE_STATUSES:
+            problems.append(Problem("Milestones", excel_row,
+                                    f"{name!r}: status {status!r} is not a milestone status"))
+            continue
+        conn.execute(
+            "INSERT INTO Milestones (PriorityCode, Name, Status, PlannedDate, "
+            "DateMet, OwnerLabel, EvidenceURL, SortOrder) VALUES (?,?,?,?,?,?,?,?)",
+            (code, name, status, r.get("Planned date") or None, r.get("Date met") or None,
+             r.get("Owner") or None, r.get("Evidence URL") or None, n + 1))
+        n += 1
+    return n
+
+
+def _import_outcomes(conn, wb, problems) -> int:
+    """Set each priority's reported outcome state from the Outcomes sheet."""
+    if "Outcomes" not in wb.sheetnames:
+        return 0
+    known = {r["Code"] for r in conn.execute(
+        "SELECT Code FROM Priorities WHERE Code IS NOT NULL")}
+    n = 0
+    for excel_row, r in _sheet_rows(wb["Outcomes"]):
+        code = r.get("Priority", "")
+        status = r.get("Outcome status", "")
+        updated = r.get("Last updated", "")
+        if not code:
+            problems.append(Problem("Outcomes", excel_row, "missing Priority"))
+            continue
+        if code not in known:
+            problems.append(Problem("Outcomes", excel_row,
+                                    f"priority {code!r} is not a known priority"))
+            continue
+        if status and status not in OUTCOME_STATUSES:
+            problems.append(Problem("Outcomes", excel_row,
+                                    f"{code}: status {status!r} is not an outcome status"))
+            continue
+        conn.execute("UPDATE Priorities SET Status=?, LastUpdated=? WHERE Code=?",
+                     (status or None, updated or None, code))
+        n += 1
+    return n
 
 
 def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
@@ -269,6 +351,17 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
                 conn.execute("UPDATE TeamInitiatives SET IsActive = 0 WHERE Code = ?",
                              (row["Code"],))
 
+        conn.commit()
+
+        # The Milestones and the outcome state (enhancement, 2026-10-07). A
+        # present sheet replaces that model: supplying the confirmed rows IS the
+        # confirmation act, which flips the dataset provenance to 'confirmed' so
+        # the Outcomes page stops labelling itself as a mock.
+        ms_n = _import_milestones(conn, wb, problems)
+        out_n = _import_outcomes(conn, wb, problems)
+        if ms_n or out_n:
+            conn.execute("INSERT OR REPLACE INTO AppMeta (Key, Value) "
+                         "VALUES ('dataset_provenance', 'confirmed')")
         conn.commit()
 
         # --- the data checks must be clear before anything is swapped in ----
