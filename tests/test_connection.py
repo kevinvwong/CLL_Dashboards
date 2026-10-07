@@ -134,7 +134,7 @@ def test_a_read_and_a_write_in_one_request_see_the_same_file(fresh_db):
 
     # A write through repo (write=True) ...
     new_id = repo.add_progress_update(
-        code="MI-002", percent=42, status="On track", note="read/write agree",
+        mi_id="MI-002", percent=42, status="On track", note="read/write agree",
         entered_by_id=1,
     )
     assert new_id is not None

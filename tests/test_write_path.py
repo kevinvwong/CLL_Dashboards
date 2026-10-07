@@ -40,7 +40,7 @@ def test_a_refused_write_leaves_nothing_behind(fresh_db):
     before = _count(fresh_db, "MajorInitiativeUpdates")
     with pytest.raises(repo.RuleError):
         repo.add_progress_update(
-            code="NO-SUCH-CODE", percent=50, status="On track", note="x",
+            mi_id="NO-SUCH-CODE", percent=50, status="On track", note="x",
             entered_by_id=1,
         )
     assert _count(fresh_db, "MajorInitiativeUpdates") == before, (
@@ -107,10 +107,13 @@ def test_unknown_status_lists_the_allowed_set(fresh_db):
 
 
 def test_duplicate_code_names_the_code(fresh_db):
+    import sqlite3
+    existing = sqlite3.connect(fresh_db).execute(
+        "SELECT Code FROM MajorInitiatives WHERE MIId='MI-002'").fetchone()[0]
     with pytest.raises(repo.RuleError) as e:
-        repo.create_initiative(code="MI-002", name="Dup", owner_id=1,
+        repo.create_initiative(code=existing, name="Dup", owner_id=1,
                                description="", person_id=1)
-    assert "MI-002" in e.value.message, e.value.message
+    assert existing in e.value.message, e.value.message
 
 
 def test_unknown_owner_is_a_message_not_a_driver_error(fresh_db):
