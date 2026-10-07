@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **139** changes in total.
+- **3** days of work recorded, **140** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 43 what we added; 29 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
+- Across all days: 43 what we added; 29 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 15 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -111,6 +111,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Power Pages feasibility brief
 - File the Visual Enhancement Blueprint with a reconciliation note
 - Plan the enhancement + model work and record the auth decisions
+- Record the enhance-20261007T195252Z checkpoint
 
 **More changes**
 
