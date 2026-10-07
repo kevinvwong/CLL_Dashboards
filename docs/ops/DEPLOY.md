@@ -10,6 +10,36 @@ reports failure while succeeding, and a bad archive takes the site down.
 
 ---
 
+## Environment policy (set 2026-10-07)
+
+**Local is dev. Azure is production. Do NOT deploy to Azure until the user
+declares a checkpoint.**
+
+- **Develop and test against the local server** (`run-dashboard.cmd`,
+  `http://127.0.0.1:8000`). The suite runs locally. The database builds
+  locally. Nothing goes to Azure by default.
+- **A deploy is a promotion, not a step in the loop.** It happens only when the
+  user explicitly declares a checkpoint — a point they have decided is worth
+  putting in front of people. Until then, "it works locally" is the done state.
+- **No agent should deploy on its own initiative**, including to "verify a fix
+  landed on the live site". Verify locally instead.
+
+**Production state at the time of this policy:** marker
+`labels-20261007T123612Z` (the `/dean-priorities` + "Goal N" + status-glyph
+round). Production is therefore AHEAD of nothing and BEHIND any local work done
+after `f24cc5d` until the next declared checkpoint.
+
+### Two runbook notes that cost time this session
+
+- **`az webapp deploy` blocks the shell while it polls** — but the deploy
+  succeeds. Run it as a background process and poll `/healthz` for the marker,
+  rather than waiting on the command (see step 4).
+- **Stop the local dev server before running the test suite.** A running
+  `uvicorn` holds `cll_initiatives.db`, so `test_build_is_reproducible` fails
+  spuriously — the build cannot replace a file another process has open.
+
+---
+
 ## Prerequisites
 
 | What | Where |

@@ -218,3 +218,15 @@ import); and `/major-initiatives/new` was declared after `/{mi_id}` and 404'd.
 demonstration on sample data - the banner reads "Sample data - these initiatives
 are invented for this prototype". The GT data-policy position is unchanged.
 
+## 2026-10-07 — Environment policy: local is dev, Azure is production
+
+The user set the working arrangement: **development and testing happen against
+the local server; Azure is production.** The Azure site is promoted only when
+the user declares a checkpoint, not as a step in the development loop. Recorded
+at the top of `docs/ops/DEPLOY.md`.
+
+**Production is frozen at marker `labels-20261007T123612Z` (commit `f24cc5d`)** —
+the round that added `/dean-priorities`, spelled "Goal N" in prose, and put a
+glyph beside each status. Any commit after `f24cc5d` is local-only until the next
+declared checkpoint.
+
