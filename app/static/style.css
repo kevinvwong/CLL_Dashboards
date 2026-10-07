@@ -342,6 +342,22 @@ a { color: var(--accent); }
 .whoami { font-size: var(--text-sm); }
 .switch { margin-left: 0.5rem; }
 
+/* The header build stamp: last push (short commit) and deploy time. A quiet
+   caption, not a control - it is here so "which version am I looking at?" is
+   answerable on the page. Full width so it never squeezes the nav; hidden on
+   narrow screens and in print, where it would only add noise. */
+.build-stamp {
+  flex-basis: 100%;
+  margin: 0.25rem 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.01em;
+  color: var(--on-chrome);
+  opacity: 0.78;
+}
+@media (max-width: 640px) { .build-stamp { display: none; } }
+@media print { .build-stamp { display: none; } }
+
 main { padding: var(--space-5); max-width: var(--content-max); }
 
 h1 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-2xl);

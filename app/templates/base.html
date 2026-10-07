@@ -69,6 +69,11 @@
       </details>
       {% endif %}
     </div>
+    {% if build_stamp %}
+    {# The build stamp: which code, deployed when. Discreet, and hidden when
+       neither is known (local dev). #}
+    <p class="build-stamp" title="Last push and deploy">{{ build_stamp }}</p>
+    {% endif %}
   </header>
 
   <main>

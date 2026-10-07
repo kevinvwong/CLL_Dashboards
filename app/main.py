@@ -1,9 +1,46 @@
 import os
+import re
 
 # Stamped by the deploy step as an app setting, and echoed by /healthz, so
 # "is the code I just deployed the code being served?" is answerable over
 # plain HTTP without shell access to the instance.
 DEPLOY_MARKER = os.getenv("DEPLOY_MARKER", "dev")
+
+
+def deploy_time_from_marker(marker: str) -> str:
+    """The deploy time encoded in a DEPLOY_MARKER, or "" if it has none.
+
+    A marker is '<label>-YYYYMMDDTHHMMSSZ', and the timestamp is the deploy
+    moment. Reading it here means a deploy that sets only DEPLOY_MARKER still
+    gets a time in the header stamp, with no second setting to keep in step.
+    """
+    m = re.search(r"(\d{8})T(\d{6})Z", marker or "")
+    if not m:
+        return ""
+    date, clock = m.groups()
+    return f"{date[0:4]}-{date[4:6]}-{date[6:8]} {clock[0:2]}:{clock[2:4]} UTC"
+
+
+def build_stamp_label(commit: str, when: str) -> str:
+    """The one-line header stamp: the short commit, then the deploy time.
+
+    Each part is omitted when unknown, so local dev (neither known) yields "",
+    and base.html hides the element rather than showing an empty chip.
+    """
+    parts = []
+    if commit:
+        parts.append(commit[:7])
+    if when:
+        parts.append("deployed " + when)
+    return " \u00b7 ".join(parts)
+
+
+# The commit the deployed code was built from (set by the deploy step), and
+# when it was built. Kept separate from DEPLOY_MARKER so the stamp can name the
+# code while the marker names the deploy.
+BUILD_COMMIT = os.getenv("GIT_COMMIT", "").strip()
+BUILD_TIME = os.getenv("BUILD_TIME", "").strip() or deploy_time_from_marker(DEPLOY_MARKER)
+BUILD_STAMP_LABEL = build_stamp_label(BUILD_COMMIT, BUILD_TIME)
 """FastAPI entry point for the initiative dashboard prototype.
 
 Access is gated before any page renders (design.md decision 5): a shared
@@ -88,6 +125,9 @@ def _ctx(request: Request, **extra) -> dict:
         # The failing-check count for the admin nav badge (5.4). Zero renders
         # no badge. Wrapped because a broken read must not break every page.
         "failing_checks": _failing_check_count(),
+        # The discreet header stamp: last push (short commit) and deploy time.
+        # Empty in local dev, where base.html omits the element.
+        "build_stamp": BUILD_STAMP_LABEL,
         **extra,
     }
 

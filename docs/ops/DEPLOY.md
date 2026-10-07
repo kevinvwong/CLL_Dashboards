@@ -101,16 +101,33 @@ Excluded: `__pycache__/`, `.pytest_cache/`, `tests/`, `*.pyc`, `.git/`.
 ## 2. Set the revision marker
 
 The marker makes "is the code I just deployed the code being served?" answerable
-over plain HTTP. Use a unique value per deploy.
+over plain HTTP. Use a unique value per deploy. Also set `GIT_COMMIT` so the
+**header stamp** can name the code the app is running (see below).
 
 ```powershell
-$marker = "launch-" + (Get-Date -Format "yyyyMMddTHHmmss") + "Z"
+$marker  = "launch-" + (Get-Date -Format "yyyyMMddTHHmmss") + "Z"
+$commit  = git -C C:\Users\kwong318\GitHub\CLL_Dashboards rev-parse --short HEAD
 & "C:\Users\kwong318\aztools\azure-cli\python.exe" -IBm azure.cli webapp config appsettings set `
     --name clldashproto2kwong27 --resource-group rg-cll-dash-proto `
-    --settings "DEPLOY_MARKER=$marker" --output none
+    --settings "DEPLOY_MARKER=$marker" "GIT_COMMIT=$commit" --output none
 ```
 
 Record `$marker`. Step 4 needs it.
+
+### The header stamp
+
+A discreet line at the bottom of the app bar shows the **last push (short
+commit) and the deploy time** — e.g. `e1c55d4 · deployed 2026-10-07 16:10 UTC`.
+The deploy time is read from the marker's `…T…Z` suffix, so `DEPLOY_MARKER`
+alone is enough for the time; `GIT_COMMIT` adds the commit. Both are unset in
+local dev, and the stamp hides itself rather than showing a fake revision
+(`tests/test_build_stamp.py`).
+
+| Setting | Source | Shown as |
+|---|---|---|
+| `GIT_COMMIT` | `git rev-parse --short HEAD` | the short commit |
+| `DEPLOY_MARKER` | `$marker` (suffix is the deploy time) | `deployed <time> UTC` |
+
 
 ---
 
