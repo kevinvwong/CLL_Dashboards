@@ -139,8 +139,13 @@ The register's 0-1 completion values are scaled ×100 into `PercentComplete`
 vocabulary (`Not started` / `On track` / `At risk` / `Off track` / `Complete`);
 the 29 team rows are all `Not started`.
 
-The **MI→Goal edge is seeded from the register's Goals 1-5 columns** (58 edges),
-replacing the alignment-string parse in `build_canon_links.py`.
+The register seed writes all three edge sets:
+
+1. **MI→Goal** (58 edges) from the register's Goals 1-5 columns, replacing the
+   alignment-string parse in `build_canon_links.py`.
+2. **MI→Priority** (primary + secondary per team row), writing `IsPrimary`.
+3. **MI→Dean** (61 edges) from the register's eight Dean KPI 27 columns into
+   `MajorInitiativeDeanLinks`.
 
 ### Register expansion
 
