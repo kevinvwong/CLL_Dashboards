@@ -297,7 +297,6 @@ a { color: var(--accent); }
 
 /* --- local banner (task 9.1) -------------------------------------------- */
 
-
 /* --- header, nav, whoami ------------------------------------------------ */
 
 /* The app bar: a GT Navy band with a 3px GT Gold rule beneath it (see the
@@ -546,22 +545,6 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .people .title { color: var(--ink-muted); font-size: var(--text-sm); }
 
 .error { color: var(--error); margin: 0.75rem 0 0; }
-/* 8.2: the synthetic-data markers. Visible in every environment, including
-   live, because the initiatives are invented and must not read as approved. */
-.synthetic-label {
-  display: inline-block;
-  margin-left: .4rem;
-  padding: 0 var(--space-1);
-  font-size: .7em;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  border: 1px solid currentColor;
-  border-radius: 3px;
-  opacity: .75;
-  vertical-align: middle;
-}
-
-
 /* The reason an initiative is on the meeting agenda (meeting-view spec,
    amended 2026-10-06). Deliberately plain text, not a second coloured badge:
    the status badge beside it already carries the colour, and the reason has to
@@ -627,7 +610,6 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   .oct16-notes { color: var(--ink-print); }
   .oct16-card { break-inside: avoid; }
 }
-
 
 /* ---- October 16, Option A: the wireframes' page -------------------------- */
 /* The one-line health read on the Overview (#8). */
@@ -700,7 +682,6 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   .oct16-requirements, .oct16-scope, .oct16-tradeoffs { break-inside: avoid; }
 }
 
-
 /* The three owner states must be distinguishable at a glance, so a withheld
    placeholder is never mistaken for a real name. The placeholder is marked by
    its bracketed form AND by style, in case a reader scans only one.
@@ -725,7 +706,6 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   .oct16-owner.unconfirmed .owner-value { color: var(--ink-print); }
   .oct16-owner .owner-none { color: var(--ink-print); }
 }
-
 
 /* ---- Status appearance: one colour per status, wherever it is shown --------
    The colour was previously defined only as .bar-fill.status-*, so a status
@@ -1020,36 +1000,6 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .breadcrumb a:hover { text-decoration: underline; }
 .breadcrumb .sep { margin: 0 var(--space-2); color: var(--ink-subtle); }
 
-/* ---- Sample-data bar and footer marker (task 2.4) -------------------------
-   One thin bar, at most 32px, replacing the two stacked banners. It is
-   dismissible for the session, but the footer marker below is server-rendered
-   on every page, so the sample-data state is never hidden by a dismissal. */
-.sample-banner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 0;
-  max-height: var(--space-8);              /* 32px ceiling */
-  margin: 0;
-  padding: var(--space-1) var(--space-4);
-  background: var(--warn-bg);
-  border-bottom: 1px solid var(--warn-border);
-  color: var(--warn-ink);
-  font-size: var(--text-sm);
-}
-.sample-banner[hidden] { display: none; }
-.sample-banner-text { flex: 1 1 auto; }
-.sample-banner-dismiss {
-  flex: 0 0 auto;
-  border: 0;
-  background: none;
-  color: inherit;
-  font-size: var(--text-lg);
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 var(--space-1);
-}
-
 .site-footer {
   display: flex;
   gap: var(--space-3);
@@ -1060,16 +1010,8 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   color: var(--ink-muted);
   font-size: var(--text-xs);
 }
-.sample-marker {
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--warn-ink);
-}
 @media print {
-  .sample-banner, .sample-banner-dismiss { display: none; }
-  .sample-marker { color: var(--ink-print); }
-}
+  }
 
 /* ---- Responsive layout (task 2.5) -----------------------------------------
    Three layouts: up to 640px stacked with a collapsed nav; 641-1024px two
@@ -1172,7 +1114,6 @@ body.overlay-open { overflow: hidden; }
 .section-heading h2 { margin: 0; }
 .section-note { margin: 0; color: var(--ink-muted); font-family: var(--font-serif);
                 font-size: var(--text-sm); }
-
 
 /* ---- Cascade grouping toggle (blueprint-redesign 3.1) --------------------- */
 .group-toggle {
@@ -1301,7 +1242,6 @@ body.overlay-open { overflow: hidden; }
 .user-menu-panel a:hover { background: var(--surface-hover); }
 .user-menu-name { margin: 0; font-weight: 700; font-size: var(--text-sm); }
 .user-menu-role { display: block; font-weight: 400; color: var(--ink-muted); font-size: var(--text-xs); }
-
 
 /* ---- Portfolio dashboard (blueprint-redesign scope correction) -------------
    Our own design, not the Dean's prototype's stage. A stat band, a grid of
@@ -1574,7 +1514,6 @@ body.overlay-open { overflow: hidden; }
 @media (max-width: 900px) {
   .priority-grid, .team-grid, .goal-grid, .mi-chip-list { grid-template-columns: 1fr; }
 }
-
 
 /* ---- Search palette (overhaul 3.5) ---------------------------------------- */
 .search-open {

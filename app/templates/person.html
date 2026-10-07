@@ -18,7 +18,6 @@
          hx-get="/major-initiatives/{{ row.Code }}"
          hx-target="#card-modal"
          hx-swap="innerHTML">{{ row.InitiativeName }}</a>
-      {% include "_synthetic_label.html" %}
       {% if row.NeedsUpdate %}<span class="flag">Needs update</span>{% endif %}
     </div>
     <div class="row-progress">

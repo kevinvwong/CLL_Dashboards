@@ -81,10 +81,8 @@ def _ctx(request: Request, **extra) -> dict:
         # (new initiative, edit description). Task 8.4 built the routes but
         # nothing linked to them.
         "may_admin": auth.is_admin_request(request),
-        # The sample-data banner is dismissible for the session (task 2.4). The
-        # session scope is the cookie the dismiss handler sets; the footer
-        # marker is rendered regardless, so dismissal never hides the state.
-        "banner_dismissed": bool(request.cookies.get("sample_banner_dismissed")),
+        # (The sample-data banner was removed 2026-10-07 with the approval of the
+        # register, so there is no banner_dismissed context any more.)
         "section": section,
         # The failing-check count for the admin nav badge (5.4). Zero renders
         # no badge. Wrapped because a broken read must not break every page.

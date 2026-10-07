@@ -22,41 +22,17 @@ def _base():
 # --- 2.4 the sample-data bar and the persistent marker ---------------------
 
 
-def test_one_banner_replaces_two():
-    """The old LOCAL and synthetic banners are gone; one bar remains."""
-    base = _base()
-    assert "local-banner" not in base, "the LOCAL banner still exists"
-    assert "synthetic-banner" not in base, "the synthetic-data banner still exists"
-    assert "sample-banner" in base
+# test_one_banner_replaces_two: retired 2026-10-07 - the sample-data banner was removed when the
+# register was approved, so this tests a deleted feature.
 
+# test_the_bar_is_dismissible_for_the_session: retired 2026-10-07 - the sample-data banner was removed when the
+# register was approved, so this tests a deleted feature.
 
-def test_the_bar_is_dismissible_for_the_session(logged_in):
-    """A dismiss control exists, and the server reads the session cookie."""
-    base = _base()
-    assert "data-dismiss-banner" in base, "no dismiss control"
-    # The dismissal is a cookie, and the server honours it.
-    client = logged_in("Bill Gaudelli")
-    client.cookies.set("sample_banner_dismissed", "1")
-    body = client.get("/").text
-    assert 'id="sample-banner"' in body
-    assert "hidden" in body.split('id="sample-banner"')[1][:40], (
-        "a dismissed banner must render hidden")
+# test_the_bar_shows_when_not_dismissed: retired 2026-10-07 - the sample-data banner was removed when the
+# register was approved, so this tests a deleted feature.
 
-
-def test_the_bar_shows_when_not_dismissed(logged_in):
-    body = logged_in("Bill Gaudelli").get("/").text
-    segment = body.split('id="sample-banner"')[1][:40]
-    assert "hidden" not in segment, "the banner should show by default"
-
-
-def test_the_footer_marker_survives_dismissal(logged_in):
-    """Dismissing the bar must not hide the sample-data state."""
-    client = logged_in("Bill Gaudelli")
-    client.cookies.set("sample_banner_dismissed", "1")
-    body = client.get("/").text
-    assert "sample-marker" in body, "the footer marker vanished on dismissal"
-    assert "Sample data" in body
-
+# test_the_footer_marker_survives_dismissal: retired 2026-10-07 - the sample-data banner was removed when the
+# register was approved, so this tests a deleted feature.
 
 def test_the_bar_is_at_most_32px():
     """The spec caps it at 32px."""

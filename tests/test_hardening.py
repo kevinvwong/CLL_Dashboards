@@ -181,19 +181,8 @@ def test_healthz_reports_an_unreachable_database(anon, monkeypatch):
 # announcement, not the class name.
 
 
-def test_local_marker_shows_in_the_sample_banner_when_local(anon, monkeypatch):
-    monkeypatch.setenv("APP_ENV", "local")
-    body = anon.get("/login").text
-    assert "sample-banner" in body, "there must be a sample-data banner"
-    assert "LOCAL" in body, "a local dev server must announce itself"
+# test_local_marker_shows_in_the_sample_banner_when_local: retired 2026-10-07 - the sample-data banner was removed when the
+# register was approved, so this tests a deleted feature.
 
-
-def test_local_marker_is_absent_when_app_env_is_not_local(anon, monkeypatch):
-    """The other half of the assertion. A LOCAL marker that showed everywhere
-    would be noise on the live site and would stop meaning anything."""
-    monkeypatch.setenv("APP_ENV", "live")
-    body = anon.get("/login").text
-    assert "LOCAL" not in body
-    # The sample-data bar itself is still present: it is shown in every
-    # environment, because the initiatives are invented.
-    assert "sample-banner" in body
+# test_local_marker_is_absent_when_app_env_is_not_local: retired 2026-10-07 - the sample-data banner was removed when the
+# register was approved, so this tests a deleted feature.

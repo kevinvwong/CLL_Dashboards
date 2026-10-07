@@ -15,7 +15,6 @@
        hx-get="/major-initiatives/{{ row.Code }}"
        hx-target="#card-modal"
        hx-swap="innerHTML">{{ row.InitiativeName }}</a>
-    {% include "_synthetic_label.html" %}
     {% if row.IsPrimary %}<span class="badge">Primary</span>{% endif %}
   </div>
   <div class="row-progress">

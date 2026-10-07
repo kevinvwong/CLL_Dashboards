@@ -1,55 +1,52 @@
-"""Task 8.2 of adopt-rev2-strategy-portfolio-schema: synthetic labelling.
+"""Provenance labels after approval (2026-10-07).
 
-The package ships canonical strategy with zero operational rows
-(rev2/inventory-absent.md), so every initiative in this prototype is invented.
-These tests assert the label is present wherever an initiative is displayed, in
-every environment including live - a reader must not be able to mistake this for
-an approved portfolio.
+The initiatives are now an APPROVED register (approval confirmed 2026-10-07), so
+the "invented / not governance-approved" labels that used to follow every
+initiative are no longer true and have been removed. This replaces
+test_synthetic_label.py, which asserted the opposite while the data was sample.
+
+The OUTCOMES page is a SEPARATE artifact: its six cards' statuses and milestone
+counts are hardcoded and are not register data, so its own "Illustrative" marker
+STAYS. That distinction is asserted here too, so nobody removes it by mistake.
 """
 
 
-def test_the_banner_shows_in_every_environment(logged_in):
-    """Not gated on APP_ENV: the data is invented in production too.
-
-    Task 2.4 merged the synthetic-data banner and the LOCAL banner into one
-    thin bar, and added a footer marker that survives dismissal. Both the bar
-    and the marker carry the meaning, so the state cannot be hidden by
-    dismissing the bar.
-    """
+def test_no_false_invented_label_on_the_home(logged_in):
     body = logged_in("Bill Gaudelli").get("/").text
-    assert "sample-banner" in body
-    assert "invented for this prototype" in body
-    assert "sample-marker" in body, "the footer marker must persist"
-    assert "Sample data" in body
+    assert "invented for this prototype" not in body
+    assert "not governance-approved" not in body
+    assert "sample-banner" not in body, "the sample-data banner should be gone"
 
 
-def test_a_list_row_is_labelled(logged_in):
-    body = logged_in("Bill Gaudelli").get("/goals/3").text
-    assert "synthetic-label" in body, "every initiative row must carry the label"
+def test_no_synthetic_badge_on_a_row_or_card(logged_in):
+    for path in ("/goals/3", "/major-initiatives/MI-004", "/people/2"):
+        body = logged_in("Bill Gaudelli").get(path).text
+        assert "synthetic-label" not in body, path
+        assert ">sample<" not in body, path
 
 
-def test_the_card_is_labelled(logged_in):
-    body = logged_in("Bill Gaudelli").get("/major-initiatives/MI-004").text
-    assert "synthetic-label" in body, "the card must carry the label too"
+def test_the_outcomes_marker_stays():
+    """The Outcomes page is still illustrative data, not the register."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from app import oct16_data as d
+
+    assert d.CONFIRMED is False
+    assert "Illustrative" in d.data_status(), d.data_status()
 
 
-def test_a_person_page_is_labelled(logged_in):
-    body = logged_in("Bill Gaudelli").get("/people/2").text
-    assert "synthetic-label" in body
+def test_the_approved_initiatives_have_no_sample_text():
+    """The 29 rows are register rows; none of their titles says 'sample'."""
+    import sqlite3
+    from pathlib import Path
 
-
-def test_a_goal_page_is_labelled(logged_in):
-    """Meeting was the other labelled page; it is iced (2026-10-06), so a live
-    cascade page (its rows carry the marker) stands in for it."""
-    body = logged_in("Bill Gaudelli").get("/goals/3").text
-    assert "synthetic-label" in body
-
-
-def test_the_seed_file_says_the_data_is_not_approved():
-    """The label has to exist at the point of authorship as well as in the UI,
-    or the next person to read the seed will take it for real data."""
-    import pathlib
-    seed = pathlib.Path(__file__).resolve().parents[1] / "db" / "seed_sample.sql"
-    text = seed.read_text(encoding="utf-8")
-    low = text.lower()
-    assert "sample" in low or "invented" in low or "not governance" in low, text[:200]
+    db = Path(__file__).resolve().parents[1] / "cll_initiatives.db"
+    con = sqlite3.connect(db)
+    n = con.execute(
+        "SELECT COUNT(*) FROM MajorInitiatives WHERE LOWER(Title) LIKE '%sample%'").fetchone()[0]
+    total = con.execute("SELECT COUNT(*) FROM MajorInitiatives").fetchone()[0]
+    con.close()
+    assert total == 29
+    assert n == 0, "%d rows still carry 'sample' text" % n

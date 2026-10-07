@@ -9,17 +9,10 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
-  {# One thin sample-data bar (task 2.4). It replaces two stacked banners: the
-     LOCAL banner (9.1) and the synthetic-data banner
-     (adopt-rev2-strategy-portfolio-schema 8.2). Both meanings survive as one
-     line, and the bar is dismissible for the session. The footer keeps a
-     "Sample data" marker after dismissal, so the state is never lost - a
-     visitor must not be able to read invented initiatives as an approved
-     portfolio just because they dismissed a banner. #}
-  <p class="sample-banner" role="status" id="sample-banner"{% if banner_dismissed %} hidden{% endif %}>
-    <span class="sample-banner-text">Sample data{% if app_env == "local" %} · LOCAL{% endif %} — these initiatives are invented for this prototype, not governance-approved records.</span>
-    <button type="button" class="sample-banner-dismiss" data-dismiss-banner aria-label="Dismiss sample-data notice">&times;</button>
-  </p>
+  {# The sample-data banner is REMOVED (2026-10-07): the initiatives are now an
+     approved register, so "these initiatives are invented for this prototype,
+     not governance-approved records" was no longer true. The Outcomes page keeps
+     its own "Illustrative" marker - that page is separate, still-hardcoded data. #}
   <header class="site-header">
     <a class="brand" href="/"><span class="visually-hidden">Georgia Tech </span>Initiative Dashboard</a>
     {# Global search (overhaul 3.5): a dialog opened with Cmd/Ctrl+K. The input
@@ -96,11 +89,8 @@
     {% block content %}{% endblock %}
   </main>
 
-  {# The permanent marker: it stays after the banner is dismissed, so the
-     sample-data state is visible on every page. #}
   <footer class="site-footer">
-    <span class="sample-marker">Sample data</span>
-    <span class="footer-note">CLL Initiative Dashboard prototype</span>
+    <span class="footer-note">CLL Initiative Dashboard</span>
   </footer>
 
   {# Initiative detail opens in a right-side drawer over the list
@@ -188,18 +178,8 @@
       });
     })();
 
-    // Dismiss the sample-data banner for the session (task 2.4). The cookie is
-    // the session scope: no server round-trip, and it survives navigation
-    // without a store. The footer marker is rendered server-side regardless.
-    (function () {
-      const banner = document.getElementById("sample-banner");
-      if (!banner) return;
-      banner.addEventListener("click", function (evt) {
-        if (!evt.target.closest("[data-dismiss-banner]")) return;
-        banner.hidden = true;
-        document.cookie = "sample_banner_dismissed=1; path=/; samesite=lax";
-      });
-    })();
+    // (The sample-data banner and its dismiss handler were removed 2026-10-07:
+    // the initiatives are an approved register now, so the notice was false.)
 
     // Global search palette (overhaul 3.5). Cmd/Ctrl+K opens it, Esc closes it,
     // and focus returns to whatever had it - the same contract the drawer keeps.
