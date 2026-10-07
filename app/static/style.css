@@ -437,7 +437,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   overflow: hidden;
 }
 
-.bar-fill { height: 100%; background: var(--status-not-started); }
+.bar-fill { display: block; height: 100%; background: var(--status-not-started); }
 
 .bar-fill.status-on-track    { background: var(--status-on-track); }
 .bar-fill.status-at-risk     { background: var(--status-at-risk); }
