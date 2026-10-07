@@ -81,3 +81,19 @@ def test_the_count_up_script_respects_reduced_motion(logged_in):
     assert "stat-value" in body
 
 
+def test_a_priority_chip_carries_its_colour_without_losing_contrast():
+    """The chip's colour is a swatch, not its text colour.
+
+    When the chips started rendering their real priority colour the text used a
+    mid-tone hue on white and axe flagged a serious contrast failure. The chip
+    keeps a dark ink label and a coloured dot + border instead.
+    """
+    css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
+    block = css.split(".chip-priority {")[1].split("}")[0]
+    assert "color: var(--ink)" in block, "the chip text is not the readable ink colour"
+    # The text colour itself must not be the mid-tone priority hue (border-color is fine).
+    assert "\n  color: var(--priority" not in block, "the chip text uses the mid-tone priority hue"
+    assert ".chip-priority::before" in css, "the chip has no colour swatch"
+
+
+

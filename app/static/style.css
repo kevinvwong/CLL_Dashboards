@@ -1517,10 +1517,18 @@ body.overlay-open { overflow: hidden; }
 .chip-warn { border-color: var(--status-at-risk); color: var(--status-at-risk); background: transparent; }
 .chip-priority {
   border-color: var(--priority, var(--accent));
-  color: var(--priority, var(--accent));
+  /* The text is dark ink, not the priority hue: a mid-tone priority colour on
+     white fails contrast (found by the axe run when the chips started rendering
+     their real colour). The identity is carried by the swatch + border. */
+  color: var(--ink);
   background: transparent;
   font-weight: 700;
   text-decoration: none;
+}
+.chip-priority::before {
+  content: ""; display: inline-block; width: 0.6rem; height: 0.6rem;
+  margin-right: 0.35em; border-radius: 50%;
+  background: var(--priority, var(--accent)); vertical-align: baseline;
 }
 .chip-priority:hover { background: var(--surface-hover); }
 
