@@ -29,12 +29,18 @@ def test_the_vocabulary_equals_the_schemas_check():
     from app import repo, status
 
     schema_text = open(SCHEMA, encoding="utf-8").read()
-    m = re.search(r"CHECK\s*\(\s*Status\s+IN\s*\(([^)]*)\)", schema_text)
+    # The initiative table owns this vocabulary; the Milestones table owns a
+    # different one and is defined first (ADR-0002).
+    block = schema_text.split("CREATE TABLE TeamInitiativeUpdates")[1].split(");")[0]
+    m = re.search(r"CHECK\s*\(\s*Status\s+IN\s*\(([^)]*)\)", block)
     assert m, "could not find the Status CHECK in the schema"
     from_schema = [v.strip().strip("'") for v in m.group(1).split(",") if v.strip()]
 
     assert list(status.vocabulary()) == from_schema
     assert list(status.vocabulary()) == list(repo.STATUSES)
+    # And the milestone vocabulary is a DIFFERENT set, not the initiative one.
+    assert list(status.milestone_vocabulary()) == ["Met", "In progress", "Not started", "Missed"]
+    assert set(status.milestone_vocabulary()) != set(status.vocabulary())
 
 
 # --- one slug ---------------------------------------------------------------

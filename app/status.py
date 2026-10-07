@@ -23,23 +23,65 @@ _SCHEMA = os.path.join(
 # The vocabulary, if the schema cannot be read. The test asserts these equal the
 # schema's CHECK values, so a drift fails a test rather than rendering silently.
 _FALLBACK = ("Not started", "On track", "At risk", "Off track", "Complete", "Paused")
+# Same, for the Milestones table's own vocabulary (ADR-0002).
+_MILESTONE_FALLBACK = ("Met", "In progress", "Not started", "Missed")
 
 
-def vocabulary() -> tuple:
-    """The status values the schema allows.
+def _table_block(text: str, table: str) -> str:
+    """The body of one CREATE TABLE, from its name to its terminating `);`.
 
-    Read from the schema's `CHECK (Status IN (...))`, so the schema remains the
-    source of truth and this module cannot invent a status the database would
-    refuse.
+    The app has three status vocabularies (ADR-0002); reading the FIRST
+    `Status CHECK` in the file returns whichever table happens to be defined
+    first, which is how the milestone set silently became the initiative one.
+    Scope the read to the table that owns the vocabulary.
     """
+    m = re.search(r"CREATE\s+TABLE\s+%s\b" % re.escape(table), text, re.IGNORECASE)
+    if not m:
+        return ""
+    rest = text[m.end():]
+    end = rest.find(");")
+    return rest[:end] if end != -1 else rest
+
+
+def _read_vocabulary(table: str, fallback: tuple) -> tuple:
     try:
         text = open(_SCHEMA, encoding="utf-8").read()
     except OSError:
-        return _FALLBACK
-    m = re.search(r"CHECK\s*\(\s*Status\s+IN\s*\(([^)]*)\)", text)
+        return fallback
+    block = _table_block(text, table)
+    m = re.search(r"CHECK\s*\(\s*Status\s+IN\s*\(([^)]*)\)", block) if block else None
     if not m:
-        return _FALLBACK
+        return fallback
     return tuple(v.strip().strip("'") for v in m.group(1).split(",") if v.strip())
+
+
+def vocabulary() -> tuple:
+    """The INITIATIVE status values the schema allows (TeamInitiativeUpdates).
+
+    Read from that table's `CHECK (Status IN (...))`, so the schema remains the
+    source of truth and this module cannot invent a status the database would
+    refuse.
+    """
+    return _read_vocabulary("TeamInitiativeUpdates", _FALLBACK)
+
+
+def milestone_vocabulary() -> tuple:
+    """The MILESTONE status values the schema allows (Milestones).
+
+    A separate set from the initiative vocabulary (ADR-0002): a milestone is
+    Met or Missed, never "On track".
+    """
+    return _read_vocabulary("Milestones", _MILESTONE_FALLBACK)
+
+
+def outcome_vocabulary() -> tuple:
+    """The OUTCOME status values a Priority may report (ADR-0002).
+
+    Stored on Priorities.Status with no CHECK, so this is the one vocabulary the
+    schema does not constrain; stated here so callers share one list.
+    """
+    return ("On track", "At risk", "Behind", "Not started")
+
 
 
 def slug(value: str) -> str:

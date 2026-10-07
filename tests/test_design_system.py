@@ -191,7 +191,10 @@ def test_status_classes_cover_exactly_the_schema_statuses():
     vocabulary, read from the database, not restated in the design.
     """
     schema = open(SCHEMA, encoding="utf-8").read()
-    m = re.search(r"CHECK\s*\(\s*Status\s+IN\s*\(([^)]*)\)", schema)
+    # Scope to the initiative table: the app has three status vocabularies
+    # (ADR-0002), and the FIRST Status CHECK in the file is the Milestones one.
+    block = schema.split("CREATE TABLE TeamInitiativeUpdates")[1].split(");")[0]
+    m = re.search(r"CHECK\s*\(\s*Status\s+IN\s*\(([^)]*)\)", block)
     assert m, "no Status CHECK in the schema"
     schema_statuses = [v.strip().strip("'") for v in m.group(1).split(",") if v.strip()]
 

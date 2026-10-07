@@ -81,7 +81,10 @@ def test_the_priority_scale_does_not_invent_a_status():
     """The status vocabulary is still exactly the schema's."""
     from app import status
     schema = open(SCHEMA, encoding="utf-8").read()
-    m = re.search(r"CHECK\s*\(\s*Status\s+IN\s*\(([^)]*)\)", schema)
+    # Scope to the initiative table (ADR-0002: three vocabularies exist).
+    block = schema.split("CREATE TABLE TeamInitiativeUpdates")[1].split(");")[0]
+    m = re.search(r"CHECK\s*\(\s*Status\s+IN\s*\(([^)]*)\)", block)
+    assert m, "no initiative Status CHECK in the schema"
     from_schema = [v.strip().strip("'") for v in m.group(1).split(",") if v.strip()]
     assert list(status.vocabulary()) == from_schema
 

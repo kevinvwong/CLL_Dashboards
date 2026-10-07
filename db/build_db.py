@@ -37,11 +37,17 @@ if "--empty" not in sys.argv:
     register = os.path.join(HERE, "seed_register.sql")
     if os.path.exists(register):
         con.executescript(open(register, encoding="utf-8").read())
+    # The Milestones model, the priority outcome state and the provenance row
+    # (enhancement work, 2026-10-07). Loaded LAST: it updates Priorities by Code
+    # and inserts Milestones whose PriorityCode references them.
+    milestones = os.path.join(HERE, "seed_milestones.sql")
+    if os.path.exists(milestones):
+        con.executescript(open(milestones, encoding="utf-8").read())
 con.commit()
 for t in ["Goals","Priorities","People","Teams","SourceAreas",
           "TeamInitiatives","TeamInitiativePriorities","TeamInitiativeGoals",
           "DeanInitiatives","TeamInitiativeDeanLinks","TeamInitiativeCoOwners",
-          "TeamInitiativeUpdates","AuditLog"]:
+          "TeamInitiativeUpdates","Milestones","AppMeta","AuditLog"]:
     print(f"{t:22} {con.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]:>4} rows")
 issues = con.execute("SELECT Code, Issue FROM vw_DataChecks").fetchall()
 print(f"\nData checks: {len(issues)} issue(s)")

@@ -123,6 +123,49 @@ def blueprint_priorities() -> list[dict]:
     return out
 
 
+def dataset_provenance() -> str:
+    """Whether the dataset is seeded 'mock' or imported-and-'confirmed'.
+
+    The Outcomes page labels itself from this, never from content: a mock that
+    happens to name owners must still read as mock (plan D5). A missing row
+    reads 'unknown', which is also not 'confirmed'.
+    """
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT Value FROM AppMeta WHERE Key = 'dataset_provenance'").fetchone()
+    return row["Value"] if row else "unknown"
+
+
+def priority_outcomes() -> list[dict]:
+    """The six priorities as the Outcomes view needs them.
+
+    One entry per priority with its milestone progress, its reported outcome
+    state, and the milestones themselves. Progress comes from
+    vw_PriorityMilestoneProgress, so a priority with no milestones reads 0 of 0
+    rather than vanishing. Ordered by code, so the cards read P01..P06.
+    """
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT p.Code, p.FullTitle, p.PriorityName, p.Description, "
+            "       p.Measure, p.Target, p.OwnerLabel, p.Status, p.LastUpdated, "
+            "       COALESCE(v.Planned, 0) AS Planned, COALESCE(v.Reached, 0) AS Reached "
+            "FROM Priorities p "
+            "LEFT JOIN vw_PriorityMilestoneProgress v ON v.PriorityCode = p.Code "
+            "WHERE p.Code IS NOT NULL ORDER BY p.Code").fetchall()
+        by_code: dict = {}
+        for m in conn.execute(
+                "SELECT PriorityCode, Name, Status, PlannedDate, DateMet, "
+                "       OwnerLabel, EvidenceURL FROM Milestones "
+                "WHERE IsActive = 1 ORDER BY PriorityCode, SortOrder, MilestoneID"):
+            by_code.setdefault(m["PriorityCode"], []).append(dict(m))
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["milestones"] = by_code.get(r["Code"], [])
+        out.append(d)
+    return out
+
+
 def initiative_signals(limit: int = 12) -> list[dict]:
     """Existing initiatives with their current progress, for the home strip.
 

@@ -69,7 +69,64 @@ CREATE TABLE Priorities (
     Cadence      TEXT,      -- review rhythm
     OwnerLabel   TEXT,      -- e.g. 'Dean + Learning Infrastructure'
     Colour       TEXT,      -- its key colour
+    -- The reported outcome state for this priority (workbook A-05/A-06). NULL
+    -- until an owner states it; the app renders "not yet reported", never a
+    -- guessed value. Its own vocabulary, distinct from initiative and milestone
+    -- status (ADR-0002): 'On track','At risk','Behind','Not started'.
+    Status       TEXT,
+    LastUpdated  TEXT,      -- ISO date the state was last confirmed
     UNIQUE (PriorityName, PlanYear)
+);
+
+-- Priorities.Code ('P01'..'P06') is the key the Milestones table and the intake
+-- reference, so it needs a uniqueness guarantee for the foreign key.
+CREATE UNIQUE INDEX UX_Priorities_Code ON Priorities(Code);
+
+-- ---------- Milestones (enhancement work, 2026-10-07) -------------------------
+-- A Milestone is a concrete, checkable event that evidences a PRIORITY. It hangs
+-- off Priorities, not Team Initiatives: the Outcomes view is one card per
+-- priority and its "milestones reached / planned" figure is defined per outcome,
+-- so the edge points at the priority (ADR-0001). The fields are the workbook's
+-- own requirement rows A-07..A-17 (Oct16_Wireframe_Data_Lists.xlsx, "Option A
+-- Data"), and every one is populated by the intake, never by hand.
+CREATE TABLE Milestones (
+    MilestoneID  INTEGER PRIMARY KEY,
+    PriorityCode TEXT    NOT NULL REFERENCES Priorities(Code),
+    Name         TEXT    NOT NULL,      -- a checkable event, not an activity
+    -- A milestone's own status vocabulary (ADR-0002): an event is Met or Missed;
+    -- it is never "On track" and never "Complete".
+    Status       TEXT    NOT NULL DEFAULT 'Not started'
+                 CHECK (Status IN ('Met','In progress','Not started','Missed')),
+    PlannedDate  TEXT,                  -- ISO date the milestone is due
+    DateMet      TEXT,                  -- ISO date achieved, when Met
+    OwnerLabel   TEXT,                  -- who is responsible, as named
+    EvidenceURL  TEXT,                  -- approving doc / minutes / release note
+    SortOrder    INTEGER NOT NULL DEFAULT 0,
+    IsActive     INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1)),
+    UNIQUE (PriorityCode, Name)
+);
+
+-- Milestones reached / planned per priority, for the Outcomes cards and the
+-- rings. LEFT JOIN so a priority with no milestones yet still appears, reading
+-- 0 of 0 rather than vanishing.
+CREATE VIEW vw_PriorityMilestoneProgress AS
+SELECT p.Code AS PriorityCode,
+       p.FullTitle AS PriorityTitle,
+       COUNT(m.MilestoneID) AS Planned,
+       SUM(CASE WHEN m.Status = 'Met' THEN 1 ELSE 0 END) AS Reached
+FROM Priorities p
+LEFT JOIN Milestones m ON m.PriorityCode = p.Code AND m.IsActive = 1
+GROUP BY p.Code, p.FullTitle;
+
+-- ---------- Dataset provenance -----------------------------------------------
+-- Whether the data is a seeded MOCK or imported-and-confirmed. The UI reads this
+-- to label the Outcomes page. Mock data is allowed only as a seed, and this row
+-- is what keeps a mock from being presented as real: the seed writes 'mock', the
+-- importer writes 'confirmed', and data_status() reads provenance, never content
+-- (the enhancement plan, D5).
+CREATE TABLE AppMeta (
+    Key   TEXT PRIMARY KEY,
+    Value TEXT
 );
 
 -- ---------- Organizational layer (blueprint-redesign scope correction) -------
