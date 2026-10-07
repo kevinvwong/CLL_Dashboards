@@ -34,6 +34,42 @@ def person_id(db_path: Path, name: str):
     return row[0] if row else None
 
 
+# Register rows the tests use, with the role each retired sample code had:
+#   MI-002 'Reusable content'      owned by Mario Herane  (was D-A / a Dean row)
+#   MI-004 'Team operating models' owned by Elizabeth Smith (was ELIZ-1)
+#   MI-001 'Portfolio & pathways'  owned by Tim Jacobbe (was TIM-*)
+# The tests reference these by MI-id; this keeps the mapping in one place.
+MI_BY_MARIO = "MI-002"
+MI_BY_ELIZABETH = "MI-004"
+MI_BY_TIM = "MI-001"
+NO_SUCH_MI = "MI-999"
+
+
+def add_update(db_path, mi_id: str, percent: int, status: str,
+               note: str = "", on: str = "2026-10-05", by: int = 5):
+    """Append one diary entry to a Major Initiative, for tests that need one.
+
+    The register seed ships no diary (the prototype's sample diary was dropped
+    in the merge), so any test that asserts on progress, staleness or the
+    meeting must seed its own entry. Writing directly, like the rest of the
+    fixtures, so the test does not depend on repo's validation.
+    """
+    import sqlite3
+
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.execute(
+            "INSERT INTO MajorInitiativeUpdates "
+            "(MajorInitiativeID, UpdateDate, PercentComplete, Status, Note, EnteredByID, CreatedAt) "
+            "SELECT MajorInitiativeID, ?, ?, ?, ?, ?, ? || ' 08:00:00' "
+            "FROM MajorInitiatives WHERE MIId = ?",
+            (on, percent, status, note or None, by, on, mi_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 @pytest.fixture
 def fresh_db(tmp_path, monkeypatch):
     """A private copy of the sample database, pointed at by DB_PATH."""
@@ -44,6 +80,18 @@ def fresh_db(tmp_path, monkeypatch):
     monkeypatch.setenv("APP_SECRET", "testsecret")
     monkeypatch.setenv("APP_ENV", "test")
     return db
+
+
+@pytest.fixture
+def diary(fresh_db):
+    """Seed a Major Initiative diary entry into this test's database.
+
+    Usage: diary("MI-004", 25, "On track", on="2026-09-20")
+    """
+    def _add(mi_id, percent, status, note="", on="2026-10-05", by=5):
+        add_update(fresh_db, mi_id, percent, status, note=note, on=on, by=by)
+
+    return _add
 
 
 @pytest.fixture

@@ -1,4 +1,4 @@
-"""Import a filled intake workbook (task 8.8).
+"""Import a filled intake workbook (register model, 2026-10-07).
 
     python scripts/import_xlsx.py workbook.xlsx [--db cll_initiatives.db]
 
@@ -8,9 +8,12 @@ database is only swapped in when there are zero errors. A failed import
 leaves the working database byte-for-byte unchanged and reports the offending
 sheet and row.
 
-Initiatives are upserted by Code, so an initiative that keeps its code keeps
-its progress history. Initiatives absent from the workbook are retired, not
-deleted.
+The 2026-10-07 merge made the register's Major Initiatives the one initiative
+model. This targets `MajorInitiatives` and `MajorInitiativeUpdates`, drops the
+prototype's Dean/D-1 "Level", and re-expresses "Feeds" as the Dean Priorities
+(the register's "Dean KPI 27" items) a Major Initiative contributes to.
+Initiatives are upserted by Code; ones absent from the workbook are retired,
+not deleted.
 """
 
 import argparse
@@ -27,7 +30,7 @@ DEFAULT_DB = os.path.join(HERE, "..", "cll_initiatives.db")
 
 TRUEISH = {"x", "X", "y", "Y", "yes", "Yes", "1", "true", "TRUE"}
 
-# The vocabulary ProgressUpdates.Status enforces.
+# The vocabulary MajorInitiativeUpdates.Status enforces.
 VALID_STATUSES = (
     "Not started",
     "On track",
@@ -74,7 +77,6 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
     if "Initiatives" not in wb.sheetnames:
         return False, [Problem("-", "-", "The workbook has no Initiatives sheet.")]
 
-    # --- work on a temporary copy so a failure cannot touch the live file ---
     temp_dir = tempfile.mkdtemp()
     temp_db = os.path.join(temp_dir, "staging.db")
     shutil.copy2(db_path, temp_db)
@@ -96,6 +98,10 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
         people = {
             r["Name"]: r["PersonID"]
             for r in conn.execute("SELECT PersonID, Name FROM People")
+        }
+        dean_priorities = {
+            r["Code"]: r["DeanPriorityID"]
+            for r in conn.execute("SELECT DeanPriorityID, Code FROM DeanPriorities")
         }
 
         ws = wb["Initiatives"]
@@ -126,15 +132,11 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
             seen_codes.append(code)
 
             name = values[1] if len(values) > 1 else ""
-            level = values[3] if len(values) > 3 else ""
-            owner = values[4] if len(values) > 4 else ""
+            description = values[2] if len(values) > 2 else ""
+            owner = values[3] if len(values) > 3 else ""
 
             if not name:
                 problems.append(Problem("Initiatives", excel_row, f"{code}: missing Name"))
-            if level not in ("Dean", "D-1"):
-                problems.append(
-                    Problem("Initiatives", excel_row, f"{code}: Level must be Dean or D-1, got {level!r}")
-                )
             if owner and owner not in people:
                 problems.append(
                     Problem("Initiatives", excel_row, f"{code}: owner {owner!r} is not in the People sheet")
@@ -144,22 +146,14 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
                 owner_id = people.get(owner)
 
             existing = conn.execute(
-                "SELECT InitiativeID FROM Initiatives WHERE Code = ?", (code,)
+                "SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = ?", (code,)
             ).fetchone()
             if existing:
-                iid = existing["InitiativeID"]
-                # An unresolvable owner is already reported; keep the existing
-                # owner rather than writing NULL into a NOT NULL column.
+                iid = existing["MajorInitiativeID"]
                 conn.execute(
-                    "UPDATE Initiatives SET InitiativeName = ?, Description = ?, Level = ?, "
-                    "OwnerID = COALESCE(?, OwnerID), IsActive = 1 WHERE InitiativeID = ?",
-                    (
-                        name,
-                        values[2] if len(values) > 2 else None,
-                        level,
-                        owner_id,
-                        iid,
-                    ),
+                    "UPDATE MajorInitiatives SET Title = ?, Description = ?, "
+                    "OwnerID = COALESCE(?, OwnerID), IsActive = 1 WHERE MajorInitiativeID = ?",
+                    (name, description or None, owner_id, iid),
                 )
             else:
                 if not owner or owner_id is None:
@@ -169,19 +163,17 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
                         )
                     continue
                 cur = conn.execute(
-                    "INSERT INTO Initiatives (Code, InitiativeName, Description, Level, OwnerID) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (code, name, values[2] if len(values) > 2 else None, level, owner_id),
+                    "INSERT INTO MajorInitiatives (Code, Title, Description, OwnerID) "
+                    "VALUES (?, ?, ?, ?)",
+                    (code, name, description or None, owner_id),
                 )
                 iid = cur.lastrowid
 
             # Tags come from the X columns.
-            conn.execute("DELETE FROM InitiativeGoals WHERE InitiativeID = ?", (iid,))
-            conn.execute("DELETE FROM InitiativePriorities WHERE InitiativeID = ?", (iid,))
+            conn.execute("DELETE FROM MajorInitiativeGoals WHERE MajorInitiativeID = ?", (iid,))
+            conn.execute("DELETE FROM MajorInitiativePriorities WHERE MajorInitiativeID = ?", (iid,))
             for index, label in goal_cols.items():
                 if index < len(values) and _marked(values[index]):
-                    # The column header is "Goal: 3 Research", so try the
-                    # number first and fall back to the short name.
                     head = label.split(" ", 1)[0]
                     goal_id = goal_by_number.get(int(head)) if head.isdigit() else None
                     if goal_id is None:
@@ -192,7 +184,7 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
                         )
                     else:
                         conn.execute(
-                            "INSERT INTO InitiativeGoals (InitiativeID, GoalID, IsPrimary) VALUES (?, ?, 0)",
+                            "INSERT INTO MajorInitiativeGoals (MajorInitiativeID, GoalID) VALUES (?, ?)",
                             (iid, goal_id),
                         )
             for index, label in priority_cols.items():
@@ -204,56 +196,31 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
                         )
                     else:
                         conn.execute(
-                            "INSERT INTO InitiativePriorities (InitiativeID, PriorityID, IsPrimary) "
+                            "INSERT INTO MajorInitiativePriorities (MajorInitiativeID, PriorityID, IsPrimary) "
                             "VALUES (?, ?, 0)",
                             (iid, priority_id),
                         )
 
-            # Feeds: the Dean codes this D-1 initiative feeds. Without this a
-            # new D-1 initiative could never clear vw_DataChecks.
+            # Feeds: the Dean Priority codes (D27-1..) this initiative contributes
+            # to. Without this a new initiative could never clear vw_DataChecks.
             if feeds_col is not None and feeds_col < len(values):
                 feeds = [f.strip() for f in values[feeds_col].split(",") if f.strip()]
-                if level == "Dean" and feeds:
-                    # A Dean initiative is fed BY D-1 initiatives; it feeds
-                    # nothing itself, so a value here is a mistake in the row.
-                    # The message used to read "a Dean initiative feeds nothing",
-                    # which described the opposite of what was found and would
-                    # have sent the reader looking for a missing value in a row
-                    # that had one. Fixed 2026-10-06.
-                    problems.append(
-                        Problem(
-                            "Initiatives",
-                            excel_row,
-                            f"{code}: a Dean initiative cannot feed another "
-                            f"initiative, but Feeds is set to {values}",
-                        )
-                    )
-                elif feeds:
-                    for dean_code in feeds:
-                        target = conn.execute(
-                            "SELECT InitiativeID FROM Initiatives "
-                            "WHERE Code = ? AND Level = 'Dean' AND IsActive = 1",
-                            (dean_code,),
-                        ).fetchone()
-                        if target is None:
-                            problems.append(
-                                Problem(
-                                    "Initiatives",
-                                    excel_row,
+                for dean_code in feeds:
+                    target_id = dean_priorities.get(dean_code)
+                    if target_id is None:
+                        problems.append(
+                            Problem("Initiatives", excel_row,
                                     f"{code}: Feeds references {dean_code!r}, "
-                                    "which is not an active Dean initiative",
-                                )
-                            )
-                        else:
-                            conn.execute(
-                                "INSERT OR IGNORE INTO InitiativeLinks "
-                                "(InitiativeID, DeanInitiativeID) VALUES (?, ?)",
-                                (iid, target["InitiativeID"]),
-                            )
+                                    "which is not a known Dean Priority")
+                        )
+                    else:
+                        conn.execute(
+                            "INSERT OR IGNORE INTO MajorInitiativeDeanLinks "
+                            "(MajorInitiativeID, DeanPriorityID) VALUES (?, ?)",
+                            (iid, target_id),
+                        )
 
-            # Percent and Status give a brand-new initiative its first diary
-            # entry. vw_DataChecks flags "No progress update yet", so without
-            # them a new initiative could never be imported.
+            # Percent and Status give a brand-new initiative its first diary entry.
             if percent_col is not None and percent_col < len(values):
                 percent_text = _text(values[percent_col])
                 if percent_text:
@@ -281,22 +248,23 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
                             )
                         elif percent_value is not None:
                             conn.execute(
-                                "INSERT INTO ProgressUpdates "
-                                "(InitiativeID, PercentComplete, Status, Note, EnteredByID) "
+                                "INSERT INTO MajorInitiativeUpdates "
+                                "(MajorInitiativeID, PercentComplete, Status, Note, EnteredByID) "
                                 "VALUES (?, ?, ?, ?, NULL)",
                                 (iid, percent_value, status_text,
-                                 f"Created from the intake workbook."),
+                                 "Created from the intake workbook."),
                             )
 
         # --- retire the ones the workbook left out -------------------------
         if seen_codes:
             placeholders = ",".join("?" * len(seen_codes))
             retired = conn.execute(
-                f"SELECT Code FROM Initiatives WHERE IsActive = 1 AND Code NOT IN ({placeholders})",
+                f"SELECT Code FROM MajorInitiatives WHERE IsActive = 1 AND Code NOT IN ({placeholders})",
                 seen_codes,
             ).fetchall()
             for row in retired:
-                conn.execute("UPDATE Initiatives SET IsActive = 0 WHERE Code = ?", (row["Code"],))
+                conn.execute("UPDATE MajorInitiatives SET IsActive = 0 WHERE Code = ?",
+                             (row["Code"],))
 
         conn.commit()
 
