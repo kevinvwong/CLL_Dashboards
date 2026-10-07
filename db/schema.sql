@@ -105,6 +105,10 @@ CREATE TABLE MajorInitiatives (
     SourceAreaID   INTEGER REFERENCES SourceAreas(SourceAreaID),
     StrategyAlign  TEXT,        -- 'Goals 1 + 3: Credentials & pathways'
     Initiatives    TEXT,        -- the initiatives named in the prototype
+    -- The register (2026-10-07 canon) carries a named owner and a description
+    -- per row; both were absent from the workbook we seeded from.
+    OwnerID        INTEGER REFERENCES People(PersonID),
+    Description    TEXT,
     -- The only target we hold. The canon workbook carries no target column, and
     -- the prototype's separate `SourceTarget` was always equal to this or null,
     -- so it was dropped as a duplicate (2026-10-07).
@@ -116,11 +120,16 @@ CREATE TABLE MajorInitiatives (
 );
 
 -- Which priorities a Major Initiative feeds (its `priorities` array).
+-- The register states a PRIMARY and a SECONDARY priority per row, so IsPrimary
+-- distinguishes them. One primary per initiative is enforced below.
 CREATE TABLE MajorInitiativePriorities (
     MajorInitiativeID      INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
     PriorityID INTEGER NOT NULL REFERENCES Priorities(PriorityID),
+    IsPrimary  INTEGER NOT NULL DEFAULT 0 CHECK (IsPrimary IN (0,1)),
     PRIMARY KEY (MajorInitiativeID, PriorityID)
 );
+CREATE UNIQUE INDEX UX_MIP_OnePrimary
+    ON MajorInitiativePriorities(MajorInitiativeID) WHERE IsPrimary = 1;
 
 -- Which Strategy 2035 goals a Major Initiative aligns to, parsed from the
 -- canon workbook's `Strategy Alignment` column. This is the MI -> Goal edge that
@@ -138,6 +147,9 @@ CREATE TABLE People (
     Title        TEXT,
     Email        TEXT,
     ReportsToID  INTEGER REFERENCES People(PersonID),   -- NULL for the Dean
+    -- The team a lead is accountable for (register, 2026-10-07). NULL for the
+    -- Dean, who leads none, and for the dashboard admin.
+    TeamID       INTEGER REFERENCES Teams(TeamID),
     IsAdmin      INTEGER NOT NULL DEFAULT 0 CHECK (IsAdmin IN (0,1)),  -- dashboard team: edits everything
     IsActive     INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1))
 );
@@ -212,6 +224,10 @@ CREATE INDEX IX_IG_Goal           ON InitiativeGoals(GoalID);
 CREATE INDEX IX_IP_Priority       ON InitiativePriorities(PriorityID);
 CREATE INDEX IX_IL_Dean           ON InitiativeLinks(DeanInitiativeID);
 CREATE INDEX IX_PU_Init_Date      ON ProgressUpdates(InitiativeID, UpdateDate);
+-- The change log (AuditLog) had no index at all; it grows with every write and
+-- the /changes reader sorts by CreatedAt and drills in by entity.
+CREATE INDEX IX_AuditLog_CreatedAt ON AuditLog(CreatedAt DESC);
+CREATE INDEX IX_AuditLog_Entity   ON AuditLog(EntityType, EntityKey);
 
 -- ---------- Rule enforcement (Level rules) ----------
 
@@ -377,3 +393,44 @@ SELECT kg.MajorInitiativeID, k.Code AS MajorInitiativeCode, k.MIId, k.Title AS M
 FROM MajorInitiativeGoals kg
 JOIN MajorInitiatives k ON k.MajorInitiativeID = kg.MajorInitiativeID
 JOIN Goals g    ON g.GoalID = kg.GoalID;
+
+
+-- ---------- The Dean Priorities layer (register, 2026-10-07) -----------------
+-- The register's "Dean KPI 26"/"Dean KPI 27" rows: the Dean's own top-level
+-- priorities, distinct from the 29 team Major Initiatives. FiscalYear 26 is
+-- complete; 27 is in flight. PercentComplete is 0-100 (the register's 0-1 value
+-- scaled by 100). Presented in the app as "Dean Priorities", never "KPI".
+
+CREATE TABLE DeanPriorities (
+    DeanPriorityID  INTEGER PRIMARY KEY,
+    FiscalYear      INTEGER NOT NULL CHECK (FiscalYear IN (26,27)),
+    Code            TEXT    NOT NULL UNIQUE,   -- 'D26-1'..'D26-3', 'D27-1'..'D27-8'
+    Title           TEXT    NOT NULL,
+    Description     TEXT,
+    PriorityID      INTEGER REFERENCES Priorities(PriorityID),
+    PercentComplete INTEGER NOT NULL DEFAULT 0 CHECK (PercentComplete BETWEEN 0 AND 100),
+    Note            TEXT
+);
+
+-- The X-matrix: which team Major Initiative contributes to which FY27 Dean item.
+CREATE TABLE MajorInitiativeDeanLinks (
+    MajorInitiativeID INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
+    DeanPriorityID    INTEGER NOT NULL REFERENCES DeanPriorities(DeanPriorityID),
+    PRIMARY KEY (MajorInitiativeID, DeanPriorityID)
+);
+
+CREATE VIEW vw_DeanPriorities AS
+SELECT d.DeanPriorityID, d.FiscalYear, d.Code, d.Title, d.Description,
+       d.PercentComplete, d.Note,
+       p.PriorityID, p.Code AS PriorityCode, p.FullTitle AS PriorityTitle,
+       p.Colour AS PriorityColour
+FROM DeanPriorities d
+LEFT JOIN Priorities p ON p.PriorityID = d.PriorityID;
+
+CREATE VIEW vw_MajorInitiativeDeanLinks AS
+SELECT kl.MajorInitiativeID, k.Code AS MajorInitiativeCode, k.MIId,
+       k.Title AS MajorInitiativeTitle,
+       d.DeanPriorityID, d.Code AS DeanCode, d.Title AS DeanTitle
+FROM MajorInitiativeDeanLinks kl
+JOIN MajorInitiatives k ON k.MajorInitiativeID = kl.MajorInitiativeID
+JOIN DeanPriorities d   ON d.DeanPriorityID = kl.DeanPriorityID;
