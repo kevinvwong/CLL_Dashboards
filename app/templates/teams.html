@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Teams — CLL Initiative Dashboard{% endblock %}
+{% block content %}
+{#
+  The four teams as an index. A team page's breadcrumb links here; before this
+  route existed, that link 404'd. A team is the accountability axis, distinct
+  from a source area.
+#}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Organizational layer</p>
+    <h1>Teams</h1>
+  </div>
+  <p class="section-note">{{ teams | length }} teams</p>
+</div>
+
+<ul class="team-grid">
+  {% for t in teams %}
+  <li class="team-card">
+    <a class="team-link" href="/teams/{{ t.TeamID }}">
+      <h2 class="team-name">{{ t.Name }}</h2>
+    </a>
+    <p class="team-desc">{{ t.Description }}</p>
+    <p class="team-count">
+      <a href="/teams/{{ t.TeamID }}"><strong>{{ t.major_initiatives | length }}</strong> Major Initiative{{ '' if t.major_initiatives | length == 1 else 's' }} →</a>
+    </p>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

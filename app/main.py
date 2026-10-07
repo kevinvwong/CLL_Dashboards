@@ -55,6 +55,7 @@ def _ctx(request: Request, **extra) -> dict:
     for prefix, name in (("/initiatives", "initiatives"), ("/people", "people"),
                          ("/goals", "initiatives"), ("/priorities", "initiatives"),
                          ("/teams", "initiatives"), ("/major-initiatives", "initiatives"),
+                         ("/checks", "checks"),
                          ("/meeting", "meeting"), ("/outcomes", "outcomes")):
         if path == prefix or path.startswith(prefix + "/"):
             section = name
@@ -290,6 +291,7 @@ async def goal_list(request: Request, goal_number: int, group: str | None = None
             description=goal["FullName"] or goal["Description"],
             entry_kind="goal",
             entry_key=goal["GoalNumber"],
+            crumbs=[("Goals", "/#goals"), ("G%d" % goal["GoalNumber"], None)],
             dean_rows=dean_rows,
             d1_groups=d1_groups,
             grouped=queries.group_rows(rows, group) if group else [],
@@ -320,6 +322,7 @@ async def priority_list(request: Request, priority_name: str, group: str | None 
             heading=f"{priority['PriorityName']} ({priority['PlanYear']})",
             description=priority["Description"],
             entry_kind="priority",
+            crumbs=[("Priorities", "/#priorities"), (priority["PriorityName"], None)],
             entry_key=priority["PriorityName"],
             plan_year=priority["PlanYear"],
             # The governed fields live on the priority page (interconnection-
@@ -336,6 +339,17 @@ async def priority_list(request: Request, priority_name: str, group: str | None 
     )
 
 
+@app.get("/teams")
+async def teams_index(request: Request):
+    """The four teams, as an index. The breadcrumb on a team page links here, and
+    before this existed that link 404'd."""
+    teams = queries.team_overview()
+    return templates.TemplateResponse(
+        request, "teams.html",
+        _ctx(request, teams=teams, crumbs=[("Teams", None)]),
+    )
+
+
 @app.get("/teams/{team_id}")
 async def team_page(request: Request, team_id: int):
     """One team, with its Major Initiatives (interconnection-redesign 3.2).
@@ -349,7 +363,7 @@ async def team_page(request: Request, team_id: int):
         request,
         "team.html",
         _ctx(request, team=team,
-             crumbs=[("Teams", None), (team["Name"], None)]),
+             crumbs=[("Teams", "/teams"), (team["Name"], None)]),
     )
 
 
@@ -366,7 +380,8 @@ async def major_initiative_page(request: Request, mi_id: str):
         request,
         "major_initiative.html",
         _ctx(request, mi=mi,
-             crumbs=[("Priorities", None), (mi["MIId"] or mi["Code"], None)]),
+             crumbs=[("Major Initiatives", "/major-initiatives"),
+                     (mi["MIId"] or mi["Code"], None)]),
     )
 
 
