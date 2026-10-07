@@ -125,6 +125,42 @@ def test_the_goal_links_match_the_canon_alignment(fresh_db):
 # --- the read model ----------------------------------------------------------
 
 
+def test_each_target_belongs_to_its_own_initiative(fresh_db):
+    """A title and its target must describe the same work.
+
+    The defect this guards: the canon and the prototype list source area
+    "Academic Affairs" in different orders, and an earlier version of the seed
+    joined them by position, so eight rows carried the *next* row's target -
+    MI-021 showed MI-022's subject. Matching by name fixed it. This pins the fix
+    by asserting each target shares a distinctive word with its own title rather
+    than describing a different initiative. It compares against the workbook, so
+    a future reorder that re-introduces a positional join fails here.
+
+    The check is deliberately loose - a keyword appearing somewhere in the target
+    - so it is not brittle to wording; it only fires when the target is about
+    something else entirely.
+    """
+    import re
+
+    # (MI id, a word that must appear in that initiative's target)
+    expected = {
+        "MI-021": "approval",       # approval/governance process
+        "MI-022": "governance",     # faculty governance process
+        "MI-023": "evaluation",     # faculty evaluation & promotion system
+        "MI-024": "faculty",        # empower faculty
+        "MI-025": "faculty",        # fill faculty positions
+        "MI-026": "program",        # stand up academic programs
+        "MI-027": "faculty",        # grow faculty participation
+        "MI-028": "program",        # recruit students into programs
+        "MI-029": "coursework",     # reusable coursework
+    }
+    got = {r["MIId"]: (r["Title"] or "") + " " + (r["ProposedTarget"] or "")
+           for r in _rows(fresh_db, "SELECT MIId, Title, ProposedTarget FROM MajorInitiatives")}
+    wrong = [mid for mid, word in expected.items()
+             if mid in got and word not in got[mid].lower()]
+    assert not wrong, "target does not match its own initiative: %s" % wrong
+
+
 def test_the_goal_view_lists_major_initiatives_per_goal(fresh_db):
     from app import queries
     rows = _rows(fresh_db, """

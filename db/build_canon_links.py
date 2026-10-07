@@ -1,17 +1,20 @@
-"""Generate seed SQL for the Major Initiative -> Goal edge from the canon workbook.
+"""Reconcile the canon workbook with the prototype's rows, keyed by NAME.
 
 Source of truth: `CLL_FY2027_Goals_Priorities_Initiatives_and_People.xlsx`,
 supplied 2026-10-06 as the most recent canon. Read directly, not retyped.
 
-It emits three things the schema lacked:
-  - MajorInitiatives.MIId      the canon's stable key (MI-001..MI-029)
-  - MajorInitiatives.Title     the canon's exact wording (5 differ from what we hold)
-  - MajorInitiativeGoals       the MI -> Goal edge, parsed from Strategy Alignment
+The canon gives each Major Initiative an id (MI-001..MI-029), an exact title, a
+source area and a Strategy Alignment. The prototype's `data.js` gives the *same
+29 rows* a target, initiatives and priority links. We need both on one row.
 
-The mapping from the canon's row to our Code is by SOURCE AREA and POSITION
-within it, because our codes were built the same way (SOURCE_AREAS index + 1,
-dash, within-area sequence). Verified: 24 of 29 names match exactly and the
-other 5 are the same work renamed in the same positions.
+THE JOIN KEY IS THE NAME, NOT THE POSITION. `build_team_layer.py` writes each row
+at a Code derived from the *prototype's* order ('5-01'..'5-09'), and the target
+travels with it. The first version of this script derived a Code from the
+*canon's* order and assumed the two orders agreed. They do not: the canon
+reorders source area "Academic Affairs" (the prototype's area 5), so matching by
+position paired each title with the next row's target and shifted eight rows -
+visible as MI-021 carrying MI-022's target. A name join cannot drift when a
+source reorders rows.
 
 Run:  python db/build_canon_links.py           # writes db/seed_canon_links.sql
       python db/build_canon_links.py --check   # fail if the output differs
@@ -27,6 +30,28 @@ OUT = os.path.join(HERE, "seed_canon_links.sql")
 WORKBOOK = os.path.join(os.path.expanduser("~"), "Downloads",
                         "CLL_FY2027_Goals_Priorities_Initiatives_and_People.xlsx")
 
+#: The prototype's data.js, read for its row names. Same env default as
+#: build_team_layer.py.
+PROTO = os.path.join(os.environ.get("TEMP", "/tmp"), "opencode",
+                     "dean-proto", "data.js")
+
+#: Canon name -> prototype name, for the rows the canon renamed. Keyed and valued
+#: by a normalised name (see `norm`). Each pair was chosen by word overlap, not
+#: position: it shares most of its significant words, and its next-best candidate
+#: shares almost none (see the build notes in git history for the scores).
+RENAMED = {
+    "empowerallfacultytoengageininnovativeprogramdevelopment":
+        "empowerfacultytoengageininnovativeprogramdevelopmentandalignworkfunctions",
+    "fillmultiplefacultypositionsandalignexistingfacultywork":
+        "fillopenrankfacultypositionsandalignfacultyworkwithstrategy2035",
+    "standupinnovativeyettraditionalacademicprograms":
+        "standupinnovativetraditionalacademicprograms",
+    "networkacrosscampustogrowfacultyparticipationincllprograms":
+        "growtheinstitutewidefacultynetworkengagedincllprograms",
+    "buildacademiccourseworkasreusableisolatedlearningexperiences":
+        "buildcourseworkasreusablelearningexperiences",
+}
+
 
 def _sq(s):
     if s is None:
@@ -34,12 +59,13 @@ def _sq(s):
     return "'" + str(s).replace("'", "''") + "'"
 
 
-def read_canon(path=WORKBOOK):
-    """The Initiatives sheet: [(MI-id, name, source_area, alignment), ...].
+def norm(s: str) -> str:
+    """A name reduced to letters and digits, for a forgiving exact match."""
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
 
-    Rows are read in order; the sheet is 100 rows but only the populated ones
-    with an MI- id are returned.
-    """
+
+def read_canon(path=WORKBOOK):
+    """The Initiatives sheet: [(MI-id, name, source_area, alignment), ...]."""
     from openpyxl import load_workbook
 
     wb = load_workbook(path, read_only=True, data_only=True)
@@ -54,6 +80,16 @@ def read_canon(path=WORKBOOK):
     return out
 
 
+def read_proto_names(path=PROTO):
+    """The prototype's rows as {Code: Title}, in the prototype's own order."""
+    t = io.open(path, encoding="utf-8").read()
+    m = re.search(r"const GOALS = \[(.*?)\n\];", t, re.S)
+    calls = re.findall(
+        r'goal\(SOURCE_AREAS\[(\d+)\],\s*"(\d+)",\s*"((?:[^"\\]|\\.)*)"',
+        m.group(1))
+    return {"%s-%s" % (int(a) + 1, n): title for a, n, title in calls}
+
+
 def goals_from_alignment(text: str) -> list:
     """The goal numbers an alignment string names.
 
@@ -65,40 +101,44 @@ def goals_from_alignment(text: str) -> list:
     if not m:
         return []
     span = m.group(1)
-    # A range "1-5" or "1–5" expands to every number between.
     rng = re.search(r"(\d)\s*[-–]\s*(\d)", span)
     if rng:
-        lo, hi = int(rng.group(1)), int(rng.group(2))
-        return list(range(lo, hi + 1))
+        return list(range(int(rng.group(1)), int(rng.group(2)) + 1))
     return sorted({int(n) for n in re.findall(r"\d", span)})
 
 
-def build(path=WORKBOOK, out=OUT):
+def build(path=WORKBOOK, out=OUT, proto_path=PROTO):
     canon = read_canon(path)
-    # Our SourceAreas order, to index the areas the way our codes do.
-    from openpyxl import load_workbook
-    wb = load_workbook(path, read_only=True, data_only=True)
-    areas = []
-    for r in wb["Initiatives"].iter_rows(values_only=True):
-        sa = str(r[2] or "").strip()
-        if sa and sa not in areas and r[0] and str(r[0]).startswith("MI-"):
-            areas.append(sa)
+    proto_by_name = {norm(name): code for code, name in read_proto_names(proto_path).items()}
 
-    seq = {}
     rows = []
+    unmatched = []
     for mid, name, sa, align in canon:
-        idx = areas.index(sa) + 1 if sa in areas else 1
-        seq[idx] = seq.get(idx, 0) + 1
-        code = "%d-%02d" % (idx, seq[idx])
+        key = norm(name)
+        code = proto_by_name.get(key)
+        if code is None and key in RENAMED:
+            code = proto_by_name.get(norm(RENAMED[key]))
+        if code is None:
+            unmatched.append((mid, name))
         rows.append({
             "mi_id": mid, "name": name, "source_area": sa,
             "alignment": align, "code": code,
             "goals": goals_from_alignment(align),
         })
 
+    if unmatched:
+        for mid, name in unmatched:
+            sys.stderr.write("UNMATCHED canon row %s: %r\n" % (mid, name))
+        sys.stderr.write(
+            "A canon row matched no prototype name or rename. The canon may have "
+            "reordered or renamed rows again; add a RENAMED entry rather than "
+            "letting the join fall back to position.\n")
+        return 1
+
     L = ["-- GENERATED by db/build_canon_links.py from",
          "-- CLL_FY2027_Goals_Priorities_Initiatives_and_People.xlsx.",
          "-- Do not hand-edit. Read from the workbook, not retyped.",
+         "-- Rows are matched to the prototype by NAME, not position.",
          ""]
     L.append("-- The canon's stable key and exact title for each Major Initiative.")
     for r in rows:
