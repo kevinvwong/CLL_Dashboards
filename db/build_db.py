@@ -38,11 +38,10 @@ if "--empty" not in sys.argv:
     if os.path.exists(register):
         con.executescript(open(register, encoding="utf-8").read())
 con.commit()
-for t in ["Goals","Priorities","People","Initiatives","InitiativeGoals",
-          "InitiativePriorities","InitiativeLinks","ProgressUpdates",
-          "Teams","SourceAreas","MajorInitiatives","MajorInitiativePriorities",
-          "MajorInitiativeGoals","DeanPriorities","MajorInitiativeDeanLinks",
-          "MajorInitiativeCoOwners"]:
+for t in ["Goals","Priorities","People","Teams","SourceAreas",
+          "MajorInitiatives","MajorInitiativePriorities","MajorInitiativeGoals",
+          "DeanPriorities","MajorInitiativeDeanLinks","MajorInitiativeCoOwners",
+          "MajorInitiativeUpdates","AuditLog"]:
     print(f"{t:22} {con.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]:>4} rows")
 issues = con.execute("SELECT Code, Issue FROM vw_DataChecks").fetchall()
 print(f"\nData checks: {len(issues)} issue(s)")
