@@ -30,6 +30,13 @@
 </p>
 <p class="oct16-status" role="status">{{ d.data_status() }}{% if d.AS_OF %} &middot; as of {{ d.AS_OF }}{% endif %}</p>
 
+{# The one-line roll-up (#12): a board reader wants the portfolio in a sentence
+   before the cards. Counts by status, never an aggregate score. #}
+<p class="oct16-rollup">
+  {{ d.OUTCOMES | length }} outcomes:
+  {% for status, n in d.OUTCOMES | groupby("status") %}{{ n | length }} {{ status | lower }}{% if not loop.last %} &middot; {% endif %}{% endfor %}
+</p>
+
 <ul class="oct16-grid">
   {% for o in d.OUTCOMES %}
   <li class="oct16-card oct16-{{ o.id|lower }}">
