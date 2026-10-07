@@ -82,42 +82,33 @@ def test_owner_may_edit_details_but_not_tags(logged_in):
 # --- 8.9: primary-tag error message ---------------------------------------
 
 
-def test_second_primary_goal_is_refused_with_the_spec_message(logged_in, fresh_db):
+def test_second_primary_priority_is_refused(logged_in, fresh_db):
     """The form's radios can only ever submit one primary, so this scenario is
-    reachable only by a hand-crafted POST. The server must refuse it rather
-    than quietly keep the first value, which is what reading a single radio
-    would have done."""
-    before = _rows(fresh_db, "SELECT * FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
+    reachable only by a hand-crafted POST. The server must refuse it rather than
+    quietly keep the first value. Goals carry no primary on the register model;
+    priorities do."""
+    before = _rows(fresh_db, "SELECT * FROM MajorInitiativePriorities WHERE MajorInitiativeID = "
                              "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId=?)", (D1,))
-    response = logged_in(ADMIN).post(
-        f"/major-initiatives/{D1}/edit/tags",
-        data={"goal": ["1", "2"], "goal_primary": ["1", "2"]},
-    )
-    assert response.status_code == 422
-    assert "Only one primary goal is allowed" in response.text
-    after = _rows(fresh_db, "SELECT * FROM MajorInitiativeGoals WHERE MajorInitiativeID = "
-                            "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId=?)", (D1,))
-    assert after == before, "a refused tag write must change nothing"
-
-
-def test_second_primary_priority_is_refused(logged_in):
     response = logged_in(ADMIN).post(
         f"/major-initiatives/{D1}/edit/tags",
         data={"priority": ["1", "2"], "priority_primary": ["1", "2"]},
     )
     assert response.status_code == 422
     assert "Only one primary priority is allowed" in response.text
+    after = _rows(fresh_db, "SELECT * FROM MajorInitiativePriorities WHERE MajorInitiativeID = "
+                            "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId=?)", (D1,))
+    assert after == before, "a refused tag write must change nothing"
 
 
-def test_one_primary_is_accepted(logged_in, fresh_db):
+def test_one_primary_priority_is_accepted(logged_in, fresh_db):
     response = logged_in(ADMIN).post(
         f"/major-initiatives/{D1}/edit/tags",
-        data={"goal": ["1", "2"], "goal_primary": "1"},
+        data={"priority": ["1", "2"], "priority_primary": "1"},
     )
     assert response.status_code == 200
     primaries = _rows(
         fresh_db,
-        "SELECT GoalID FROM MajorInitiativeGoals WHERE IsPrimary = 1 AND MajorInitiativeID = "
+        "SELECT PriorityID FROM MajorInitiativePriorities WHERE IsPrimary = 1 AND MajorInitiativeID = "
         "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)",
         (D1,),
     )
@@ -179,46 +170,33 @@ def test_empty_name_is_refused(logged_in, fresh_db):
 # --- 8.3 links ------------------------------------------------------------
 
 
-def test_links_only_list_dean_initiatives(logged_in, fresh_db):
+def test_links_only_list_dean_priorities(logged_in, fresh_db):
     from app import queries
 
     options = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"]
     assert options
-    assert all(o["Code"].startswith("D-") for o in options)
+    # The merged model links to Dean Priorities (D27-n), not Dean initiatives.
+    assert all(o["Code"].startswith("D") for o in options), [o["Code"] for o in options]
 
 
 def test_link_edit_saves_the_selection(logged_in, fresh_db):
     from app import queries
 
-    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["MajorInitiativeID"]
+    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["InitiativeID"]
     response = logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/links",
                                      data={"dean_initiative_id": str(dean_id)})
     assert response.status_code == 200
-    links = _rows(fresh_db, "SELECT DeanInitiativeID FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
+    links = _rows(fresh_db, "SELECT DeanPriorityID FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
                             "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?)", (D1,))
-    assert [r["DeanInitiativeID"] for r in links] == [dean_id]
+    assert [r["DeanPriorityID"] for r in links] == [dean_id]
 
 
-def test_links_are_refused_on_a_dean_initiative(logged_in, fresh_db):
-    """Only a D-1 initiative feeds a Dean one."""
-    from app import queries
-
-    dean_id = queries.link_edit_options(_initiative_id(fresh_db, D1))["deans"][0]["MajorInitiativeID"]
-    response = logged_in(ADMIN).post(f"/major-initiatives/{DEAN}/edit/links",
-                                     data={"dean_initiative_id": str(dean_id)})
-    assert response.status_code == 422
-    assert "Only a D-1 initiative" in response.text
-
-
-def test_linking_to_a_non_dean_initiative_is_refused(logged_in, fresh_db):
-    """The spec's exact message, enforced by the database as well."""
-    from app import queries
-
-    d1_id = _rows(fresh_db, "SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId = ?", (D1,))[0]["MajorInitiativeID"]
+def test_linking_to_a_non_dean_priority_is_refused(logged_in, fresh_db):
+    """Every target must be a real Dean Priority."""
     response = logged_in(ADMIN).post(f"/major-initiatives/{D1}/edit/links",
-                                     data={"dean_initiative_id": str(d1_id)})
+                                     data={"dean_initiative_id": "9999"})
     assert response.status_code == 422
-    assert "Links must connect a D-1 initiative to a Dean initiative" in response.text
+    assert "real Dean Priorities" in response.text or "Links must point" in response.text
 
 
 # --- 8.4 create and retire ------------------------------------------------
@@ -228,7 +206,7 @@ def test_create_makes_an_untagged_initiative_that_shows_on_checks(logged_in, fre
     from app import queries
 
     owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
-    response = logged_in(ADMIN).post("/initiatives", data={
+    response = logged_in(ADMIN).post("/major-initiatives", data={
         "code": "MI-900", "name": "Brand new", "owner_id": str(owner), "description": "",
     }, follow_redirects=False)
     assert response.status_code == 303
@@ -240,8 +218,9 @@ def test_create_makes_an_untagged_initiative_that_shows_on_checks(logged_in, fre
 
 def test_duplicate_code_is_refused_with_a_readable_message(logged_in, fresh_db):
     owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
-    response = logged_in(ADMIN).post("/initiatives", data={
-        "code": D1, "name": "Clash", "owner_id": str(owner), "description": "",
+    existing_code = _rows(fresh_db, "SELECT Code FROM MajorInitiatives WHERE MIId = ?", (D1,))[0]["Code"]
+    response = logged_in(ADMIN).post("/major-initiatives", data={
+        "code": existing_code, "name": "Clash", "owner_id": str(owner), "description": "",
     })
     assert response.status_code == 422
     assert "already an initiative with the code" in response.text
@@ -250,7 +229,7 @@ def test_duplicate_code_is_refused_with_a_readable_message(logged_in, fresh_db):
 
 def test_non_admin_cannot_create(logged_in, fresh_db):
     owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
-    response = logged_in(NOT_ADMIN).post("/initiatives", data={
+    response = logged_in(NOT_ADMIN).post("/major-initiatives", data={
         "code": "NEW-1", "name": "Nope", "owner_id": str(owner), "description": "",
     })
     assert response.status_code == 403
