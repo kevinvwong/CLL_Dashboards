@@ -37,7 +37,7 @@ def _raw_goal_counts(fresh_db):
             SELECT g.GoalNumber, COUNT(DISTINCT i.MajorInitiativeID) AS n
             FROM Goals g
             LEFT JOIN MajorInitiativeGoals ig ON ig.GoalID = g.GoalID
-            LEFT JOIN Initiatives i
+            LEFT JOIN MajorInitiatives i
                    ON i.MajorInitiativeID = ig.MajorInitiativeID AND i.IsActive = 1
             GROUP BY g.GoalID, g.GoalNumber
             """
@@ -55,7 +55,7 @@ def _raw_priority_counts(fresh_db):
             SELECT p.PriorityName, COUNT(DISTINCT i.MajorInitiativeID) AS n
             FROM Priorities p
             LEFT JOIN MajorInitiativePriorities ip ON ip.PriorityID = p.PriorityID
-            LEFT JOIN Initiatives i
+            LEFT JOIN MajorInitiatives i
                    ON i.MajorInitiativeID = ip.MajorInitiativeID AND i.IsActive = 1
             GROUP BY p.PriorityID, p.PriorityName
             """

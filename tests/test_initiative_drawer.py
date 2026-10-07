@@ -65,7 +65,8 @@ def test_every_edit_endpoint_splits_fragment_and_full(logged_in, path):
 # --- 4.3 the drawer layout ---------------------------------------------------
 
 
-def test_the_detail_shows_header_status_progress_owner(logged_in):
+def test_the_detail_shows_header_status_progress_owner(logged_in, diary):
+    diary('MI-004', 30, 'On track', on='2026-10-05')
     body = _html.unescape(logged_in("Bill Gaudelli").get("/major-initiatives/MI-004").text)
     assert "detail-header" in body
     assert 'role="progressbar"' in body
@@ -73,16 +74,19 @@ def test_the_detail_shows_header_status_progress_owner(logged_in):
     assert "Owner:" in body
 
 
-def test_the_detail_lists_relationships_with_status_and_progress(logged_in):
+def test_the_detail_lists_relationships_with_status_and_progress(logged_in, diary):
+    """The merged model's relationships are the Dean Priorities an initiative
+    contributes to. A DeanPriority carries no status or progress, so the row
+    shows its code and title; the initiative's own progress is in the header."""
     body = _html.unescape(logged_in("Bill Gaudelli").get("/major-initiatives/MI-004").text)
     assert "card-connections" in body
-    # Both a status pill and a percentage appear on the relationship rows.
-    assert "connection-status" in body
-    assert "%" in body
+    assert "Contributes to" in body
 
 
-def test_the_diary_is_newest_first(logged_in):
+def test_the_diary_is_newest_first(logged_in, diary):
     from app import queries
+    diary('MI-004', 20, 'On track', on='2026-09-20')
+    diary('MI-004', 30, 'On track', on='2026-10-05')
     diary = queries.initiative_card("MI-004")["diary"]
     assert diary, "no diary entries"
     dates = [d["UpdateDate"] for d in diary]
@@ -108,9 +112,10 @@ def test_the_status_control_offers_exactly_the_schema_values(logged_in):
     assert sorted(options) == sorted(repo.STATUSES)
 
 
-def test_the_form_shows_the_previous_value(logged_in):
+def test_the_form_shows_the_previous_value(logged_in, diary):
     """The control is set to the initiative's current progress."""
     from app import queries
+    diary('MI-004', 30, 'On track', on='2026-10-05')
     card = queries.initiative_card("MI-004")
     body = logged_in("Bill Gaudelli").get("/major-initiatives/MI-004/update",
                                  headers={"HX-Request": "true"}).text

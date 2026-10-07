@@ -27,7 +27,7 @@ def test_search_finds_an_initiative_by_code(logged_in):
     from app import queries
     results = queries.search("MI-003")
     assert results, "no result for a code"
-    assert results[0]["label"].startswith("Mario"), results[0]
+    assert "Data" in results[0]["label"] or results[0]["code"] == "MI-003", results[0]
 
 
 def test_search_finds_a_person(logged_in):
@@ -42,7 +42,7 @@ def test_search_spans_all_four_kinds(logged_in):
     for term in ("MI-002", "Bill Gaudelli", "Research", "Data"):
         for r in queries.search(term):
             kinds.add(r["kind"])
-    assert {"initiative", "person", "goal", "priority"} <= kinds, kinds
+    assert {"major-initiative", "person", "goal", "priority"} <= kinds, kinds
 
 
 def test_search_returns_nothing_for_empty_or_no_match(logged_in):
@@ -114,8 +114,10 @@ def test_a_range_sets_the_window(logged_in):
 # --- meeting deltas (overhaul 6.3) ------------------------------------------
 
 
-def test_deltas_show_before_and_after(logged_in):
+def test_deltas_show_before_and_after(logged_in, diary):
     from app import queries
+    diary('MI-002', 20, 'On track', on='2026-09-20')
+    diary('MI-002', 40, 'On track', on='2026-10-05')
     rows = queries.update_deltas("2000-01-01")
     assert rows, "no deltas"
     changed = [d for d in rows if not d["IsFirst"]]
@@ -134,13 +136,16 @@ def test_a_first_update_is_marked_not_invented_as_zero(logged_in):
         assert d["PrevPercent"] is None
 
 
-def test_the_meeting_renders_the_delta_arrow(logged_in):
+def test_the_meeting_renders_the_delta_arrow(logged_in, diary):
+    diary('MI-002', 20, 'On track', on='2026-09-20')
+    diary('MI-002', 40, 'On track', on='2026-10-05')
     body = logged_in("Bill Gaudelli").get("/meeting?since=2000-01-01").text
     # The arrow is rendered as text (→), so a delta is visible without colour.
     assert "→" in body or "&rarr;" in body
 
 
-def test_changes_stay_grouped_by_owner(logged_in, fresh_db):
+def test_changes_stay_grouped_by_owner(logged_in, fresh_db, diary):
+    diary('MI-002', 20, 'On track', on='2026-10-05')
     """The meeting-view requirement: changes grouped by owner is unchanged."""
     import sqlite3
     conn = sqlite3.connect(str(fresh_db))
