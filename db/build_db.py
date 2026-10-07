@@ -31,10 +31,18 @@ if "--empty" not in sys.argv:
     canon = os.path.join(HERE, "seed_canon_links.sql")
     if os.path.exists(canon):
         con.executescript(open(canon, encoding="utf-8").read())
+    # The register (2026-10-07 canon): named owners, descriptions, team moves,
+    # the Goal and Priority edges, and the Dean Priorities layer. Loaded last,
+    # because it updates MajorInitiatives and People set by earlier seeds.
+    register = os.path.join(HERE, "seed_register.sql")
+    if os.path.exists(register):
+        con.executescript(open(register, encoding="utf-8").read())
 con.commit()
 for t in ["Goals","Priorities","People","Initiatives","InitiativeGoals",
           "InitiativePriorities","InitiativeLinks","ProgressUpdates",
-          "Teams","SourceAreas","MajorInitiatives","MajorInitiativePriorities"]:
+          "Teams","SourceAreas","MajorInitiatives","MajorInitiativePriorities",
+          "MajorInitiativeGoals","DeanPriorities","MajorInitiativeDeanLinks",
+          "MajorInitiativeCoOwners"]:
     print(f"{t:22} {con.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]:>4} rows")
 issues = con.execute("SELECT Code, Issue FROM vw_DataChecks").fetchall()
 print(f"\nData checks: {len(issues)} issue(s)")

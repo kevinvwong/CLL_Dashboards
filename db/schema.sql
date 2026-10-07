@@ -419,6 +419,16 @@ CREATE TABLE MajorInitiativeDeanLinks (
     PRIMARY KEY (MajorInitiativeID, DeanPriorityID)
 );
 
+-- Co-owners. The register names one owner per row, EXCEPT Learning Futures,
+-- whose six rows name two people in one cell ("Meltem Alemdar/Grace Flavin").
+-- MajorInitiatives.OwnerID holds the accountable lead (the first-named); this
+-- table holds the additional co-owners, so neither person is lost.
+CREATE TABLE MajorInitiativeCoOwners (
+    MajorInitiativeID INTEGER NOT NULL REFERENCES MajorInitiatives(MajorInitiativeID),
+    PersonID          INTEGER NOT NULL REFERENCES People(PersonID),
+    PRIMARY KEY (MajorInitiativeID, PersonID)
+);
+
 CREATE VIEW vw_DeanPriorities AS
 SELECT d.DeanPriorityID, d.FiscalYear, d.Code, d.Title, d.Description,
        d.PercentComplete, d.Note,

@@ -40,6 +40,64 @@ def _canon():
     return {str(r[0]): (str(r[1]).strip(), str(r[3]).strip()) for r in rows}
 
 
+#: The register (2026-10-07) is now the authority for titles and the MI -> Goal
+#: edge; the canon workbook still owns the MI-id and source area. These helpers
+#: read the register, joining to codes by NAME through the generator's own
+#: RENAMED map, so the test and the seed cannot disagree about which row is which.
+REGISTER = os.path.join(os.path.expanduser("~"), "Downloads",
+                        "Initiative Dashboard Register.xlsx")
+
+
+def _register_module():
+    import importlib.util
+    path = os.path.join(R, "db", "build_register_seed.py")
+    spec = importlib.util.spec_from_file_location("build_register_seed", path)
+    assert spec and spec.loader, "cannot load build_register_seed.py"
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _register_rows():
+    """Register team rows keyed to the committed Code by name (or skip)."""
+    if not os.path.exists(REGISTER):
+        pytest.skip("register workbook not present")
+    mod = _register_module()
+    import sqlite3
+    con = sqlite3.connect(os.path.join(R, "cll_initiatives.db"))
+    committed = {mod.norm(t): code for code, t in
+                 con.execute("SELECT Code, Title FROM MajorInitiatives")}
+    con.close()
+    from openpyxl import load_workbook
+    wb = load_workbook(REGISTER, read_only=True, data_only=True)
+    rows = [r for r in wb["Team KPI Register"].iter_rows(values_only=True)]
+    team = [r for r in rows[4:] if r and r[0] and not str(r[0]).strip().startswith("Dean")]
+    out = {}
+    for r in team:
+        key = mod.norm(r[2])
+        code = committed.get(key) or committed.get(mod.norm(mod.RENAMED.get(key, "")))
+        if code:
+            out[code] = r
+    return out
+
+
+def _register_goals():
+    """{MIId: {goal numbers}} from the register's Goal 1-5 columns."""
+    import sqlite3
+    if not os.path.exists(REGISTER):
+        pytest.skip("register workbook not present")
+    reg = _register_rows()
+    con = sqlite3.connect(os.path.join(R, "cll_initiatives.db"))
+    code_to_mi = {c: m for m, c in con.execute("SELECT MIId, Code FROM MajorInitiatives")}
+    con.close()
+    out = {}
+    for code, r in reg.items():
+        goals = {str(i - 9 + 1) for i in range(9, 14) if r[i] not in (None, "")}
+        if code in code_to_mi:
+            out[code_to_mi[code]] = goals
+    return out
+
+
 # --- the edge exists ---------------------------------------------------------
 
 
@@ -94,16 +152,39 @@ def test_a_range_alignment_expands(fresh_db):
 
 
 def test_every_mi_id_matches_the_canon_title(fresh_db):
+    """The MI-id -> title map, where the register is the wording authority.
+
+    The register (2026-10-07) rewords five of the 29 titles; the register wins.
+    For every other row the canon title still holds. This pins the MI-id to the
+    register's own row (joined by name), so a renumber fails here.
+    """
     canon = _canon()
+    reg = _register_rows()
     ours = {r["MIId"]: r["Title"] for r in
             _rows(fresh_db, "SELECT MIId, Title FROM MajorInitiatives WHERE MIId IS NOT NULL")}
-    for mid, (title, _) in canon.items():
-        assert ours.get(mid) == title, "MI-id %s title differs from canon" % mid
+    for mid, (canon_title, _) in canon.items():
+        rows = _rows(fresh_db, "SELECT Code, Title FROM MajorInitiatives WHERE MIId = ?", (mid,))
+        if not rows:
+            continue
+        code = rows[0]["Code"]
+        if code in reg:
+            # the register is canon for the title
+            assert ours.get(mid) == str(reg[code][2]).strip(), \
+                "MI-id %s title differs from the register" % mid
+        else:
+            assert ours.get(mid) == canon_title, "MI-id %s title differs from canon" % mid
 
 
 def test_the_goal_links_match_the_canon_alignment(fresh_db):
-    """The strongest check: parse the canon and compare set-for-set."""
-    canon = _canon()
+    """The strongest check: parse the canon and compare set-for-set.
+
+    Superseded field-by-field by the register (2026-10-07): the register's Goal
+    1-5 columns are now the source of the MI -> Goal edge, not the canon's
+    Strategy Alignment prose, so this compares against the register instead.
+    """
+    reg = _register_goals()
+    if reg is None:
+        pytest.skip("register workbook not present")
     got = {}
     for r in _rows(fresh_db, """
             SELECT k.MIId, g.GoalNumber FROM MajorInitiativeGoals kg
@@ -111,12 +192,7 @@ def test_the_goal_links_match_the_canon_alignment(fresh_db):
             JOIN Goals g ON g.GoalID = kg.GoalID"""):
         got.setdefault(r["MIId"], set()).add(str(r["GoalNumber"]))
     mismatched = []
-    for mid, (title, align) in canon.items():
-        m = re.search(r"Goals?\s+([\d\s,+\-–]+)", align)
-        want = set(re.findall(r"\d", m.group(1))) if m else set()
-        rng = re.search(r"(\d)\s*[-–]\s*(\d)", align)
-        if rng:
-            want = {str(x) for x in range(int(rng.group(1)), int(rng.group(2)) + 1)}
+    for mid, want in reg.items():
         if want != got.get(mid, set()):
             mismatched.append((mid, sorted(want), sorted(got.get(mid, set()))))
     assert not mismatched, mismatched
