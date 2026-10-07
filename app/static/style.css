@@ -302,8 +302,12 @@ a { color: var(--accent); }
               text-decoration: none; }
 .site-nav a:hover { text-decoration: underline; }
 
-.whoami { margin-left: auto; color: var(--on-chrome); font-size: var(--text-sm); }
-.person-name { font-weight: 600; color: var(--on-chrome); }
+/* The whoami/user-menu block is navy chrome in the header. Scoped to
+   .site-header: .whoami and .person-name are ALSO used on light-ground pages
+   (whoami.html, /people), where white text is invisible. */
+.site-header .whoami { margin-left: auto; color: var(--on-chrome); font-size: var(--text-sm); }
+.site-header .person-name { font-weight: 600; color: var(--on-chrome); }
+.whoami { font-size: var(--text-sm); }
 .switch { margin-left: 0.5rem; }
 
 main { padding: var(--space-5); max-width: var(--content-max); }
@@ -389,7 +393,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   min-width: 6rem;
   border: 1px solid var(--line);
   border-radius: 3px;
-  background: var(--surface-sunken);
+  background: var(--line);
   overflow: hidden;
 }
 
@@ -535,7 +539,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .oct16-target { margin: 0 0 .5rem; font-size: var(--text-sm); color: var(--ink-muted); }
 .oct16-count { margin: 0 0 .35rem; font-size: var(--text-sm); }
 .oct16-bar {
-  height: 10px; border-radius: 5px; background: var(--surface-sunken); overflow: hidden;
+  height: 10px; border-radius: 5px; background: var(--line); border: 1px solid var(--line-strong); overflow: hidden;
 }
 .oct16-fill { display: block; height: 100%; background: var(--status-on-track); }
 .oct16-milestones { list-style: none; margin: .6rem 0 0; padding: 0; }
@@ -619,15 +623,24 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 
 /* The three owner states must be distinguishable at a glance, so a withheld
    placeholder is never mistaken for a real name. The placeholder is marked by
-   its bracketed form AND by style, in case a reader scans only one. */
+   its bracketed form AND by style, in case a reader scans only one.
+
+   When no owner is confirmed, the whole line is a pending state, so the
+   "updated [date]" placeholder is set in the same muting rather than reading
+   as a half-filled form. The wording is fixed by tests; only the styling
+   changes here. */
 .oct16-owner .owner-value { font-weight: 600; }
 .oct16-owner .owner-none {
   font-style: italic; color: var(--ink-muted);
+}
+.oct16-owner.unconfirmed {
+  color: var(--ink-subtle);
 }
 .oct16-owner.unconfirmed .owner-value {
   font-weight: 400; color: var(--ink-muted);
   border-bottom: 1px dashed var(--ink-muted);
 }
+.oct16-owner.unconfirmed .owner-none { color: var(--ink-muted); }
 @media print {
   .oct16-owner.unconfirmed .owner-value { color: var(--ink-print); }
   .oct16-owner .owner-none { color: var(--ink-print); }
