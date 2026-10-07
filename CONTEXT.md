@@ -31,14 +31,14 @@ Dean outcomes + 29 team-level) and 5 Strategy 2035 goal measures.
 *Source:* `07_CLL_KPI_Atomic_Definitions_Master.xlsx`, `Metrics` sheet. Its own
 README: "35 FY27 KPIs + 5 Strategy 2035 goals = 40 measures."
 
-> **Do not call a Major Initiative a KPI.** If a row has no measure and no
+> **Do not call a Team Initiative a KPI.** If a row has no measure and no
 > target, it is not an indicator.
 
-**Major Initiative** — one of the 29 bodies of work the College will execute,
+**Team Initiative** — one of the 29 bodies of work the College will execute,
 aligned to one or more Strategy 2035 goals. Identified `MI-001`..`MI-029`. A
-Major Initiative is *work*; a KPI is a *measurement*. A Major Initiative names
+Team Initiative is *work*; a KPI is a *measurement*. A Team Initiative names
 the smaller initiatives that deliver it.
-*Source:* the canon workbook's `Initiatives` sheet (header "Major Initiatives";
+*Source:* the canon workbook's `Initiatives` sheet (header "Team Initiatives";
 Quality Check `Initiatives 29/29 PASS`). Columns: Initiative ID, Initiative
 Name, Source Area, Strategy Alignment, Status, Validation Category — note the
 absence of any measure or target.
@@ -47,21 +47,21 @@ absence of any measure or target.
 Learning Experiences, Learning Ecosystems, Learning Infrastructure, Learning
 Futures. A team is an accountability axis, distinct from a source area.
 
-**Source Area** — the register area a Major Initiative was filed under (e.g.
+**Source Area** — the register area a Team Initiative was filed under (e.g.
 "Content & Product Strategy"). A source area is where something was *recorded*;
 a team is who is *accountable*. The two are different axes and are not
 interchangeable.
 
 **Initiative** (unqualified) — an entry in the dashboard's sample demonstration
 population (the `Initiatives` table), with a level (Dean / D-1), an owner, and
-progress updates. Deliberately separate from a Major Initiative: these are
+progress updates. Deliberately separate from a Team Initiative: these are
 invented demo records, explicitly not governance-approved. When the word
 "Initiative" appears alone in the UI it means this demo population; the canon's
-29 are always "Major Initiatives".
+29 are always "Team Initiatives".
 
 ## Known tensions
 
-- **Two populations are called "initiative".** The canon's 29 Major Initiatives
+- **Two populations are called "initiative".** The canon's 29 Team Initiatives
   and the dashboard's 22 sample Initiatives are different things. The qualifier
   "Major" is load-bearing: without it the two are ambiguous.
 - **The six Priorities carry KPI anatomy** (measure, target, cadence, owner).

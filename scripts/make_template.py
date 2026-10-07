@@ -63,7 +63,7 @@ def build(db_path: str, out_path: str):
     priority_cols = [f"Priority: {p['PriorityName']}" for p in priorities]
     # The merged model (2026-10-07) has no Dean/D-1 Level; the columns are Code,
     # Name, Description, Owner, Feeds, Percent, Status, then the goal and
-    # priority X columns. "Feeds" carries the Dean Priority codes (D27-n) a Major
+    # priority X columns. "Feeds" carries the Dean Initiative codes (D27-n) a Major
     # Initiative contributes to, so a new initiative can clear vw_DataChecks.
     base_cols = ["Code", "Name", "Description", "Owner", "Feeds", "Percent", "Status"]
     _header(
@@ -87,7 +87,7 @@ def build(db_path: str, out_path: str):
     dean_codes = [
         r["Code"]
         for r in conn.execute(
-            "SELECT Code FROM DeanPriorities ORDER BY FiscalYear, Code"
+            "SELECT Code FROM DeanInitiatives ORDER BY FiscalYear, Code"
         )
     ]
     dv_feeds = DataValidation(
