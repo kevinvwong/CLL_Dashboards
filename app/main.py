@@ -63,6 +63,7 @@ def _ctx(request: Request, **extra) -> dict:
     for prefix, name in (("/initiatives", "initiatives"), ("/people", "people"),
                          ("/goals", "initiatives"), ("/priorities", "initiatives"),
                          ("/teams", "initiatives"), ("/major-initiatives", "initiatives"),
+                         ("/dean-priorities", "initiatives"),
                          ("/checks", "checks"),
                          ("/changes", "changes"),
                          ("/meeting", "meeting"), ("/outcomes", "outcomes")):
@@ -927,6 +928,18 @@ def _mi_index_ctx(request: Request, target: str | None, group: str | None) -> di
         mi_group=mi_group,
         mi_groupings={"team": "Team", "source_area": "Source area"},
         mi_base=mi_base,
+    )
+
+
+@app.get("/dean-priorities")
+async def dean_priorities_page(request: Request):
+    """The Dean's own priorities (register, 2026-10-07): FY26 complete, FY27 in
+    flight. Moved off the home page, which is an overview; 11 rows with progress
+    bars is a full view."""
+    return templates.TemplateResponse(
+        request, "dean_priorities.html",
+        _ctx(request, dean_priorities=queries.dean_priorities(),
+             crumbs=[("Dean Priorities", None)]),
     )
 
 

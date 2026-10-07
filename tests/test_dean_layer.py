@@ -22,9 +22,16 @@ def test_dean_links_resolve(fresh_db):
     assert all(l["dean_code"].startswith("D27-") for l in links)
 
 
-def test_home_shows_dean_section(logged_in):
+def test_home_shows_a_one_line_dean_rollup(logged_in):
     html = logged_in("Bill Gaudelli").get("/").text
     assert "Dean Priorities" in html
+    assert "FY26" in html and "FY27" in html
+    assert "/dean-priorities" in html, "the roll-up must link to the full page"
+
+
+def test_dean_priorities_page_lists_all_eleven(logged_in):
+    html = logged_in("Bill Gaudelli").get("/dean-priorities").text
+    assert html.count('class="dean-row"') == 11
     assert "FY26" in html and "FY27" in html
 
 
