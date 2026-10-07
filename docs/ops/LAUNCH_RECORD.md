@@ -143,3 +143,36 @@ author's personal `Azure for Students` subscription and the GT data-policy
 position is unchanged. The register's owners are the register's named leads, not
 institutionally confirmed ownership.
 
+## 2026-10-07 — Deployed: register canon, Dean layer, change log
+
+**Marker `register-20261007T094057Z` confirmed live on the first `/healthz`
+poll.** The register work is now serving at
+`https://clldashproto2kwong27.azurewebsites.net`.
+
+Verified live after deploy:
+
+| Check | Result |
+|---|---|
+| `/healthz` | 200, marker matched on the first poll |
+| `/robots.txt` | 200, `Disallow: /` |
+| `/login`, `/` (anon) | 200; 303 to login |
+| `/whoami` picker | lists Bill Gaudelli, Meltem Alemdar, Grace Flavin |
+| Home | Dean Priorities FY26/FY27 with percent bars; teams 6/10/6/7 |
+| `/major-initiatives/MI-002` | description and "Contributes to" chips render |
+| `/changes` | 200 for the admin (Kevin); 403 for the Dean (not an admin) |
+
+The archive shipped 70 entries (was 68): `db/seed_register.sql` and
+`db/seed_canon_links.sql` were added to the archive manifest, because a rebuild
+from the archive would otherwise omit the Dean layer, the owners and the four
+team reassignments — the same class of defect `seed_team_layer.sql` had until
+2026-10-06.
+
+Deploy caveats observed: the F1 plan's `WP stop requests` read 0/15 before the
+deploy (reset 14:00Z), so no quota risk; `az webapp deploy` reported
+`RuntimeSuccessful` and this time exited 0.
+
+**Still not launched in the governance sense.** This remains a labelled
+demonstration on sample data — the banner reads "Sample data — these initiatives
+are invented for this prototype". The GT data-policy position is unchanged, and
+the owners are the register's named leads, not institutionally confirmed.
+

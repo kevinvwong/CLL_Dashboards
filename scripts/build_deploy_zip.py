@@ -64,6 +64,12 @@ REQUIRED = [
     (os.path.join(SPEC, "db", "schema.sql"), "db/schema.sql"),
     (os.path.join(SPEC, "db", "seed_sample.sql"), "db/seed_sample.sql"),
     (os.path.join(SPEC, "db", "seed_team_layer.sql"), "db/seed_team_layer.sql"),
+    # The register seed (2026-10-07) is REQUIRED: build_db.py loads it after the
+    # others, and it is the only source of the Dean layer, the owners, and the
+    # four team reassignments. Omitting it leaves the rebuild path broken — the
+    # same class of defect seed_team_layer.sql had until 2026-10-06.
+    (os.path.join(SPEC, "db", "seed_register.sql"), "db/seed_register.sql"),
+    (os.path.join(SPEC, "db", "seed_canon_links.sql"), "db/seed_canon_links.sql"),
     (os.path.join(SPEC, "requirements.txt"), "requirements.txt"),
     # `.env.example` is documentation, not a secret: it ships so a deployed copy
     # has the shape of the settings to set. The real `.env` never does.
