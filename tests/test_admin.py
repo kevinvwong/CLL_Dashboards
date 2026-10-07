@@ -229,8 +229,7 @@ def test_create_makes_an_untagged_initiative_that_shows_on_checks(logged_in, fre
 
     owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
     response = logged_in(ADMIN).post("/initiatives", data={
-        "code": "MI-900", "name": "Brand new", "level": "D-1",
-        "owner_id": str(owner), "description": "",
+        "code": "MI-900", "name": "Brand new", "owner_id": str(owner), "description": "",
     }, follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"] == "/checks"
@@ -242,7 +241,7 @@ def test_create_makes_an_untagged_initiative_that_shows_on_checks(logged_in, fre
 def test_duplicate_code_is_refused_with_a_readable_message(logged_in, fresh_db):
     owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
     response = logged_in(ADMIN).post("/initiatives", data={
-        "code": D1, "name": "Clash", "level": "D-1", "owner_id": str(owner), "description": "",
+        "code": D1, "name": "Clash", "owner_id": str(owner), "description": "",
     })
     assert response.status_code == 422
     assert "already an initiative with the code" in response.text
@@ -252,7 +251,7 @@ def test_duplicate_code_is_refused_with_a_readable_message(logged_in, fresh_db):
 def test_non_admin_cannot_create(logged_in, fresh_db):
     owner = _rows(fresh_db, "SELECT PersonID FROM People WHERE Name = 'Elizabeth Smith'")[0]["PersonID"]
     response = logged_in(NOT_ADMIN).post("/initiatives", data={
-        "code": "NEW-1", "name": "Nope", "level": "D-1", "owner_id": str(owner), "description": "",
+        "code": "NEW-1", "name": "Nope", "owner_id": str(owner), "description": "",
     })
     assert response.status_code == 403
 

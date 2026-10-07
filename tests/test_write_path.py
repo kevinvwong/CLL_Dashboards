@@ -108,7 +108,7 @@ def test_unknown_status_lists_the_allowed_set(fresh_db):
 
 def test_duplicate_code_names_the_code(fresh_db):
     with pytest.raises(repo.RuleError) as e:
-        repo.create_initiative(code="MI-002", name="Dup", level="Dean", owner_id=1,
+        repo.create_initiative(code="MI-002", name="Dup", owner_id=1,
                                description="", person_id=1)
     assert "MI-002" in e.value.message, e.value.message
 
@@ -116,8 +116,7 @@ def test_duplicate_code_names_the_code(fresh_db):
 def test_unknown_owner_is_a_message_not_a_driver_error(fresh_db):
     """The one write with its own integrity mapping still refuses readable."""
     with pytest.raises(repo.RuleError) as e:
-        repo.create_initiative(code="FRESH-1", name="New", level="D-1",
-                               owner_id=999999, description="", person_id=1)
+        repo.create_initiative(code="FRESH-1", name="New",                                owner_id=999999, description="", person_id=1)
     assert "directory" in e.value.message.lower(), e.value.message
 
 
