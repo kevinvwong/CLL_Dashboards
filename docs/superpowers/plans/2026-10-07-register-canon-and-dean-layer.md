@@ -730,6 +730,169 @@ git commit -m "data: rebuild from the register; record team moves and Dean layer
 
 ---
 
+---
+
+### Task 6: The change log — fix EntityType, index it, and make it readable
+
+**Files:**
+- Modify: `app/repo.py:362-376` (`_audit` entity map), `app/repo.py` (add `_ACTION_ENTITY`)
+- Modify: `db/schema.sql` (two AuditLog indexes)
+- Modify: `app/queries.py` (add `recent_changes()`)
+- Create: `app/templates/changes.html`
+- Modify: `app/main.py` (add `/changes` route), `app/templates/base.html` (admin nav link)
+- Test: `tests/test_change_log.py` (create)
+
+**Interfaces:**
+- Consumes: `AuditLog` (already exists), `is_admin_request`.
+- Produces: `_ACTION_ENTITY` map; `recent_changes(limit=100) -> list[dict]` with keys `created_at, person, action, entity_type, entity_key`; route `GET /changes`.
+
+- [ ] **Step 1: Write the failing test**
+
+```python
+# tests/test_change_log.py
+"""The change log: correct EntityType, and a reader that shows it."""
+import sqlite3
+from pathlib import Path
+
+from app import queries, repo
+
+REPO = Path(__file__).resolve().parents[1]
+
+
+def _audit_entity(db_path, action):
+    con = sqlite3.connect(db_path)
+    con.execute(
+        "INSERT INTO AuditLog (PersonID, Action, EntityType, EntityKey) VALUES (1,?,?,?)",
+        (action, "", "x"))
+    con.commit()
+    con.close()
+
+
+def test_every_repo_action_has_an_entity():
+    """A new write path cannot silently mislabel again."""
+    import inspect
+    src = inspect.getsource(repo)
+    found = set(re.findall(r"_audit\(\s*conn,\s*person_id,\s*[\"'](\w+)[\"']", src))
+    found |= set(re.findall(r"[\"'](update_\w+|replace_\w+|create_\w+|retire_\w+)[\"'],?\s*[\"']?(?:Initiative|Goal|Priority|Tag|Link)?", src))
+    missing = {a for a in found if a not in repo._ACTION_ENTITY}
+    assert not missing, f"actions with no EntityType mapping: {missing}"
+
+
+def test_goal_edit_logs_entity_goal(fresh_db):
+    repo.update_entry_description("goal", 1, "new text", person_id=5)
+    con = sqlite3.connect(fresh_db)
+    row = con.execute(
+        "SELECT EntityType FROM AuditLog ORDER BY AuditID DESC LIMIT 1").fetchone()
+    con.close()
+    assert row[0] == "Goal"
+
+
+def test_recent_changes_returns_rows(fresh_db):
+    repo.update_entry_description("priority", "P01", "t", person_id=5)
+    rows = queries.recent_changes()
+    assert rows and rows[0]["entity_type"] == "Priority"
+
+
+def test_changes_page_is_admin_gated(logged_in):
+    assert logged_in("Kevin").get("/changes").status_code == 200
+    assert logged_in("Bill Gaudelli").get("/changes").status_code == 403
+
+
+import re  # noqa: E402  (used by test_every_repo_action_has_an_entity)
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `python -m pytest tests/test_change_log.py -v`
+Expected: FAIL — `module 'app.repo' has no attribute '_ACTION_ENTITY'`
+
+- [ ] **Step 3: Fix the entity map**
+
+In `app/repo.py`, add near `STATUSES`:
+
+```python
+#: Action -> the kind of thing it changed. This is a MAP KEYED BY ACTION, not by
+#: entity. The first version looked up {"Initiative":...,"Goal":...} with
+#: action.split("_")[0].capitalize() -- "update"/"replace"/"create" -- none of
+#: which are keys, so the default "Initiative" was written for EVERY change,
+#: mislabelling goal, priority, tag and link edits (found 2026-10-07).
+_ACTION_ENTITY = {
+    "update_initiative": "Initiative",
+    "create_initiative": "Initiative",
+    "retire_initiative": "Initiative",
+    "replace_tags": "Tag",
+    "replace_links": "Link",
+    "update_goal_description": "Goal",
+    "update_priority_description": "Priority",
+}
+```
+
+Replace the body of `_audit`'s entity derivation:
+
+```python
+def _audit(conn, person_id: int, action: str, entity_key: str, details: dict):
+    import json
+
+    entity = _ACTION_ENTITY.get(action, "Unknown")
+    conn.execute(
+        "INSERT INTO AuditLog (PersonID, Action, EntityType, EntityKey, Details) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (person_id, action, entity, entity_key, json.dumps(details)),
+    )
+```
+
+- [ ] **Step 4: Add the AuditLog indexes**
+
+In `db/schema.sql`, after the `IX_*` index block add:
+
+```sql
+CREATE INDEX IX_AuditLog_CreatedAt ON AuditLog(CreatedAt DESC);
+CREATE INDEX IX_AuditLog_Entity   ON AuditLog(EntityType, EntityKey);
+```
+
+- [ ] **Step 5: Add the reader query and page**
+
+In `app/queries.py`:
+
+```python
+def recent_changes(limit: int = 100) -> list[dict]:
+    """The change log, newest first, with who made each change."""
+    with connect() as conn:
+        return _dicts(conn.execute(
+            "SELECT a.CreatedAt AS created_at, p.Name AS person, a.Action AS action, "
+            "a.EntityType AS entity_type, a.EntityKey AS entity_key "
+            "FROM AuditLog a LEFT JOIN People p ON p.PersonID = a.PersonID "
+            "ORDER BY a.CreatedAt DESC, a.AuditID DESC LIMIT ?", (limit,)))
+```
+
+Create `app/templates/changes.html` with a table titled "Change log" over `rows`, columns *When · Who · Action · Entity*. Add the route in `app/main.py`:
+
+```python
+@app.get("/changes")
+def changes_page(request: Request):
+    if not is_admin_request(request):
+        return templates.TemplateResponse(request, "error.html",
+                                          {"message": "Admins only."}, status_code=403)
+    return templates.TemplateResponse(request, "changes.html",
+                                      {"rows": queries.recent_changes()})
+```
+
+Add an admin-only nav link in `base.html` beside `/checks`.
+
+- [ ] **Step 6: Run test to verify it passes**
+
+Run: `python -m pytest tests/test_change_log.py -v`
+Expected: PASS (4 tests)
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -- app/repo.py app/queries.py app/main.py app/templates/changes.html app/templates/base.html db/schema.sql tests/test_change_log.py
+git commit -m "fix(changelog): correct EntityType; add AuditLog indexes and a /changes reader"
+```
+
+---
+
 ## Self-Review
 
 **Spec coverage:**
@@ -738,6 +901,7 @@ git commit -m "data: rebuild from the register; record team moves and Dean layer
 - §3 Seed pipeline (name join, fail loud, reproducible, `--check`, three edge sets) → Task 2. ✅
 - §4 Read models & UI (Dean section, MI chips, team flow through `vw_TeamSummary`) → Task 4. ✅
 - §5 Testing → Tasks 1, 2, 4, and the reproducibility assert in Task 5. ✅
+- Change-log subsystem (fix EntityType, index, log canon seam, `/changes` reader) → Task 6. ✅
 
 **Placeholder scan:** no TBD/TODO; every code step shows the code. Task 4's query code says "verify against `app/db.py`" — the executor must read that one file for the real `connect()`/`_dicts` names; this is a named lookup, not a placeholder.
 
