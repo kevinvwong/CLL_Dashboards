@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **131** changes in total.
+- **3** days of work recorded, **132** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 38 what we added; 26 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
+- Across all days: 38 what we added; 27 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 14 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -64,6 +64,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - The register is approved, so remove the 'invented / not governance-approved' labels
 - Alias the intermediate /major-initiatives and /dean-priorities names
 - Progress log ignores its own refresh commits, so it can stay current
+- Priority chips render their real colour, not var(var(...))
 
 **Appearance and design**
 
