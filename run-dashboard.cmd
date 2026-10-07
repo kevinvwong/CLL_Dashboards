@@ -55,6 +55,17 @@ if errorlevel 1 (
 set "PORT=%~1"
 if "%PORT%"=="" set "PORT=8000"
 
+rem Free the port first. A previous run (or another uvicorn) can still hold it,
+rem and on Windows the new server then dies with "only one usage of each socket
+rem address". scripts/free_port.ps1 stops a stale dashboard server but refuses to
+rem kill anything else on that port, so this can never take down an unrelated
+rem process; if the port is foreign it prints why and we stop here.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%APP%\scripts\free_port.ps1" -Port %PORT%
+if errorlevel 1 (
+  echo [run-dashboard] Could not free port %PORT%. Not starting.
+  exit /b 1
+)
+
 echo [run-dashboard] App:  %APP%
 echo [run-dashboard] Python: %PY%
 echo [run-dashboard] Open http://127.0.0.1:%PORT% and use the passcode in .env
