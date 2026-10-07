@@ -19,7 +19,7 @@
 </div>
 
 {# --- filters -------------------------------------------------------------- #}
-<form class="filter-bar" method="get" action="/initiatives">
+<form class="filter-bar" method="get" action="/major-initiatives">
   <label class="field-inline">Status
     <select name="status">
       <option value="">Any</option>
@@ -50,7 +50,7 @@
     Needs update only
   </label>
   <button class="button primary" type="submit">Apply</button>
-  {% if filters %}<a class="text-button" href="/initiatives">Clear filters</a>{% endif %}
+  {% if filters %}<a class="text-button" href="/major-initiatives">Clear filters</a>{% endif %}
 </form>
 
 {% if initiatives %}
@@ -72,7 +72,7 @@
     <tbody>
       {% for row in initiatives %}
       <tr class="index-row" tabindex="0" role="link"
-          hx-get="/initiatives/{{ row.Code }}"
+          hx-get="/major-initiatives/{{ row.Code }}"
           hx-target="#card-modal" hx-swap="innerHTML"
           hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
           aria-label="Open {{ row.InitiativeName }}">
@@ -108,7 +108,7 @@
 {% else %}
 <div class="empty">
   <p>No initiatives match these filters.</p>
-  {% if filters %}<p><a class="text-button" href="/initiatives">Clear the filters</a></p>{% endif %}
+  {% if filters %}<p><a class="text-button" href="/major-initiatives">Clear the filters</a></p>{% endif %}
 </div>
 {% endif %}
 {% endblock %}

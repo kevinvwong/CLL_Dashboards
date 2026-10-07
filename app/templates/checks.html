@@ -36,7 +36,7 @@
     <tbody>
       {% for check in checks %}
       <tr class="index-row" tabindex="0" role="link"
-          hx-get="/initiatives/{{ check.Code }}"
+          hx-get="/major-initiatives/{{ check.Code }}"
           hx-target="#card-modal" hx-swap="innerHTML"
           hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
           aria-label="Open {{ check.Code }}">

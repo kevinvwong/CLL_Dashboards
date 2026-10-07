@@ -6,7 +6,7 @@
   <p class="error">Only a D-1 initiative feeds a Dean initiative.</p>
   {% else %}
   {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-  <form hx-post="/initiatives/{{ card.Code }}/edit/links" hx-target="#card-modal" hx-swap="innerHTML" class="card">
+  <form hx-post="/major-initiatives/{{ card.Code }}/edit/links" hx-target="#card-modal" hx-swap="innerHTML" class="card">
     {% for de in deans %}
     <label class="check">
       <input type="checkbox" name="dean_initiative_id" value="{{ de.InitiativeID }}"

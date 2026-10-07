@@ -4,7 +4,7 @@
 <div class="card-body">
   <h2>Edit {{ card.Code }}</h2>
   {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-  <form hx-post="/initiatives/{{ card.Code }}/edit/details" hx-target="#card-modal" hx-swap="innerHTML" class="card">
+  <form hx-post="/major-initiatives/{{ card.Code }}/edit/details" hx-target="#card-modal" hx-swap="innerHTML" class="card">
     <label for="name">Name</label>
     <input id="name" name="name" value="{{ card.InitiativeName }}" required>
     <label for="description">Description</label>

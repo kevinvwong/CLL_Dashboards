@@ -7,7 +7,7 @@
 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
 {# A stacked form: one labelled field per row. The controls sat inline before, so
    "Code [input] Name" wrapped and each label sat beside the wrong field (#N2). #}
-<form method="post" action="/initiatives" class="card stacked-form">
+<form method="post" action="/major-initiatives" class="card stacked-form">
   <div class="field">
     <label for="code">Code</label>
     <input id="code" name="code" placeholder="e.g. NEW-1" required>
@@ -15,13 +15,6 @@
   <div class="field">
     <label for="name">Name</label>
     <input id="name" name="name" required>
-  </div>
-  <div class="field">
-    <label for="level">Level</label>
-    <select id="level" name="level">
-      <option value="D-1">D-1</option>
-      <option value="Dean">Dean</option>
-    </select>
   </div>
   <div class="field">
     <label for="owner_id">Owner</label>

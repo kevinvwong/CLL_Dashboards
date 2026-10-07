@@ -2,10 +2,19 @@
 {% block title %}{{ mi.MIId or mi.Code }} — {{ mi.Title }}{% endblock %}
 {% block content %}
 {#
-  One Major Initiative, with every edge (interconnection-redesign 3.3): its team,
-  its source area, the goals it aligns to, and the priorities it feeds. Found by
-  the canon's stable key, MI-###, or by the code we held before it arrived.
+  One Major Initiative, as the interactive card (2026-10-07 merge). Before the
+  merge the interactive card lived on /major-initiatives/{code} and this read-only page
+  on /major-initiatives/{mi_id}; they are one surface now. The card body (status,
+  progress, update/edit controls, tags, Dean links, diary) is shared with the
+  drawer fragment via _card_body.html; the register-only edges (team, source
+  area, target, the source-register initiatives, note) follow below.
 #}
+<div class="card-body card-fullpage">
+  {% with modal=False %}
+  {% include "_card_body.html" %}
+  {% endwith %}
+</div>
+
 <div class="section-heading">
   <div>
     <p class="eyebrow">{{ mi.MIId or mi.Code }} · Major Initiative</p>

@@ -48,11 +48,11 @@ def _person_or_500(request: Request) -> dict:
     return person
 
 
-def _resolve_target(request: Request, code: str, check) -> Target:
+def _resolve_target(request: Request, mi_id: str, check) -> Target:
     # Existence BEFORE permission (the spec's ordering rule). The card read also
     # supplies the row the permission check and the handler need, so the target
     # is read once.
-    card = queries.initiative_card(code)
+    card = queries.initiative_card(mi_id)
     if card is None:
         raise HTTPException(status_code=404, detail="No such initiative")
     person = _person_or_500(request)
@@ -61,21 +61,21 @@ def _resolve_target(request: Request, code: str, check) -> Target:
     return Target(person=person, card=card)
 
 
-def may_update(request: Request, code: str) -> Target:
+def may_update(request: Request, mi_id: str) -> Target:
     """Owner, Dean, or admin may append a progress update."""
     def check(person, card):
         return (auth.is_admin(person) or auth.is_dean(person)
                 or card["OwnerID"] == person["PersonID"])
 
-    return _resolve_target(request, code, check)
+    return _resolve_target(request, mi_id, check)
 
 
-def may_edit_details(request: Request, code: str) -> Target:
+def may_edit_details(request: Request, mi_id: str) -> Target:
     """Owner or admin may edit an initiative's name and description."""
     def check(person, card):
         return (auth.is_admin(person) or card["OwnerID"] == person["PersonID"])
 
-    return _resolve_target(request, code, check)
+    return _resolve_target(request, mi_id, check)
 
 
 def admin_only(request: Request) -> Target:
@@ -86,21 +86,21 @@ def admin_only(request: Request) -> Target:
     return Target(person=person)
 
 
-def admin_for(request: Request, code: str) -> Target:
+def admin_for(request: Request, mi_id: str) -> Target:
     """An admin-only route that names an initiative (tags, links, retire)."""
     def check(person, card):
         return auth.is_admin(person)
 
-    return _resolve_target(request, code, check)
+    return _resolve_target(request, mi_id, check)
 
 
-def known_target(request: Request, code: str) -> Target:
+def known_target(request: Request, mi_id: str) -> Target:
     """A route that needs the initiative to exist but sets no permission floor.
 
     Used by the card view and the update form's existence check; permission for
     editing is still enforced by the write routes below.
     """
-    card = queries.initiative_card(code)
+    card = queries.initiative_card(mi_id)
     if card is None:
         raise HTTPException(status_code=404, detail="No such initiative")
     return Target(person=_person_or_500(request), card=card)

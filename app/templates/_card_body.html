@@ -36,7 +36,7 @@
   {% if may_update %}
   <p class="card-actions">
     <button class="button primary update-button"
-            hx-get="/initiatives/{{ card.Code }}/update"
+            hx-get="/major-initiatives/{{ card.Code }}/update"
             hx-target="#card-modal"
             hx-swap="innerHTML">Update</button>
   </p>
@@ -47,17 +47,15 @@
   {% if may_edit_details or may_admin %}
   <p class="card-actions admin-actions">
     {% if may_edit_details %}
-    <button class="button ghost" hx-get="/initiatives/{{ card.Code }}/edit/details"
+    <button class="button ghost" hx-get="/major-initiatives/{{ card.Code }}/edit/details"
             hx-target="#card-modal" hx-swap="innerHTML">Edit details</button>
     {% endif %}
     {% if may_admin %}
-    <button class="button ghost" hx-get="/initiatives/{{ card.Code }}/edit/tags"
+    <button class="button ghost" hx-get="/major-initiatives/{{ card.Code }}/edit/tags"
             hx-target="#card-modal" hx-swap="innerHTML">Edit tags</button>
-    {% if card.Level == 'D-1' %}
-    <button class="button ghost" hx-get="/initiatives/{{ card.Code }}/edit/links"
+    <button class="button ghost" hx-get="/major-initiatives/{{ card.Code }}/edit/links"
             hx-target="#card-modal" hx-swap="innerHTML">Edit links</button>
-    {% endif %}
-    <form method="post" action="/initiatives/{{ card.Code }}/retire"
+    <form method="post" action="/major-initiatives/{{ card.Code }}/retire"
           onsubmit="return confirm('Retire {{ card.Code }}? It will disappear from every list, but its progress history is kept.')">
       <button type="submit" class="button ghost danger">Retire</button>
     </form>
@@ -84,19 +82,15 @@
 
   {% if card.connections %}
   <section class="card-connections">
-    {# A D-1 initiative lists what it Feeds; a Dean initiative lists what is
-       Fed by (design.md decision 6). Both come from vw_InitiativeConnections. #}
-    {% if card.Level == 'D-1' %}
-    <h3>Feeds</h3>
-    {% else %}
-    <h3>Fed by</h3>
-    {% endif %}
+    {# A Major Initiative contributes to the Dean FY27 Priorities (the register's
+       X-matrix, 2026-10-07). The merged model has this one direction. #}
+    <h3>Contributes to</h3>
     <ul class="connections">
       {% for c in card.connections %}
       <li>
         {# Clicking a connected initiative swaps the modal content in place. #}
-        <a href="/initiatives/{{ c.Code }}"
-           hx-get="/initiatives/{{ c.Code }}"
+        <a href="/major-initiatives/{{ c.Code }}"
+           hx-get="/major-initiatives/{{ c.Code }}"
            hx-target="#card-modal"
            hx-swap="innerHTML">{{ c.Code }} {{ c.InitiativeName }}</a>
         <span class="connection-owner">

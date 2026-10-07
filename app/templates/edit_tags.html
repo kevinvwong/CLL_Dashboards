@@ -3,7 +3,7 @@
 <div class="card-body">
   <h2>Tags for {{ card.Code }}</h2>
   {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-  <form hx-post="/initiatives/{{ card.Code }}/edit/tags" hx-target="#card-modal" hx-swap="innerHTML" class="card">
+  <form hx-post="/major-initiatives/{{ card.Code }}/edit/tags" hx-target="#card-modal" hx-swap="innerHTML" class="card">
     <fieldset>
       <legend>Goals</legend>
       {% for g in goals %}

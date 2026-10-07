@@ -1,7 +1,7 @@
 {# One initiative row, shared by the Dean block and every D-1 group.
    Expects: row. OwnerID and InitiativeID come from the list views. #}
 <li class="initiative-row"
-    hx-get="/initiatives/{{ row.Code }}"
+    hx-get="/major-initiatives/{{ row.Code }}"
     hx-target="#card-modal"
     hx-swap="innerHTML"
     hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"

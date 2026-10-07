@@ -46,7 +46,7 @@
       {# The hybrid nav (blueprint-redesign 5.1): the blueprint home, the two
          indexes, the meeting, and the outcomes. Active derived from the path. #}
       <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>Overview</a>
-      <a href="/initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>Initiatives</a>
+      <a href="/major-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>Initiatives</a>
       <a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>People</a>
       {# Meeting is ICED (2026-10-06): hidden unless MEETING_ENABLED is set. #}
       {% if meeting_enabled %}
@@ -69,7 +69,7 @@
           <p class="user-menu-name">{{ person.Name }}{% if person.Title %} <span class="user-menu-role">{{ person.Title }}</span>{% endif %}</p>
           {# Admin actions live in the menu, not the primary nav (5.1/5.4). #}
           {% if may_admin %}
-          <a href="/initiatives/new">New initiative</a>
+          <a href="/major-initiatives/new">New initiative</a>
           {% endif %}
           <a href="/whoami">Switch user</a>
         </div>

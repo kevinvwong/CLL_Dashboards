@@ -9,7 +9,7 @@
 <ul class="initiative-list person-initiatives">
   {% for row in card.initiatives %}
   <li class="initiative-row{% if row.NeedsUpdate %} needs-update{% endif %}"
-      hx-get="/initiatives/{{ row.Code }}"
+      hx-get="/major-initiatives/{{ row.Code }}"
       hx-target="#card-modal"
       hx-swap="innerHTML"
       hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"

@@ -376,111 +376,269 @@ async def team_page(request: Request, team_id: int):
 
 
 @app.get("/major-initiatives/{mi_id}")
-async def major_initiative_page(request: Request, mi_id: str):
-    """One Major Initiative by its canon key, with every edge (interconnection 3.3).
+async def major_initiative_page(request: Request, mi_id: str,
+                                target: guards.Target = Depends(guards.known_target)):
+    """One Major Initiative: the interactive card, on the register path.
 
-    Reachable by `MI-###` or by the code we held before the canon arrived.
+    Before the 2026-10-07 merge this was a read-only page and the interactive
+    card lived on /initiatives/{code}. They are one surface now: an HTMX request
+    gets the bare fragment for the drawer, a direct navigation gets the full page
+    (plus the register's edges: team, source area, goals, priorities, and the Dean
+    Priorities it contributes to).
     """
     mi = queries.major_initiative_detail(mi_id)
     if mi is None:
         raise HTTPException(status_code=404, detail="No such Major Initiative")
-    return templates.TemplateResponse(
-        request,
-        "major_initiative.html",
-        _ctx(request, mi=mi,
-             dean_links=queries.major_initiative_dean_links(mi["MIId"] or mi_id),
-             crumbs=[("Major Initiatives", "/major-initiatives"),
-                     (mi["MIId"] or mi["Code"], None)]),
-    )
-
-
-# Declared before /initiatives/{code}: otherwise "new" is captured as a code
-# and the create form 404s.
-@app.get("/initiatives/new")
-async def create_form(request: Request, _: guards.Target = Depends(guards.admin_only)):
-    return templates.TemplateResponse(
-        request,
-        "edit_create.html",
-        _ctx(request, people=auth.active_people(), error=None),
-    )
-
-
-@app.get("/initiatives/{code}")
-async def initiative(request: Request, code: str,
-                     target: guards.Target = Depends(guards.known_target)):
-    """Initiative card.
-
-    Task 5.1: an HTMX request gets the bare fragment to swap into the modal;
-    a direct navigation gets the same content wrapped in a full page.
-    """
     context = _ctx(
         request,
+        mi=mi,
         card=target.card,
-        # Breadcrumbs on the full page only (5.2); the fragment goes into a
-        # drawer over the page that already shows them.
-        crumbs=[("Initiatives", "/initiatives"), (code, None)],
-        may_update=auth.can_update(request, code),
-        may_edit_details=auth.can_edit_details(request, code),
+        dean_links=queries.major_initiative_dean_links(mi["MIId"] or mi_id),
+        crumbs=[("Major Initiatives", "/major-initiatives"), (mi["MIId"] or mi_id, None)],
+        may_update=auth.can_update(request, mi_id),
+        may_edit_details=auth.can_edit_details(request, mi_id),
         may_admin=auth.is_admin_request(request),
     )
     if request.headers.get("HX-Request"):
         return templates.TemplateResponse(request, "card.html", context)
-    return templates.TemplateResponse(request, "card_full.html", context)
+    return templates.TemplateResponse(request, "major_initiative.html", context)
 
 
-@app.get("/initiatives/{code}/update")
-async def update_form(request: Request, code: str,
+# --- The interactive card, on the register path (2026-10-07 merge) ----------
+#
+# The prototype's /initiatives/{code} card (drawer, update form, edit forms)
+# moves onto /major-initiatives/{mi_id}. Everything is keyed by the canon's
+# MIId; the old /initiatives/* paths 308-redirect here so bookmarks keep working.
+
+@app.get("/major-initiatives/{mi_id}/update")
+async def update_form(request: Request, mi_id: str,
                       target: guards.Target = Depends(guards.may_update)):
-    """The update form. 403 for anyone who may not update (task 6.4).
-
-    A fragment: it is opened with hx-get into #card-modal. Rendered through the
-    helper so a direct load still gets the full layout.
-    """
+    """The update form. 403 for anyone who may not update."""
     return _fragment_or_full(
         request, "update_form.html", "update_form_full.html",
         _ctx(request, card=target.card, statuses=repo.STATUSES, note_max=repo.NOTE_MAX),
     )
 
 
-@app.post("/initiatives/{code}/updates")
-async def submit_update(request: Request, code: str,
+@app.post("/major-initiatives/{mi_id}/updates")
+async def submit_update(request: Request, mi_id: str,
                         target: guards.Target = Depends(guards.may_update)):
     """Append a progress update, then re-render the card.
 
-    The permission check is in the guard, on the server, and not only on the
-    button: the progress-updates spec requires a 403 for a non-owner posting
-    directly. The guard also enforces existence before permission, so an
-    unknown code is a 404 and a known-but-forbidden one a 403.
+    The permission check is in the guard, on the server, not only on the button:
+    the progress-updates spec requires a 403 for a non-owner posting directly.
+    The guard also enforces existence before permission.
     """
     form = await request.form()
     try:
         repo.add_progress_update(
-            code=code,
+            mi_id=mi_id,
             percent=str(form.get("percent", 0)),
             status=str(form.get("status", "")),
             note=str(form.get("note", "")),
             entered_by_id=target.person_id,
         )
     except repo.RuleError as exc:
-        # Refused by a rule: show the message rather than a 500.
         return templates.TemplateResponse(
-            request,
-            "update_form.html",
-            _ctx(
-                request,
-                card=queries.initiative_card(code),
-                statuses=repo.STATUSES,
-                note_max=repo.NOTE_MAX,
-                error=exc.message,
-            ),
+            request, "update_form.html",
+            _ctx(request, card=queries.initiative_card(mi_id),
+                 statuses=repo.STATUSES, note_max=repo.NOTE_MAX, error=exc.message),
             status_code=422,
         )
 
-    card = queries.initiative_card(code)
+    card = queries.initiative_card(mi_id)
     response = templates.TemplateResponse(request, "card.html", _ctx(request, card=card))
-    # Tells a list screen behind the modal that its row is now stale (task 6.3).
-    response.headers["HX-Trigger"] = f'{{"initiativeUpdated": "{code}"}}'
+    # Tells a list screen behind the modal that its row is now stale.
+    response.headers["HX-Trigger"] = f'{{"initiativeUpdated": "{mi_id}"}}'
     return response
+
+
+@app.get("/major-initiatives/{mi_id}/edit/details")
+async def edit_details_form(request: Request, mi_id: str,
+                            target: guards.Target = Depends(guards.may_edit_details)):
+    return _fragment_or_full(
+        request, "edit_details.html", "edit_details_full.html",
+        _ctx(request, card=target.card),
+    )
+
+
+@app.post("/major-initiatives/{mi_id}/edit/details")
+async def edit_details_submit(request: Request, mi_id: str,
+                              target: guards.Target = Depends(guards.may_edit_details)):
+    form = await request.form()
+    try:
+        repo.update_initiative_details(
+            mi_id=mi_id,
+            name=str(form.get("name", "")),
+            description=str(form.get("description", "")),
+            person_id=target.person_id,
+        )
+    except repo.RuleError as exc:
+        return templates.TemplateResponse(
+            request, "edit_details.html",
+            _ctx(request, card=queries.initiative_card(mi_id), error=exc.message),
+            status_code=422,
+        )
+    return _edit_result(request, mi_id)
+
+
+@app.get("/major-initiatives/{mi_id}/edit/tags")
+async def edit_tags_form(request: Request, mi_id: str,
+                         target: guards.Target = Depends(guards.admin_for)):
+    options = queries.tag_edit_options(target.card["InitiativeID"])
+    return _fragment_or_full(
+        request, "edit_tags.html", "edit_tags_full.html",
+        _ctx(request, card=target.card, error=None, **options),
+    )
+
+
+@app.post("/major-initiatives/{mi_id}/edit/tags")
+async def edit_tags_submit(request: Request, mi_id: str,
+                           target: guards.Target = Depends(guards.admin_for)):
+    form = await request.form()
+
+    def collect(primary_field):
+        """Build the tag list from the submitted form.
+
+        The form uses a radio per list, so a browser sends exactly one primary.
+        This still reads every `*_primary` value rather than just the first: a
+        hand-crafted POST carrying two primaries must be rejected by
+        repo.replace_tags with the spec's message, not silently reduced to one.
+        """
+        chosen = form.getlist(primary_field.replace("_primary", ""))
+        primaries = {str(p) for p in form.getlist(primary_field)}
+        out = []
+        for raw in chosen:
+            try:
+                value = int(str(raw))
+            except (TypeError, ValueError):
+                continue
+            out.append({"id": value, "primary": str(raw) in primaries})
+        return out
+
+    try:
+        repo.replace_tags(
+            mi_id=mi_id,
+            goal_tags=collect("goal_primary"),
+            priority_tags=collect("priority_primary"),
+            person_id=target.person_id,
+        )
+    except repo.RuleError as exc:
+        return templates.TemplateResponse(
+            request, "edit_tags.html",
+            _ctx(request, card=queries.initiative_card(mi_id),
+                 goals=[], priorities=[], chosen_goals=set(), chosen_priorities=set(),
+                 error=exc.message),
+            status_code=422,
+        )
+    return _edit_result(request, mi_id)
+
+
+@app.get("/major-initiatives/{mi_id}/edit/links")
+async def edit_links_form(request: Request, mi_id: str,
+                          target: guards.Target = Depends(guards.admin_for)):
+    options = queries.link_edit_options(target.card["InitiativeID"])
+    return _fragment_or_full(
+        request, "edit_links.html", "edit_links_full.html",
+        _ctx(request, card=target.card, error=None, **options),
+    )
+
+
+@app.post("/major-initiatives/{mi_id}/edit/links")
+async def edit_links_submit(request: Request, mi_id: str,
+                            target: guards.Target = Depends(guards.admin_for)):
+    form = await request.form()
+    ids = []
+    for raw in form.getlist("dean_initiative_id"):
+        try:
+            ids.append(int(str(raw)))
+        except (TypeError, ValueError):
+            continue
+    try:
+        repo.replace_links(mi_id=mi_id, dean_priority_ids=ids, person_id=target.person_id)
+    except repo.RuleError as exc:
+        return templates.TemplateResponse(
+            request, "edit_links.html",
+            _ctx(request, card=queries.initiative_card(mi_id),
+                 deans=queries.link_edit_options(target.card["InitiativeID"])["deans"],
+                 chosen=set(ids), error=exc.message),
+            status_code=422,
+        )
+    return _edit_result(request, mi_id)
+
+
+@app.post("/major-initiatives/{mi_id}/retire")
+async def retire_submit(request: Request, mi_id: str,
+                        target: guards.Target = Depends(guards.admin_for)):
+    try:
+        repo.retire_initiative(mi_id=mi_id, person_id=target.person_id)
+    except repo.RuleError as exc:
+        raise HTTPException(status_code=422, detail=exc.message)
+    return RedirectResponse(url="/checks", status_code=303)
+
+
+@app.get("/major-initiatives/new")
+async def create_form(request: Request, _: guards.Target = Depends(guards.admin_only)):
+    return templates.TemplateResponse(
+        request, "edit_create.html",
+        _ctx(request, people=auth.active_people(), error=None),
+    )
+
+
+@app.post("/major-initiatives")
+async def create_submit(request: Request,
+                        target: guards.Target = Depends(guards.admin_only)):
+    form = await request.form()
+    try:
+        repo.create_initiative(
+            code=str(form.get("code", "")),
+            name=str(form.get("name", "")),
+            owner_id=int(str(form.get("owner_id") or 0)),
+            description=str(form.get("description", "")),
+            person_id=target.person_id,
+        )
+    except (repo.RuleError, ValueError) as exc:
+        message = exc.message if isinstance(exc, repo.RuleError) else "Pick an owner."
+        return templates.TemplateResponse(
+            request, "edit_create.html",
+            _ctx(request, people=auth.active_people(), error=message),
+            status_code=422,
+        )
+    return RedirectResponse(url="/checks", status_code=303)
+
+
+# --- Retired paths: 308 to the register path (the merge, 2026-10-07) ---------
+
+
+@app.get("/initiatives/{code}")
+async def initiative_retired(code: str):
+    """The prototype card path retires to the register path."""
+    return RedirectResponse(url="/major-initiatives/" + code, status_code=308)
+
+
+@app.get("/initiatives/{code}/{rest:path}")
+async def initiative_sub_retired(code: str, rest: str):
+    return RedirectResponse(url="/major-initiatives/%s/%s" % (code, rest), status_code=308)
+
+
+@app.post("/initiatives/{code}/{rest:path}")
+async def initiative_sub_retired_post(code: str, rest: str):
+    return RedirectResponse(url="/major-initiatives/%s/%s" % (code, rest), status_code=308)
+
+
+@app.get("/initiatives/new")
+async def create_form_retired():
+    return RedirectResponse(url="/major-initiatives/new", status_code=308)
+
+
+@app.post("/initiatives")
+async def create_submit_retired():
+    return RedirectResponse(url="/major-initiatives", status_code=308)
+
+
+@app.get("/initiatives")
+async def initiatives_index_retired():
+    return RedirectResponse(url="/major-initiatives", status_code=308)
 
 
 @app.get("/meeting")
@@ -618,168 +776,6 @@ async def outcomes(request: Request):
     )
 
 
-@app.get("/initiatives/{code}/edit/details")
-async def edit_details_form(request: Request, code: str,
-                            target: guards.Target = Depends(guards.may_edit_details)):
-    return _fragment_or_full(
-        request, "edit_details.html", "edit_details_full.html",
-        _ctx(request, card=target.card),
-    )
-
-
-@app.post("/initiatives/{code}/edit/details")
-async def edit_details_submit(request: Request, code: str,
-                              target: guards.Target = Depends(guards.may_edit_details)):
-    form = await request.form()
-    try:
-        repo.update_initiative_details(
-            code=code,
-            name=str(form.get("name", "")),
-            description=str(form.get("description", "")),
-            person_id=target.person_id,
-        )
-    except repo.RuleError as exc:
-        return templates.TemplateResponse(
-            request,
-            "edit_details.html",
-            _ctx(request, card=queries.initiative_card(code), error=exc.message),
-            status_code=422,
-        )
-    return _edit_result(request, code)
-
-
-@app.get("/initiatives/{code}/edit/tags")
-async def edit_tags_form(request: Request, code: str,
-                         target: guards.Target = Depends(guards.admin_for)):
-    options = queries.tag_edit_options(target.card["InitiativeID"])
-    return _fragment_or_full(
-        request, "edit_tags.html", "edit_tags_full.html",
-        _ctx(request, card=target.card, error=None, **options),
-    )
-
-
-@app.post("/initiatives/{code}/edit/tags")
-async def edit_tags_submit(request: Request, code: str,
-                           target: guards.Target = Depends(guards.admin_for)):
-    form = await request.form()
-
-    def collect(primary_field):
-        """Build the tag list from the submitted form.
-
-        The form uses a radio per list, so a browser sends exactly one
-        primary. This still reads every `*_primary` value rather than just
-        the first: a hand-crafted POST carrying two primaries must be
-        rejected by repo.replace_tags with the spec's message, not silently
-        reduced to one.
-        """
-        chosen = form.getlist(primary_field.replace("_primary", ""))
-        primaries = {str(p) for p in form.getlist(primary_field)}
-        out = []
-        for raw in chosen:
-            try:
-                value = int(str(raw))
-            except (TypeError, ValueError):
-                continue
-            out.append({"id": value, "primary": str(raw) in primaries})
-        return out
-
-    try:
-        repo.replace_tags(
-            code=code,
-            goal_tags=collect("goal_primary"),
-            priority_tags=collect("priority_primary"),
-            person_id=target.person_id,
-        )
-    except repo.RuleError as exc:
-        card = queries.initiative_card(code)
-        return templates.TemplateResponse(
-            request,
-            "edit_tags.html",
-            _ctx(
-                request,
-                card=card,
-                goals=[],
-                priorities=[],
-                chosen_goals=set(),
-                chosen_priorities=set(),
-                error=exc.message,
-            ),
-            status_code=422,
-        )
-    return _edit_result(request, code)
-
-
-@app.get("/initiatives/{code}/edit/links")
-async def edit_links_form(request: Request, code: str,
-                          target: guards.Target = Depends(guards.admin_for)):
-    options = queries.link_edit_options(target.card["InitiativeID"])
-    return _fragment_or_full(
-        request, "edit_links.html", "edit_links_full.html",
-        _ctx(request, card=target.card, error=None, **options),
-    )
-
-
-@app.post("/initiatives/{code}/edit/links")
-async def edit_links_submit(request: Request, code: str,
-                            target: guards.Target = Depends(guards.admin_for)):
-    form = await request.form()
-    ids = []
-    for raw in form.getlist("dean_initiative_id"):
-        try:
-            ids.append(int(str(raw)))
-        except (TypeError, ValueError):
-            continue
-    try:
-        repo.replace_links(code=code, dean_initiative_ids=ids, person_id=target.person_id)
-    except repo.RuleError as exc:
-        return templates.TemplateResponse(
-            request,
-            "edit_links.html",
-            _ctx(
-                request,
-                card=queries.initiative_card(code),
-                deans=queries.link_edit_options(target.card["InitiativeID"])["deans"],
-                chosen=set(ids),
-                error=exc.message,
-            ),
-            status_code=422,
-        )
-    return _edit_result(request, code)
-
-
-
-@app.post("/initiatives")
-async def create_submit(request: Request,
-                        target: guards.Target = Depends(guards.admin_only)):
-    form = await request.form()
-    try:
-        repo.create_initiative(
-            code=str(form.get("code", "")),
-            name=str(form.get("name", "")),
-            level=str(form.get("level", "")),
-            owner_id=int(str(form.get("owner_id") or 0)),
-            description=str(form.get("description", "")),
-            person_id=target.person_id,
-        )
-    except (repo.RuleError, ValueError) as exc:
-        message = exc.message if isinstance(exc, repo.RuleError) else "Pick an owner."
-        return templates.TemplateResponse(
-            request,
-            "edit_create.html",
-            _ctx(request, people=auth.active_people(), error=message),
-            status_code=422,
-        )
-    return RedirectResponse(url="/checks", status_code=303)
-
-
-@app.post("/initiatives/{code}/retire")
-async def retire_submit(request: Request, code: str,
-                        target: guards.Target = Depends(guards.admin_for)):
-    try:
-        repo.retire_initiative(code=code, person_id=target.person_id)
-    except repo.RuleError as exc:
-        raise HTTPException(status_code=422, detail=exc.message)
-    return RedirectResponse(url="/checks", status_code=303)
 
 
 @app.get("/entries/{kind}/{key}/edit")
@@ -842,44 +838,6 @@ async def person(request: Request, person_id: int):
     )
 
 
-@app.get("/initiatives")
-async def initiatives_index(request: Request):
-    """The initiatives index (task 1.6; filters task 3.4).
-
-    Filter state lives in the query string, so a filtered view is shareable and
-    the controls can reflect what is applied. The controls are plain links, so
-    the page works without JavaScript.
-    """
-    q = request.query_params
-    filters: dict = {k: q.get(k) for k in ("status", "owner", "tier", "goal", "priority")
-                     if q.get(k)}
-    if q.get("stale"):
-        filters["stale"] = True
-
-    all_rows = queries.all_initiatives()
-    rows = queries.all_initiatives(filters) if filters else all_rows
-
-    # The filter options come from the data, so a control never offers a value
-    # that matches nothing.
-    owners = sorted({r["Owner"] for r in all_rows if r["Owner"]})
-    statuses = sorted({r["Status"] or "Not started" for r in all_rows})
-    goals = sorted({g for r in all_rows for g in r["Goals"]})
-
-    return templates.TemplateResponse(
-        request,
-        "initiatives.html",
-        _ctx(
-            request,
-            initiatives=rows,
-            total=len(all_rows),
-            filters=filters,
-            owners=owners,
-            statuses=statuses,
-            goals=goals,
-        ),
-    )
-
-
 @app.get("/")
 async def root(request: Request):
     """Home: the portfolio OVERVIEW.
@@ -912,8 +870,10 @@ async def root(request: Request):
     # A one-line health read, above the taxonomy (#8): the first question on
     # opening a dashboard is "how are we doing?", not "how is this organised?".
     # Counts by status, not a composite score (the design forbids a rollup).
+    # An initiative with no progress update yet counts as Not started, so the
+    # health line counts the whole portfolio (all 29), matching status_counts.
     from collections import Counter
-    by_status = Counter(r["Status"] for r in queries.all_initiatives() if r["Status"])
+    by_status = Counter((r["Status"] or "Not started") for r in queries.all_initiatives())
     health = {
         "on_track": by_status.get("On track", 0),
         "at_risk": by_status.get("At risk", 0),
