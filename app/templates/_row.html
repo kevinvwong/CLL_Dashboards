@@ -1,17 +1,20 @@
 {# One initiative row, shared by the Dean block and every D-1 group.
-   Expects: row. OwnerID and InitiativeID come from the list views. #}
-<li class="initiative-row"
-    hx-get="/major-initiatives/{{ row.Code }}"
-    hx-target="#card-modal"
-    hx-swap="innerHTML"
-    hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
-    tabindex="0"
-    role="link"
-    aria-label="Open {{ row.InitiativeName }}">
+   Expects: row. OwnerID and InitiativeID come from the list views.
+
+   The row is opened by a REAL <a> stretched over it (the .row-open anchor and
+   its ::after), not by role="link" on the <li>. A role on a list item removes
+   its listitem role, so the surrounding <ul> stopped being a list to assistive
+   tech ("18 of 18" lost). The anchor is a genuine link too: keyboard-native,
+   and it navigates to the full page if JavaScript is off (frontend review,
+   2026-10-07). The owner link sits above the stretched target via z-index, so
+   clicking the owner still goes to the person and not the drawer. #}
+<li class="initiative-row">
   <div class="row-main">
     <span class="code">{{ row.Code }}</span>
-    <span class="name">{{ row.InitiativeName }}</span>
-    {# 8.2: every initiative shown is invented demo data. #}
+    <a class="row-open" href="/major-initiatives/{{ row.Code }}"
+       hx-get="/major-initiatives/{{ row.Code }}"
+       hx-target="#card-modal"
+       hx-swap="innerHTML">{{ row.InitiativeName }}</a>
     {% include "_synthetic_label.html" %}
     {% if row.IsPrimary %}<span class="badge">Primary</span>{% endif %}
   </div>
@@ -29,7 +32,7 @@
   </div>
   {% if row.OwnerID %}
   <div class="row-owner">
-    <a href="/people/{{ row.OwnerID }}" onclick="event.stopPropagation()">{{ row.Owner }}</a>
+    <a href="/people/{{ row.OwnerID }}">{{ row.Owner }}</a>
   </div>
   {% else %}
   <div class="row-owner">{{ row.Owner }}</div>

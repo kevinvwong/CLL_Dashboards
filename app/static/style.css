@@ -404,7 +404,20 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   gap: var(--space-1) var(--space-3);
   padding: var(--space-2) var(--space-1);
   border-bottom: 1px solid var(--line);
+  /* Anchor for the stretched .row-open link below. */
+  position: relative;
 }
+
+.initiative-row .row-main { display: flex; align-items: baseline; gap: var(--space-2); flex-wrap: wrap; }
+
+/* The stretched link: the row is opened by this real anchor, whose ::after
+   covers the row. A role="link" on the <li> removed its listitem role and broke
+   the list for assistive tech; a real anchor is keyboard-native and works
+   without JavaScript. The owner link is lifted above it (z-index) so it stays
+   clickable (frontend review, 2026-10-07). */
+.initiative-row .row-open { color: inherit; text-decoration: none; }
+.initiative-row .row-open::after { content: ""; position: absolute; inset: 0; }
+.initiative-row .row-owner a { position: relative; z-index: 1; }
 
 .initiative-row .owner { font-size: var(--text-sm); color: var(--ink-muted); }
 
@@ -446,7 +459,10 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .bar-fill.status-paused      { background: var(--status-paused); }
 .bar-fill.status-complete    { background: var(--status-complete); }
 
-.bar-empty { color: var(--ink-muted); font-size: var(--text-sm); font-style: italic; }
+/* The empty state is TEXT sitting on the bar's track (#9c9480), so it must meet
+   contrast against the track, not the page. --ink-muted was 2.27:1 there; --ink
+   is 5.56:1 (frontend review, 2026-10-07). */
+.bar-empty { color: var(--ink); font-size: var(--text-sm); font-style: italic; }
 
 .bar-label {
   font-size: var(--text-sm);
@@ -568,7 +584,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .oct16-grid {
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr));
 }
 .oct16-card {
   border: 1px solid var(--line); border-radius: var(--radius-md);
@@ -997,7 +1013,10 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
   font-size: var(--text-sm);
   color: var(--ink-muted);
 }
-.breadcrumb a { color: var(--accent); text-decoration: none; }
+/* A breadcrumb link differs from its neighbours only by colour (1.23:1), which
+   WCAG 1.4.1 forbids; underline it so the cue is not colour alone (frontend
+   review, 2026-10-07). */
+.breadcrumb a { color: var(--accent); text-decoration: underline; }
 .breadcrumb a:hover { text-decoration: underline; }
 .breadcrumb .sep { margin: 0 var(--space-2); color: var(--ink-subtle); }
 
@@ -1332,7 +1351,7 @@ body.overlay-open { overflow: hidden; }
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
   gap: var(--space-4);
 }
 .priority-card {
@@ -1395,7 +1414,7 @@ body.overlay-open { overflow: hidden; }
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
   gap: var(--space-4);
 }
 .team-card {
@@ -1520,7 +1539,7 @@ body.overlay-open { overflow: hidden; }
   margin: 0 0 var(--space-4);
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
   gap: var(--space-2);
 }
 .mi-chip {
@@ -1542,7 +1561,10 @@ body.overlay-open { overflow: hidden; }
 }
 .mi-chip a:hover .mi-chip-title { text-decoration: underline; }
 .mi-chip-title { font-size: var(--text-sm); }
-.mi-chip-team { color: var(--ink-muted); font-size: var(--text-xs); white-space: nowrap; }
+/* nowrap kept the team name on one line, but a long name ("Learning
+   Infrastructure") then set the chip's min-content wider than a phone column and
+   overflowed the page at 320px. Let it wrap (frontend review, 2026-10-07). */
+.mi-chip-team { color: var(--ink-muted); font-size: var(--text-xs); }
 
 /* The team page's source-area row and the MI page's field list. */
 .team-areas { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-4); }
@@ -1680,3 +1702,11 @@ body.presenting .no-print { display: none; }
    status is not carried by colour alone (WCAG 1.4.1). Decorative: aria-hidden,
    the word is always rendered next to it. */
 .status-glyph { font-size: 0.85em; line-height: 1; }
+
+/* One column on a phone (frontend review, 2026-10-07): a minmax floor of 18-20rem
+   overflows a 320px screen, and min(20rem,100%) is circular inside minmax so the
+   floor wins. Placed last so it beats the grid definitions above it, which a rule
+   at the earlier mobile breakpoint did not. */
+@media (max-width: 640px) {
+  .mi-chip-list, .priority-grid, .team-grid, .oct16-grid { grid-template-columns: 1fr; }
+}

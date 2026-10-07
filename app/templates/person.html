@@ -8,17 +8,17 @@
 {% if card.initiatives %}
 <ul class="initiative-list person-initiatives">
   {% for row in card.initiatives %}
-  <li class="initiative-row{% if row.NeedsUpdate %} needs-update{% endif %}"
-      hx-get="/major-initiatives/{{ row.Code }}"
-      hx-target="#card-modal"
-      hx-swap="innerHTML"
-      hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
-      tabindex="0" role="link">
+  {# A real <a> opens the row (see _row.html): role="link" on the <li> removed its
+     listitem role and broke the list for assistive tech (frontend review,
+     2026-10-07). #}
+  <li class="initiative-row{% if row.NeedsUpdate %} needs-update{% endif %}">
     <div class="row-main">
       <span class="code">{{ row.Code }}</span>
-      <span class="name">{{ row.InitiativeName }}</span>
+      <a class="row-open" href="/major-initiatives/{{ row.Code }}"
+         hx-get="/major-initiatives/{{ row.Code }}"
+         hx-target="#card-modal"
+         hx-swap="innerHTML">{{ row.InitiativeName }}</a>
       {% include "_synthetic_label.html" %}
-      <span class="level">{{ row.Level }}</span>
       {% if row.NeedsUpdate %}<span class="flag">Needs update</span>{% endif %}
     </div>
     <div class="row-progress">

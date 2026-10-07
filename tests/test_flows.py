@@ -112,17 +112,25 @@ def test_editing_a_description_returns_to_the_list(logged_in):
 
 
 def test_list_rows_can_be_opened_from_the_keyboard(logged_in):
-    """tabindex/role without a key handler is an accessibility promise the app
-    does not keep; htmx's hx-trigger supplies Enter and Space natively."""
+    """A row opens via a real <a>, which is keyboard-native (Enter, and Space by
+    default) and works with JavaScript off.
+
+    Replaced the role="link" + tabindex + hx-trigger pattern (frontend review,
+    2026-10-07): role="link" on the <li> removed its listitem role, so the <ul>
+    stopped being a list to assistive tech. The anchor also carries hx-get, so
+    the drawer still opens in place.
+    """
     body = logged_in("Bill Gaudelli").get("/goals/3").text
-    assert 'hx-trigger="click, keyup[key==&#39;Enter&#39;]' in body or \
-           "keyup[key=='Enter']" in body
-    assert 'tabindex="0"' in body
-    assert 'role="link"' in body
+    assert 'class="row-open"' in body
+    assert 'hx-get="/major-initiatives/' in body
+    assert 'role="link"' not in body, "the row is an <a> now, not a div-with-role"
 
 
 def test_person_and_initiative_rows_are_keyboard_reachable(logged_in):
-    """The person card carries the keyboard contract (Enter opens a row). The
-    meeting is iced (2026-10-06) and the old list index retired in the
-    2026-10-07 merge, so the person card is the remaining keyboard surface."""
-    assert "keyup[key=='Enter']" in logged_in("Bill Gaudelli").get("/people/2").text
+    """The person card's rows open via a real <a> now (frontend review,
+    2026-10-07): role="link" + hx-trigger was replaced by an anchor, which is
+    keyboard-native and works without JavaScript. The meeting is iced
+    (2026-10-06)."""
+    body = logged_in("Bill Gaudelli").get("/people/2").text
+    assert 'class="row-open"' in body
+    assert 'role="link"' not in body
