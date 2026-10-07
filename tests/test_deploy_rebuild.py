@@ -74,7 +74,7 @@ def test_a_rebuild_from_the_archive_reproduces_the_team_layer(tmp_path, stray):
         conn.commit()
         counts = {
             t: conn.execute("SELECT COUNT(*) FROM %s" % t).fetchone()[0]
-            for t in ("Goals", "Priorities", "Initiatives", "Teams",
+            for t in ("Goals", "Priorities", "MajorInitiatives", "Teams",
                       "SourceAreas", "MajorInitiatives", "MajorInitiativePriorities")
         }
     finally:
@@ -84,4 +84,4 @@ def test_a_rebuild_from_the_archive_reproduces_the_team_layer(tmp_path, stray):
     assert counts["SourceAreas"] == 5, counts
     assert counts["MajorInitiatives"] == 29, counts
     assert counts["MajorInitiativePriorities"] == 51, counts
-    assert counts["Initiatives"] == 22, counts
+    assert counts["MajorInitiatives"] == 29, counts

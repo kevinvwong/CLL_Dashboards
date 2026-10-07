@@ -40,7 +40,7 @@ def test_unknown_code_is_404_even_for_a_caller_who_could_edit(logged_in):
 
 def test_known_but_forbidden_is_403(logged_in):
     """A code that exists, that this caller may not act on, is forbidden."""
-    r = logged_in("Tim Jacobbe").get("/major-initiatives/ELIZ-1/update")
+    r = logged_in("Tim Jacobbe").get("/major-initiatives/MI-004/update")
     assert r.status_code == 403
 
 
@@ -48,9 +48,9 @@ def test_known_but_forbidden_is_403(logged_in):
 
 
 def test_direct_post_without_permission_is_refused(logged_in, fresh_db):
-    """Tim Jacobbe does not own ELIZ-1 and is not the Dean; a direct POST is refused."""
+    """Tim Jacobbe does not own MI-004 and is not the Dean; a direct POST is refused."""
     r = logged_in("Tim Jacobbe").post(
-        "/major-initiatives/ELIZ-1/updates",
+        "/major-initiatives/MI-004/updates",
         data={"percent": "10", "status": "On track", "note": "sneaking in"},
         follow_redirects=False,
     )
@@ -60,7 +60,7 @@ def test_direct_post_without_permission_is_refused(logged_in, fresh_db):
 def test_admin_only_post_is_refused_for_a_non_admin(logged_in):
     """An owner who is not an admin cannot edit tags, even on their own item."""
     r = logged_in("Elizabeth Smith").post(
-        "/major-initiatives/ELIZ-1/edit/tags",
+        "/major-initiatives/MI-004/edit/tags",
         data={"goal": ["1"]},
         follow_redirects=False,
     )

@@ -311,8 +311,13 @@ JOIN DeanPriorities d   ON d.DeanPriorityID = kl.DeanPriorityID;
 
 -- ---------- Data checks (merged model, 2026-10-07) ----------------------------
 -- The prototype's vw_DataChecks read the dropped tables. These are the same
--- checks on the register's Major Initiatives: each should be tag-complete and
--- carry at least one diary entry before the dashboard is trusted.
+-- checks on the register's Major Initiatives: each should be tag-complete before
+-- the dashboard is trusted.
+--
+-- "No progress update yet" was dropped 2026-10-07: the register ships no diary,
+-- so an initiative with no update is the NORMAL state, not a data error - and the
+-- intake importer refuses any import that leaves a check outstanding, so keeping
+-- it would have made every import fail. Tag completeness is the real check.
 
 CREATE VIEW vw_DataChecks AS
 SELECT k.Code, 'No goal tagged' AS Issue
@@ -323,9 +328,4 @@ UNION ALL
 SELECT k.Code, 'No priority tagged'
 FROM MajorInitiatives k
 WHERE k.IsActive = 1
-  AND NOT EXISTS (SELECT 1 FROM MajorInitiativePriorities p WHERE p.MajorInitiativeID = k.MajorInitiativeID)
-UNION ALL
-SELECT k.Code, 'No progress update yet'
-FROM MajorInitiatives k
-WHERE k.IsActive = 1
-  AND NOT EXISTS (SELECT 1 FROM MajorInitiativeUpdates u WHERE u.MajorInitiativeID = k.MajorInitiativeID);
+  AND NOT EXISTS (SELECT 1 FROM MajorInitiativePriorities p WHERE p.MajorInitiativeID = k.MajorInitiativeID);

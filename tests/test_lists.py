@@ -134,7 +134,7 @@ def test_no_update_yet_is_shown_when_an_initiative_has_no_progress(logged_in, fr
 
     from app import queries
 
-    # ELIZ-1 sits on the Research goal; query and render must agree on which goal
+    # MI-004 sits on the Research goal; query and render must agree on which goal
     # that is, so the number is resolved rather than assumed.
     number = _goal_number("Research")
     row = [r for r in queries.goal_rows(number) if r["Code"] == "MI-004"][0]
@@ -149,14 +149,14 @@ def test_no_update_yet_is_shown_when_an_initiative_has_no_progress(logged_in, fr
 
 def test_progress_bar_length_and_status_class(logged_in):
     body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
-    assert "style=\"width: 30%\"" in body          # D-A is at 30%
+    assert "style=\"width: 30%\"" in body          # MI-002 is at 30%
     assert "status-at-risk" in body                # D-C is At risk
     assert "status-on-track" in body
 
 
 def test_rows_carry_the_htmx_attributes_for_the_card(logged_in):
     body = logged_in("Bill Gaudelli").get("/goals/%d" % _goal_number("Research")).text
-    assert 'hx-get="/major-initiatives/D-A"' in body
+    assert 'hx-get="/major-initiatives/MI-002"' in body
     assert 'hx-target="#card-modal"' in body
     assert 'hx-swap="innerHTML"' in body
 

@@ -35,8 +35,8 @@ def _initiative_id(fresh_db, code):
 
 
 ADMIN_ROUTES = [
-    ("get", "/major-initiatives/ELIZ-1/edit/tags"),
-    ("get", "/major-initiatives/ELIZ-1/edit/links"),
+    ("get", "/major-initiatives/MI-004/edit/tags"),
+    ("get", "/major-initiatives/MI-004/edit/links"),
     ("get", "/major-initiatives/new"),
     ("get", "/entries/goal/3/edit"),
     ("get", "/entries/priority/Data/edit"),
@@ -55,7 +55,7 @@ def test_non_admin_gets_403_on_admin_routes(logged_in, method, path):
 def test_non_owner_post_gets_403_not_a_silent_success(logged_in, fresh_db):
     """The spec is explicit: the server responds 403 and nothing changes.
 
-    Tim Jacobbe is used rather than NOT_ADMIN because Elizabeth Smith *owns* ELIZ-1 and is
+    Tim Jacobbe is used rather than NOT_ADMIN because Elizabeth Smith *owns* MI-004 and is
     therefore allowed to edit it - owner-or-admin, per design decision 5.
     """
     before = _rows(fresh_db, "SELECT Title AS InitiativeName FROM MajorInitiatives WHERE MIId = ?", (D1,))

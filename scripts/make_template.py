@@ -61,23 +61,20 @@ def build(db_path: str, out_path: str):
     ws.title = "Initiatives"
     goal_cols = [f"Goal: {g['GoalNumber']} {g['ShortName']}" for g in goals]
     priority_cols = [f"Priority: {p['PriorityName']}" for p in priorities]
+    # The merged model (2026-10-07) has no Dean/D-1 Level; the columns are Code,
+    # Name, Description, Owner, Feeds, Percent, Status, then the goal and
+    # priority X columns. "Feeds" carries the Dean Priority codes (D27-n) a Major
+    # Initiative contributes to, so a new initiative can clear vw_DataChecks.
+    base_cols = ["Code", "Name", "Description", "Owner", "Feeds", "Percent", "Status"]
     _header(
         ws,
-        # Feeds carries the Dean codes a D-1 initiative feeds. Without it a
-        # brand-new D-1 initiative can never clear vw_DataChecks, so the
-        # importer would refuse every workbook that created one.
-        ["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent", "Status"]
-        + goal_cols
-        + priority_cols,
-        {"Code": 12, "Name": 42, "Description": 50, "Level": 10, "Owner": 16,
+        base_cols + goal_cols + priority_cols,
+        {"Code": 12, "Name": 42, "Description": 50, "Owner": 16,
          "Feeds": 18, "Percent": 10, "Status": 16},
     )
 
-    # Percent and Status carry a brand-new initiative's starting progress.
-    # vw_DataChecks flags "No progress update yet", and the importer refuses
-    # any import that leaves a check outstanding, so without these two columns
-    # no new initiative could ever be imported at all.
-    status_letter = get_column_letter(8)
+    # Percent and Status carry a brand-new initiative's first diary entry.
+    status_letter = get_column_letter(base_cols.index("Status") + 1)
     dv_status = DataValidation(
         type="list",
         formula1='"Not started,On track,At risk,Off track,Complete,Paused"',
@@ -86,11 +83,11 @@ def build(db_path: str, out_path: str):
     ws.add_data_validation(dv_status)
     dv_status.add(f"{status_letter}2:{status_letter}500")
 
-    feeds_letter = get_column_letter(6)
+    feeds_letter = get_column_letter(base_cols.index("Feeds") + 1)
     dean_codes = [
         r["Code"]
         for r in conn.execute(
-            "SELECT Code FROM Initiatives WHERE Level = 'Dean' AND IsActive = 1 ORDER BY Code"
+            "SELECT Code FROM DeanPriorities ORDER BY FiscalYear, Code"
         )
     ]
     dv_feeds = DataValidation(
@@ -99,8 +96,7 @@ def build(db_path: str, out_path: str):
     ws.add_data_validation(dv_feeds)
     dv_feeds.add(f"{feeds_letter}2:{feeds_letter}500")
 
-    owner_letter = get_column_letter(5)
-    level_letter = get_column_letter(4)
+    owner_letter = get_column_letter(base_cols.index("Owner") + 1)
 
     dv_owner = DataValidation(
         type="list",
@@ -110,13 +106,10 @@ def build(db_path: str, out_path: str):
     ws.add_data_validation(dv_owner)
     dv_owner.add(f"{owner_letter}2:{owner_letter}500")
 
-    dv_level = DataValidation(type="list", formula1='"Dean,D-1"', allow_blank=False)
-    ws.add_data_validation(dv_level)
-    dv_level.add(f"{level_letter}2:{level_letter}500")
-
     # Shade the X columns so they read as mark-these boxes.
+    first_x = len(base_cols) + 1
     for index in range(len(goal_cols) + len(priority_cols)):
-        cell = ws.cell(row=1, column=6 + index)
+        cell = ws.cell(row=1, column=first_x + index)
         cell.fill = X_FILL
         cell.font = Font(bold=True)
 

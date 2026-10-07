@@ -111,7 +111,7 @@ def test_attention_list_holds_initiatives_that_are_at_risk(logged_in, fresh_db):
     _set_progress(fresh_db, "MI-004", "At risk")
 
     attention = queries.attention_list()
-    assert [r["Code"] for r in attention] == ["MI-004"], "only ELIZ-1 should qualify"
+    assert [r["Code"] for r in attention] == ["MI-004"], "only MI-004 should qualify"
     assert "MI-004" in logged_in("Bill Gaudelli").get("/meeting").text
 
 
@@ -206,21 +206,21 @@ def test_the_order_is_stable_when_ages_tie(logged_in, fresh_db):
     """A tie on age must fall back to code, or the agenda reorders between
     renders and is harder to follow in a meeting.
 
-    The codes matter. An earlier version of this test used D-A, D-B, D-C, which
+    The codes matter. An earlier version of this test used MI-002, MI-003, D-C, which
     happen to be in the same order by insertion as alphabetically - so removing
     the code tie-break could not change the result and the test passed without
     testing anything. TIM-* and MAR-* sit the other way round: TIM-* is inserted
     first but MAR-* sorts first alphabetically, so only a real tie-break produces
-    MAR-1, MAR-2, TIM-1.
+    MI-002, MAR-2, MI-001.
     """
     _quiet(fresh_db)
-    for code in ("TIM-1", "MI-002", "MAR-2"):
+    for code in ("MI-001", "MI-002", "MAR-2"):
         _set_progress(fresh_db, code, "At risk", days_ago=3)
 
     first = [r["Code"] for r in queries.attention_list()]
     second = [r["Code"] for r in queries.attention_list()]
     assert first == second, "the order must not vary between renders"
-    assert first == ["MI-002", "MAR-2", "TIM-1"], (
+    assert first == ["MI-002", "MAR-2", "MI-001"], (
         "equal ages must fall back to code order, not insertion order: got %s" % first
     )
 
@@ -281,7 +281,7 @@ def test_checks_lists_each_issue_with_its_initiative(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
         "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004')"
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
     conn.close()
@@ -298,7 +298,7 @@ def test_checks_uses_the_spec_wording_for_a_missing_dean_link(logged_in, fresh_d
     conn = sqlite3.connect(fresh_db)
     conn.execute(
         "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004')"
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
     conn.close()
@@ -319,13 +319,13 @@ def test_checks_rows_link_to_the_initiative(logged_in, fresh_db):
     conn = sqlite3.connect(fresh_db)
     conn.execute(
         "DELETE FROM MajorInitiativeDeanLinks WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004')"
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
     )
     conn.commit()
     conn.close()
 
     body = logged_in("Bill Gaudelli").get("/checks").text
-    assert 'hx-get="/major-initiatives/ELIZ-1"' in body
+    assert 'hx-get="/major-initiatives/MI-004"' in body
 
 
 # --- gating ---------------------------------------------------------------

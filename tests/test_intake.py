@@ -42,7 +42,8 @@ def _counts(db):
     conn = sqlite3.connect(db)
     out = {
         table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        for table in ("Initiatives", "MajorInitiativeUpdates", "MajorInitiativeGoals", "MajorInitiativeDeanLinks")
+        for table in ("MajorInitiatives", "MajorInitiativeUpdates",
+                      "MajorInitiativeGoals", "MajorInitiativeDeanLinks")
     }
     out["active"] = conn.execute("SELECT COUNT(*) FROM MajorInitiatives WHERE IsActive = 1").fetchone()[0]
     conn.close()
@@ -53,7 +54,7 @@ def _diary(db, code):
     conn = sqlite3.connect(db)
     rows = conn.execute(
         "SELECT pu.PercentComplete, pu.Status, pu.Note FROM MajorInitiativeUpdates pu "
-        "JOIN Initiatives i ON i.MajorInitiativeID = pu.MajorInitiativeID WHERE i.Code = ? "
+        "JOIN MajorInitiatives i ON i.MajorInitiativeID = pu.MajorInitiativeID WHERE i.Code = ? "
         "ORDER BY pu.UpdateDate, pu.UpdateID",
         (code,),
     ).fetchall()
@@ -81,7 +82,9 @@ def test_initiatives_sheet_has_x_columns_for_every_goal_and_priority(logged_in, 
     priority_cols = [h for h in header if h.startswith("Priority:")]
     assert len(goal_cols) == 5
     assert len(priority_cols) == 6
-    assert "Code" in header and "Name" in header and "Level" in header and "Owner" in header
+    # The merged model (2026-10-07) has no Dean/D-1 Level column.
+    assert "Code" in header and "Name" in header and "Owner" in header
+    assert "Level" not in header
 
 
 def test_template_round_trips_without_errors(logged_in, fresh_db, tmp_path):
@@ -135,16 +138,16 @@ def _goal_columns(fresh_db):
     return [h for h in header if h and str(h).startswith("Goal:")]
 
 
-def _row(code, name, level, owner, goals=(), priorities=(), feeds="",
+def _row(code, name, owner, goals=(), priorities=(), feeds="",
          percent="", status="", goal_cols=None):
-    """One Initiatives row.
+    """One Initiatives row, in the merged template's column order.
 
-    The goal columns come from the template when given, so a fixture cannot
-    disagree with the workbook a leader would actually receive.
+    The merged model (2026-10-07) has no Level: the columns are
+    Code, Name, Description, Owner, Feeds, Percent, Status, then the X columns.
     """
     cols = goal_cols or ("1 Academic", "2 Extension", "3 Research",
                          "4 Learner impact", "5 Operational")
-    row = [code, name, f"{name} description", level, owner, feeds, percent, status]
+    row = [code, name, f"{name} description", owner, feeds, percent, status]
     row += ["X" if g in goals else "" for g in cols]
     row += ["X" if p in priorities else "" for p in ("Culture", "Data", "Identity",
                                                      "Innovation", "Pathways", "Scale")]
@@ -153,44 +156,45 @@ def _row(code, name, level, owner, goals=(), priorities=(), feeds="",
 
 def test_clean_import_succeeds_and_swaps(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
-        _row("MI-004", "Elizabeth Smith one", "D-1", "Elizabeth Smith",
-             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002"),
+        _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-004", "Elizabeth Smith one", "Elizabeth Smith",
+             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D27-1"),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
     conn = sqlite3.connect(fresh_db)
-    assert conn.execute("SELECT Title AS InitiativeName FROM MajorInitiatives WHERE Code='MI-004'").fetchone()[0] \
+    assert conn.execute("SELECT Title FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0] \
         == "Elizabeth Smith one"
     conn.close()
 
 
 def test_new_initiative_from_the_workbook(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("MI-900", "Brand new", "D-1", "Elizabeth Smith",
-             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002",
+        _row("MI-900", "Brand new", "Elizabeth Smith",
+             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D27-1",
              percent="10", status="On track"),
-        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
-    before = _counts(fresh_db)["Initiatives"]
+    before = _counts(fresh_db)["MajorInitiatives"]
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
-    assert _counts(fresh_db)["Initiatives"] == before + 1
+    assert _counts(fresh_db)["MajorInitiatives"] == before + 1
 
 
 # --- 8.8 diary preserved after re-import ----------------------------------
 
 
-def test_diary_survives_a_re_import(logged_in, fresh_db, tmp_path):
+def test_diary_survives_a_re_import(logged_in, fresh_db, tmp_path, diary):
     """The data-intake spec: every initiative that kept its code still shows
     its full diary."""
+    diary("MI-004", 25, "On track", on="2026-09-20")
     diary_before = _diary(fresh_db, "MI-004")
     assert diary_before
 
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("MI-004", "Renamed but same code", "D-1", "Elizabeth Smith",
-             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002"),
-        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-004", "Renamed but same code", "Elizabeth Smith",
+             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D27-1"),
+        _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
@@ -203,7 +207,7 @@ def test_diary_survives_a_re_import(logged_in, fresh_db, tmp_path):
 def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_path):
     before = _counts(fresh_db)
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok, [str(p) for p in problems]
@@ -212,10 +216,10 @@ def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_pa
     assert after["Initiatives"] == before["Initiatives"], "rows are retired, never deleted"
     assert after["active"] < before["active"]
     conn = sqlite3.connect(fresh_db)
-    assert conn.execute("SELECT IsActive FROM MajorInitiatives WHERE Code='MI-004'").fetchone()[0] == 0
+    assert conn.execute("SELECT IsActive FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0] == 0
     assert conn.execute(
         "SELECT COUNT(*) FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004')"
+        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004')"
     ).fetchone()[0] > 0, "a retired initiative keeps its history"
     conn.close()
 
@@ -228,10 +232,10 @@ def test_a_failing_import_changes_nothing(logged_in, fresh_db, tmp_path):
     diary_before = _diary(fresh_db, "MI-004")
 
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
-        _row("MI-004", "Fine row", "D-1", "Elizabeth Smith",
+        _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-004", "Fine row", "Elizabeth Smith",
              goals=("3 Research",), priorities=("Data", "Innovation")),
-        _row("BAD-1", "Broken", "Sideways", "Nobody", goals=("3 Research",)),
+        _row("BAD-1", "Broken", "Nobody", goals=("3 Research",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok is False
@@ -242,8 +246,8 @@ def test_a_failing_import_changes_nothing(logged_in, fresh_db, tmp_path):
 
 def test_failure_names_the_sheet_row(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
-        _row("BAD-1", "Broken", "Sideways", "Nobody", goals=("3 Research",)),
+        _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("BAD-1", "Broken", "Nobody", goals=("3 Research",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok is False
@@ -255,8 +259,8 @@ def test_failure_names_the_sheet_row(logged_in, fresh_db, tmp_path):
 
 def test_unknown_owner_is_reported(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
-        _row("NEW-1", "New", "D-1", "Someone Not Here", goals=("3 Research",)),
+        _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("NEW-1", "New", "Someone Not Here", goals=("3 Research",)),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path)
     assert ok is False
@@ -266,8 +270,8 @@ def test_unknown_owner_is_reported(logged_in, fresh_db, tmp_path):
 def test_dry_run_reports_clean_without_swapping(logged_in, fresh_db, tmp_path):
     before = _counts(fresh_db)
     path = _filled_workbook(fresh_db, tmp_path, [
-        _row("MI-002", "Dean A", "Dean", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
-        _row("MI-004", "Elizabeth Smith one", "D-1", "Elizabeth Smith",
+        _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
+        _row("MI-004", "Elizabeth Smith one", "Elizabeth Smith",
              goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002"),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path, dry_run=True)
@@ -447,7 +451,7 @@ def test_primacy_can_be_set_after_import_through_the_edit_screen(logged_in, fres
     )
 
     conn = sqlite3.connect(fresh_db)
-    iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004'").fetchone()[0]
+    iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0]
     n = conn.execute("SELECT COUNT(*) FROM MajorInitiativeGoals WHERE MajorInitiativeID=? AND IsPrimary=1",
                      (iid,)).fetchone()[0]
     conn.close()
@@ -462,7 +466,7 @@ def test_imported_initiative_has_no_primary_but_a_second_is_still_refused(logged
     conn = sqlite3.connect(fresh_db)
     goal_ids = [r[0] for r in conn.execute(
         "SELECT GoalID FROM Goals ORDER BY GoalNumber LIMIT 2")]
-    iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code='MI-004'").fetchone()[0]
+    iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0]
     imported_none = conn.execute(
         "SELECT COUNT(*) FROM MajorInitiativeGoals WHERE MajorInitiativeID=? AND IsPrimary=1",
         (iid,)).fetchone()[0]
@@ -500,7 +504,7 @@ def test_the_row_helper_uses_the_templates_goal_columns(fresh_db):
     """
     real = _goal_columns(fresh_db)
     assert real, "the template produced no goal columns"
-    built = _row("X-1", "x", "Dean", "Bill Gaudelli", goals=(real[0],), goal_cols=real)
+    built = _row("X-1", "x", "Bill Gaudelli", goals=(real[0],), goal_cols=real)
     # The first goal column is marked, and the labels are prefix-compatible with
     # the template's, so a row can be appended under the real header.
     assert built[8] == "X", "the row does not line up with the template's first goal column"

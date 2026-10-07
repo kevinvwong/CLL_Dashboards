@@ -60,9 +60,9 @@ def test_relationships_render_both_directions(logged_in):
     from app import queries
     rel = queries.relationships_for(["MI-002", "MI-004"])
     assert rel, "no relationships found"
-    # ELIZ-1 feeds a Dean initiative.
+    # MI-004 feeds a Dean initiative.
     assert any(x["Direction"] == "Feeds" for x in rel.get("MI-004", [])), rel.get("MI-004")
-    # D-A is fed by one.
+    # MI-002 is fed by one.
     assert any(x["Direction"] == "Fed by" for x in rel.get("MI-002", [])), rel.get("MI-002")
 
 
@@ -83,7 +83,7 @@ def test_a_d1_supporting_two_deans_shows_both():
     from app import queries
     rel = queries.relationships_for(["MI-004"])
     feeds = [x for x in rel.get("MI-004", []) if x["Direction"] == "Feeds"]
-    assert len(feeds) >= 2, "expected ELIZ-1 to feed more than one Dean initiative"
+    assert len(feeds) >= 2, "expected MI-004 to feed more than one Dean initiative"
 
 
 # --- 3.4 the index filters ---------------------------------------------------

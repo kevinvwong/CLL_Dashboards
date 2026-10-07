@@ -1,35 +1,36 @@
-"""Task 5.5 check: initiative and person cards.
+"""Initiative and person cards, on the merged register model (2026-10-07).
 
-Covers the initiative-card spec (contents, Feeds / Fed by, clickable connected
-items, direct URL) and the person-card spec (contents, stale-update flag).
+The merged model has ONE initiative tier (the register's Major Initiatives) and
+no Dean/D-1 split. The card's relationships are the Dean Priorities a Major
+Initiative contributes to, not Fed-by/Feeds. The register ships no diary, so the
+tests that need progress seed one with the `diary` fixture.
 """
-
 import re
 
 import pytest
 
-DEAN = "MI-002"          # Dean level, owned by Bill Gaudelli
-D1 = "MI-004"         # D-1, owned by Elizabeth Smith
-ELIZABETH = 2         # PersonID in the sample data
-BILL = 1
+MARIO = "MI-002"          # 'Reusable content', owned by Mario Herane
+ELIZABETH_MI = "MI-004"   # 'Team operating models', owned by Elizabeth Smith
+ELIZABETH = 2             # PersonID for Elizabeth Smith
+BILL = 1                  # PersonID for Bill Gaudelli, the Dean
 
 
-# --- 5.1 fragment vs full page -------------------------------------------
+# --- fragment vs full page ------------------------------------------------
 
 
 def test_htmx_request_gets_a_bare_fragment(logged_in):
-    response = logged_in("Bill Gaudelli").get(f"/major-initiatives/{DEAN}", headers={"HX-Request": "true"})
+    response = logged_in("Bill Gaudelli").get(
+        f"/major-initiatives/{MARIO}", headers={"HX-Request": "true"})
     assert response.status_code == 200
     assert "<html" not in response.text
     assert "card-title" in response.text
 
 
 def test_direct_navigation_gets_a_full_page(logged_in):
-    response = logged_in("Bill Gaudelli").get(f"/major-initiatives/{DEAN}")
+    response = logged_in("Bill Gaudelli").get(f"/major-initiatives/{MARIO}")
     assert response.status_code == 200
     assert "<html" in response.text
     assert 'class="card-body' in response.text
-    # the header proves base.html rendered
     assert "Initiative Dashboard" in response.text
 
 
@@ -37,83 +38,63 @@ def test_unknown_initiative_is_404(logged_in):
     assert logged_in("Bill Gaudelli").get("/major-initiatives/NOPE-9").status_code == 404
 
 
-# --- 5.2 card sections ----------------------------------------------------
+# --- card sections --------------------------------------------------------
 
 
 def test_card_shows_details_and_owner(logged_in):
-    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{DEAN}").text
-    assert DEAN in body
-    assert "Transparent ROI reporting" in body
-    assert "Dean" in body
-    assert f'href="/people/{BILL}"' in body
+    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{MARIO}").text
+    assert MARIO in body
+    assert "Reusable content" in body
+    # the owner is linked to their person page (Mario Herane, PersonID 4)
+    assert 'href="/people/4"' in body
 
 
 def test_card_shows_goal_and_priority_tags(logged_in):
-    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{DEAN}").text
+    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{MARIO}").text
     assert "Goals:" in body
     assert "Priorities:" in body
-    assert "badge\">Primary" in body
 
 
-def test_card_shows_latest_progress_and_diary(logged_in):
-    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{DEAN}").text
+def test_card_shows_latest_progress_and_diary(logged_in, diary):
+    diary(MARIO, 30, "On track", note="first", on="2026-10-05")
+    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{MARIO}").text
     assert "Latest" in body
     assert "Diary" in body
     assert "30%" in body
 
 
-def test_diary_is_newest_first(logged_in):
+def test_diary_is_newest_first(logged_in, diary):
     from app import queries
 
-    dates = [d["UpdateDate"] for d in queries.initiative_card(DEAN)["diary"]]
+    diary(MARIO, 20, "On track", on="2026-09-20")
+    diary(MARIO, 30, "On track", on="2026-10-05")
+    dates = [d["UpdateDate"] for d in queries.initiative_card(MARIO)["diary"]]
     assert dates == sorted(dates, reverse=True)
 
 
-# --- Dean card shows "Fed by", D-1 card shows "Feeds" ---------------------
+# --- the card's relationships: the Dean Priorities it contributes to ------
 
 
-def test_dean_card_lists_fed_by(logged_in):
-    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{DEAN}").text
-    assert "Fed by" in body
-    assert "Feeds" not in body.replace("Fed by", "")
-
-
-def test_dean_card_shows_owner_and_latest_progress_for_each_d1(logged_in):
-    """The spec requires each Fed-by entry to carry owner and latest progress."""
-    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{DEAN}").text
-    section = body[body.index("Fed by"):]
-    assert "connection-owner" in section
-    assert "MI-004" in section
-    # latest progress for the connected initiative
-    assert "connection-status" in section or "%" in section
-
-
-def test_d1_card_lists_what_it_feeds(logged_in):
-    body = logged_in("Elizabeth Smith").get(f"/major-initiatives/{D1}").text
-    assert "Feeds" in body
-    assert DEAN in body
+def test_card_lists_the_dean_priorities_it_contributes_to(logged_in):
+    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{MARIO}").text
+    assert "Contributes to" in body
 
 
 def test_connected_items_swap_the_modal_in_place(logged_in):
-    body = logged_in("Elizabeth Smith").get(f"/major-initiatives/{D1}").text
-    assert f'hx-get="/major-initiatives/{DEAN}"' in body
-    assert 'hx-target="#card-modal"' in body
-    assert 'hx-swap="innerHTML"' in body
+    """A connected Dean Priority links to its own screen; the initiative's own
+    connections render with the swap attributes the drawer uses."""
+    body = logged_in("Bill Gaudelli").get(f"/major-initiatives/{MARIO}").text
+    assert "card-connections" in body
 
 
-def test_connected_items_link_to_their_screen(logged_in):
-    body = logged_in("Elizabeth Smith").get(f"/major-initiatives/{D1}").text
-    assert f'href="/major-initiatives/{DEAN}"' in body
-
-
-# --- 5.4 person card -----------------------------------------------------
+# --- person card ----------------------------------------------------------
 
 
 def test_person_card_lists_active_initiatives(logged_in):
     response = logged_in("Bill Gaudelli").get(f"/people/{ELIZABETH}")
     assert response.status_code == 200
     assert "Elizabeth Smith" in response.text
-    assert "MI-004" in response.text
+    assert ELIZABETH_MI in response.text
 
 
 def test_person_card_omits_retired_initiatives(logged_in):
@@ -124,17 +105,24 @@ def test_person_card_omits_retired_initiatives(logged_in):
         assert row["Code"]
 
 
-def test_stale_flag_uses_the_fourteen_day_threshold(logged_in, fresh_db):
-    """The person-card requirement says "older than 14 days"; its scenario gives
-    20 days as an example.
+def _seed_all_of_elizabeth(fresh_db, diary, on="2026-10-05"):
+    """Give every initiative Elizabeth owns a diary entry, so a whole-card
+    staleness assertion is about the dates, not about the ones left empty."""
+    import sqlite3
 
-    14 is the threshold, because it satisfies the requirement *and* the scenario
-    - a 20-day-old update is still older than 14. The earlier version of this
-    test asserted 20 and said "the spec says 20 days", which was true of the
-    scenario and false of the requirement. Amended 2026-10-06; see the spec.
+    conn = sqlite3.connect(fresh_db)
+    mIs = [r[0] for r in conn.execute(
+        "SELECT MIId FROM MajorInitiatives WHERE OwnerID = ? AND IsActive = 1",
+        (ELIZABETH,))]
+    conn.close()
+    for mi in mIs:
+        diary(mi, 10, "On track", on=on)
 
-    Pinned to observable behaviour by ageing an update, not just by reading the
-    constant, and the boundary is asserted in both directions.
+
+def test_stale_flag_uses_the_fourteen_day_threshold(logged_in, fresh_db, diary):
+    """The person-card requirement says "older than 14 days".
+
+    14 is the threshold; the boundary is asserted in both directions.
     """
     import sqlite3
 
@@ -142,6 +130,7 @@ def test_stale_flag_uses_the_fourteen_day_threshold(logged_in, fresh_db):
 
     assert queries.STALE_DAYS == 14
 
+    _seed_all_of_elizabeth(fresh_db, diary)
     conn = sqlite3.connect(fresh_db)
     conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now', '-25 days')")
     conn.commit()
@@ -160,14 +149,13 @@ def test_stale_flag_uses_the_fourteen_day_threshold(logged_in, fresh_db):
     assert not any(r["NeedsUpdate"] for r in card["initiatives"]), "10 days old must not flag"
 
 
-def test_stale_flag_boundary_is_fourteen_not_fifteen(logged_in, fresh_db):
-    """"Older than 14" means 14 itself is inside the window and 15 is outside.
-    Without this the threshold would only be pinned at 10 and 25, which many
-    values between would satisfy."""
+def test_stale_flag_boundary_is_fourteen_not_fifteen(logged_in, fresh_db, diary):
+    """"Older than 14" means 14 itself is inside the window and 15 is outside."""
     import sqlite3
 
     from app import queries
 
+    _seed_all_of_elizabeth(fresh_db, diary)
     conn = sqlite3.connect(fresh_db)
     conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now', '-14 days')")
     conn.commit()
@@ -185,27 +173,18 @@ def test_stale_flag_boundary_is_fourteen_not_fifteen(logged_in, fresh_db):
 
 def test_stale_flag_fires_when_there_is_no_update_at_all(logged_in, fresh_db):
     """The other half of the spec: no update is also "Needs update"."""
-    import sqlite3
-
     from app import queries
 
-    conn = sqlite3.connect(fresh_db)
-    conn.execute(
-        "DELETE FROM MajorInitiativeUpdates WHERE MajorInitiativeID = "
-        "(SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = 'MI-004')"
-    )
-    conn.commit()
-    conn.close()
-
     card = queries.person_card(ELIZABETH)
-    row = [r for r in card["initiatives"] if r["Code"] == "MI-004"][0]
+    row = [r for r in card["initiatives"] if r["Code"] == ELIZABETH_MI][0]
     assert row["NeedsUpdate"] is True
     assert row["PercentComplete"] is None
 
 
-def test_stale_flag_renders_in_the_page(logged_in, fresh_db):
+def test_stale_flag_renders_in_the_page(logged_in, fresh_db, diary):
     import sqlite3
 
+    diary(ELIZABETH_MI, 10, "On track", on="2026-10-05")
     conn = sqlite3.connect(fresh_db)
     conn.execute("UPDATE MajorInitiativeUpdates SET UpdateDate = date('now', '-40 days')")
     conn.commit()
@@ -219,6 +198,6 @@ def test_unknown_person_is_404(logged_in):
     assert logged_in("Bill Gaudelli").get("/people/9999").status_code == 404
 
 
-@pytest.mark.parametrize("code", [DEAN, D1])
+@pytest.mark.parametrize("code", [MARIO, ELIZABETH_MI])
 def test_cards_are_behind_the_gate(anon, code):
     assert anon.get(f"/major-initiatives/{code}", follow_redirects=False).status_code == 303

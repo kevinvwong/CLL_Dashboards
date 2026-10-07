@@ -24,10 +24,10 @@ def _signed(client, pid=1):
 
 
 @pytest.mark.parametrize("path", [
-    "/major-initiatives/ELIZ-1/edit/details",
-    "/major-initiatives/ELIZ-1/edit/tags",
-    "/major-initiatives/ELIZ-1/edit/links",
-    "/major-initiatives/ELIZ-1/update",
+    "/major-initiatives/MI-004/edit/details",
+    "/major-initiatives/MI-004/edit/tags",
+    "/major-initiatives/MI-004/edit/links",
+    "/major-initiatives/MI-004/update",
 ])
 def test_edit_forms_are_fragments_when_requested_by_htmx(logged_in, path):
     """A partial request must not carry the site layout.
@@ -42,10 +42,10 @@ def test_edit_forms_are_fragments_when_requested_by_htmx(logged_in, path):
 
 
 @pytest.mark.parametrize("path", [
-    "/major-initiatives/ELIZ-1/edit/details",
-    "/major-initiatives/ELIZ-1/edit/tags",
-    "/major-initiatives/ELIZ-1/edit/links",
-    "/major-initiatives/ELIZ-1/update",
+    "/major-initiatives/MI-004/edit/details",
+    "/major-initiatives/MI-004/edit/tags",
+    "/major-initiatives/MI-004/edit/links",
+    "/major-initiatives/MI-004/update",
 ])
 def test_edit_forms_are_full_pages_when_loaded_directly(logged_in, path):
     """A direct load must render the full layout, not a bare fragment."""
@@ -60,14 +60,14 @@ def test_edit_forms_are_full_pages_when_loaded_directly(logged_in, path):
 def test_standalone_page_has_no_modal_close_control(logged_in):
     """The full page shows "← Back"; a second "×" is a control for a dialog
     that was never opened."""
-    body = logged_in("Bill Gaudelli").get("/major-initiatives/ELIZ-1").text
+    body = logged_in("Bill Gaudelli").get("/major-initiatives/MI-004").text
     assert 'class="card-close"' not in body, "the full page still shows the close control"
     assert "Back" in body, "the full page lost its Back link"
 
 
 def test_the_fragment_keeps_the_close_control(logged_in):
     """The modal still needs its close button."""
-    body = logged_in("Bill Gaudelli").get("/major-initiatives/ELIZ-1",
+    body = logged_in("Bill Gaudelli").get("/major-initiatives/MI-004",
                                 headers={"HX-Request": "true"}).text
     assert 'class="card-close"' in body
 

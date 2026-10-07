@@ -58,7 +58,7 @@ def test_the_edit_forms_actually_submit_over_htmx(logged_in):
     """Belt and braces: assert the markup, so a stray method="post" cannot
     come back unnoticed."""
     body = logged_in(ADMIN).get(f"/major-initiatives/{D1}/edit/details").text
-    assert 'hx-post="/major-initiatives/ELIZ-1/edit/details"' in body
+    assert 'hx-post="/major-initiatives/MI-004/edit/details"' in body
     assert 'method="post"' not in body
 
 

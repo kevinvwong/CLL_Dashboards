@@ -146,7 +146,7 @@ def test_the_same_status_uses_one_class_on_every_screen(logged_in):
     """
     from app import status
 
-    # D-A is On track in the sample data; its bar uses the module's class.
+    # MI-002 is On track in the sample data; its bar uses the module's class.
     listing = logged_in("Bill Gaudelli").get("/goals/1").text
     assert status.status_class("On track") in listing, (
         "the list screen did not render the module's status class"

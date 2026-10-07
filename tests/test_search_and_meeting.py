@@ -53,7 +53,7 @@ def test_search_returns_nothing_for_empty_or_no_match(logged_in):
 
 def test_the_search_endpoint_renders_the_fragment_for_the_palette(logged_in):
     """An htmx request from the palette gets the bare fragment to swap in."""
-    body = logged_in("Bill Gaudelli").get("/search?q=MAR-3",
+    body = logged_in("Bill Gaudelli").get("/search?q=MI-003",
                                  headers={"HX-Request": "true"}).text
     assert "search-results" in body
     assert "<html" not in body.lower(), "the palette wants a fragment"

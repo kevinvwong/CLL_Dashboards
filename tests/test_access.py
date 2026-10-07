@@ -141,8 +141,8 @@ def test_reports_to_someone_is_not_the_dean(logged_in, request_for):
 @pytest.mark.parametrize(
     "name,expected",
     [
-        ("Elizabeth Smith", True),   # owns ELIZ-1
-        ("Tim Jacobbe", False),        # does not own ELIZ-1
+        ("Elizabeth Smith", True),   # owns MI-004
+        ("Tim Jacobbe", False),        # does not own MI-004
         ("Bill Gaudelli", True),        # Dean
         ("Kevin", True),       # admin
     ],
