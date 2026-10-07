@@ -1,6 +1,6 @@
 # Register as Canon and Dean Priorities Layer — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make `Initiative Dashboard Register.xlsx` the authoritative source for the Major Initiatives, add real owner names, and introduce a Dean Priorities (FY26/FY27) layer with percent-complete.
 
@@ -9,6 +9,13 @@
 **Tech Stack:** Python 3.12, SQLite, FastAPI, Jinja2, HTMX, pytest, openpyxl.
 
 **Spec:** `docs/superpowers/specs/2026-10-07-register-canon-and-dean-layer-design.md`
+
+**Status: COMPLETE (2026-10-07).** All six tasks executed and committed
+(`1e97bb4`, `d37415d`, `ee5a3d3`, `9ca3a34`, `2a265b5`). Verified by running, not
+by the commits: `python -m pytest` → **535 passed**; `python db/build_register_seed.py
+--check` → current (29 MI, 11 Dean, 58 goal links, 61 dean links); three consecutive
+`python db/build_db.py` runs produce a byte-identical database (SHA256
+`78670AD6…`). The boxes below are ticked to reflect that state.
 
 ## Global Constraints
 
@@ -34,7 +41,7 @@
 **Interfaces:**
 - Produces: tables `DeanPriorities(DeanPriorityID, FiscalYear, Code, Title, Description, PriorityID, PercentComplete, Note)`; `MajorInitiativeDeanLinks(MajorInitiativeID, DeanPriorityID)`; new columns `MajorInitiatives.Description`, `MajorInitiatives.OwnerID`, `MajorInitiativePriorities.IsPrimary`, `People.TeamID`; views `vw_DeanPriorities`, `vw_MajorInitiativeDeanLinks`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_schema_register.py
@@ -86,12 +93,12 @@ def test_fiscal_year_check(tmp_path):
         con.execute("INSERT INTO DeanPriorities (FiscalYear, Code, Title) VALUES (99,'D99-1','x')")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_schema_register.py -v`
 Expected: FAIL — `no such table: DeanPriorities`
 
-- [ ] **Step 3: Add the schema**
+- [x] **Step 3: Add the schema**
 
 In `db/schema.sql`, after `MajorInitiatives` add `OwnerID INTEGER REFERENCES People(PersonID)` and `Description TEXT` to the `MajorInitiatives` column list. Add `IsPrimary` to `MajorInitiativePriorities`:
 
@@ -153,12 +160,12 @@ JOIN DeanPriorities d   ON d.DeanPriorityID = kl.DeanPriorityID;
 
 Update `db/build_db.py:35` row-count list to append `"DeanPriorities","MajorInitiativeDeanLinks"`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_schema_register.py -v`
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -- db/schema.sql db/build_db.py tests/test_schema_register.py
@@ -178,7 +185,7 @@ git commit -m "feat(schema): add Dean Priorities layer and register columns"
 - Consumes: the register workbook; the Task 1 tables.
 - Produces: `db/seed_register.sql`; CLI `python db/build_register_seed.py [--check]`. Sets `MajorInitiatives.{Description,OwnerID}` and `TeamID`; replaces `MajorInitiativePriorities` rows with `IsPrimary`; writes `MajorInitiativeGoals`, `DeanPriorities`, `MajorInitiativeDeanLinks`; replaces `People` names with the register owners.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_register_seed.py
@@ -231,12 +238,12 @@ def test_seed_has_no_clock_default():
     assert not re.search(r"(date|datetime)\('now'\)", sql)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_register_seed.py -v`
 Expected: FAIL — `no such table: DeanPriorities` (seed does not exist yet)
 
-- [ ] **Step 3: Write the generator**
+- [x] **Step 3: Write the generator**
 
 Create `db/build_register_seed.py` following the `build_canon_links.py` pattern:
 
@@ -476,7 +483,7 @@ if __name__ == "__main__":
 
 The register's `--check` note: the seed is generated from the workbook, so `--check` compares generator output against the committed file.
 
-- [ ] **Step 4: Wire the seed into the build**
+- [x] **Step 4: Wire the seed into the build**
 
 In `db/build_db.py`, after the `seed_canon_links.sql` block (line ~33) add:
 
@@ -491,12 +498,12 @@ Then generate and build:
 Run: `python db/build_register_seed.py && python db/build_db.py`
 Expected: prints `MI 29 | Dean 11 | goal links 58 | dean links 61` and rebuilds the db.
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_register_seed.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -- db/build_register_seed.py db/seed_register.sql db/build_db.py tests/test_register_seed.py
@@ -515,12 +522,12 @@ git commit -m "feat(seed): generate the register seed (owners, teams, Dean layer
 - Consumes: Task 2's `People` names (`Bill Gaudelli`, `Elizabeth Smith`, `Tim Jacobbe`, `Mario Herane`).
 - Produces: a green suite whose `logged_in` calls use the canonical names.
 
-- [ ] **Step 1: Confirm the old names are gone from the data**
+- [x] **Step 1: Confirm the old names are gone from the data**
 
 Run: `python -c "import sqlite3;print([r[0] for r in sqlite3.connect('cll_initiatives.db').execute('SELECT Name FROM People')])"`
 Expected: the five full names.
 
-- [ ] **Step 2: Rename the quoted literals in tests**
+- [x] **Step 2: Rename the quoted literals in tests**
 
 Write and run a throwaway migration (temp path, not the repo):
 
@@ -540,17 +547,17 @@ for p in root.glob("*.py"):
     print("rewrote", p.name)
 ```
 
-- [ ] **Step 3: Assert the rename landed**
+- [x] **Step 3: Assert the rename landed**
 
 Run: `git -C "C:\Users\kwong318\GitHub\CLL_Dashboards" diff --stat -- tests | Select-Object -Last 1`
 Expected: ~28 files changed. If a file shows the *opposite* direction (full→short), the regex over-matched; inspect it.
 
-- [ ] **Step 4: Run the full suite to verify it passes**
+- [x] **Step 4: Run the full suite to verify it passes**
 
 Run: `python -m pytest -q`
 Expected: PASS (510 tests). Fix any direct `WHERE Name = '…'` site the rename missed (grep `Name = ` in `tests/`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -- tests
@@ -571,7 +578,7 @@ git commit -m "test: sign in with the canonical owner names"
 - Consumes: `vw_DeanPriorities`, `vw_MajorInitiativeDeanLinks`, `MajorInitiatives.Description`.
 - Produces: `dean_priorities() -> list[dict]` with keys `fiscal_year, code, title, description, percent_complete, priority_code, priority_title`; `major_initiative_dean_links(mi_id) -> list[dict]` with `dean_code, dean_title`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_dean_layer.py
@@ -604,12 +611,12 @@ def test_home_shows_dean_section(logged_in):
     assert "FY26" in html and "FY27" in html
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_dean_layer.py -v`
 Expected: FAIL — `module 'app.queries' has no attribute 'dean_priorities'`
 
-- [ ] **Step 3: Add the queries**
+- [x] **Step 3: Add the queries**
 
 In `app/queries.py`, add (following the existing row-dict convention):
 
@@ -635,7 +642,7 @@ def major_initiative_dean_links(mi_id: str) -> list[dict]:
 
 (Use the module's existing `connect()` context manager and row-to-dict helper names — verify against `app/db.py`.)
 
-- [ ] **Step 4: Render the home section and the MI chips**
+- [x] **Step 4: Render the home section and the MI chips**
 
 In `app/templates/home.html`, add above the priorities section:
 
@@ -677,12 +684,12 @@ In `app/templates/major_initiative.html`, after the title add:
 
 Pass `dean_priorities` to the home context and `dean_links` to the MI detail context in `app/main.py`.
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_dean_layer.py -v`
 Expected: PASS (4 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -- app/queries.py app/main.py app/templates/home.html app/templates/major_initiative.html tests/test_dean_layer.py
@@ -699,7 +706,7 @@ git commit -m "feat(ui): Dean Priorities section and MI contributes-to chips"
 **Interfaces:**
 - Consumes: all prior tasks; a fully-seeded db.
 
-- [ ] **Step 1: Rebuild twice and assert byte-identity**
+- [x] **Step 1: Rebuild twice and assert byte-identity**
 
 Run:
 ```
@@ -711,16 +718,16 @@ python -c "import hashlib;print(hashlib.sha256(open('cll_initiatives.db','rb').r
 ```
 Expected: the two hashes are **identical**; `--check` prints "current".
 
-- [ ] **Step 2: Run the full suite**
+- [x] **Step 2: Run the full suite**
 
 Run: `python -m pytest -q`
 Expected: PASS (515 tests: 510 + 3 schema + 5 seed-register replaced by build-time... verify actual count).
 
-- [ ] **Step 3: Note the team moves in the launch record**
+- [x] **Step 3: Note the team moves in the launch record**
 
 In `docs/ops/LAUNCH_RECORD.md`, add a dated entry naming the four reassigned Major Initiatives, the five reworded titles, and the new Dean layer, citing the register as the source.
 
-- [ ] **Step 4: Stage the exact paths and commit**
+- [x] **Step 4: Stage the exact paths and commit**
 
 ```bash
 git add -- cll_initiatives.db docs/ops/LAUNCH_RECORD.md
@@ -746,7 +753,7 @@ git commit -m "data: rebuild from the register; record team moves and Dean layer
 - Consumes: `AuditLog` (already exists), `is_admin_request`.
 - Produces: `_ACTION_ENTITY` map; `recent_changes(limit=100) -> list[dict]` with keys `created_at, person, action, entity_type, entity_key`; route `GET /changes`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # tests/test_change_log.py
@@ -801,12 +808,12 @@ def test_changes_page_is_admin_gated(logged_in):
 import re  # noqa: E402  (used by test_every_repo_action_has_an_entity)
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_change_log.py -v`
 Expected: FAIL — `module 'app.repo' has no attribute '_ACTION_ENTITY'`
 
-- [ ] **Step 3: Fix the entity map**
+- [x] **Step 3: Fix the entity map**
 
 In `app/repo.py`, add near `STATUSES`:
 
@@ -841,7 +848,7 @@ def _audit(conn, person_id: int, action: str, entity_key: str, details: dict):
     )
 ```
 
-- [ ] **Step 4: Add the AuditLog indexes**
+- [x] **Step 4: Add the AuditLog indexes**
 
 In `db/schema.sql`, after the `IX_*` index block add:
 
@@ -850,7 +857,7 @@ CREATE INDEX IX_AuditLog_CreatedAt ON AuditLog(CreatedAt DESC);
 CREATE INDEX IX_AuditLog_Entity   ON AuditLog(EntityType, EntityKey);
 ```
 
-- [ ] **Step 5: Add the reader query and page**
+- [x] **Step 5: Add the reader query and page**
 
 In `app/queries.py`:
 
@@ -879,12 +886,12 @@ def changes_page(request: Request):
 
 Add an admin-only nav link in `base.html` beside `/checks`.
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_change_log.py -v`
 Expected: PASS (4 tests)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -- app/repo.py app/queries.py app/main.py app/templates/changes.html app/templates/base.html db/schema.sql tests/test_change_log.py
