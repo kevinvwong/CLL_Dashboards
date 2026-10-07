@@ -54,9 +54,10 @@ def _diary(db, code):
     conn = sqlite3.connect(db)
     rows = conn.execute(
         "SELECT pu.PercentComplete, pu.Status, pu.Note FROM MajorInitiativeUpdates pu "
-        "JOIN MajorInitiatives i ON i.MajorInitiativeID = pu.MajorInitiativeID WHERE i.Code = ? "
+        "JOIN MajorInitiatives i ON i.MajorInitiativeID = pu.MajorInitiativeID "
+        "WHERE i.MIId = ? OR i.Code = ? "
         "ORDER BY pu.UpdateDate, pu.UpdateID",
-        (code,),
+        (code, code),
     ).fetchall()
     conn.close()
     return rows
@@ -204,7 +205,8 @@ def test_diary_survives_a_re_import(logged_in, fresh_db, tmp_path, diary):
 # --- 8.8 retire missing, never delete -------------------------------------
 
 
-def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_path):
+def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_path, diary):
+    diary("MI-004", 25, "On track", on="2026-09-20")
     before = _counts(fresh_db)
     path = _filled_workbook(fresh_db, tmp_path, [
         _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
@@ -213,7 +215,7 @@ def test_missing_initiatives_are_retired_not_deleted(logged_in, fresh_db, tmp_pa
     assert ok, [str(p) for p in problems]
 
     after = _counts(fresh_db)
-    assert after["Initiatives"] == before["Initiatives"], "rows are retired, never deleted"
+    assert after["MajorInitiatives"] == before["MajorInitiatives"], "rows are retired, never deleted"
     assert after["active"] < before["active"]
     conn = sqlite3.connect(fresh_db)
     assert conn.execute("SELECT IsActive FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0] == 0
@@ -254,7 +256,7 @@ def test_failure_names_the_sheet_row(logged_in, fresh_db, tmp_path):
     text = " | ".join(str(p) for p in problems)
     assert "Initiatives" in text
     assert "BAD-1" in text
-    assert "Dean or D-1" in text
+    assert "owner" in text.lower() or "Nobody" in text
 
 
 def test_unknown_owner_is_reported(logged_in, fresh_db, tmp_path):
@@ -272,7 +274,7 @@ def test_dry_run_reports_clean_without_swapping(logged_in, fresh_db, tmp_path):
     path = _filled_workbook(fresh_db, tmp_path, [
         _row("MI-002", "Dean A", "Bill Gaudelli", goals=("3 Research",), priorities=("Data",)),
         _row("MI-004", "Elizabeth Smith one", "Elizabeth Smith",
-             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="MI-002"),
+             goals=("3 Research",), priorities=("Data", "Innovation"), feeds="D27-1"),
     ])
     ok, problems = import_xlsx.import_workbook(fresh_db, path, dry_run=True)
     assert ok, [str(p) for p in problems]
@@ -336,163 +338,26 @@ def test_the_generated_template_carries_the_import_columns(logged_in, fresh_db, 
     formula = validations[feeds_letter].formula1
     conn = sqlite3.connect(fresh_db)
     deans = [r[0] for r in conn.execute(
-        "SELECT Code FROM MajorInitiatives WHERE Level='Dean' AND IsActive=1")]
+        "SELECT Code FROM DeanPriorities ORDER BY FiscalYear, Code")]
     conn.close()
     for code in deans:
         assert code in formula, "Feeds dropdown is missing Dean code %s" % code
 
 
-def test_a_dean_row_with_feeds_is_refused_and_says_why(logged_in, fresh_db, tmp_path):
-    """A Dean initiative is fed BY D-1 initiatives; it feeds nothing, so a value
-    in Feeds on a Dean row is a mistake.
+# test_a_dean_row_with_feeds_is_refused_and_says_why: retired 2026-10-07 - the merged model has no Dean/D-1
+# level and Feeds is a Dean Priority list, so neither premise holds.
 
-    The message used to read "a Dean initiative feeds nothing" while rejecting a
-    row that had just supplied one, which described the opposite of what was
-    found. Amended 2026-10-06.
-    """
-    from openpyxl import Workbook
+# test_a_d1_row_with_no_feeds_is_refused_by_the_data_check: retired 2026-10-07 - the merged model has no Dean/D-1
+# level and Feeds is a Dean Priority list, so neither premise holds.
 
-    out = tmp_path / "dean_with_feeds.xlsx"
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Initiatives"
-    ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
-               "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["D-Z", "A dean row", "d", "Dean", "Bill Gaudelli", "MI-002", "", "", "X", "X"])
-    wb.save(out)
+# test_the_template_cannot_mark_a_primary_and_import_leaves_none: retired 2026-10-07 - the merged register model has no goal
+# primacy (MajorInitiativeGoals has no IsPrimary), so this gap is gone.
 
-    ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
-    assert ok is False
-    text = " ".join(str(p) for p in problems)
-    assert "cannot feed another initiative" in text, text
-    assert "MI-002" in text, "the report should quote what the row actually said"
-    assert "feeds nothing" not in text, (
-        "the old wording claimed the value was missing while rejecting a row that had one"
-    )
+# test_primacy_can_be_set_after_import_through_the_edit_screen: retired 2026-10-07 - the merged register model has no goal
+# primacy (MajorInitiativeGoals has no IsPrimary), so this gap is gone.
 
-
-def test_a_d1_row_with_no_feeds_is_refused_by_the_data_check(logged_in, fresh_db, tmp_path):
-    from openpyxl import Workbook
-
-    out = tmp_path / "d1_no_feeds.xlsx"
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Initiatives"
-    ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
-               "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["MI-900", "No link", "d", "D-1", "Elizabeth Smith", "", "20", "On track", "X", "X"])
-    wb.save(out)
-
-    ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
-    assert ok is False
-    text = " ".join(str(p) for p in problems)
-    assert "not linked to any Dean initiative" in text, text
-
-
-def test_the_template_cannot_mark_a_primary_and_import_leaves_none(logged_in, fresh_db, tmp_path):
-    """Documents a gap rather than fixing it.
-
-    The requirement once promised primary goal and primary priority dropdowns.
-    There are none, and the importer inserts every tag with IsPrimary = 0, so an
-    imported initiative carries no primary even though the schema permits one and
-    the cards render a badge for it. Changing the workbook format is a decision
-    for whoever owns the intake round, so this test records the behaviour instead
-    of silently choosing for them.
-    """
-    from openpyxl import Workbook
-
-    probe = tmp_path / "probe.xlsx"
-    path, _, _, _ = make_template.build(fresh_db, str(probe))
-    header = [c.value for c in load_workbook(path)["Initiatives"][1]]
-    assert not any("primary" in str(h).lower() for h in header), (
-        "a primary column appeared; the gap this test documents may be closed, "
-        "in which case update the data-intake spec and remove this test"
-    )
-
-    out = tmp_path / "new.xlsx"
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Initiatives"
-    ws.append(["Code", "Name", "Description", "Level", "Owner", "Feeds", "Percent",
-               "Status", _goal_header("Research"), "Priority: Data"])
-    ws.append(["MI-900", "Fresh", "d", "D-1", "Elizabeth Smith", "MI-002", "20", "On track", "X", "X"])
-    wb.save(out)
-    ok, problems = import_xlsx.import_workbook(fresh_db, str(out))
-    assert ok, problems
-
-    conn = sqlite3.connect(fresh_db)
-    n = conn.execute(
-        "SELECT COUNT(*) FROM MajorInitiativeGoals ig JOIN Initiatives i "
-        "ON i.MajorInitiativeID = ig.MajorInitiativeID WHERE i.Code = 'MI-900' AND ig.IsPrimary = 1"
-    ).fetchone()[0]
-    conn.close()
-    assert n == 0, "an imported initiative has no primary goal, by design of the template"
-
-
-def test_primacy_can_be_set_after_import_through_the_edit_screen(logged_in, fresh_db):
-    """The gap above is recoverable per initiative without a second import.
-
-    Resolves the goal the way the edit-tags screen does - by number - rather than
-    assuming the card hands back an internal id it does not carry.
-    """
-    from app import repo
-
-    goal_number = queries.initiative_card("MI-004")["goal_tags"][0]["GoalNumber"]
-    conn = sqlite3.connect(fresh_db)
-    goal_id = conn.execute("SELECT GoalID FROM Goals WHERE GoalNumber = ?",
-                           (goal_number,)).fetchone()[0]
-    conn.close()
-
-    repo.replace_tags(
-        "MI-004",
-        goal_tags=[{"id": goal_id, "primary": True}],
-        priority_tags=[],
-        person_id=1,
-    )
-
-    conn = sqlite3.connect(fresh_db)
-    iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0]
-    n = conn.execute("SELECT COUNT(*) FROM MajorInitiativeGoals WHERE MajorInitiativeID=? AND IsPrimary=1",
-                     (iid,)).fetchone()[0]
-    conn.close()
-    assert n == 1, "primacy set through the edit screen must persist"
-
-
-def test_imported_initiative_has_no_primary_but_a_second_is_still_refused(logged_in, fresh_db):
-    """The other half of the primacy gap: imported tags carry none, and setting
-    two is refused by the same rule that governs the sample data."""
-    from app import repo
-
-    conn = sqlite3.connect(fresh_db)
-    goal_ids = [r[0] for r in conn.execute(
-        "SELECT GoalID FROM Goals ORDER BY GoalNumber LIMIT 2")]
-    iid = conn.execute("SELECT MajorInitiativeID FROM MajorInitiatives WHERE MIId='MI-004'").fetchone()[0]
-    imported_none = conn.execute(
-        "SELECT COUNT(*) FROM MajorInitiativeGoals WHERE MajorInitiativeID=? AND IsPrimary=1",
-        (iid,)).fetchone()[0]
-    conn.close()
-
-    # the edit screen offers both goals, so a second primary is reachable
-    with pytest.raises(repo.RuleError) as exc:
-        repo.replace_tags(
-            "MI-004",
-            goal_tags=[{"id": goal_ids[0], "primary": True},
-                       {"id": goal_ids[1], "primary": True}],
-            priority_tags=[],
-            person_id=1,
-        )
-    assert "Only one primary goal is allowed" in str(exc.value)
-
-    conn = sqlite3.connect(fresh_db)
-    after = conn.execute("SELECT COUNT(*) FROM MajorInitiativeGoals WHERE MajorInitiativeID=? AND IsPrimary=1",
-                         (iid,)).fetchone()[0]
-    conn.close()
-    assert after == 0 or after == 1, "the refusal must not leave two primaries behind"
-
-
-
-# --- the fixture must agree with the template -----------------------------
-
+# test_imported_initiative_has_no_primary_but_a_second_is_still_refused: retired 2026-10-07 - the merged register model has no goal
+# primacy (MajorInitiativeGoals has no IsPrimary), so this gap is gone.
 
 def test_the_row_helper_uses_the_templates_goal_columns(fresh_db):
     """The fixture's goal columns must be the ones the template generates.
@@ -507,7 +372,7 @@ def test_the_row_helper_uses_the_templates_goal_columns(fresh_db):
     built = _row("X-1", "x", "Bill Gaudelli", goals=(real[0],), goal_cols=real)
     # The first goal column is marked, and the labels are prefix-compatible with
     # the template's, so a row can be appended under the real header.
-    assert built[8] == "X", "the row does not line up with the template's first goal column"
+    assert built[7] == "X", "the row does not line up with the template's first goal column"
     for label in real:
         assert label.startswith("Goal: "), label
     assert "Learner" in " ".join(real), "the corrected Learner goal is missing"

@@ -146,7 +146,8 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
                 owner_id = people.get(owner)
 
             existing = conn.execute(
-                "SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = ?", (code,)
+                "SELECT MajorInitiativeID FROM MajorInitiatives WHERE Code = ? OR MIId = ?",
+                (code, code),
             ).fetchone()
             if existing:
                 iid = existing["MajorInitiativeID"]
@@ -259,8 +260,10 @@ def import_workbook(db_path: str, workbook_path: str, dry_run: bool = False):
         if seen_codes:
             placeholders = ",".join("?" * len(seen_codes))
             retired = conn.execute(
-                f"SELECT Code FROM MajorInitiatives WHERE IsActive = 1 AND Code NOT IN ({placeholders})",
-                seen_codes,
+                f"SELECT Code, MIId FROM MajorInitiatives WHERE IsActive = 1 "
+                f"AND Code NOT IN ({placeholders}) "
+                f"AND COALESCE(MIId,'') NOT IN ({placeholders})",
+                tuple(seen_codes) + tuple(seen_codes),
             ).fetchall()
             for row in retired:
                 conn.execute("UPDATE MajorInitiatives SET IsActive = 0 WHERE Code = ?",
