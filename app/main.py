@@ -324,6 +324,7 @@ async def whoami_submit(request: Request):
         return RedirectResponse(url="/login", status_code=303)
     form = await request.form()
     person_id = str(form.get("person_id", ""))
+    pin = str(form.get("pin", ""))
     if not auth.person_exists(person_id):
         return templates.TemplateResponse(
             request,
@@ -331,8 +332,33 @@ async def whoami_submit(request: Request):
             _ctx(request, people=auth.active_people(), error="Pick who you are."),
             status_code=400,
         )
+    # The stopgap (auth hardening, 2026-10-07): once a person has a PIN, BECOMING
+    # them requires it - the passcode alone no longer lets anyone assert any
+    # identity, which was the real escalation vector. A person with no PIN set
+    # still falls back to the passcode-held picker, so nothing breaks before PINs
+    # are provisioned.
+    if auth.person_credential(person_id):
+        if not auth.verify_person_pin(person_id, pin):
+            return templates.TemplateResponse(
+                request,
+                "whoami.html",
+                _ctx(request, people=auth.active_people(),
+                     error="That PIN is not right."),
+                status_code=401,
+            )
     response = RedirectResponse(url="/", status_code=303)
     return auth.set_person_cookie(response, request, int(person_id))
+
+
+@app.post("/people/{person_id}/set-pin")
+async def set_pin(request: Request, person_id: int, _=Depends(guards.admin_only)):
+    """An admin sets a person's PIN, closing self-assertion for them."""
+    form = await request.form()
+    pin = str(form.get("pin", "")).strip()
+    if len(pin) < 4 or not pin.isdigit():
+        raise HTTPException(status_code=400, detail="A PIN must be at least 4 digits.")
+    auth.set_person_pin(person_id, pin)
+    return RedirectResponse(url="/people", status_code=303)
 
 
 @app.get("/goals/{goal_number}")

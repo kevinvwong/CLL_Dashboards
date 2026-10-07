@@ -36,6 +36,7 @@ _ACTION_ENTITY = {
     "update_initiative": "Initiative",
     "create_initiative": "Initiative",
     "retire_initiative": "Initiative",
+    "restore_initiative": "Initiative",
     "replace_tags": "Tag",
     "replace_links": "Link",
     "update_goal_description": "Goal",
@@ -329,6 +330,28 @@ def retire_initiative(mi_id: str, person_id: int):
     write(body)
 
 
+def restore_initiative(mi_id: str, person_id: int, reason: str = None):
+    """Undo a retire: bring a retired initiative back.
+
+    Retire kept the row, so a restore is the inverse flag flip - the "restore
+    path" the change-management review found missing. Audited like any write.
+    """
+    def body(conn):
+        row = conn.execute(
+            "SELECT TeamInitiativeID, IsActive FROM TeamInitiatives WHERE MIId = ?",
+            (mi_id,),
+        ).fetchone()
+        if row is None:
+            raise RuleError("That initiative does not exist.")
+        if row["IsActive"]:
+            raise RuleError(f"{mi_id} is not retired.")
+        conn.execute("UPDATE TeamInitiatives SET IsActive = 1 WHERE TeamInitiativeID = ?",
+                     (row["TeamInitiativeID"],))
+        _audit(conn, person_id, "restore_initiative", mi_id, {}, reason=reason)
+
+    write(body)
+
+
 def update_entry_description(
     kind: str, key, description: str, person_id: int
 ):
@@ -356,12 +379,17 @@ def update_entry_description(
     write(body)
 
 
-def _audit(conn, person_id: int, action: str, entity_key: str, details: dict):
+def _audit(conn, person_id: int, action: str, entity_key: str, details: dict,
+           reason: str = None, source: str = None, correlation_id: str = None):
+    """Record one change. Reason, source and correlation id are the change-
+    management fields (2026-10-07); all optional, so existing writers are
+    unchanged."""
     import json
 
     entity = _ACTION_ENTITY.get(action, "Unknown")
     conn.execute(
-        "INSERT INTO AuditLog (PersonID, Action, EntityType, EntityKey, Details) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (person_id, action, entity, entity_key, json.dumps(details)),
+        "INSERT INTO AuditLog (PersonID, Action, EntityType, EntityKey, Details, "
+        "Reason, Source, CorrelationID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (person_id, action, entity, entity_key, json.dumps(details),
+         reason, source, correlation_id),
     )

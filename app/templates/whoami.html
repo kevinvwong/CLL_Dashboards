@@ -3,6 +3,11 @@
 {% block content %}
 <h1>Who are you?</h1>
 <form method="post" action="/whoami" class="card whoami">
+  {# The stopgap (auth hardening): if a PIN has been set for you, enter it above
+     and then click your name. Without a PIN set, the name alone still works. #}
+  <label class="pin-field">PIN <span class="pin-hint">(if you have one)</span>
+    <input type="password" name="pin" inputmode="numeric" autocomplete="off">
+  </label>
   <ul class="people">
     {% for p in people %}
     <li>

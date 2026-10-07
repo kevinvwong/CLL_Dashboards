@@ -47,7 +47,7 @@ con.commit()
 for t in ["Goals","Priorities","People","Teams","SourceAreas",
           "TeamInitiatives","TeamInitiativePriorities","TeamInitiativeGoals",
           "DeanInitiatives","TeamInitiativeDeanLinks","TeamInitiativeCoOwners",
-          "TeamInitiativeUpdates","Milestones","AppMeta","AuditLog"]:
+          "TeamInitiativeUpdates","Milestones","AppMeta","Roles","PeopleRoles","AuditLog"]:
     print(f"{t:22} {con.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]:>4} rows")
 issues = con.execute("SELECT Code, Issue FROM vw_DataChecks").fetchall()
 print(f"\nData checks: {len(issues)} issue(s)")

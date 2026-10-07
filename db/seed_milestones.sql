@@ -37,3 +37,17 @@ DELETE FROM AppMeta;
 INSERT INTO AppMeta (Key, Value) VALUES
   ('dataset_provenance', 'mock'),
   ('dataset_source', 'seed: illustrative milestones for build/layout review');
+
+-- Roles and their assignment (ADR-0005). App-local, not provider groups.
+DELETE FROM PeopleRoles;
+DELETE FROM Roles;
+INSERT INTO Roles (RoleID, Name, Description) VALUES
+  (1, 'admin', 'the dashboard team: edits everything'),
+  (2, 'dean', 'the Dean: updates any initiative and the Dean layer'),
+  (3, 'team_lead', 'accountable for a team: updates its initiatives'),
+  (4, 'viewer', 'may read every page');
+INSERT INTO PeopleRoles (PersonID, RoleID)
+  SELECT PersonID, 1 FROM People WHERE IsAdmin = 1
+  UNION SELECT PersonID, 2 FROM People WHERE lower(trim(COALESCE(Title,''))) = 'dean'
+  UNION SELECT PersonID, 3 FROM People WHERE TeamID IS NOT NULL
+  UNION SELECT PersonID, 4 FROM People WHERE IsActive = 1;

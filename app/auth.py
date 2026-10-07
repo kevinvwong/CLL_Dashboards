@@ -14,6 +14,9 @@ rather than an absent button.
 ``DB_PATH`` at a temporary copy between cases.
 """
 
+import hashlib
+import hmac
+import os
 import secrets
 import sqlite3
 
@@ -128,7 +131,7 @@ def current_person(request: Request) -> dict | None:
         return None
     with _conn() as conn:
         row = conn.execute(
-            "SELECT PersonID, Name, Title, ReportsToID, IsAdmin "
+            "SELECT PersonID, Name, Title, ReportsToID, IsAdmin, Credential "
             "FROM People WHERE PersonID = ? AND IsActive = 1",
             (person_id,),
         ).fetchone()
@@ -170,20 +173,149 @@ def get_initiative(mi_id: str):
 
 
 def is_admin(person) -> bool:
-    return bool(person and person["IsAdmin"])
+    """The dashboard team: edits everything.
+
+    Reads the local roles (ADR-0005), falling back to the deprecated IsAdmin
+    column so the two agree during the migration. `IsAdmin` is what the picker
+    used to make self-assertable; roles are not.
+    """
+    if not person:
+        return False
+    if has_role(person, "admin"):
+        return True
+    return bool(person.get("IsAdmin"))
 
 
 def is_dean(person) -> bool:
-    """The Dean is the person titled "Dean".
+    """The Dean: the person with the 'dean' role.
 
-    Before the 2026-10-07 merge this was "owns a Dean-level initiative", but the
-    merged model has no Dean-level initiatives - the Dean's own work is the
-    separate Dean Initiatives layer. The register marks Bill Gaudelli with the
-    Title 'Dean', so that is the marker. `ReportsToID IS NULL` alone would also
-    catch the dashboard admin and any co-owner the register lists without a
-    reporting line, which is why it is not used.
+    Was the free-text marker `Title == 'Dean'`; now the role (ADR-0005), with the
+    Title check kept as a fallback during the migration.
     """
-    return bool(person and (person["Title"] or "").strip().lower() == "dean")
+    if not person:
+        return False
+    if has_role(person, "dean"):
+        return True
+    return (person.get("Title") or "").strip().lower() == "dean"
+
+
+#: role name -> RoleID, read once. Empty if the schema predates the roles tables.
+def _role_ids() -> dict:
+    try:
+        with _conn() as conn:
+            return {r["Name"]: r["RoleID"] for r in
+                    conn.execute("SELECT RoleID, Name FROM Roles")}
+    except sqlite3.Error:
+        return {}
+
+
+def roles_of(person) -> set:
+    """The role names a person holds."""
+    if not person:
+        return set()
+    with _conn() as conn:
+        rows = conn.execute(
+            "SELECT r.Name FROM PeopleRoles pr JOIN Roles r ON r.RoleID = pr.RoleID "
+            "WHERE pr.PersonID = ?", (person["PersonID"],)).fetchall()
+    return {r["Name"] for r in rows}
+
+
+def has_role(person, role: str) -> bool:
+    return role in roles_of(person)
+
+
+# --- the credential stopgap (auth hardening, 2026-10-07) ---------------------
+#
+# The escalation vector was never the passcode; it was that POST /whoami let
+# anyone holding the passcode BECOME any person, including the admin. A PIN that
+# only that person knows closes it. Stored as PBKDF2-HMAC-SHA256, salted, never
+# in the seed. This is the local implementation behind the seam below; an Entra
+# or Clerk adapter replaces `authenticate` later without touching the routes.
+
+PBKDF2_ITERATIONS = 60000
+
+
+def hash_pin(pin: str) -> str:
+    salt = os.urandom(16)
+    dk = hashlib.pbkdf2_hmac("sha256", (pin or "").encode("utf-8"), salt, PBKDF2_ITERATIONS)
+    return "pbkdf2_sha256$%d$%s$%s" % (PBKDF2_ITERATIONS, salt.hex(), dk.hex())
+
+
+def check_pin(stored: str, pin: str) -> bool:
+    try:
+        algo, iters, salt_hex, hash_hex = (stored or "").split("$")
+        if algo != "pbkdf2_sha256":
+            return False
+        dk = hashlib.pbkdf2_hmac("sha256", (pin or "").encode("utf-8"),
+                                 bytes.fromhex(salt_hex), int(iters))
+        return hmac.compare_digest(dk.hex(), hash_hex)
+    except (ValueError, TypeError):
+        return False
+
+
+def person_credential(person_id):
+    """The stored credential hash for a person, or None (no PIN set)."""
+    try:
+        pid = int(person_id)
+    except (TypeError, ValueError):
+        return None
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT Credential FROM People WHERE PersonID = ? AND IsActive = 1",
+            (pid,)).fetchone()
+    return row["Credential"] if row else None
+
+
+def verify_person_pin(person_id, pin) -> bool:
+    stored = person_credential(person_id)
+    if not stored:
+        return False
+    return check_pin(stored, pin)
+
+
+def set_person_pin(person_id, pin: str):
+    with connect(write=True) as conn:
+        conn.execute("UPDATE People SET Credential = ? WHERE PersonID = ?",
+                     (hash_pin(pin), int(person_id)))
+        conn.commit()
+
+
+class Principal:
+    """The authenticated subject and what it may do (ADR-0004).
+
+    The identity provider answers "who"; the local roles answer "what". Routes
+    read a Principal, never a raw cookie, so swapping the provider is one
+    function.
+    """
+
+    __slots__ = ("person", "roles")
+
+    def __init__(self, person: dict, roles: set):
+        self.person = person
+        self.roles = roles
+
+    @property
+    def person_id(self) -> int:
+        return self.person["PersonID"]
+
+    @property
+    def name(self) -> str:
+        return self.person["Name"]
+
+    def has_role(self, role: str) -> bool:
+        return role in self.roles
+
+
+def authenticate(request: Request):
+    """The one entry point every auth path goes through (ADR-0004).
+
+    Returns a Principal for a signed-in person, else None. An Entra/Clerk
+    adapter implements this same contract; the routes do not change.
+    """
+    person = current_person(request)
+    if not person:
+        return None
+    return Principal(person, roles_of(person))
 
 
 def can_update(request: Request, mi_id: str) -> bool:

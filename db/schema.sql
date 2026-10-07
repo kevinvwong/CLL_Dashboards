@@ -212,6 +212,11 @@ CREATE TABLE People (
     -- Dean, who leads none, and for the dashboard admin.
     TeamID       INTEGER REFERENCES Teams(TeamID),
     IsAdmin      INTEGER NOT NULL DEFAULT 0 CHECK (IsAdmin IN (0,1)),  -- dashboard team: edits everything
+    -- The stopgap credential (auth hardening, 2026-10-07): a PBKDF2 hash of the
+    -- person's PIN, or NULL if none is set. NULL means the picker still asserts
+    -- this person; setting a PIN is what closes self-assertion for them. Kept
+    -- out of the seed so no credential is committed; an admin sets it in-app.
+    Credential   TEXT,
     IsActive     INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1))
 );
 
@@ -255,17 +260,40 @@ FROM (
 )
 WHERE rn = 1;
 
+-- ---------- Local roles (auth hardening, 2026-10-07) -------------------------
+-- Authorization is app-local, not from an identity provider's groups (ADR-0005).
+-- A person is WHO they are (the provider answers that); a role is WHAT they may
+-- do here. The provider may change (local credential now, Clerk/Entra later)
+-- without touching these rows.
+CREATE TABLE Roles (
+    RoleID      INTEGER PRIMARY KEY,
+    Name        TEXT NOT NULL UNIQUE,   -- 'admin','dean','team_lead','viewer'
+    Description TEXT
+);
+
+CREATE TABLE PeopleRoles (
+    PersonID INTEGER NOT NULL REFERENCES People(PersonID),
+    RoleID   INTEGER NOT NULL REFERENCES Roles(RoleID),
+    PRIMARY KEY (PersonID, RoleID)
+);
+
 -- ---------- Change log ----------
 
 -- Who changed what (edits to initiatives, tags, links, descriptions)
 CREATE TABLE AuditLog (
-    AuditID     INTEGER PRIMARY KEY,
-    CreatedAt   TEXT    NOT NULL DEFAULT (datetime('now')),
-    PersonID    INTEGER REFERENCES People(PersonID),
-    Action      TEXT    NOT NULL,     -- e.g. 'update_initiative', 'add_goal_tag', 'remove_link'
-    EntityType  TEXT    NOT NULL,     -- 'Initiative','Goal','Priority','Link','Tag'
-    EntityKey   TEXT    NOT NULL,     -- Code or ID
-    Details     TEXT                  -- JSON of before/after
+    AuditID       INTEGER PRIMARY KEY,
+    CreatedAt     TEXT    NOT NULL DEFAULT (datetime('now')),
+    PersonID      INTEGER REFERENCES People(PersonID),
+    Action        TEXT    NOT NULL,     -- e.g. 'update_initiative', 'add_goal_tag', 'remove_link'
+    EntityType    TEXT    NOT NULL,     -- 'Initiative','Goal','Priority','Link','Tag'
+    EntityKey     TEXT    NOT NULL,     -- Code or ID
+    Details       TEXT,                 -- JSON of before/after
+    -- Change-management fields (2026-10-07): why a change was made, where the
+    -- request came from, and an id to correlate the changes of one request. All
+    -- optional, so every existing writer keeps working.
+    Reason        TEXT,                 -- why this change was made
+    Source        TEXT,                 -- the request's origin (e.g. a ticket id)
+    CorrelationID TEXT                  -- groups the changes of one request
 );
 
 -- The change log (AuditLog) had no index at all; it grows with every write and

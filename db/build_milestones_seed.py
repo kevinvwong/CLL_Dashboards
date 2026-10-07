@@ -96,6 +96,24 @@ def build(out=OUT):
     L.append("  ('dataset_source', 'seed: illustrative milestones for build/layout review');")
     L.append("")
 
+    # Local roles (ADR-0005). Assignment is by the person's current state, so it
+    # holds as the register changes: the dashboard admin, the Dean, and every
+    # person accountable for a team are leads; everyone active is a viewer.
+    L.append("-- Roles and their assignment (ADR-0005). App-local, not provider groups.")
+    L.append("DELETE FROM PeopleRoles;")
+    L.append("DELETE FROM Roles;")
+    L.append("INSERT INTO Roles (RoleID, Name, Description) VALUES")
+    L.append("  (1, 'admin', 'the dashboard team: edits everything'),")
+    L.append("  (2, 'dean', 'the Dean: updates any initiative and the Dean layer'),")
+    L.append("  (3, 'team_lead', 'accountable for a team: updates its initiatives'),")
+    L.append("  (4, 'viewer', 'may read every page');")
+    L.append("INSERT INTO PeopleRoles (PersonID, RoleID)")
+    L.append("  SELECT PersonID, 1 FROM People WHERE IsAdmin = 1")
+    L.append("  UNION SELECT PersonID, 2 FROM People WHERE lower(trim(COALESCE(Title,''))) = 'dean'")
+    L.append("  UNION SELECT PersonID, 3 FROM People WHERE TeamID IS NOT NULL")
+    L.append("  UNION SELECT PersonID, 4 FROM People WHERE IsActive = 1;")
+    L.append("")
+
     text = "\n".join(L)
     if "--check" in sys.argv:
         cur = io.open(out, encoding="utf-8").read() if os.path.exists(out) else ""

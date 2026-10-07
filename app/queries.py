@@ -1269,6 +1269,8 @@ def recent_changes(limit: int = 100) -> list[dict]:
     with _conn() as conn:
         return [dict(r) for r in conn.execute(
             "SELECT a.CreatedAt AS created_at, p.Name AS person, a.Action AS action, "
-            "       a.EntityType AS entity_type, a.EntityKey AS entity_key "
+            "       a.EntityType AS entity_type, a.EntityKey AS entity_key, "
+            "       a.Reason AS reason, a.Source AS source, "
+            "       a.CorrelationID AS correlation_id "
             "FROM AuditLog a LEFT JOIN People p ON p.PersonID = a.PersonID "
             "ORDER BY a.CreatedAt DESC, a.AuditID DESC LIMIT ?", (limit,))]

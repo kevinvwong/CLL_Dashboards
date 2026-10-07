@@ -25,6 +25,7 @@
       <th scope="col">Who</th>
       <th scope="col">Action</th>
       <th scope="col">Entity</th>
+      <th scope="col">Reason / source</th>
     </tr>
   </thead>
   <tbody>
@@ -34,6 +35,11 @@
       <td>{{ r.person or '—' }}</td>
       <td>{{ r.action }}</td>
       <td>{{ r.entity_type }} <span class="mono">{{ r.entity_key }}</span></td>
+      <td>
+        {% if r.reason %}{{ r.reason }}{% endif %}
+        {% if r.source %}<span class="mono">{{ r.source }}</span>{% endif %}
+        {% if not (r.reason or r.source) %}—{% endif %}
+      </td>
     </tr>
     {% endfor %}
   </tbody>

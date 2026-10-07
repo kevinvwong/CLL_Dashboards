@@ -12,6 +12,41 @@ import sqlite3
 from app import queries, repo
 
 
+def test_a_retire_then_restore_round_trips_and_is_logged(fresh_db):
+    """The restore path the review found missing: retire is reversible, and both
+    directions are audited."""
+    import sqlite3
+
+    repo.retire_initiative("MI-004", person_id=5)
+    conn = sqlite3.connect(fresh_db)
+    assert conn.execute("SELECT IsActive FROM TeamInitiatives WHERE MIId='MI-004'").fetchone()[0] == 0
+    conn.close()
+
+    repo.restore_initiative("MI-004", person_id=5, reason="retired in error")
+    conn = sqlite3.connect(fresh_db)
+    conn.row_factory = sqlite3.Row
+    assert conn.execute("SELECT IsActive FROM TeamInitiatives WHERE MIId='MI-004'").fetchone()[0] == 1
+    row = conn.execute(
+        "SELECT Action, Reason FROM AuditLog WHERE Action='restore_initiative'").fetchone()
+    conn.close()
+    assert row is not None, "the restore was not logged"
+    assert row["Reason"] == "retired in error"
+
+
+def test_the_change_log_query_returns_reason_and_source(fresh_db):
+    import sqlite3
+    conn = sqlite3.connect(fresh_db)
+    conn.execute("INSERT INTO AuditLog (PersonID, Action, EntityType, EntityKey, Details, "
+                 "Reason, Source, CorrelationID) VALUES (5,'x','Initiative','MI-001','{}',"
+                 "'why','JIRA-7','corr-1')")
+    conn.commit()
+    conn.close()
+    rows = queries.recent_changes()
+    r = next(x for x in rows if x["action"] == "x")
+    assert r["reason"] == "why" and r["source"] == "JIRA-7" and r["correlation_id"] == "corr-1"
+
+
+
 def test_every_repo_action_has_an_entity():
     """A new write path cannot silently mislabel again."""
     src = inspect.getsource(repo)
