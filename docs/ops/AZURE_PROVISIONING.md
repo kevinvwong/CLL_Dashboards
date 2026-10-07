@@ -64,6 +64,10 @@ The deploy **zip replaces `/home/site/wwwroot`**, and nothing recreates the SQLi
 
 > **Residual deviations to accept (documented in `db/mssql/DEVIATIONS.md`):** two constraints are **weaker** in T-SQL than the PostgreSQL reference — deferred/`DEFERRABLE` cardinality checks (immediate triggers + integrity report instead) and `EXCLUDE USING gist` period non-overlap (`sp_getapplock` trigger instead). These are recorded, not hidden.
 
+### Code prerequisites for the SQL migration (owned by this project)
+
+`requirements.txt` currently ships **no SQL driver** and **no Azure identity library** — the T-SQL port was validated with `pymssql` only inside `db/mssql/tests/`. Before the app can read Azure SQL, the runtime gains either **`pyodbc`** (with the MS ODBC Driver for SQL Server on the Linux image) or **`pymssql`**, plus **`azure-identity`** for managed-identity access. This is a code change on the project's side; it does **not** block provisioning and is listed so the resource request and the roadmap agree.
+
 ---
 
 ## 3. Supporting Resources
@@ -73,7 +77,10 @@ The deploy **zip replaces `/home/site/wwwroot`**, and nothing recreates the SQLi
 | **Blob Storage** | **Optional / minimal** | Static assets ship inside the app package and are served from the App Service filesystem — no blob needed for the app. A **small storage account (<1 GB)** is worth adding **only** to offload DB backups and export files (`BACKUP_DIR`, xlsx intake). |
 | **Key Vault** | **Yes** | Secrets: `APP_PASSCODE`, `APP_SECRET`, and the **Azure SQL connection string**. Replace the current `.env`/app-settings plaintext with Key Vault references. |
 | **Application Insights / Log Analytics** | **Yes** | No telemetry exists today; `/healthz` is the only signal. Add App Insights for request/failure tracking and a Log Analytics workspace for retention. Low volume, low cost. |
-| **Entra ID App Registration** | **No (for current code)** | The app authenticates with a **shared passcode + person picker** signed by `itsdangerous` — it does not use Entra ID. **Recommended add-on** if institutional SSO is required; it is a code change, not a config change. |
+| **Azure Monitor Action Group** | **Yes** | App Insights without an action group sends alerts nowhere. One action group routes failure/health alerts to the CLL team (GT email or Teams). $0. |
+| **Entra ID App Registration** | **No for the current code — request it anyway** | The app authenticates with a **shared passcode + person picker** signed by `itsdangerous`; it does not use Entra ID today. Institutional SSO is the expected end-state, the registration is **$0**, and taking it now lets the SSO code change proceed without a second procurement. |
+| **System-assigned Managed Identity** | **Recommended** | Removes passwords from the app entirely: the Web App reads Key Vault and authenticates to Azure SQL via its managed identity (AAD token auth). Requires **Entra ID auth enabled on Azure SQL** and an AAD admin. $0. |
+| **Custom domain + Managed Certificate** | **Recommended** | A GT service should present `*.gatech.edu`, not `*.azurewebsites.net`. The App Service **Managed Certificate is free**; the **DNS record is a GT OIT lead-time item**. $0 (cert). |
 | **Static assets / CDN** | **No** | Assets total **~400 KB** (vendored `htmx.min.js` 50 KB, one 59 KB stylesheet, self-hosted woff2 fonts, GT logo SVG). htmx is vendored **by design** so the app works with no CDN access. No CDN required. |
 
 ---
@@ -100,7 +107,10 @@ The deploy **zip replaces `/home/site/wwwroot`**, and nothing recreates the SQLi
 | `cll-dash-ai` | Application Insights | Pay-as-you-go | ~$0–5 (low volume) | At launch |
 | `cll-dash-logs` | Log Analytics Workspace | Pay-as-you-go | ~$2–10 | At launch |
 | `clldashstorage` | Storage Account (optional) | Standard LRS | <$1 | Optional |
-| *(none)* | Entra ID App Registration | — | $0 | Only if SSO required (code change) |
+| `cll-dash-identity` | Entra ID App Registration + Enterprise App | — | $0 | **Request now** (SSO lands later) |
+| `cll-dash-prod-app` (identity) | System-assigned Managed Identity | — | $0 | With the app |
+| `cll-dash-prod-app` (domain) | Custom domain + App Service Managed Certificate | — | $0 (cert) | DNS by GT OIT |
+| `cll-dash-alerts` | Azure Monitor Action Group | — | $0 | At launch |
 | *(none)* | CDN / Static assets | — | $0 | Not required |
 
 **Estimated total: ~$80–140/month** (Standard S1 + serverless SQL + Key Vault + monitoring), or **~$20–35/month** on the Basic interim tier.
@@ -117,5 +127,7 @@ The deploy **zip replaces `/home/site/wwwroot`**, and nothing recreates the SQLi
 4. **SQL tier** — Basic (fixed, cheapest) vs Serverless (repo's stated target, auto-pauses).
 5. **Networking posture** — public + IP allow-list, or private endpoint for the DB.
 6. **SSO** — keep the app's passcode gate, or fund an Entra ID integration (code change).
+7. **Auth posture for SQL** — password in Key Vault, or **managed identity (passwordless)** with Entra auth enabled on the database. The latter is recommended and is why the App Registration is requested now.
+8. **Custom domain** — confirm the GT hostname (`*.gatech.edu`) and raise the **DNS record with GT OIT** early; it is the longest-lead item after the tenant move.
 
-**What this document is based on:** `pyproject.toml`, `requirements.txt`, `Dockerfile`, `.env.example`, `app/config.py`, `app/main.py`, `app/auth.py`, `db/mssql/001`–`007`, `db/mssql/DEVIATIONS.md`, `db/rev2/PROVENANCE.md`, `docs/ops/DEPLOY.md`, `docs/ops/LAUNCH_RECORD.md`, `.github/workflows/docker.yml`, and a live count of `cll_initiatives.db` (17 tables, 13 views, 216 KB).
+**What this document is based on:** `pyproject.toml`, `requirements.txt`, `Dockerfile`, `.env.example`, `app/config.py`, `app/main.py`, `app/auth.py`, `scripts/backup.py`, `db/mssql/001`–`007`, `db/mssql/tests/`, `db/mssql/DEVIATIONS.md`, `db/rev2/PROVENANCE.md`, `docs/ops/DEPLOY.md`, `docs/ops/LAUNCH_RECORD.md`, `.github/workflows/docker.yml`, and a live count of `cll_initiatives.db` (17 tables, 13 views, 216 KB).
