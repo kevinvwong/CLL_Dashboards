@@ -5,11 +5,28 @@ screen needs an initiative count per goal and per priority, which no view
 provides, so it lives here. Writes go through app/repo.py instead.
 """
 
+import datetime as _dt
+
 from app.db import connect
 
 
 def _conn():
     return connect()
+
+
+def _today() -> _dt.date:
+    """Today, on the same clock the dates were written with.
+
+    Every stored date comes from SQLite's `date('now')`, which is UTC. Ageing
+    them against Python's `date.today()` - the LOCAL date - drifts by a day
+    whenever the local date and the UTC date differ (any evening west of UTC).
+    The staleness windows then fire a day early or late, and the boundary tests
+    pass or fail with the time of day. This reads the clock the data came from,
+    so the comparison is on one clock. See the meeting-view spec.
+    """
+    with connect() as conn:
+        return _dt.date.fromisoformat(conn.execute("SELECT date('now')").fetchone()[0])
+
 
 
 def goal_tiles() -> list[dict]:
@@ -353,8 +370,6 @@ def person_card(person_id: int):
     update older than STALE_DAYS. The sample data only ever satisfies the
     first negatively, so the second is what usually fires.
     """
-    import datetime as _dt
-
     with _conn() as conn:
         person = conn.execute(
             "SELECT PersonID, Name, Title, ReportsToID, IsAdmin FROM People "
@@ -373,7 +388,7 @@ def person_card(person_id: int):
             )
         ]
 
-    today = _dt.date.today()
+    today = _today()
     for row in rows:
         if row["LastUpdated"] is None:
             row["NeedsUpdate"] = True
@@ -397,9 +412,7 @@ DEFAULT_MEETING_WINDOW_DAYS = 7
 
 
 def default_since(days: int = DEFAULT_MEETING_WINDOW_DAYS) -> str:
-    import datetime as _dt
-
-    return (_dt.date.today() - _dt.timedelta(days=days)).isoformat()
+    return (_today() - _dt.timedelta(days=days)).isoformat()
 
 
 def meeting_updates(since: str):
@@ -442,8 +455,6 @@ def attention_list() -> list[dict]:
     Off track, and the staleness window - were missing. The requirement is the
     contract; the scenario below it was one example of it.
     """
-    import datetime as _dt
-
     with _conn() as conn:
         rows = [
             dict(r)
@@ -457,7 +468,7 @@ def attention_list() -> list[dict]:
             )
         ]
 
-    today = _dt.date.today()
+    today = _today()
 
     # Lower rank sorts first. Off track outranks At risk outranks stale.
     SEVERITY = {"Off track": 0, "At risk": 1}
@@ -599,8 +610,6 @@ def all_initiatives(filters: dict | None = None) -> list[dict]:
     initiative that carries several goals or priorities. The goal and priority
     names are collected per initiative rather than joined, for the same reason.
     """
-    import datetime as _dt
-
     with _conn() as conn:
         rows = [
             dict(r)
@@ -629,7 +638,7 @@ def all_initiatives(filters: dict | None = None) -> list[dict]:
         ):
             priorities.setdefault(r["InitiativeID"], []).append(r["PriorityName"])
 
-    today = _dt.date.today()
+    today = _today()
     for row in rows:
         row["Goals"] = goals.get(row["InitiativeID"], [])
         row["Priorities"] = priorities.get(row["InitiativeID"], [])

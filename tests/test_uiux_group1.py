@@ -170,13 +170,14 @@ def test_goal_header_reads_total_not_a_status_word(logged_in):
 def test_one_day_is_singular(logged_in, fresh_db):
     """The defect: every count read "N days", including "1 days"."""
     import sqlite3
-    import datetime as dt
 
-    # ELIZ-1 is owned by Elizabeth (2); age its only update to exactly 1 day.
-    yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
     conn = sqlite3.connect(str(fresh_db))
     try:
+        # Seed on the clock production writes with: ProgressUpdates.UpdateDate
+        # defaults to SQLite's date('now'), which is UTC. Seeding from Python's
+        # local date.today() drifts a day apart from UTC every evening.
         iid = conn.execute("SELECT InitiativeID FROM Initiatives WHERE Code = 'ELIZ-1'").fetchone()[0]
+        yesterday = conn.execute("SELECT date('now', '-1 day')").fetchone()[0]
         conn.execute("DELETE FROM ProgressUpdates WHERE InitiativeID = ?", (iid,))
         conn.execute(
             "INSERT INTO ProgressUpdates (InitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
@@ -192,12 +193,12 @@ def test_one_day_is_singular(logged_in, fresh_db):
 
 def test_many_days_is_plural(logged_in, fresh_db):
     import sqlite3
-    import datetime as dt
 
-    old = (dt.date.today() - dt.timedelta(days=15)).isoformat()
     conn = sqlite3.connect(str(fresh_db))
     try:
+        # Same clock as production: date('now') is UTC (see schema.sql).
         iid = conn.execute("SELECT InitiativeID FROM Initiatives WHERE Code = 'MAR-1'").fetchone()[0]
+        old = conn.execute("SELECT date('now', '-15 days')").fetchone()[0]
         conn.execute("DELETE FROM ProgressUpdates WHERE InitiativeID = ?", (iid,))
         conn.execute(
             "INSERT INTO ProgressUpdates (InitiativeID, UpdateDate, PercentComplete, Status, EnteredByID) "
