@@ -10,6 +10,8 @@ the status scale it must not be confused with. Goal and team identity live here,
 for the same reason: one place that knows how an id maps to a colour and a mark.
 """
 
+from markupsafe import Markup
+
 #: goal number (1..5) -> CSS custom property name.
 GOAL_COLOUR_TOKENS = {
     1: "--goal-1",
@@ -77,10 +79,11 @@ def goal_icon(goal_number) -> str:
     except (TypeError, ValueError):
         number = 1
     body = _GOAL_ICONS.get(number, _GOAL_ICONS[1])
-    return ('<svg class="goal-icon" viewBox="0 0 24 24" width="18" height="18" '
-            'fill="none" stroke="currentColor" stroke-width="2" '
-            'stroke-linecap="round" stroke-linejoin="round" '
-            'aria-hidden="true" focusable="false">%s</svg>' % body)
+    return Markup(
+        '<svg class="goal-icon" viewBox="0 0 24 24" width="18" height="18" '
+        'fill="none" stroke="currentColor" stroke-width="2" '
+        'stroke-linecap="round" stroke-linejoin="round" '
+        'aria-hidden="true" focusable="false">%s</svg>' % body)
 
 
 #: nav key -> the inner markup of a 24x24 stroke icon. Decorative: the nav label
@@ -101,11 +104,16 @@ _NAV_ICONS = {
 
 
 def nav_icon(name: str) -> str:
-    """The inline SVG for a nav item, or "" if it has none."""
+    """The inline SVG for a nav item, or "" if it has none.
+
+    Returns Markup so Jinja renders the SVG rather than escaping it: a plain
+    string would print the literal `<svg ...>` text on the page.
+    """
     body = _NAV_ICONS.get((name or "").strip().lower())
     if not body:
         return ""
-    return ('<svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" '
-            'fill="none" stroke="currentColor" stroke-width="1.8" '
-            'stroke-linecap="round" stroke-linejoin="round" '
-            'aria-hidden="true" focusable="false">%s</svg>' % body)
+    return Markup(
+        '<svg class="nav-icon" viewBox="0 0 24 24" width="16" height="16" '
+        'fill="none" stroke="currentColor" stroke-width="1.8" '
+        'stroke-linecap="round" stroke-linejoin="round" '
+        'aria-hidden="true" focusable="false">%s</svg>' % body)
