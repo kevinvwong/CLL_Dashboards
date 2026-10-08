@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **4** days of work recorded, **153** changes in total.
+- **4** days of work recorded, **154** changes in total.
 - Most recent day: **Thursday 08 October 2026**.
-- Across all days: 50 what we added; 31 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 17 documentation; 17 more changes.
+- Across all days: 51 what we added; 31 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 17 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -31,6 +31,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 **What we added**
 
 - Implement Clerk behind the authenticate() seam
+- Wire Clerk for Entra SSO, with a chrome-free pre-auth surface
 
 **Documentation**
 
