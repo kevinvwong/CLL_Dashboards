@@ -12,9 +12,10 @@ Users and their roles are provisioned **locally by an admin in the app**, not
 synced from Entra or Clerk. `People.IsAdmin` is kept as a deprecated mirror until
 the guards are migrated, then dropped.
 
-**The role set is the DR-05 model (six capability-oriented roles):**
-`Administrator`, `ExecutiveSponsor`, `DataOwner`, `Operator`, `Contributor`,
-`Viewer`. The earlier placeholder names (`admin`, `dean`, `team_lead`, `viewer`)
+**The role set is the DR-05 model (capability-oriented roles):**
+`PlatformAdmin`, `ExecutiveSponsor`, `DataOwner`, `Operator`, `Contributor`,
+`Viewer`, and `TechnicalAdmin` (OIT infrastructure support). The earlier
+placeholder names (`admin`, `dean`, `team_lead`, `viewer`) and `Administrator`
 are still recognised as aliases during the migration.
 
 The roles are **not a hierarchy** (DR-23). Each carries a different authority —
