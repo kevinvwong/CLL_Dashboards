@@ -23,6 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY cll_initiatives.db ./cll_initiatives.db
 COPY ${APP_DIR} ./app
 COPY db ./db
+# The in-app guide renders markdown from DOCS_PATH (default ./docs). Without
+# this the /guide page is empty in the container.
+COPY docs ./docs
 
 # Non-root from here on. Task 9.4 asked for this explicitly.
 #

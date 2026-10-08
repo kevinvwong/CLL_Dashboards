@@ -1,0 +1,33 @@
+# Keep the build context small and free of things the image must not carry.
+# Anything not needed at runtime is excluded; the Dockerfile copies the rest
+# explicitly.
+
+# Version control and editor/agent scratch
+.git
+.github
+.superpowers
+ospec
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+
+# Local secrets and environment-specific data (never in an image)
+.env
+.env.*
+!.env.example
+backups/
+db/local_overlay.sql
+
+# Build artefacts
+deploy.zip
+*.db-wal
+*.db-shm
+
+# Tests and their fixtures are not needed at runtime
+tests/
+
+# Abandoned scaffolds deliberately left untracked
+fastapi-container/
+fastapi-dashboard/
+source/
