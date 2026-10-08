@@ -31,13 +31,20 @@ after `f24cc5d` until the next declared checkpoint.
 
 **Data store (2026-10-08):** the app reads and writes through `app/db.py`'s
 single seam, selected by the `DB_PROVIDER` env var — `sqlite` (the local file,
-default) or `mssql` (the Rev2 model on Azure SQL, `cllrev2`). Every screen and
-write is ported and parity-tested on both stores. **Flipping to Rev2 is one env
-var,** not a deploy step — but promoting Rev2 to the authoritative production
-source is a separate business-validation decision (the Rev2 schema was seeded
-from the app's data; `db/rev2/inventory-absent.md` records that no approved
-inventory exists yet). Do not set `DB_PROVIDER=mssql` in production just to try
-it; that changes which store production reads.
+default) or `mssql` (the Rev2 model on Azure SQL, `cllrev2`). Every screen, write
+**and the authentication layer** is ported and parity-tested on both stores, so
+flipping to Rev2 is one env var. **But promoting Rev2 to the authoritative
+production source is a separate business-validation decision** (the Rev2 schema
+was seeded from the app's data; `db/rev2/inventory-absent.md` records that no
+approved inventory exists yet). Do not set `DB_PROVIDER=mssql` in production just
+to try it; that changes which store production reads.
+
+**Identity on Rev2:** production identity is Clerk (`AUTH_PROVIDER=clerk`). The
+local PIN stopgap is a development seam and is deliberately **not** available on
+Rev2 — no credential is stored there (see `db/mssql/DEVIATIONS.md`, entry 010).
+If `DB_PROVIDER=mssql` is set with `AUTH_PROVIDER=local`, the PIN gate is skipped
+and the passcode picker is the sign-in path; per-person PINs will refuse with a
+clear message.
 
 **Latest production checkpoint:** marker `shell-guide-20261007T203634Z` at commit
 `198da95` — the persistent left-rail shell (rail / icon-rail / bottom tab bar)
