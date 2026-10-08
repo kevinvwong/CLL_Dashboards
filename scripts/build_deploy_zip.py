@@ -78,8 +78,14 @@ REQUIRED = [
 
 # Asserted present after building. A missing one means a broken deploy, so the
 # script fails loudly rather than producing an archive that takes the site down.
+#: The in-app guide reads its markdown from DOCS_PATH. These files ship so the
+#: guide renders live. (source_path, arcname) - the whole docs tree is small and
+#: self-consistent, so it ships whole rather than by a fragile hand-list.
+DOCS = os.path.join(SPEC, "docs")
+
+# Verified present after building.
 MUST_CONTAIN = ["app/main.py", "app/templates/base.html", "requirements.txt",
-                "cll_initiatives.db"]
+                "cll_initiatives.db", "docs/guide.yaml"]
 
 
 def build(out_path: str = DEFAULT_OUT) -> str:
@@ -124,6 +130,24 @@ def build(out_path: str = DEFAULT_OUT) -> str:
                 raise SystemExit("required file missing, refusing to build: %s" % src)
             z.write(src, arc)
             added.append(arc)
+
+        # The docs the in-app guide renders (2026-10-07). Shipped whole: the guide
+        # reads markdown from DOCS_PATH, and a missing chapter is worse than a
+        # slightly larger archive. Skips the repo's own agent/ops scratch only if a
+        # secret-shaped name appears (none do).
+        if os.path.isdir(DOCS):
+            for root, dirs, files in os.walk(DOCS):
+                dirs[:] = [d for d in dirs if d not in {"assets"}]
+                for fn in files:
+                    if os.path.splitext(fn)[1].lower() not in {".md", ".yaml", ".yml"}:
+                        continue
+                    full = os.path.join(root, fn)
+                    arc = os.path.join("docs",
+                                       os.path.relpath(full, DOCS)).replace(os.sep, "/")
+                    if SECRET_NAME_RE.search(arc) and arc not in ALLOWED_NAMES:
+                        continue
+                    z.write(full, arc)
+                    added.append(arc)
 
     # Verify, rather than trust the loop above.
     with zipfile.ZipFile(out_path) as z:
