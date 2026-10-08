@@ -29,8 +29,15 @@ declares a checkpoint.**
 round). Production is therefore AHEAD of nothing and BEHIND any local work done
 after `f24cc5d` until the next declared checkpoint.
 
-**Latest production checkpoint:** marker `enhance-20261007T195252Z` at commit
-`bae40b7` — the Milestones model, the intake, the DB-backed Outcomes page, goal
+**Latest production checkpoint:** marker `shell-guide-20261007T203634Z` at commit
+`198da95` — the persistent left-rail shell (rail / icon-rail / bottom tab bar)
+and the in-app `/guide` documentation set. The deploy also sets
+`DOCS_PATH=./docs` so the guide renders from the shipped docs. Verified live
+2026-10-07 20:36 UTC: stamp reads `198da95 · deployed 2026-10-07 20:36 UTC`, the
+rail and guide render, a non-admin sees user chapters only, and the technical
+chapter is refused.
+
+**Previous checkpoint:** marker `enhance-20261007T195252Z` at commit `bae40b7` — the Milestones model, the intake, the DB-backed Outcomes page, goal
 and team identity, the enhancements and motion, and the auth stopgap (PIN +
 local roles + change-log fields). Verified live 2026-10-07 19:52 UTC: the header
 stamp reads `bae40b7 · deployed 2026-10-07 19:52 UTC`, and the gate and the new
