@@ -85,14 +85,18 @@ def test_clerk_user_id_is_unique(fresh_db):
         auth.link_person_to_clerk(3, "user_abc123")
 
 
-def test_sign_out_clears_the_session_cookie(monkeypatch, fresh_db):
+def test_sign_out_runs_in_the_browser(monkeypatch, fresh_db):
+    """Sign-out must run through clerk-js: the session is client-managed, so a
+    server-side cookie delete is not durable (the sign-in page bounces straight
+    back). The page calls Clerk.signOut()."""
     _clerk_env(monkeypatch)
     from fastapi.testclient import TestClient
     from app.main import app
     c = TestClient(app)
-    r = c.get("/clerk/sign-out", follow_redirects=False)
-    assert r.status_code == 303
-    assert r.headers["location"] == "/clerk/sign-in"
+    r = c.get("/clerk/sign-out")
+    assert r.status_code == 200
+    assert "Clerk.signOut()" in r.text
+    assert "clerk.browser.js" in r.text
 
 
 def test_the_layout_offers_sign_out_under_clerk(monkeypatch, fresh_db):

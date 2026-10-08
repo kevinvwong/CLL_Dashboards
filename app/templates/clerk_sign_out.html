@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Signing out{% endblock %}
+{% block content %}
+{#
+  Sign-out must run in the browser: Clerk's session is client-managed (clerk-js
+  holds the client and re-mints the __session token), so a server-side cookie
+  delete is not durable and the sign-in page would bounce the user straight back
+  in. This page calls Clerk.signOut() - which ends the session - then returns to
+  the sign-in page. If Clerk is unavailable, the fallback link still works.
+#}
+<h1>Signing out…</h1>
+<div class="card login">
+  {% if clerk_publishable_key %}
+  <script
+    async crossorigin="anonymous"
+    data-clerk-publishable-key="{{ clerk_publishable_key }}"
+    {% if clerk_frontend_api %}data-clerk-frontend-api="{{ clerk_frontend_api }}"{% endif %}
+    src="https://{{ clerk_frontend_api or 'js.clerk.accounts.dev' }}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+  <script>
+    window.addEventListener("load", async function () {
+      try {
+        if (window.Clerk) {
+          await window.Clerk.load();
+          await window.Clerk.signOut();
+        }
+      } catch (e) { /* fall through to the redirect regardless */ }
+      window.location.replace("/clerk/sign-in");
+    });
+  </script>
+  <noscript>
+    <p>Continue to <a href="/clerk/sign-in">sign in</a>.</p>
+  </noscript>
+  <p class="section-note">If this page does not move on its own,
+    <a href="/clerk/sign-in">go to sign in</a>.</p>
+  {% else %}
+  <p><a href="/clerk/sign-in">Go to sign in</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

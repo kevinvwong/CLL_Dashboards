@@ -331,14 +331,19 @@ async def clerk_unlinked(request: Request):
 async def clerk_sign_out(request: Request):
     """Sign out of the Clerk session.
 
-    The session is a cookie the browser holds; clearing the Clerk `__session`
-    cookie signs the person out of this app immediately, with no client script.
-    Clerk's own sessions on other origins are unaffected.
+    Clerk's session is CLIENT-managed: clerk-js holds the client and re-mints the
+    short-lived `__session` cookie, so deleting the cookie server-side is not
+    durable - the sign-in page's own clerk-js sees the user still signed in and
+    bounces straight back. Sign-out therefore runs through clerk-js, which is
+    what actually ends the session. See the page this renders.
     """
-    response = RedirectResponse(url="/clerk/sign-in", status_code=303)
-    for name in ("__session", "__client", "__clerk_db_jwt", "__session_gt"):
-        response.delete_cookie(name, path="/")
-    return response
+    from app import clerk_auth
+    return templates.TemplateResponse(
+        request, "clerk_sign_out.html",
+        _ctx(request,
+             clerk_publishable_key=auth.settings().CLERK_PUBLISHABLE_KEY,
+             clerk_frontend_api=clerk_auth.frontend_api()),
+    )
 
 
 @app.post("/login")
