@@ -33,7 +33,12 @@ PERSON_COOKIE = "cll_person"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 30
 
 # Reachable without the passcode cookie.
-EXEMPT_PATHS = frozenset({"/login", "/whoami", "/healthz", "/favicon.ico", "/robots.txt"})
+EXEMPT_PATHS = frozenset({
+    "/login", "/whoami", "/healthz", "/favicon.ico", "/robots.txt",
+    # Clerk (ADR-0004): the sign-in page and its unlinked explanation are the
+    # gate's own destinations, so they must be reachable before a person exists.
+    "/clerk/sign-in", "/clerk/unlinked", "/clerk/sign-out",
+})
 
 PASSCODE_MARKER = "passcode-ok"
 
@@ -123,6 +128,15 @@ def current_person(request: Request) -> dict | None:
     # asked" from "asked, and there is no signed-in person".
     if getattr(request.state, "person_resolved", False):
         return request.state.person
+
+    if settings().AUTH_PROVIDER == "clerk":
+        # Clerk (ADR-0004): identity comes from the verified session token, not
+        # a person cookie. Everything downstream keeps calling current_person.
+        from app import clerk_auth
+        person = person_by_clerk_id(clerk_auth.clerk_user_id(request))
+        request.state.person = person
+        request.state.person_resolved = True
+        return person
 
     person_id = person_id_from_cookie(request)
     if person_id is None:
@@ -306,13 +320,38 @@ class Principal:
         return role in self.roles
 
 
+def person_by_clerk_id(clerk_user_id):
+    """The active person linked to a Clerk user id, or None."""
+    if not clerk_user_id:
+        return None
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT PersonID, Name, Title, ReportsToID, IsAdmin, Credential "
+            "FROM People WHERE ClerkUserID = ? AND IsActive = 1",
+            (clerk_user_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def link_person_to_clerk(person_id, clerk_user_id: str):
+    """An admin links a person to a Clerk user id (People.ClerkUserID)."""
+    with connect(write=True) as conn:
+        conn.execute("UPDATE People SET ClerkUserID = ? WHERE PersonID = ?",
+                     ((clerk_user_id or None), int(person_id)))
+        conn.commit()
+
+
 def authenticate(request: Request):
     """The one entry point every auth path goes through (ADR-0004).
 
-    Returns a Principal for a signed-in person, else None. An Entra/Clerk
-    adapter implements this same contract; the routes do not change.
+    Returns a Principal for a signed-in person, else None. Which provider runs
+    is a config switch (`AUTH_PROVIDER`): the local stopgap (passcode + picker),
+    or Clerk. The routes do not change either way.
     """
-    person = current_person(request)
+    if settings().AUTH_PROVIDER == "clerk":
+        from app import clerk_auth
+        person = person_by_clerk_id(clerk_auth.clerk_user_id(request))
+    else:
+        person = current_person(request)
     if not person:
         return None
     return Principal(person, roles_of(person))

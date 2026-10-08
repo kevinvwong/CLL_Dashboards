@@ -47,6 +47,13 @@ chapters:
     audience: user
     path: guide/06-glossary.md
 
+  - slug: signing-in-with-clerk
+    title: Signing in with Clerk
+    group: Reference
+    order: 65
+    audience: user
+    path: guide/08-clerk-sign-in.md
+
   - slug: authoritative-source
     title: The authoritative source
     group: Reference

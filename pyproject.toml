@@ -16,6 +16,10 @@ dependencies = [
     "itsdangerous",
     "openpyxl",
     "python-dotenv",
+    "Markdown",
+    "bleach",
+    "PyYAML",
+    "clerk-backend-api",
 ]
 
 [project.optional-dependencies]

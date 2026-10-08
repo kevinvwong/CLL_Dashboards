@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+{#
+  The Clerk sign-in surface (ADR-0004). clerk-js renders the sign-in component
+  into #clerk-sign-in; the session token it mints is a cookie the server
+  verifies, so nothing about the token is trusted by the browser. The
+  publishable key is public by design; the secret key never reaches this page.
+#}
+<h1>Initiative Dashboard</h1>
+<div class="card login">
+  {% if clerk_publishable_key %}
+  <div id="clerk-sign-in"></div>
+  <script
+    async crossorigin="anonymous"
+    data-clerk-publishable-key="{{ clerk_publishable_key }}"
+    {% if clerk_frontend_api %}data-clerk-frontend-api="{{ clerk_frontend_api }}"{% endif %}
+    src="https://{{ clerk_frontend_api or 'js.clerk.accounts.dev' }}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+  <script>
+    window.addEventListener("load", async function () {
+      if (!window.Clerk) return;
+      await window.Clerk.load();
+      if (window.Clerk.user) { window.location.replace("/"); return; }
+      window.Clerk.mountSignIn(document.getElementById("clerk-sign-in"), {
+        afterSignInUrl: "/",
+        afterSignUpUrl: "/clerk/unlinked"
+      });
+    });
+  </script>
+  <noscript>
+    <p>Sign-in needs JavaScript. Ask the dashboard team for access.</p>
+  </noscript>
+  {% else %}
+  <p class="error">Clerk is not configured on this server (no publishable key).</p>
+  {% endif %}
+</div>
+{% endblock %}

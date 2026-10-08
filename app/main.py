@@ -128,6 +128,9 @@ def _ctx(request: Request, **extra) -> dict:
         # route 404s unless MEETING_ENABLED is set. Read here so every page
         # agrees with the route.
         "meeting_enabled": auth.settings().MEETING_ENABLED,
+        # Which identity provider is active, so the layout offers the right
+        # sign-in/sign-out control (ADR-0004).
+        "auth_provider": auth.settings().AUTH_PROVIDER,
         # Every page needs to know whether to offer admin-only entry points
         # (new initiative, edit description). Task 8.4 built the routes but
         # nothing linked to them.
@@ -215,10 +218,21 @@ async def access_gate(request: Request, call_next):
         return response
 
     if not _is_exempt(path):
-        if not auth.has_passcode(request):
-            return _redirect("/login")
-        if auth.current_person(request) is None:
-            return _redirect("/whoami")
+        if auth.settings().AUTH_PROVIDER == "clerk":
+            # Clerk (ADR-0004): a verified session token is the gate. Distinguish
+            # "no token" (send to sign-in) from "valid token, no linked Person"
+            # (send to the unlinked page), so neither loops.
+            from app import clerk_auth
+            clerk_id = clerk_auth.clerk_user_id(request)
+            if not clerk_id:
+                return _redirect("/clerk/sign-in")
+            if auth.person_by_clerk_id(clerk_id) is None:
+                return _redirect("/clerk/unlinked")
+        else:
+            if not auth.has_passcode(request):
+                return _redirect("/login")
+            if auth.current_person(request) is None:
+                return _redirect("/whoami")
     response = await call_next(request)
     # Task 9.2: noindex on every response, so nothing here reaches a search
     # engine even before robots.txt is fetched.
@@ -285,6 +299,46 @@ async def login_form(request: Request):
             error="Too many attempts. Try again in 15 minutes." if locked else None,
         ),
     )
+
+
+@app.get("/clerk/sign-in")
+async def clerk_sign_in(request: Request):
+    """The Clerk sign-in surface (ADR-0004): the gate's destination when the
+    Clerk provider is on and no session token is present. clerk-js renders the
+    sign-in component; the token it mints is verified server-side."""
+    from app import clerk_auth
+    return templates.TemplateResponse(
+        request, "clerk_sign_in.html",
+        _ctx(request,
+             clerk_publishable_key=auth.settings().CLERK_PUBLISHABLE_KEY,
+             clerk_frontend_api=clerk_auth.frontend_api()),
+    )
+
+
+@app.get("/clerk/unlinked")
+async def clerk_unlinked(request: Request):
+    """Signed in to Clerk but with no matching Person row.
+
+    Not an error page and not a loop: it says plainly that the account is not
+    yet linked, and who to ask. Reached only with a valid session token.
+    """
+    return templates.TemplateResponse(
+        request, "clerk_unlinked.html", _ctx(request),
+    )
+
+
+@app.get("/clerk/sign-out")
+async def clerk_sign_out(request: Request):
+    """Sign out of the Clerk session.
+
+    The session is a cookie the browser holds; clearing the Clerk `__session`
+    cookie signs the person out of this app immediately, with no client script.
+    Clerk's own sessions on other origins are unaffected.
+    """
+    response = RedirectResponse(url="/clerk/sign-in", status_code=303)
+    for name in ("__session", "__client", "__clerk_db_jwt", "__session_gt"):
+        response.delete_cookie(name, path="/")
+    return response
 
 
 @app.post("/login")

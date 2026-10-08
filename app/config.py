@@ -34,3 +34,24 @@ class Config:
         # the tree so re-enabling is one environment variable, not a rebuild.
         # Off by default; set MEETING_ENABLED=1 to bring it back.
         self.MEETING_ENABLED = os.getenv("MEETING_ENABLED", "0") == "1"
+
+        # --- authentication provider (ADR-0004) -------------------------------
+        # Which adapter `authenticate()` uses. `local` is the built-in stopgap
+        # (shared passcode + self-asserted picker, closed per person by a PIN).
+        # `clerk` verifies a Clerk session token instead. The routes do not
+        # change either way; only this switch does.
+        self.AUTH_PROVIDER = os.getenv("AUTH_PROVIDER", "local").strip().lower()
+        # The Clerk backend secret key (server-side only; never sent to the
+        # browser). Empty means the Clerk adapter is not usable.
+        self.CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "")
+        # The publishable key, safe to expose, injected into the page for clerk-js.
+        self.CLERK_PUBLISHABLE_KEY = os.getenv("CLERK_PUBLISHABLE_KEY", "")
+        # The origin(s) allowed to mint a session for this app, for
+        # authenticate_request's `authorized_parties` check. Comma-separated.
+        self.CLERK_AUTHORIZED_PARTY = os.getenv(
+            "CLERK_AUTHORIZED_PARTY",
+            "http://localhost:8000,http://127.0.0.1:8000",
+        )
+        # Optional: the Clerk frontend-API host for the clerk-js loader. Normally
+        # derived from the publishable key, so this is only an override.
+        self.CLERK_FRONTEND_API = os.getenv("CLERK_FRONTEND_API", "")

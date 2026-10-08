@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Account not linked{% endblock %}
+{% block content %}
+{#
+  Reached with a valid Clerk session but no Person row linked to that Clerk user
+  (People.ClerkUserID). It says so plainly and who to ask - it is not an error
+  and it does not loop back to sign-in while the session is valid.
+#}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Signed in</p>
+    <h1>Your account is not linked yet</h1>
+  </div>
+</div>
+
+<div class="card">
+  <p>
+    You are signed in, but this dashboard has no person linked to your account
+    yet. An administrator links your Clerk account to your name in the
+    dashboard's directory before you can use it.
+  </p>
+  <p class="section-note">
+    Ask the dashboard team to link your account, then reload this page.
+  </p>
+  <p class="entry-actions">
+    <a class="button" href="/clerk/sign-in">Sign in as someone else</a>
+    <a class="button" href="/">Try again</a>
+  </p>
+</div>
+{% endblock %}

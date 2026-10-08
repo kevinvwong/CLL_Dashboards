@@ -54,7 +54,13 @@
           {% endif %}
           {% if meeting_enabled %}<a href="/meeting">Meeting</a>{% endif %}
           <a href="/guide">Guide</a>
+          {% if auth_provider == "clerk" %}
+          {# Clerk (ADR-0004): sign out clears the session cookie; the picker is
+             gone, so "Switch user" is not offered. #}
+          <a class="nav-admin" href="/clerk/sign-out">Sign out</a>
+          {% else %}
           <a href="/whoami">Switch user</a>
+          {% endif %}
         </div>
       </details>
       {% endif %}

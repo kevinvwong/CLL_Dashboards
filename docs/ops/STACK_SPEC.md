@@ -46,6 +46,7 @@ all read from one SQLite database, behind a shared access gate.
 | In-app docs | Python-Markdown | 3.10.2 | renders `docs/**/*.md` |
 | HTML sanitiser | bleach | 6.4.0 | sanitises rendered markdown |
 | Doc manifest | PyYAML | 6.0.3 | `docs/guide.yaml` |
+| Auth provider (optional) | clerk-backend-api | 7.0.0 | verifies Clerk session tokens (ADR-0004) |
 | Tests | pytest | 9.1.1 | config in `pyproject.toml` |
 | Test HTTP client | httpx | 0.28.1 | via Starlette `TestClient` |
 | Lint | Ruff | (dev) | config in `pyproject.toml` |
@@ -145,6 +146,11 @@ file), and is the only place a setting is named.
 | `PORT` | local port | `8000` | (App Service uses `WEBSITES_PORT`) |
 | `MEETING_ENABLED` | un-ices the meeting surface | unset (off) | unset (off) |
 | `DOCS_PATH` | docs root for the in-app guide | `./docs` | `./docs` |
+| `AUTH_PROVIDER` | `local` or `clerk` (ADR-0004) | `local` | `local` |
+| `CLERK_SECRET_KEY` | Clerk backend secret (server-side only) | unset | only if `AUTH_PROVIDER=clerk` |
+| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key (public) | unset | only if `AUTH_PROVIDER=clerk` |
+| `CLERK_AUTHORIZED_PARTY` | origin(s) allowed to mint a session | localhost defaults | the live origin |
+| `CLERK_FRONTEND_API` | optional override; derived from the publishable key | unset | unset |
 | `DEPLOY_MARKER` | which build is serving; echoed by `/healthz` | unset (`dev`) | set per deploy |
 | `GIT_COMMIT` | short commit, shown in the header stamp | unset | set per deploy |
 
@@ -309,11 +315,13 @@ hardened for public exposure. Known, unresolved items:
    value-shaped passcode/secret; **rotate these and purge them from git
    history** if that has not been done. Treat any value that has appeared in a
    log, transcript or commit as compromised.
-2. **Authentication is a stopgap.** A shared passcode + a person picker; a PIN
-   closed the self-assertion hole for people who have one set, but there is no
-   institutional identity provider. Entra is blocked (the host subscription is
-   outside the GT tenant). `authenticate()` is the seam a real provider would
-   slot into (ADR-0004).
+2. **Authentication is a stopgap, with Clerk available behind the seam.** The
+   default is a shared passcode + a person picker; a PIN closes the
+   self-assertion hole for people who have one set. Setting `AUTH_PROVIDER=clerk`
+   switches to Clerk session-token verification (ADR-0004), mapping a Clerk user
+   to a `People.ClerkUserID`. Entra remains blocked (the host subscription is
+   outside the GT tenant). `authenticate()` is the seam either provider slots
+   into.
 3. **Roles are app-local** (ADR-0005), seeded from the register; there is no
    user administration UI beyond setting a PIN.
 4. **No monitoring or alerting.** The only endpoint is `GET /healthz`

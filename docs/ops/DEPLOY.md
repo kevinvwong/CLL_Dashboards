@@ -61,7 +61,8 @@ visuals were walked.
 | `az` wrapper | `C:\Users\kwong318\aztools\azure-cli\python.exe` |
 | Python | `C:\Users\kwong318\AppData\Local\Programs\Python\Python312\python.exe` |
 | Passcode for the live site | `%TEMP%\cll-creds2.txt`, key `APP_PASSCODE` |
-| App Service settings | `DEPLOY_MARKER`, `APP_ENV=live`, `DB_PATH=./cll_initiatives.db`, `APP_PASSCODE`, `APP_SECRET` |
+| App Service settings | `DEPLOY_MARKER`, `APP_ENV=live`, `DB_PATH=./cll_initiatives.db`, `DOCS_PATH=./docs`, `APP_PASSCODE`, `APP_SECRET` |
+| Clerk (only when `AUTH_PROVIDER=clerk`) | `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `CLERK_AUTHORIZED_PARTY` (the live origin) |
 
 **Never commit a credential.** The passcode lives in `%TEMP%` and is passed to
 `az` through the shell; it does not appear in this document or in any file under
