@@ -43,11 +43,11 @@ fully green.
 
 ## 5. Card reads
 
-- [ ] 5.1 `initiative_card` — details + goal/priority tags + contributes-to connections (`initiative_relationship`) + latest + diary (`initiative_update`).
-- [ ] 5.2 `person_card` — via `vw_person_portfolio` (a person owning nothing still resolves).
-- [ ] 5.3 `priority_detail`, `priority_outcomes` (milestone read stays sqlite per Open issue 1 — recorded, with a clear interim path), `tag_edit_options`, `link_edit_options`.
-- [ ] 5.4 Meeting reads (`meeting_updates`, `update_deltas`, `attention_list`) — only if they reuse an already-ported read model; otherwise out of scope while MEETING_ENABLED=0. Record which.
-- [ ] 5.5 **parity test** for initiative and person cards.
+- [x] 5.1 `initiative_card` — details + goal/priority tags + contributes-to connections (`initiative_relationship`) + latest + diary (`initiative_update`). (owner via vw_primary_reporting_owner's person_id/display_name)
+- [x] 5.2 `person_card` — `initiative_owner`+`vw_initiative_summary` by Reporting-Owner-primary; person owning nothing still resolves.
+- [x] 5.3 `priority_detail`, `priority_outcomes` (milestone read now runs on Rev2 - Open issue 1 closed by the reconciliation), `tag_edit_options`, `link_edit_options`. (`_plan_year_int` normalizes 'FY2027'->2027; priority option lists keyed by the app shape)
+- [x] 5.4 Meeting reads (`meeting_updates`, `update_deltas`, `attention_list`) — out of scope while MEETING_ENABLED=0 (no Rev2 view of the diary window yet; they read the mssql `initiative_update` directly if the meeting is re-enabled, but that surface is ICED, so recording and not porting).
+- [x] 5.5 **parity test** for initiative and person cards. (+ priority_outcomes / priority_detail; 22 parity tests total, all green)
 
 ## 6. Writes
 

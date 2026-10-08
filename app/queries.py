@@ -133,24 +133,10 @@ def priority_outcomes(year: int | None = None) -> list[dict]:
     if year is None:
         year = current_plan_year()
     with _conn() as conn:
-        rows = conn.execute(
-            "SELECT p.PriorityID, p.Code, p.PlanYear, p.FullTitle, p.PriorityName, "
-            "       p.Description, p.Measure, p.Target, p.OwnerLabel, p.Status, "
-            "       p.LastUpdated, "
-            "       COALESCE(v.Planned, 0) AS Planned, COALESCE(v.Reached, 0) AS Reached "
-            "FROM Priorities p "
-            "LEFT JOIN vw_PriorityMilestoneProgress v ON v.PriorityID = p.PriorityID "
-            "WHERE p.Code IS NOT NULL AND p.PlanYear = ? ORDER BY p.Code", (year,)).fetchall()
-        by_id: dict = {}
-        for m in conn.execute(
-                "SELECT PriorityID, Name, Status, PlannedDate, DateMet, "
-                "       OwnerLabel, EvidenceURL FROM Milestones "
-                "WHERE IsActive = 1 ORDER BY PriorityID, SortOrder, MilestoneID"):
-            by_id.setdefault(m["PriorityID"], []).append(dict(m))
+        rows = port.priority_outcomes(conn, year)
     out = []
     for r in rows:
         d = dict(r)
-        d["milestones"] = by_id.get(r["PriorityID"], [])
         # Floored, not rounded: a bar reading 50% when fewer than half the
         # milestones are Met would overstate progress.
         d["Percent"] = (100 * d["Reached"]) // d["Planned"] if d["Planned"] else 0
@@ -331,68 +317,9 @@ def initiative_card(mi_id: str):
     the canon's MIId (or the internal Code for a row with none).
     """
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT k.TeamInitiativeID AS InitiativeID, k.MIId AS Code, "
-            "       k.Title AS InitiativeName, k.Description, k.MIId, "
-            "       'Team Initiative' AS Level, k.OwnerID, p.Name AS Owner "
-            "FROM TeamInitiatives k LEFT JOIN People p ON p.PersonID = k.OwnerID "
-            "WHERE (k.MIId = ? OR k.Code = ?) AND k.IsActive = 1",
-            (mi_id, mi_id),
-        ).fetchone()
-        if row is None:
+        card = port.initiative_card(conn, mi_id)
+        if card is None:
             return None
-        card = dict(row)
-        # A row with no MI-id falls back to its internal Code for display/links.
-        card["Code"] = card["MIId"] or card["Code"]
-
-        # Goal tags: the register's goal columns are plain marks (no primary).
-        card["goal_tags"] = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT g.GoalNumber, g.ShortName, 0 AS IsPrimary "
-                "FROM TeamInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
-                "WHERE kg.TeamInitiativeID = ? ORDER BY g.GoalNumber",
-                (card["InitiativeID"],),
-            )
-        ]
-        card["priority_tags"] = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT pr.PriorityName, pr.PlanYear, tp.IsPrimary "
-                "FROM TeamInitiativePriorities tp JOIN Priorities pr ON pr.PriorityID = tp.PriorityID "
-                "WHERE tp.TeamInitiativeID = ? ORDER BY pr.PriorityName",
-                (card["InitiativeID"],),
-            )
-        ]
-        # What this initiative contributes to: the Dean FY27 Priorities. The
-        # merged model has no reverse "Fed by" direction, so only the forward
-        # direction is returned, in the old rows' shape.
-        card["connections"] = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT 'Contributes to' AS Direction, d.Code AS Code, d.Title AS InitiativeName, "
-                "       NULL AS OwnerID, NULL AS Owner, NULL AS PercentComplete, NULL AS Status "
-                "FROM TeamInitiativeDeanLinks kl JOIN DeanInitiatives d ON d.DeanInitiativeID = kl.DeanInitiativeID "
-                "WHERE kl.TeamInitiativeID = ? ORDER BY d.Code",
-                (card["InitiativeID"],),
-            )
-        ]
-        latest = conn.execute(
-            "SELECT UpdateDate, PercentComplete, Status, Note "
-            "FROM vw_LatestTeamInitiativeProgress WHERE TeamInitiativeID = ?",
-            (card["InitiativeID"],),
-        ).fetchone()
-        card["latest"] = dict(latest) if latest else None
-        card["diary"] = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT UpdateDate, PercentComplete, Status, Note, "
-                "       (SELECT Name FROM People e WHERE e.PersonID = pu.EnteredByID) AS EnteredBy "
-                "FROM TeamInitiativeUpdates pu WHERE TeamInitiativeID = ? "
-                "ORDER BY UpdateDate DESC, UpdateID DESC",
-                (card["InitiativeID"],),
-            )
-        ]
     return card
 
 
@@ -404,26 +331,11 @@ def person_card(person_id: int):
     first negatively, so the second is what usually fires.
     """
     with _conn() as conn:
-        person = conn.execute(
-            "SELECT PersonID, Name, Title, ReportsToID, IsAdmin FROM People "
-            "WHERE PersonID = ? AND IsActive = 1",
-            (person_id,),
-        ).fetchone()
-        if person is None:
+        data = port.person_card(conn, person_id)
+        if data is None:
             return None
-        rows = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT k.TeamInitiativeID AS InitiativeID, 'Team Initiative' AS Level, "
-                "       k.MIId AS Code, k.Title AS InitiativeName, "
-                "       lp.PercentComplete, lp.Status, lp.UpdateDate AS LastUpdated "
-                "FROM TeamInitiatives k "
-                "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
-                "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
-                "WHERE k.OwnerID = ? AND k.IsActive = 1 ORDER BY k.MIId",
-                (person_id,),
-            )
-        ]
+        person = data["person"]
+        rows = data["initiatives"]
     for r in rows:
         r["Code"] = r["Code"] or ""
 
@@ -597,40 +509,7 @@ def data_checks() -> list[dict]:
 def tag_edit_options(initiative_id: int) -> dict:
     """What the tags edit screen needs: both lists and what is chosen."""
     with _conn() as conn:
-        goals = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT GoalID, GoalNumber, ShortName, FullName, Description "
-                "FROM Goals ORDER BY GoalNumber"
-            )
-        ]
-        priorities = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT PriorityID, PriorityName, PlanYear, Description "
-                "FROM Priorities ORDER BY PlanYear, PriorityName"
-            )
-        ]
-        chosen_goals = {
-            r["GoalID"]
-            for r in conn.execute(
-                "SELECT GoalID FROM TeamInitiativeGoals WHERE TeamInitiativeID = ?",
-                (initiative_id,),
-            )
-        }
-        chosen_priorities = {
-            r["PriorityID"]
-            for r in conn.execute(
-                "SELECT PriorityID FROM TeamInitiativePriorities WHERE TeamInitiativeID = ?",
-                (initiative_id,),
-            )
-        }
-    return {
-        "goals": goals,
-        "priorities": priorities,
-        "chosen_goals": chosen_goals,
-        "chosen_priorities": chosen_priorities,
-    }
+        return port.tag_edit_options(conn, initiative_id)
 
 
 def link_edit_options(initiative_id: int) -> dict:
@@ -642,21 +521,7 @@ def link_edit_options(initiative_id: int) -> dict:
     edit_links template keeps working unchanged.
     """
     with _conn() as conn:
-        deans = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT DeanInitiativeID AS InitiativeID, Code, Title AS InitiativeName "
-                "FROM DeanInitiatives ORDER BY FiscalYear, Code"
-            )
-        ]
-        chosen = {
-            r["DeanInitiativeID"]
-            for r in conn.execute(
-                "SELECT DeanInitiativeID FROM TeamInitiativeDeanLinks WHERE TeamInitiativeID = ?",
-                (initiative_id,),
-            )
-        }
-    return {"deans": deans, "chosen": chosen}
+        return port.link_edit_options(conn, initiative_id)
 
 
 # --- index screens (task 1.6; filters and sorting land in tasks 4.2, 4.3) ---
@@ -824,27 +689,7 @@ def priority_detail(name: str) -> dict | None:
     it rather than a name and a count.
     """
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT PriorityID, PriorityName, PlanYear, Description, Code, "
-            "       FullTitle, Measure, Target, Cadence, OwnerLabel, Colour "
-            "FROM Priorities WHERE PriorityName = ?", (name,)).fetchone()
-        if row is None:
-            return None
-        out = dict(row)
-        out["team_initiatives"] = [
-            dict(r) for r in conn.execute(
-                "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Status, "
-                "       k.TargetStatus, k.ProposedTarget, t.Name AS Team "
-                "FROM TeamInitiativePriorities tp "
-                "JOIN TeamInitiatives k ON k.TeamInitiativeID = tp.TeamInitiativeID "
-                "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
-                "WHERE tp.PriorityID = ? ORDER BY k.Code", (out["PriorityID"],))
-        ]
-        out["initiative_count"] = conn.execute(
-            "SELECT COUNT(DISTINCT k.TeamInitiativeID) FROM TeamInitiativePriorities tp "
-            "JOIN TeamInitiatives k ON k.TeamInitiativeID = tp.TeamInitiativeID AND k.IsActive = 1 "
-            "WHERE tp.PriorityID = ?", (out["PriorityID"],)).fetchone()[0]
-    return out
+        return port.priority_detail(conn, name)
 
 
 def team_overview() -> list[dict]:

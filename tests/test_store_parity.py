@@ -288,3 +288,72 @@ def test_search_parity(both):
     ai = {(r["kind"], r["code"]) for r in port.search(sq, "MI-0")}
     bi = {(r["kind"], r["code"]) for r in port.search(ms, "MI-0")}
     assert ai == bi
+
+
+# --- group 5: cards -------------------------------------------------------
+
+
+def test_initiative_card_parity(both):
+    from app import port
+
+    sq, ms = both
+    for code in ("MI-001", "MI-014", "MI-029"):
+        a = port.initiative_card(sq, code)
+        b = port.initiative_card(ms, code)
+        assert (a is None) == (b is None), code
+        if a is None:
+            continue
+        assert a["Code"] == b["Code"] and a["InitiativeName"] == b["InitiativeName"], code
+        assert a["Owner"] == b["Owner"], code
+        assert sorted(g["GoalNumber"] for g in a["goal_tags"]) == \
+               sorted(g["GoalNumber"] for g in b["goal_tags"]), code
+        assert sorted(p["PriorityName"] for p in a["priority_tags"]) == \
+               sorted(p["PriorityName"] for p in b["priority_tags"]), code
+        assert sorted(c["Code"] for c in a["connections"]) == \
+               sorted(c["Code"] for c in b["connections"]), code
+        # No diary rows seeded on either store yet.
+        assert (a["latest"] is None) == (b["latest"] is None)
+        assert len(a["diary"]) == len(b["diary"])
+
+
+def test_person_card_parity(both):
+    from app import port
+
+    sq, ms = both
+    for pid in (1, 3, 5, 11):
+        a = port.person_card(sq, pid)
+        b = port.person_card(ms, pid)
+        assert (a is None) == (b is None), pid
+        if a is None:
+            continue
+        assert a["person"]["Name"] == b["person"]["Name"], pid
+        assert sorted(r["Code"] for r in a["initiatives"]) == \
+               sorted(r["Code"] for r in b["initiatives"]), pid
+
+
+def test_priority_outcomes_parity(both):
+    from app import port
+
+    sq, ms = both
+    year = port.current_plan_year(ms) or 2027
+    a = {p["Code"]: p for p in port.priority_outcomes(sq, year)}
+    b = {p["Code"]: p for p in port.priority_outcomes(ms, year)}
+    assert a.keys() == b.keys()
+    for code in a:
+        assert a[code]["Planned"] == b[code]["Planned"], code
+        assert a[code]["Reached"] == b[code]["Reached"], code
+        assert [m["Name"] for m in a[code]["milestones"]] == \
+               [m["Name"] for m in b[code]["milestones"]], code
+
+
+def test_priority_detail_parity(both):
+    from app import port
+
+    sq, ms = both
+    for name in ("Identity", "Innovation", "Data"):
+        a = port.priority_detail(sq, name)
+        b = port.priority_detail(ms, name)
+        assert (a is None) == (b is None), name
+        assert a["initiative_count"] == b["initiative_count"], name
+        assert sorted(ti["MIId"] for ti in a["team_initiatives"]) == \
+               sorted(ti["MIId"] for ti in b["team_initiatives"]), name

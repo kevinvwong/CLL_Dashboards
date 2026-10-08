@@ -28,6 +28,12 @@ def _dicts(rows):
     return [dict(r) for r in rows]
 
 
+#: dict(row) for a single mssql/sqlite row in a port (not the seed's SQL-quoting
+#: `_d`). Named for the pattern it serves in the card/edit ports below.
+def _d(row):
+    return dict(row)
+
+
 #: ---------------------------------------------------------------------------
 #: Read ports (wired into app/queries.py task-group by task-group). A function
 #: whose engine is sqlite returns exactly what app/queries.py produced before;
@@ -824,3 +830,326 @@ def search(conn, term, limit=10):
             out.append({"kind": kind, "label": r["label"],
                         "code": r["code"], "key": r["key"]})
     return out
+
+
+#: ---------------------------------------------------------------------------
+#: Card reads (adopt-rev2-store task group 5). initiative_card composes details,
+#: tags, connections (initiative_relationship), latest and diary
+#: (initiative_update). person_card uses vw_person_portfolio. priority_* read the
+#: reconciled milestone table (008). Goal option ids are the app's goal_number;
+#: priority option ids the canon short name; Dean ids the Dean row's code - the
+#: app's edit templates key on these display ids, which are store-independent.
+#: ---------------------------------------------------------------------------
+
+
+def initiative_card(conn, mi_id):
+    if engine(conn) == "mssql":
+        row = conn.execute(
+            "SELECT i.initiative_id AS InitiativeID, i.initiative_code AS Code, "
+            "       i.initiative_name AS InitiativeName, i.description AS Description, "
+            "       o.person_id AS OwnerID, o.display_name AS Owner "
+            "FROM dbo.initiative i "
+            "LEFT JOIN dbo.vw_primary_reporting_owner o ON o.initiative_id = i.initiative_id "
+            "WHERE (i.initiative_code = %s OR i.initiative_id = %s) "
+            "  AND i.active_flag = 1 AND i.initiative_level = 'D-1'",
+            (mi_id, "INI-" + mi_id)).fetchone()
+        if row is None:
+            return None
+        d = dict(row)
+        d["Level"] = "Team Initiative"
+        d["MIId"] = d["Code"]
+        iid = d["InitiativeID"]
+        d["goal_tags"] = [_d(r) for r in conn.execute(
+            "SELECT g.goal_number AS GoalNumber, g.short_label AS ShortName, 0 AS IsPrimary "
+            "FROM dbo.initiative_goal kg JOIN dbo.goal g ON g.goal_id = kg.goal_id "
+            "WHERE kg.initiative_id = %s ORDER BY g.goal_number", (iid,)).fetchall()]
+        pris = []
+        for r in conn.execute(
+                "SELECT ap.priority_code AS Code, "
+                "       CASE WHEN tp.relationship_type = 'Primary' THEN 1 ELSE 0 END AS IsPrimary "
+                "FROM dbo.initiative_priority tp JOIN dbo.annual_priority ap ON ap.priority_id = tp.priority_id "
+                "WHERE tp.initiative_id = %s ORDER BY ap.priority_code", (iid,)):
+            from app import priorities as canon
+            pris.append({"PriorityName": canon.short_for_code(r["Code"]) or r["Code"],
+                         "PlanYear": _plan_year_int_from_id(conn, iid),
+                         "IsPrimary": r["IsPrimary"]})
+        d["priority_tags"] = pris
+        d["connections"] = [_d(r) for r in conn.execute(
+            "SELECT 'Contributes to' AS Direction, parent.initiative_code AS Code, "
+            "       parent.initiative_name AS InitiativeName, NULL AS OwnerID, NULL AS Owner, "
+            "       NULL AS PercentComplete, NULL AS Status "
+            "FROM dbo.initiative_relationship kl JOIN dbo.initiative parent "
+            "       ON parent.initiative_id = kl.to_initiative_id "
+            "WHERE kl.from_initiative_id = %s AND parent.initiative_level = 'Dean' "
+            "  AND kl.relationship_type = 'Supports' ORDER BY parent.initiative_code", (iid,)).fetchall()]
+        latest = conn.execute(
+            "SELECT CONVERT(VARCHAR(10), lu.update_date, 23) AS UpdateDate, "
+            "       CAST(lu.progress_value AS FLOAT) AS PercentComplete, "
+            "       lu.status_at_update AS Status, lu.narrative AS Note "
+            "FROM dbo.vw_latest_update lu WHERE lu.initiative_id = %s", (iid,)).fetchone()
+        d["latest"] = dict(latest) if latest else None
+        d["diary"] = []
+        for r in conn.execute(
+                "SELECT CONVERT(VARCHAR(10), pu.update_date, 23) AS UpdateDate, "
+                "       CAST(pu.progress_value AS FLOAT) AS PercentComplete, "
+                "       pu.status_at_update AS Status, pu.narrative AS Note, "
+                "       e.display_name AS EnteredBy "
+                "FROM dbo.initiative_update pu "
+                "LEFT JOIN dbo.person e ON e.person_id = pu.updated_by_person_id "
+                "WHERE pu.initiative_id = %s ORDER BY pu.update_date DESC, pu.update_id DESC",
+                (iid,)):
+            d["diary"].append(_d(r))
+        d["OwnerID_int"] = _pid_int(d["OwnerID"])
+        return d
+    # sqlite (unchanged)
+    row = conn.execute(
+        "SELECT k.TeamInitiativeID AS InitiativeID, k.MIId AS Code, "
+        "       k.Title AS InitiativeName, k.Description, k.MIId, "
+        "       'Team Initiative' AS Level, k.OwnerID, p.Name AS Owner "
+        "FROM TeamInitiatives k LEFT JOIN People p ON p.PersonID = k.OwnerID "
+        "WHERE (k.MIId = ? OR k.Code = ?) AND k.IsActive = 1",
+        (mi_id, mi_id)).fetchone()
+    if row is None:
+        return None
+    card = dict(row)
+    card["Code"] = card["MIId"] or card["Code"]
+    card["goal_tags"] = [dict(r) for r in conn.execute(
+        "SELECT g.GoalNumber, g.ShortName, 0 AS IsPrimary "
+        "FROM TeamInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
+        "WHERE kg.TeamInitiativeID = ? ORDER BY g.GoalNumber", (card["InitiativeID"],))]
+    card["priority_tags"] = [dict(r) for r in conn.execute(
+        "SELECT pr.PriorityName, pr.PlanYear, tp.IsPrimary "
+        "FROM TeamInitiativePriorities tp JOIN Priorities pr ON pr.PriorityID = tp.PriorityID "
+        "WHERE tp.TeamInitiativeID = ? ORDER BY pr.PriorityName", (card["InitiativeID"],))]
+    card["connections"] = [dict(r) for r in conn.execute(
+        "SELECT 'Contributes to' AS Direction, d.Code AS Code, d.Title AS InitiativeName, "
+        "       NULL AS OwnerID, NULL AS Owner, NULL AS PercentComplete, NULL AS Status "
+        "FROM TeamInitiativeDeanLinks kl JOIN DeanInitiatives d ON d.DeanInitiativeID = kl.DeanInitiativeID "
+        "WHERE kl.TeamInitiativeID = ? ORDER BY d.Code", (card["InitiativeID"],))]
+    latest = conn.execute(
+        "SELECT UpdateDate, PercentComplete, Status, Note "
+        "FROM vw_LatestTeamInitiativeProgress WHERE TeamInitiativeID = ?",
+        (card["InitiativeID"],)).fetchone()
+    card["latest"] = dict(latest) if latest else None
+    card["diary"] = [dict(r) for r in conn.execute(
+        "SELECT UpdateDate, PercentComplete, Status, Note, "
+        "       (SELECT Name FROM People e WHERE e.PersonID = pu.EnteredByID) AS EnteredBy "
+        "FROM TeamInitiativeUpdates pu WHERE TeamInitiativeID = ? "
+        "ORDER BY UpdateDate DESC, UpdateID DESC", (card["InitiativeID"],))]
+    return card
+
+
+def _plan_year_int_from_id(conn, initiative_id):
+    """helper used by ports that need a row's plan year; looks via annual_priority."""
+    r = conn.execute(
+        "SELECT ap.planning_period AS pp FROM dbo.initiative_priority ip "
+        "JOIN dbo.annual_priority ap ON ap.priority_id = ip.priority_id "
+        "WHERE ip.initiative_id = %s", (initiative_id,)).fetchone()
+    return _plan_year_int(r["pp"]) if r else None
+
+
+def person_card(conn, person_id):
+    if engine(conn) == "mssql":
+        rid = "PERS-%d" % person_id
+        person = conn.execute(
+            "SELECT person_id, display_name AS Name, working_title AS Title, active_flag "
+            "FROM dbo.person WHERE person_id = %s AND active_flag = 1", (rid,)).fetchone()
+        if person is None:
+            return None
+        p = {"PersonID": person_id, "Name": person["Name"], "Title": person["Title"],
+             "ReportsToID": None, "IsAdmin": 1 if person_id in _admin_pids(conn) else 0}
+        rows = []
+        for r in conn.execute(
+                "SELECT s.initiative_id AS InitiativeID, 'Team Initiative' AS Level, "
+                "       s.initiative_code AS Code, s.initiative_name AS InitiativeName, "
+                "       CAST(s.progress_current AS FLOAT) AS PercentComplete, "
+                "       s.status_current AS Status, "
+                "       CONVERT(VARCHAR(10), s.last_updated, 23) AS LastUpdated "
+                "FROM dbo.initiative_owner o JOIN dbo.vw_initiative_summary s "
+                "       ON s.initiative_id = o.initiative_id "
+                "WHERE o.person_id = %s AND o.ownership_role = 'Reporting Owner' "
+                "  AND o.primary_flag = 1 AND o.effective_end IS NULL "
+                "  AND s.initiative_level = 'D-1' ORDER BY s.initiative_code",
+                (rid,)):
+            rows.append(_d(r))
+        return {"person": p, "initiatives": rows}
+    person = conn.execute(
+        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin FROM People "
+        "WHERE PersonID = ? AND IsActive = 1", (person_id,)).fetchone()
+    if person is None:
+        return None
+    rows = [dict(r) for r in conn.execute(
+        "SELECT k.TeamInitiativeID AS InitiativeID, 'Team Initiative' AS Level, "
+        "       k.MIId AS Code, k.Title AS InitiativeName, "
+        "       lp.PercentComplete, lp.Status, lp.UpdateDate AS LastUpdated "
+        "FROM TeamInitiatives k "
+        "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
+        "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
+        "WHERE k.OwnerID = ? AND k.IsActive = 1 ORDER BY k.MIId", (person_id,)).fetchall()]
+    for r in rows:
+        r["Code"] = r["Code"] or ""
+    return {"person": dict(person), "initiatives": rows}
+
+
+def _admin_pids(conn):
+    """int PersonIDs holding PlatformAdmin (mssql only)."""
+    return {_pid_int(r["person_id"]) for r in conn.execute(
+        "SELECT pr.person_id FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id "
+        "WHERE ro.name = 'PlatformAdmin'")}
+
+
+def priority_detail(conn, name):
+    from app import priorities as canon
+    if engine(conn) == "mssql":
+        code = canon.code(name)
+        if not code:
+            return None
+        row = conn.execute(
+            "SELECT ap.priority_id, ap.priority_code AS Code, ap.priority_name AS FullTitle, "
+            "       ap.planning_period, ap.description AS Description "
+            "FROM dbo.annual_priority ap WHERE ap.priority_code = %s", (code,)).fetchone()
+        if row is None:
+            return None
+        out = {"PriorityID": row["priority_id"], "PriorityName": canon.short_for_code(code) or code,
+               "PlanYear": _plan_year_int(row["planning_period"]), "Description": row["Description"],
+               "Code": code, "FullTitle": row["FullTitle"],
+               "Measure": None, "Target": None, "Cadence": None, "OwnerLabel": None, "Colour": None}
+        out["team_initiatives"] = [_d(r) for r in conn.execute(
+            "SELECT i.initiative_id AS TeamInitiativeID, i.initiative_code AS Code, "
+            "       i.initiative_code AS MIId, i.initiative_name AS Title, i.strategy_align AS StrategyAlign, "
+            "       s.status_current AS Status, i.target_status AS TargetStatus, "
+            "       i.proposed_target AS ProposedTarget, t.team_name AS Team "
+            "FROM dbo.initiative_priority tp JOIN dbo.initiative i ON i.initiative_id = tp.initiative_id "
+            "LEFT JOIN dbo.vw_initiative_summary s ON s.initiative_id = i.initiative_id "
+            "LEFT JOIN dbo.team t ON t.team_id = i.team_id "
+            "WHERE tp.priority_id = %s AND i.active_flag = 1 AND i.initiative_level = 'D-1' "
+            "ORDER BY i.initiative_code", (row["priority_id"],)).fetchall()]
+        out["initiative_count"] = conn.execute(
+            "SELECT COUNT(DISTINCT i.initiative_id) FROM dbo.initiative_priority tp "
+            "JOIN dbo.initiative i ON i.initiative_id = tp.initiative_id "
+            "WHERE tp.priority_id = %s AND i.active_flag = 1 AND i.initiative_level = 'D-1'",
+            (row["priority_id"],)).fetchone()[0]
+        return out
+    row = conn.execute(
+        "SELECT PriorityID, PriorityName, PlanYear, Description, Code, "
+        "       FullTitle, Measure, Target, Cadence, OwnerLabel, Colour "
+        "FROM Priorities WHERE PriorityName = ?", (name,)).fetchone()
+    if row is None:
+        return None
+    out = dict(row)
+    out["team_initiatives"] = [dict(r) for r in conn.execute(
+        "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Status, "
+        "       k.TargetStatus, k.ProposedTarget, t.Name AS Team "
+        "FROM TeamInitiativePriorities tp "
+        "JOIN TeamInitiatives k ON k.TeamInitiativeID = tp.TeamInitiativeID "
+        "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
+        "WHERE tp.PriorityID = ? ORDER BY k.Code", (out["PriorityID"],))]
+    out["initiative_count"] = conn.execute(
+        "SELECT COUNT(DISTINCT k.TeamInitiativeID) FROM TeamInitiativePriorities tp "
+        "JOIN TeamInitiatives k ON k.TeamInitiativeID = tp.TeamInitiativeID AND k.IsActive = 1 "
+        "WHERE tp.PriorityID = ?", (out["PriorityID"],)).fetchone()[0]
+    return out
+
+
+def priority_outcomes(conn, year):
+    """The six priorities for one plan year with milestone progress + the
+    milestones. Now portable: the reconciled milestone table exists on Rev2."""
+    if engine(conn) == "mssql":
+        from app import priorities as canon
+        rows = []
+        for r in conn.execute(
+                "SELECT ap.priority_id, ap.priority_code AS Code, ap.priority_name AS FullTitle, "
+                "       ap.planning_period, ap.description AS Description, "
+                "       (SELECT COUNT(*) FROM dbo.milestone m WHERE m.priority_id = ap.priority_id AND m.active_flag = 1) AS Planned, "
+                "       (SELECT COUNT(*) FROM dbo.milestone m WHERE m.priority_id = ap.priority_id AND m.active_flag = 1 AND m.status = 'Met') AS Reached "
+                "FROM dbo.annual_priority ap "
+                "WHERE ap.priority_code IS NOT NULL AND ap.planning_period = %s "
+                "ORDER BY ap.priority_code",
+                ("FY%d" % year,)):
+            rows.append({
+                "PriorityID": r["priority_id"], "Code": r["Code"], "PlanYear": _plan_year_int(r["planning_period"]),
+                "FullTitle": r["FullTitle"], "PriorityName": canon.short_for_code(r["Code"]) or r["FullTitle"],
+                "Description": r["Description"], "Measure": None, "Target": None, "OwnerLabel": None,
+                "Status": None, "LastUpdated": None, "Planned": r["Planned"], "Reached": r["Reached"],
+            })
+        ms = milestones_for_year(conn, year)
+        for r in rows:
+            r["milestones"] = ms.get(r["Code"], [])
+        return rows
+    rows = _dicts(conn.execute(
+        "SELECT p.PriorityID, p.Code, p.PlanYear, p.FullTitle, p.PriorityName, "
+        "       p.Description, p.Measure, p.Target, p.OwnerLabel, p.Status, "
+        "       p.LastUpdated, "
+        "       COALESCE(v.Planned, 0) AS Planned, COALESCE(v.Reached, 0) AS Reached "
+        "FROM Priorities p "
+        "LEFT JOIN vw_PriorityMilestoneProgress v ON v.PriorityID = p.PriorityID "
+        "WHERE p.Code IS NOT NULL AND p.PlanYear = ? ORDER BY p.Code", (year,)).fetchall())
+    by_id: dict = {}
+    for m in conn.execute(
+            "SELECT PriorityID, Name, Status, PlannedDate, DateMet, "
+            "       OwnerLabel, EvidenceURL FROM Milestones "
+            "WHERE IsActive = 1 ORDER BY PriorityID, SortOrder, MilestoneID"):
+        by_id.setdefault(m["PriorityID"], []).append(dict(m))
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["milestones"] = by_id.get(r["PriorityID"], [])
+        out.append(d)
+    return out
+
+
+def tag_edit_options(conn, initiative_id):
+    """The goals + priorities choice lists and what's chosen. initiative_id is the
+    app's int on sqlite and the Rev2 id on mssql; the caller resolves it before
+    calling (the row's InitiativeID). Option keys: goal = GoalNumber, priority =
+    PriorityID (the app's id) / priority_code (Rev2)."""
+    if engine(conn) == "mssql":
+        goals = [_d(r) for r in conn.execute(
+            "SELECT g.goal_id AS GoalID, g.goal_number AS GoalNumber, g.short_label AS ShortName, "
+            "       g.canonical_title AS FullName, g.canonical_description AS Description "
+            "FROM dbo.goal g ORDER BY g.goal_number").fetchall()]
+        pri = []
+        for r in conn.execute(
+                "SELECT ap.priority_id, ap.priority_code AS Code, ap.priority_name AS FullTitle, "
+                "       ap.planning_period, ap.description AS Description FROM dbo.annual_priority ap "
+                "ORDER BY ap.priority_code"):
+            from app import priorities as canon
+            pri.append({"PriorityID": r["priority_id"], "PriorityName": canon.short_for_code(r["Code"]) or r["FullTitle"],
+                        "PlanYear": _plan_year_int(r["planning_period"]), "Description": r["Description"]})
+        chosen_g = {r["GoalNumber"] for r in conn.execute(
+            "SELECT g.goal_number AS GoalNumber FROM dbo.initiative_goal kg JOIN dbo.goal g ON g.goal_id = kg.goal_id "
+            "WHERE kg.initiative_id = %s", (initiative_id,))}
+        chosen_p = {r["priority_id"] for r in conn.execute(
+            "SELECT tp.priority_id FROM dbo.initiative_priority tp WHERE tp.initiative_id = %s",
+            (initiative_id,))}
+        return {"goals": goals, "priorities": pri,
+                "chosen_goals": chosen_g, "chosen_priorities": chosen_p}
+    goals = _dicts(conn.execute(
+        "SELECT GoalID, GoalNumber, ShortName, FullName, Description FROM Goals ORDER BY GoalNumber").fetchall())
+    pri = _dicts(conn.execute(
+        "SELECT PriorityID, PriorityName, PlanYear, Description FROM Priorities ORDER BY PlanYear, PriorityName").fetchall())
+    chosen_g = {r["GoalID"] for r in conn.execute(
+        "SELECT GoalID FROM TeamInitiativeGoals WHERE TeamInitiativeID = ?", (initiative_id,))}
+    chosen_p = {r["PriorityID"] for r in conn.execute(
+        "SELECT PriorityID FROM TeamInitiativePriorities WHERE TeamInitiativeID = ?", (initiative_id,))}
+    return {"goals": goals, "priorities": pri,
+            "chosen_goals": chosen_g, "chosen_priorities": chosen_p}
+
+
+def link_edit_options(conn, initiative_id):
+    """The Dean initiatives + what's chosen. The edit template keys on
+    InitiativeID/Title; Dean rows on Rev2 are initiatives with level='Dean'."""
+    if engine(conn) == "mssql":
+        deans = [_d(r) for r in conn.execute(
+            "SELECT initiative_id AS InitiativeID, initiative_code AS Code, initiative_name AS InitiativeName "
+            "FROM dbo.initiative WHERE initiative_level = 'Dean' ORDER BY initiative_code").fetchall()]
+        chosen = {r["to_initiative_id"] for r in conn.execute(
+            "SELECT to_initiative_id FROM dbo.initiative_relationship "
+            "WHERE from_initiative_id = %s AND relationship_type = 'Supports'", (initiative_id,))}
+        return {"deans": deans, "chosen": chosen}
+    deans = _dicts(conn.execute(
+        "SELECT DeanInitiativeID AS InitiativeID, Code, Title AS InitiativeName "
+        "FROM DeanInitiatives ORDER BY FiscalYear, Code").fetchall())
+    chosen = {r["DeanInitiativeID"] for r in conn.execute(
+        "SELECT DeanInitiativeID FROM TeamInitiativeDeanLinks WHERE TeamInitiativeID = ?", (initiative_id,))}
+    return {"deans": deans, "chosen": chosen}
