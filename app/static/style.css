@@ -355,6 +355,10 @@ a { color: var(--accent); }
    icon-only; mobile <=767px replaces it with the bottom tab bar (.tabbar). One
    `nav[aria-label=Primary]` is visible per breakpoint (see the media queries). */
 .app-shell { display: grid; grid-template-columns: 15rem 1fr; align-items: start; }
+/* The content column must be allowed to shrink, or a wide table forces the grid
+   (and the page) past the viewport. min-width:0 is the fix for the classic
+   grid-item-overflow: a grid item defaults to min-content and refuses to shrink. */
+.app-shell > main { min-width: 0; }
 .site-nav {
   position: sticky; top: 0; align-self: start;
   display: flex; flex-direction: column; gap: var(--space-1);
@@ -1382,12 +1386,9 @@ body.overlay-open { overflow: hidden; }
 .coverage-row em { color: var(--ink-muted); font-size: var(--text-xs); font-style: normal; text-align: right; }
 
 /* ---- Nav: user menu and admin entry (blueprint-redesign 5.1/5.3) ---------- */
-.site-nav a[aria-current=page] {
-  color: var(--on-chrome);
-  font-weight: 700;
-  border-bottom: 3px solid var(--gold);
-}
-.nav-admin { margin-left: auto; }
+/* The active rail item is styled in the app-shell block above; the old top-bar
+   "white + gold underline" rule was removed 2026-10-07 (it made the rail's
+   selected item white-on-cream). The badge keeps its warn colour. */
 .badge-warn { background: var(--status-at-risk); color: var(--on-accent); border-color: var(--status-at-risk); }
 .user-menu { position: relative; }
 .user-menu summary { cursor: pointer; list-style: none; }
