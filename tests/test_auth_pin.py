@@ -61,14 +61,16 @@ def test_an_admin_sets_a_pin_but_a_non_admin_cannot(logged_in, fresh_db):
     assert r.status_code == 403
 
 
-def test_roles_are_seeded_and_agree_with_the_legacy_flags(fresh_db):
+def test_roles_are_seeded_with_the_canonical_set(fresh_db):
+    """The six DR-05 roles, assigned by the person's state (DR-23)."""
     rows = {r[0]: r[1] for r in sqlite3.connect(fresh_db).execute(
         "SELECT p.Name, group_concat(r.Name) FROM PeopleRoles pr "
         "JOIN People p ON p.PersonID=pr.PersonID JOIN Roles r ON r.RoleID=pr.RoleID "
         "GROUP BY p.PersonID")}
-    assert "admin" in rows["Kevin"]
-    assert "dean" in rows["Bill Gaudelli"]
-    assert "team_lead" in rows["Elizabeth Smith"]
+    assert "Administrator" in rows["Kevin"]
+    assert "Operator" in rows["Kevin"]
+    assert "ExecutiveSponsor" in rows["Bill Gaudelli"]
+    assert "DataOwner" in rows["Elizabeth Smith"]
 
 
 def test_authenticate_returns_a_principal_with_roles(logged_in):
@@ -82,4 +84,4 @@ def test_authenticate_returns_a_principal_with_roles(logged_in):
     principal = auth.authenticate(Request(scope))
     assert principal is not None
     assert principal.name == "Kevin"
-    assert principal.has_role("admin")
+    assert principal.has_role("Administrator")

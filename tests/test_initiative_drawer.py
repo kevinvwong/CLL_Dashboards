@@ -97,7 +97,7 @@ def test_the_diary_is_newest_first(logged_in, diary):
 
 
 def test_the_update_form_has_progress_and_status_controls(logged_in):
-    body = logged_in("Bill Gaudelli").get("/team-initiatives/MI-004/update",
+    body = logged_in("Elizabeth Smith").get("/team-initiatives/MI-004/update",
                                  headers={"HX-Request": "true"}).text
     assert 'name="percent"' in body
     assert 'name="status"' in body
@@ -106,7 +106,7 @@ def test_the_update_form_has_progress_and_status_controls(logged_in):
 
 def test_the_status_control_offers_exactly_the_schema_values(logged_in):
     from app import repo
-    body = logged_in("Bill Gaudelli").get("/team-initiatives/MI-004/update",
+    body = logged_in("Elizabeth Smith").get("/team-initiatives/MI-004/update",
                                  headers={"HX-Request": "true"}).text
     options = re.findall(r'<option value="([^"]+)"', body)
     assert sorted(options) == sorted(repo.STATUSES)
@@ -117,7 +117,7 @@ def test_the_form_shows_the_previous_value(logged_in, diary):
     from app import queries
     diary('MI-004', 30, 'On track', on='2026-10-05')
     card = queries.initiative_card("MI-004")
-    body = logged_in("Bill Gaudelli").get("/team-initiatives/MI-004/update",
+    body = logged_in("Elizabeth Smith").get("/team-initiatives/MI-004/update",
                                  headers={"HX-Request": "true"}).text
     # The slider value equals the latest percent.
     assert 'value="%s"' % card["latest"]["PercentComplete"] in body
@@ -125,7 +125,7 @@ def test_the_form_shows_the_previous_value(logged_in, diary):
 
 def test_the_note_has_a_character_limit(logged_in):
     from app import repo
-    body = logged_in("Bill Gaudelli").get("/team-initiatives/MI-004/update",
+    body = logged_in("Elizabeth Smith").get("/team-initiatives/MI-004/update",
                                  headers={"HX-Request": "true"}).text
     assert ('maxlength="%d"' % repo.NOTE_MAX) in body
 

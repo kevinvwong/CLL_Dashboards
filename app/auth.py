@@ -187,30 +187,75 @@ def get_initiative(mi_id: str):
 
 
 def is_admin(person) -> bool:
-    """The dashboard team: edits everything.
+    """Platform administration: users, configuration, everything.
 
-    Reads the local roles (ADR-0005), falling back to the deprecated IsAdmin
-    column so the two agree during the migration. `IsAdmin` is what the picker
-    used to make self-assertable; roles are not.
+    Reads the local `Administrator` role (ADR-0005, DR-05). The legacy `admin`
+    name and the deprecated `IsAdmin` column are honoured during the migration,
+    so the two agree.
     """
     if not person:
         return False
-    if has_role(person, "admin"):
+    if has_role(person, "Administrator") or has_role(person, "admin"):
         return True
     return bool(person.get("IsAdmin"))
 
 
-def is_dean(person) -> bool:
-    """The Dean: the person with the 'dean' role.
+def is_executive_sponsor(person) -> bool:
+    """The Executive Sponsor: the Dean's application authorization relationship.
 
-    Was the free-text marker `Title == 'Dean'`; now the role (ADR-0005), with the
-    Title check kept as a fallback during the migration.
+    Was `is_dean`, keyed on the free-text Title 'Dean' (a person). DR-23 records
+    the role as `ExecutiveSponsor` — an authorization relationship that survives a
+    personnel change. This grants EXECUTIVE ACTION authority, never routine data
+    maintenance: it must not be used inside a general update guard.
     """
     if not person:
         return False
-    if has_role(person, "dean"):
+    if has_role(person, "ExecutiveSponsor") or has_role(person, "dean"):
         return True
     return (person.get("Title") or "").strip().lower() == "dean"
+
+
+def is_dean(person) -> bool:
+    """Deprecated alias for `is_executive_sponsor` (kept for callers/tests)."""
+    return is_executive_sponsor(person)
+
+
+def is_data_owner(person) -> bool:
+    """The Data Owner: governs portfolio data (approvals, exceptions, quality)."""
+    return bool(person and (has_role(person, "DataOwner")))
+
+
+def is_operator(person) -> bool:
+    """Strategic Operations / Operator: operational and data-maintenance authority."""
+    return bool(person and (has_role(person, "Operator")))
+
+
+def has_capability(person, capability: str) -> bool:
+    """Whether a person's roles include a named capability (DR-05).
+
+    A small, explicit map from capability to the roles that hold it, so a guard
+    asks a capability question rather than an identity question. `Administrator`
+    holds every capability; the others are deliberately disjoint (DR-23: the
+    model is not a hierarchy).
+    """
+    if not person:
+        return False
+    roles = roles_of(person)
+    if "Administrator" in roles or "admin" in roles or person.get("IsAdmin"):
+        return True
+    holders = _CAPABILITIES.get(capability, frozenset())
+    return bool(roles & holders)
+
+
+#: capability -> the roles that hold it. `Administrator` is handled above (all).
+_CAPABILITIES = {
+    "maintain_data": frozenset({"Operator"}),
+    "govern_data": frozenset({"DataOwner"}),
+    "execute_action": frozenset({"ExecutiveSponsor", "dean"}),
+    "contribute": frozenset({"Contributor"}),
+    "view": frozenset({"Viewer", "ExecutiveSponsor", "DataOwner", "Operator",
+                       "Contributor", "dean"}),
+}
 
 
 #: role name -> RoleID, read once. Empty if the schema predates the roles tables.
@@ -358,11 +403,18 @@ def authenticate(request: Request):
 
 
 def can_update(request: Request, mi_id: str) -> bool:
-    """Owner, Dean, or admin may append a progress update."""
+    """Who may append a progress update to an initiative.
+
+    The owner, an Operator (Strategic Operations data maintenance), or an
+    Administrator — and NOT the Executive Sponsor by virtue of being Dean
+    (DR-23: executive authority is not routine data-maintenance authority; the
+    Dean authorizes a change through an executive action, which Strategic
+    Operations then performs).
+    """
     person = current_person(request)
     if not person:
         return False
-    if is_admin(person) or is_dean(person):
+    if is_admin(person) or is_operator(person):
         return True
     initiative = get_initiative(mi_id)
     return bool(initiative and initiative["OwnerID"] == person["PersonID"])

@@ -104,22 +104,26 @@ def build(out=OUT):
     L.append("  ('current_plan_year', '%d');" % PLAN_YEAR)
     L.append("")
 
-    # Local roles (ADR-0005). Assignment is by the person's current state, so it
-    # holds as the register changes: the dashboard admin, the Dean, and every
-    # person accountable for a team are leads; everyone active is a viewer.
-    L.append("-- Roles and their assignment (ADR-0005). App-local, not provider groups.")
+    # Local roles (ADR-0005). The canonical set is the DR-05 role model: six
+    # capability-oriented roles, deliberately NOT a hierarchy (DR-23). Assignment
+    # is by the person's current state so it holds as the register changes.
+    L.append("-- Roles and their assignment (ADR-0005, DR-05, DR-23). App-local.")
     L.append("DELETE FROM PeopleRoles;")
     L.append("DELETE FROM Roles;")
     L.append("INSERT INTO Roles (RoleID, Name, Description) VALUES")
-    L.append("  (1, 'admin', 'the dashboard team: edits everything'),")
-    L.append("  (2, 'dean', 'the Dean: updates any initiative and the Dean layer'),")
-    L.append("  (3, 'team_lead', 'accountable for a team: updates its initiatives'),")
-    L.append("  (4, 'viewer', 'may read every page');")
+    L.append("  (1, 'Administrator', 'platform administration: users, configuration, everything'),")
+    L.append("  (2, 'ExecutiveSponsor', 'the Dean: portfolio read plus executive actions (never routine data edits)'),")
+    L.append("  (3, 'DataOwner', 'governs portfolio data: approvals, exceptions, quality, accountability'),")
+    L.append("  (4, 'Operator', 'Strategic Operations: portfolio and data maintenance'),")
+    L.append("  (5, 'Contributor', 'edits assigned initiatives (future phase; assigned but not yet enforced)'),")
+    L.append("  (6, 'Viewer', 'reads published content');")
     L.append("INSERT INTO PeopleRoles (PersonID, RoleID)")
     L.append("  SELECT PersonID, 1 FROM People WHERE IsAdmin = 1")
     L.append("  UNION SELECT PersonID, 2 FROM People WHERE lower(trim(COALESCE(Title,''))) = 'dean'")
-    L.append("  UNION SELECT PersonID, 3 FROM People WHERE TeamID IS NOT NULL")
-    L.append("  UNION SELECT PersonID, 4 FROM People WHERE IsActive = 1;")
+    L.append("  UNION SELECT PersonID, 3 FROM People WHERE Name = 'Elizabeth Smith'")
+    L.append("  UNION SELECT PersonID, 4 FROM People WHERE Title LIKE '%Strategic Operations%'")
+    L.append("  UNION SELECT PersonID, 5 FROM People WHERE TeamID IS NOT NULL")
+    L.append("  UNION SELECT PersonID, 6 FROM People WHERE IsActive = 1;")
     L.append("")
 
     text = "\n".join(L)

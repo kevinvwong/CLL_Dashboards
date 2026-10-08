@@ -143,15 +143,31 @@ def test_reports_to_someone_is_not_the_dean(logged_in, request_for):
     [
         ("Elizabeth Smith", True),   # owns MI-004
         ("Tim Jacobbe", False),        # does not own MI-004
-        ("Bill Gaudelli", True),        # Dean
-        ("Kevin", True),       # admin
+        ("Bill Gaudelli", False),       # Dean: DR-23, executive authority is not update authority
+        ("Kevin", True),       # admin/operator
     ],
 )
 def test_can_update_for_a_d1_initiative(logged_in, request_for, name, expected):
+    """Who may append an update (DR-23).
+
+    The owner, an Operator, or an Administrator. The Executive Sponsor (Dean)
+    may NOT: the Dean authorizes a change through an executive action, which
+    Strategic Operations then performs.
+    """
     from app.auth import can_update
 
     request = request_for(logged_in(name))
     assert can_update(request, "MI-004") is expected
+
+
+def test_the_dean_cannot_update_any_initiative(logged_in, request_for):
+    """DR-23: Dean status shall not satisfy may_update. Asserted directly, so
+    re-adding `is_dean` to the update guard fails loudly here."""
+    from app.auth import can_update
+
+    request = request_for(logged_in("Bill Gaudelli"))
+    for mi in ("MI-004", "MI-001", "MI-002"):
+        assert can_update(request, mi) is False, "the Dean gained update authority"
 
 
 def test_non_owner_cannot_edit_details(logged_in, request_for):

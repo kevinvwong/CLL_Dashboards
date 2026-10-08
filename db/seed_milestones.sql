@@ -40,16 +40,20 @@ INSERT INTO AppMeta (Key, Value) VALUES
   ('dataset_source', 'seed: illustrative milestones for build/layout review'),
   ('current_plan_year', '2027');
 
--- Roles and their assignment (ADR-0005). App-local, not provider groups.
+-- Roles and their assignment (ADR-0005, DR-05, DR-23). App-local.
 DELETE FROM PeopleRoles;
 DELETE FROM Roles;
 INSERT INTO Roles (RoleID, Name, Description) VALUES
-  (1, 'admin', 'the dashboard team: edits everything'),
-  (2, 'dean', 'the Dean: updates any initiative and the Dean layer'),
-  (3, 'team_lead', 'accountable for a team: updates its initiatives'),
-  (4, 'viewer', 'may read every page');
+  (1, 'Administrator', 'platform administration: users, configuration, everything'),
+  (2, 'ExecutiveSponsor', 'the Dean: portfolio read plus executive actions (never routine data edits)'),
+  (3, 'DataOwner', 'governs portfolio data: approvals, exceptions, quality, accountability'),
+  (4, 'Operator', 'Strategic Operations: portfolio and data maintenance'),
+  (5, 'Contributor', 'edits assigned initiatives (future phase; assigned but not yet enforced)'),
+  (6, 'Viewer', 'reads published content');
 INSERT INTO PeopleRoles (PersonID, RoleID)
   SELECT PersonID, 1 FROM People WHERE IsAdmin = 1
   UNION SELECT PersonID, 2 FROM People WHERE lower(trim(COALESCE(Title,''))) = 'dean'
-  UNION SELECT PersonID, 3 FROM People WHERE TeamID IS NOT NULL
-  UNION SELECT PersonID, 4 FROM People WHERE IsActive = 1;
+  UNION SELECT PersonID, 3 FROM People WHERE Name = 'Elizabeth Smith'
+  UNION SELECT PersonID, 4 FROM People WHERE Title LIKE '%Strategic Operations%'
+  UNION SELECT PersonID, 5 FROM People WHERE TeamID IS NOT NULL
+  UNION SELECT PersonID, 6 FROM People WHERE IsActive = 1;

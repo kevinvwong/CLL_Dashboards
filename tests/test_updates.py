@@ -123,19 +123,27 @@ def test_update_form_is_403_for_a_non_owner(logged_in):
     assert logged_in("Tim Jacobbe").get(f"/team-initiatives/{D1}/update").status_code == 403
 
 
-def test_dean_and_admin_may_update_any_initiative(logged_in):
-    assert logged_in("Bill Gaudelli").get(f"/team-initiatives/{D1}/update").status_code == 200
+def test_operator_and_admin_may_update_any_initiative(logged_in):
+    """Strategic Operations (Operator) and the Administrator may update any
+    initiative. The Dean may not (DR-23)."""
     assert logged_in("Kevin").get(f"/team-initiatives/{D1}/update").status_code == 200
+
+
+def test_the_dean_may_not_update_an_initiative_they_do_not_own(logged_in):
+    """DR-23: the Executive Sponsor has no routine update authority."""
+    assert logged_in("Bill Gaudelli").get(f"/team-initiatives/{D1}/update").status_code == 403
 
 
 def test_update_button_hidden_from_a_non_owner(logged_in):
     assert 'update-button' not in logged_in("Tim Jacobbe").get(f"/team-initiatives/{D1}").text
 
 
-def test_update_button_shown_to_owner_dean_and_admin(logged_in):
+def test_update_button_shown_to_owner_and_admin(logged_in):
+    """Owner and Administrator (Operator) see the update control; the Dean does
+    not, because update is not an executive action (DR-23)."""
     assert 'update-button' in logged_in("Elizabeth Smith").get(f"/team-initiatives/{D1}").text
-    assert 'update-button' in logged_in("Bill Gaudelli").get(f"/team-initiatives/{D1}").text
     assert 'update-button' in logged_in("Kevin").get(f"/team-initiatives/{D1}").text
+    assert 'update-button' not in logged_in("Bill Gaudelli").get(f"/team-initiatives/{D1}").text
 
 
 # --- no Dean rollup -------------------------------------------------------

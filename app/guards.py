@@ -76,9 +76,12 @@ def _resolve_target(request: Request, mi_id: str, check) -> Target:
 
 
 def may_update(request: Request, mi_id: str) -> Target:
-    """Owner, Dean, or admin may append a progress update."""
+    """Owner, Operator (Strategic Operations), or Administrator may append a
+    progress update. NOT the Executive Sponsor by virtue of being Dean (DR-23):
+    the Dean authorizes a change through an executive action; Strategic
+    Operations performs the routine data update."""
     def check(person, card):
-        return (auth.is_admin(person) or auth.is_dean(person)
+        return (auth.is_admin(person) or auth.is_operator(person)
                 or card["OwnerID"] == person["PersonID"])
 
     return _resolve_target(request, mi_id, check)
