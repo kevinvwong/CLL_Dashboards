@@ -1,25 +1,34 @@
 {% extends "base.html" %}
-{% block title %}October 16 — {{ d.TITLE }}{% endblock %}
+{% block title %}The {{ plan_year }} priorities — CLL Initiative Dashboard{% endblock %}
 {% block content %}
 {#
-  The October 16 deliverable. Option A of the wireframes, CHOSEN 2026-10-07.
-  Laid out to match the drawing:
-    eyebrow -> title -> explainer -> six outcome cards -> scope block
-    -> data-requirements table -> trade-offs
+  The six annual priorities for one plan year (multi-year, 2026-10-08).
 
-  Every label here is the wireframes' own. The cards print "n of m milestones
-  reached" and an "Owner: ... · updated ..." line, both as drawn; owner and date
-  render as placeholders because no owners are named yet, which the data plan
-  marks "No" rather than pretending otherwise.
+  The wireframes called the same six rows "outcomes"; they are the six priorities
+  P01-P06, shown once here. Scoped to a plan year because the six recur each year;
+  `plan_year` is the year this page shows, and `plan_years` drives a control that
+  appears only once a second year exists.
 #}
-<p class="oct16-eyebrow">{{ d.EYEBROW }}</p>
-<h1 class="oct16-title">{{ d.TITLE }}</h1>
-<p class="oct16-sub">{{ d.SUBTITLE }}</p>
-<p class="oct16-explainer">{{ d.EXPLAINER }}</p>
+<p class="oct16-eyebrow">Annual priorities · {{ plan_year }}</p>
+<h1 class="oct16-title">The six {{ plan_year }} priorities</h1>
+<p class="oct16-sub">Progress = milestones reached of milestones planned, reported by each owner</p>
+
+{# The year control (multi-year): only when more than one plan year has data. #}
+{% if plan_years | length > 1 %}
+<nav class="year-control" aria-label="Plan year">
+  <span class="year-control-label">Plan year</span>
+  {% for y in plan_years %}
+  {% if y == plan_year %}<span class="year-current" aria-current="page">{{ y }}</span>
+  {% else %}<a href="/outcomes?year={{ y }}">{{ y }}</a>{% endif %}
+  {% endfor %}
+</nav>
+{% endif %}
+
+{% set active = "outcomes" %}
+{% include "_lens_note.html" with context %}
 
 {# The milestone-status legend (#6). The states are the Milestones model's own
-   ACTIVE vocabulary (ADR-0002) - "Met", "In progress", "Not started", "Missed" -
-   not the initiative set, and not the wireframes' pseudo-states. #}
+   ACTIVE vocabulary (ADR-0002) - "Met", "In progress", "Not started", "Missed". #}
 <p class="oct16-legend">
   <span class="oct16-legend-label">Milestone states:</span>
   <span class="oct16-mstatus m-met">Met</span>
@@ -35,22 +44,22 @@
   {%- if provenance == "confirmed" -%}
   Confirmed by each owner
   {%- else -%}
-  {{ d.DATA_STATUS_ILLUSTRATIVE }} &mdash; seeded working data, pending owner confirmation
+  Illustrative &mdash; seeded working data, pending owner confirmation
   {%- endif -%}
 </p>
 
-{# The one-line roll-up (#12): the portfolio in a sentence before the cards.
+{# The one-line roll-up (#12): the six in a sentence before the cards.
    Counts by status, never an aggregate score. #}
 <p class="oct16-rollup">
   {{ outcomes | length }} priorities:
-  {% for status, n in outcomes | groupby("Status") %}{{ n | length }} {{ status | lower }}{% if not loop.last %} &middot; {% endif %}{% endfor %}
+  {% for status, n in outcomes | groupby("Status") %}{{ n | length }} {{ (status or "not yet reported") | lower }}{% if not loop.last %} &middot; {% endif %}{% endfor %}
 </p>
 
 <ul class="oct16-grid">
   {% for o in outcomes %}
   <li class="oct16-card oct16-{{ o.Code|lower }}">
     <div class="oct16-head">
-      <span class="oct16-id">{{ o.Code }}</span>
+      <span class="oct16-id">{{ o.Code }} <span class="oct16-id-year">&middot; {{ o.PlanYear }}</span></span>
       {% if o.Status %}<span class="oct16-outcome-status badge {{ o.Status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ o.Status | status_icon }}</span> {{ o.Status }}</span>{% endif %}
     </div>
     <h2 class="oct16-name">{{ o.FullTitle }}</h2>
@@ -88,101 +97,19 @@
   {% endfor %}
 </ul>
 
-{# Below the six cards is the build team's decision memo: scope, the data-
-   requirements table and the trade-offs. It is a deliberate part of the October 16
-   deliverable, but it read as a planning document dropped into the Dean's own view
-   (#4 in the browser analysis). Wrapped in a <details> reveal so the default view
-   is the six outcome cards; the memo is one click away and nothing is lost. It is
-   open by default in print, so the printed agenda still carries the full record. #}
-<details class="oct16-memo"{% if print_open %} open{% endif %}>
-  <summary>Scope, data requirements and trade-offs (the build memo)</summary>
-
-<section class="oct16-scope">
-  <h2>Scope and scale of this choice</h2>
-  <p class="oct16-scope-sub">What this view collects by October 16</p>
-  <dl class="oct16-scope-grid">
-    {% for label, value, note in d.SCOPE %}
-    <div class="oct16-scope-item">
-      <dt>{{ label }}</dt>
-      <dd><strong>{{ value }}</strong> <span class="oct16-scope-note">{{ note }}</span></dd>
-    </div>
-    {% endfor %}
-  </dl>
-</section>
-
-<section class="oct16-requirements">
-  <h2>Data requirements: the complete list</h2>
-  <p class="oct16-scope-sub">
-    Full detail in <code>Oct16_Wireframe_Data_Lists.xlsx</code>, sheet
-    &ldquo;Option A Data&rdquo;. These are the {{ d.DATA_REQUIREMENTS | length }} rows,
-    reproduced so the page and the workbook cannot disagree.
-  </p>
-  <div class="oct16-table-wrap">
-    <table class="oct16-table">
-      <thead>
-        <tr>
-          <th scope="col">ID</th>
-          <th scope="col">Section</th>
-          <th scope="col">Data element</th>
-          <th scope="col">Definition or rule</th>
-          <th scope="col">Volume</th>
-          <th scope="col">Source</th>
-          <th scope="col">Provided by</th>
-          <th scope="col">Available today</th>
-          <th scope="col">Needed for Oct 16</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in d.DATA_REQUIREMENTS %}
-        <tr class="{{ r.available | availability_class }}">
-          <td>{{ r.id }}</td>
-          <td>{{ r.section }}</td>
-          <td>{{ r.element }}</td>
-          <td>{{ r.definition }}</td>
-          <td>{{ r.volume }}</td>
-          <td>{{ r.source }}</td>
-          <td>{{ r.provided_by }}</td>
-          {# The availability column is the one the reader scans for. It is text,
-             not colour alone. #}
-          <td class="oct16-avail">{{ r.available or "&mdash;" }}</td>
-          <td>{{ r.needed }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<section class="oct16-tradeoffs">
-  <h2>Trade-offs</h2>
-  {# Both sides, as drawn. A page that showed only the advantages would not be
-     one the Dean could decide from. #}
-  <ul class="oct16-tradeoff-list">
-    {% for good, text in d.TRADE_OFFS %}
-    <li class="oct16-tradeoff {{ 'pro' if good else 'con' }}">
-      {# The mark is an HTML entity OUTSIDE a Jinja expression: inside one, Jinja
-         escapes the ampersand and the page prints the literal text "&minus;". #}
-      <span class="oct16-mark" aria-hidden="true">{% if good %}+{% else %}&minus;{% endif %}</span>
-      <span class="oct16-tradeoff-text">{{ text }}</span>
-    </li>
-    {% endfor %}
-  </ul>
-</section>
-
-</details>
-
+{# The build memo (scope, data requirements, trade-offs) moved off this page
+   (2026-10-08): it is now the canonical six-priorities view, not a dated
+   deliverable, so the "October 16" build memo lives in the guide. See /guide. #}
 <section class="oct16-notes">
   <h2>About these figures</h2>
-  <p>{{ d.SOURCE_NOTE }}</p>
   <p class="oct16-caveat">
     {% if provenance == "confirmed" %}
-    Milestones and outcome states are confirmed by each owner and read from the
-    register database.
+    Milestones and statuses are confirmed by each owner and read from the register
+    database.
     {% else %}
     Milestones and statuses are seeded working data, not CLL results, pending owner
-    confirmation. No outcome owner is named yet. They are replaced when owners
-    confirm their milestone lists and status; importing that confirmation moves
-    this page from &ldquo;Illustrative&rdquo; to &ldquo;Confirmed&rdquo;.
+    confirmation. Importing that confirmation moves this page from
+    &ldquo;Illustrative&rdquo; to &ldquo;Confirmed&rdquo;.
     {% endif %}
   </p>
 </section>

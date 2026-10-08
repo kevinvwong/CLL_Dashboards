@@ -414,17 +414,14 @@ async def goal_list(request: Request, goal_number: int, group: str | None = None
 
 
 @app.get("/priorities")
-async def priorities_index(request: Request):
-    """The six annual priorities as their own index (overview split, 2026-10-07).
+async def priorities_retired(request: Request):
+    """The six priorities are shown on /outcomes now (2026-10-08).
 
-    One of four views of the same 29 Team Initiatives; see goals_index.
+    /priorities and /outcomes rendered the same six rows (the "outcomes" ARE the
+    six priorities); the index route folds into the one canonical page, keeping
+    the drill-down at /priorities/{name}.
     """
-    return templates.TemplateResponse(
-        request, "priorities_index.html",
-        _ctx(request, priorities=queries.blueprint_priorities(),
-             crumbs=[("Priorities", None)],
-             lens_total=len(queries.team_initiative_cards())),
-    )
+    return RedirectResponse(url="/outcomes", status_code=308)
 
 
 @app.get("/priorities/{priority_name}")
@@ -955,26 +952,27 @@ async def oct16(request: Request):
 
 
 @app.get("/outcomes")
-async def outcomes(request: Request):
-    """The October 16 deliverable, under a stable route.
+async def outcomes(request: Request, year: int | None = None):
+    """The six annual priorities, for one plan year.
 
-    Option A of the wireframes. Its own definition says "Static, clickable
-    pages; no live data feeds", so this renders a fixed data module rather than
-    reading the prototype's tables. That is deliberate, not a shortcut: the
-    outcome and team model does not exist in the prototype schema, and
-    inventing tables for a ten-day deliverable would have been the expensive
-    way to get this wrong.
-
-    It also sidesteps the one open question. Option A shows the Dean's own six
-    outcomes, which the wireframes note "does not match the 2026 priorities
-    presented in May" - so it needs no decision on which priority list is real.
+    The canonical page for the six priorities (the wireframes called the same six
+    "outcomes"). Scoped to a plan year, because the six recur each year
+    (multi-year, 2026-10-08); `?year=` selects one, defaulting to the app's
+    current plan year. The year control appears only once a second year exists.
     """
-    from app import oct16_data
-
+    years = queries.plan_years()
+    current = queries.current_plan_year()
+    if year is None:
+        year = current if current is not None else (years[0] if years else None)
     return templates.TemplateResponse(
-        request, "oct16.html", _ctx(request, d=oct16_data,
-                                    outcomes=queries.priority_outcomes(),
-                                    provenance=queries.dataset_provenance())
+        request, "oct16.html",
+        _ctx(request,
+             outcomes=queries.priority_outcomes(year),
+             provenance=queries.dataset_provenance(),
+             plan_year=year,
+             plan_years=years,
+             is_current_year=(year == current),
+             lens_total=len(queries.team_initiative_cards()))
     )
 
 
@@ -1101,6 +1099,9 @@ async def root(request: Request):
             stats=stats,
             health=health,
             plan_year=plan_year,
+            # The landing hero: the six 2027 priorities, compact (multi-year,
+            # 2026-10-08).
+            outcomes=queries.priority_outcomes(),
             dean_initiatives=queries.dean_initiatives(),
         ),
     )

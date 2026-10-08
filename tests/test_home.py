@@ -83,7 +83,7 @@ def test_home_shows_the_landing_and_keeps_everything_reachable(logged_in):
     assert "lens-grid" in body, "the four-lens block is missing"
     assert "dean-node" not in body, "the prototype's stage still renders"
     # Every lens is reachable from the landing.
-    for href in ("/goals", "/priorities", "/teams", "/dean-initiatives"):
+    for href in ("/goals", "/outcomes", "/teams", "/dean-initiatives"):
         assert ('href="%s"' % href) in body, "landing does not link %s" % href
     assert "/team-initiatives" in body
 
@@ -123,15 +123,13 @@ def test_goal_names_come_from_the_canonical_list(logged_in):
 
 
 def test_a_priority_and_its_count_appear_in_the_rendered_page(logged_in, fresh_db):
-    """A priority name and its initiative count render together (on the
-    priorities index, where the cards moved, overview split 2026-10-07)."""
+    """A priority name renders on /outcomes, the canonical six-priorities page
+    (/priorities redirects there; multi-year, 2026-10-08)."""
     from app import queries
 
-    body = logged_in("Bill Gaudelli").get("/priorities").text
+    body = logged_in("Bill Gaudelli").get("/outcomes").text
     p = queries.blueprint_priorities()[0]
     assert p["Title"] in body
-    assert f">{p['InitiativeCount']}<" in body or \
-           f"{p['InitiativeCount']} initiative" in body
 
 
 def test_home_requires_a_signed_in_person(anon):

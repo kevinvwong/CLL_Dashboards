@@ -134,7 +134,6 @@ def test_status_classes_are_emitted_by_the_filters():
     page = open(os.path.join(TEMPLATES, "oct16.html"), encoding="utf-8").read()
     assert "| status_class" in page
     assert "| milestone_class" in page
-    assert "| availability_class" in page
 
     row = open(os.path.join(TEMPLATES, "_row.html"), encoding="utf-8").read()
     assert "| status_class" in row

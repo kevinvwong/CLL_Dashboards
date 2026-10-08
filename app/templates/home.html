@@ -40,7 +40,7 @@
     <span class="stat-value">{{ stats.team_initiatives }}</span>
     <span class="stat-label">Team Initiatives</span>
   </a>
-  <a class="stat-tile" href="/priorities">
+  <a class="stat-tile" href="/outcomes">
     <span class="stat-value">{{ stats.priorities }}</span>
     <span class="stat-label">Priorities</span>
   </a>
@@ -56,6 +56,38 @@
           role="img"
           aria-label="{{ stats.needs_review }} of {{ stats.team_initiatives }} Team Initiatives need review"></span>
   </a>
+</section>
+
+{# The landing hero (multi-year, 2026-10-08): the six 2027 priorities, compact.
+   This is the one thing that answers "how are we doing?" at a glance, so it leads
+   the landing. The full view, with milestones and the ring, is /outcomes. #}
+<section id="hero" aria-labelledby="hero-heading">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Annual priorities · {{ plan_year }}</p>
+      <h2 id="hero-heading">The six {{ plan_year }} priorities at a glance</h2>
+    </div>
+    <p class="section-note"><a href="/outcomes">Full view →</a></p>
+  </div>
+
+  <ul class="oct16-grid">
+    {% for o in outcomes %}
+    <li class="oct16-card oct16-{{ o.Code|lower }}">
+      <a class="oct16-hero-link" href="/outcomes">
+        <div class="oct16-head">
+          <span class="oct16-id">{{ o.Code }} <span class="oct16-id-year">&middot; {{ o.PlanYear }}</span></span>
+          {% if o.Status %}<span class="oct16-outcome-status badge {{ o.Status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ o.Status | status_icon }}</span> {{ o.Status }}</span>{% endif %}
+        </div>
+        <h3 class="oct16-name">{{ o.FullTitle }}</h3>
+        <p class="oct16-count">{{ o.Reached }} of {{ o.Planned }} milestones reached</p>
+        <div class="oct16-bar" role="img"
+             aria-label="{{ o.Reached }} of {{ o.Planned }} milestones reached">
+          <span class="oct16-fill" style="width: {{ o.Percent }}%"></span>
+        </div>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
 </section>
 
 {# The four lenses: the same 29 Team Initiatives viewed four ways. Each is its own
@@ -79,7 +111,7 @@
       </a>
     </li>
     <li class="lens-card">
-      <a class="lens-link" href="/priorities">
+      <a class="lens-link" href="/outcomes">
         <span class="lens-count">{{ stats.priorities }}</span>
         <span class="lens-name">Annual Priorities</span>
         <span class="lens-desc">The six execution lenses for {{ plan_year }}</span>

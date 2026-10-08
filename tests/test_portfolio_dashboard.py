@@ -35,7 +35,7 @@ def test_the_home_is_a_landing_not_a_stage(logged_in):
     assert "team-grid" not in body
     # Each lens page carries its own grid.
     assert "goal-grid" in _page(logged_in, "/goals")
-    assert "priority-grid" in _page(logged_in, "/priorities")
+    assert "oct16-grid" in _page(logged_in, "/outcomes")   # the six priorities
     assert "team-grid" in _page(logged_in, "/teams")
     # The 29-row table has its own page.
     assert "mi-table" not in body, "the landing still renders the MI table"
@@ -55,9 +55,11 @@ def test_the_stat_band_reports_the_portfolio(logged_in):
 
 
 def test_all_six_priorities_render(logged_in):
+    """The six priorities render on /outcomes (the canonical page; /priorities
+    redirects). The wireframes called them "outcomes"."""
     from app import queries
-    body = _page(logged_in, "/priorities")
-    assert body.count('class="priority-card"') == 6
+    body = _page(logged_in, "/outcomes")
+    assert body.count('class="oct16-card') == 6
     for p in queries.blueprint_priorities():
         assert p["Title"] in body
 

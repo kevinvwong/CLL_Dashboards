@@ -4,14 +4,14 @@
    of one portfolio. Each lens now has its own page; this line, shown on every
    lens, states the relationship and links the other three.
 
-   Expects: `active` (one of goals|priorities|teams|dean), `lens_total` (the
+   Expects: `active` (one of goals|outcomes|teams|dean), `lens_total` (the
    shared count). #}
 <p class="lens-note">
   <span class="lens-note-label">One of four views of the same
   <strong>{{ lens_total }}</strong> Team Initiatives.</span>
   <span class="lens-note-links">
     {% for key, label, href in [("goals", "Goals", "/goals"),
-                                ("priorities", "Priorities", "/priorities"),
+                                ("outcomes", "Priorities", "/outcomes"),
                                 ("teams", "Teams", "/teams"),
                                 ("dean", "Dean Initiatives", "/dean-initiatives")] %}
     {% if key != active %}<a href="{{ href }}">{{ label }}</a>{% else %}<span class="lens-current" aria-current="page">{{ label }}</span>{% endif %}
