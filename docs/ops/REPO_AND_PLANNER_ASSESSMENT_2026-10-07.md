@@ -197,7 +197,7 @@ Ordered by severity. **Locations only; no values reproduced.**
 
 | Area | State | Evidence |
 |---|---|---|
-| Hosting | Personal `Azure for Students`, F1 plan, `westus` | `docs/ops/AZURE_PROVISIONING_REQUEST.md` |
+| Hosting | Personal `Azure for Students`, F1 plan, `northcentralus` | `docs/ops/AZURE_PROVISIONING_REQUEST.md` |
 | Availability | Free-tier **stop-quota** (80/15) → 403 to all users observed | provisioning request; DEPLOY.md §4 |
 | Monitoring | **None** — `/healthz` is the only signal | provisioning doc; no logger |
 | Alerts | **None** (no action group) | provisioning request lists as future |
