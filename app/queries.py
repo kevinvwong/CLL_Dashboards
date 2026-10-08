@@ -151,30 +151,7 @@ def initiative_signals(limit: int = 12) -> list[dict]:
     reported zero - the same distinction the person card makes.
     """
     with _conn() as conn:
-        rows = [
-            dict(r)
-            for r in conn.execute(
-                """
-                SELECT k.Code, k.MIId, k.Title AS InitiativeName,
-                       'Team Initiative' AS Level,
-                       p.Name AS Owner,
-                       lp.PercentComplete, lp.Status
-                FROM TeamInitiatives k
-                LEFT JOIN People p ON p.PersonID = k.OwnerID
-                LEFT JOIN vw_LatestTeamInitiativeProgress lp
-                       ON lp.TeamInitiativeID = k.TeamInitiativeID
-                WHERE k.IsActive = 1
-                ORDER BY k.MIId
-                LIMIT ?
-                """,
-                (limit,),
-            )
-        ]
-    for r in rows:
-        r["HasUpdate"] = r["PercentComplete"] is not None
-        # Templates key on the canon id; the internal Code is kept too.
-        r["Code"] = r["MIId"] or r["Code"]
-    return rows
+        return port.initiative_signals(conn, limit)
 
 
 
@@ -487,12 +464,7 @@ def attention_list() -> list[dict]:
 
 def data_checks() -> list[dict]:
     with _conn() as conn:
-        return [
-            dict(r)
-            for r in conn.execute(
-                "SELECT Code, Issue FROM vw_DataChecks ORDER BY Code, Issue"
-            )
-        ]
+        return port.data_checks(conn)
 
 
 # --- edit-form reads (tasks 8.2, 8.3, 8.4; deepened per `screen-reads`) -----
@@ -606,38 +578,8 @@ def relationships_for(codes: list) -> dict:
     attributes of a DeanInitiative, so those keys are None here; the caller renders
     the Dean title and code.
     """
-    if not codes:
-        return {}
-    placeholders = ",".join("?" * len(codes))
     with _conn() as conn:
-        id_to_code = {
-            r["TeamInitiativeID"]: (r["MIId"] or r["Code"])
-            for r in conn.execute(
-                "SELECT TeamInitiativeID, MIId, Code FROM TeamInitiatives "
-                "WHERE MIId IN (%s) OR Code IN (%s)" % (placeholders, placeholders),
-                tuple(codes) + tuple(codes))
-        }
-        if not id_to_code:
-            return {}
-        ids = list(id_to_code)
-        id_ph = ",".join("?" * len(ids))
-        rows = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT kl.TeamInitiativeID AS InitiativeID, 'Contributes to' AS Direction, "
-                "       d.Code AS Code, d.Title AS InitiativeName, "
-                "       NULL AS Owner, NULL AS Status, NULL AS PercentComplete "
-                "FROM TeamInitiativeDeanLinks kl JOIN DeanInitiatives d "
-                "       ON d.DeanInitiativeID = kl.DeanInitiativeID "
-                "WHERE kl.TeamInitiativeID IN (%s) "
-                "ORDER BY Direction, d.Code" % id_ph, tuple(ids))
-        ]
-    out: dict = {}
-    for r in rows:
-        subject = id_to_code.get(r["InitiativeID"])
-        if subject:
-            out.setdefault(subject, []).append(r)
-    return out
+        return port.relationships_for(conn, codes)
 
 
 # --- coverage (blueprint-redesign 5.4) --------------------------------------
@@ -871,42 +813,16 @@ def dean_initiatives() -> list[dict]:
     can name them rather than show a bare count (design review, 2026-10-07).
     """
     with _conn() as conn:
-        rows = [dict(r) for r in conn.execute(
-            "SELECT DeanInitiativeID, FiscalYear AS fiscal_year, Code AS code, "
-            "       Title AS title, Description AS description, "
-            "       PercentComplete AS percent_complete, "
-            "       PriorityCode AS priority_code, PriorityTitle AS priority_title, "
-            "       PriorityColour AS priority_colour "
-            "FROM vw_DeanInitiatives ORDER BY FiscalYear, Code")]
-        rolled: dict = {}
-        for r in conn.execute(
-                "SELECT kl.DeanInitiativeID, k.MIId, k.Title "
-                "FROM TeamInitiativeDeanLinks kl "
-                "JOIN TeamInitiatives k ON k.TeamInitiativeID = kl.TeamInitiativeID "
-                "WHERE k.IsActive = 1 ORDER BY k.MIId"):
-            rolled.setdefault(r["DeanInitiativeID"], []).append(
-                {"mi_id": r["MIId"], "title": r["Title"]})
-    for r in rows:
-        r["initiatives"] = rolled.get(r["DeanInitiativeID"], [])
-    return rows
+        return port.dean_initiatives(conn)
 
 
 def team_initiative_dean_links(mi_id: str) -> list[dict]:
     """The Dean FY27 items a Team Initiative contributes to."""
     with _conn() as conn:
-        return [dict(r) for r in conn.execute(
-            "SELECT DeanCode AS dean_code, DeanTitle AS dean_title "
-            "FROM vw_TeamInitiativeDeanLinks WHERE MIId = ? ORDER BY DeanCode",
-            (mi_id,))]
+        return port.team_initiative_dean_links(conn, mi_id)
 
 
 def recent_changes(limit: int = 100) -> list[dict]:
     """The change log, newest first, with who made each change."""
     with _conn() as conn:
-        return [dict(r) for r in conn.execute(
-            "SELECT a.CreatedAt AS created_at, p.Name AS person, a.Action AS action, "
-            "       a.EntityType AS entity_type, a.EntityKey AS entity_key, "
-            "       a.Reason AS reason, a.Source AS source, "
-            "       a.CorrelationID AS correlation_id "
-            "FROM AuditLog a LEFT JOIN People p ON p.PersonID = a.PersonID "
-            "ORDER BY a.CreatedAt DESC, a.AuditID DESC LIMIT ?", (limit,))]
+        return port.recent_changes(conn, limit)

@@ -1376,3 +1376,206 @@ def write_update_entry_description(conn, kind, key, description, person_id, audi
               {"before": row["description"], "after": (description or "").strip() or None})
     else:
         raise RuleError("Unknown entry type.")
+
+
+#: ---------------------------------------------------------------------------
+#: The remaining active surfaces (change `rev2-remaining-surfaces`).
+#: ---------------------------------------------------------------------------
+
+
+def initiative_signals(conn, limit=12):
+    """The home page's current-progress strip: existing initiatives with their
+    derived current progress."""
+    if engine(conn) == "mssql":
+        rows = [_d(r) for r in conn.execute(
+            "SELECT s.initiative_code AS Code, s.initiative_code AS MIId, "
+            "       s.initiative_name AS InitiativeName, 'Team Initiative' AS Level, "
+            "       o.display_name AS Owner, CAST(s.progress_current AS FLOAT) AS PercentComplete, "
+            "       s.status_current AS Status "
+            "FROM dbo.vw_initiative_summary s "
+            "LEFT JOIN dbo.vw_primary_reporting_owner o ON o.initiative_id = s.initiative_id "
+            "WHERE s.initiative_level = 'D-1' "
+            "ORDER BY s.initiative_code "
+            "OFFSET 0 ROWS FETCH NEXT " + str(int(limit)) + " ROWS ONLY").fetchall()]
+        for r in rows:
+            r["HasUpdate"] = r["PercentComplete"] is not None
+            r["Code"] = r["MIId"] or r["Code"]
+        return rows
+    rows = [_d(r) for r in conn.execute(
+        """
+        SELECT k.Code, k.MIId, k.Title AS InitiativeName,
+               'Team Initiative' AS Level,
+               p.Name AS Owner,
+               lp.PercentComplete, lp.Status
+        FROM TeamInitiatives k
+        LEFT JOIN People p ON p.PersonID = k.OwnerID
+        LEFT JOIN vw_LatestTeamInitiativeProgress lp
+               ON lp.TeamInitiativeID = k.TeamInitiativeID
+        WHERE k.IsActive = 1
+        ORDER BY k.MIId
+        LIMIT ?
+        """,
+        (limit,)).fetchall()]
+    for r in rows:
+        r["HasUpdate"] = r["PercentComplete"] is not None
+        r["Code"] = r["MIId"] or r["Code"]
+    return rows
+
+
+def relationships_for(conn, codes):
+    """What each Team Initiative contributes to, keyed by its canon id."""
+    if not codes:
+        return {}
+    if engine(conn) == "mssql":
+        ph = ",".join("%s" for _ in codes)
+        idmap = {r["initiative_id"]: r["initiative_code"] for r in conn.execute(
+            "SELECT initiative_id, initiative_code FROM dbo.initiative "
+            "WHERE initiative_code IN (%s) AND initiative_level = 'D-1'" % ph, tuple(codes))}
+        if not idmap:
+            return {}
+        ids = list(idmap)
+        idph = ",".join("%s" for _ in ids)
+        rows = [_d(r) for r in conn.execute(
+            "SELECT kl.from_initiative_id AS InitiativeID, 'Contributes to' AS Direction, "
+            "       d.initiative_code AS Code, d.initiative_name AS InitiativeName, "
+            "       NULL AS Owner, NULL AS Status, NULL AS PercentComplete "
+            "FROM dbo.initiative_relationship kl JOIN dbo.initiative d "
+            "       ON d.initiative_id = kl.to_initiative_id "
+            "WHERE kl.from_initiative_id IN (%s) AND kl.relationship_type IN ('Supports','Contributes To') "
+            "ORDER BY d.initiative_code" % idph, tuple(ids)).fetchall()]
+        out = {}
+        for r in rows:
+            subj = idmap.get(r["InitiativeID"])
+            if subj:
+                out.setdefault(subj, []).append(r)
+        return out
+    placeholders = ",".join("?" * len(codes))
+    id_to_code = {
+        r["TeamInitiativeID"]: (r["MIId"] or r["Code"])
+        for r in conn.execute(
+            "SELECT TeamInitiativeID, MIId, Code FROM TeamInitiatives "
+            "WHERE MIId IN (%s) OR Code IN (%s)" % (placeholders, placeholders),
+            tuple(codes) + tuple(codes))
+    }
+    if not id_to_code:
+        return {}
+    ids = list(id_to_code)
+    id_ph = ",".join("?" * len(ids))
+    rows = [_d(r) for r in conn.execute(
+        "SELECT kl.TeamInitiativeID AS InitiativeID, 'Contributes to' AS Direction, "
+        "       d.Code AS Code, d.Title AS InitiativeName, "
+        "       NULL AS Owner, NULL AS Status, NULL AS PercentComplete "
+        "FROM TeamInitiativeDeanLinks kl JOIN DeanInitiatives d "
+        "       ON d.DeanInitiativeID = kl.DeanInitiativeID "
+        "WHERE kl.TeamInitiativeID IN (%s) "
+        "ORDER BY Direction, d.Code" % id_ph, tuple(ids)).fetchall()]
+    out = {}
+    for r in rows:
+        subject = id_to_code.get(r["InitiativeID"])
+        if subject:
+            out.setdefault(subject, []).append(r)
+    return out
+
+
+def dean_initiatives(conn):
+    """The Dean's initiatives, FY26 then FY27, with priority + D-1 roll-up."""
+    if engine(conn) == "mssql":
+        from app import priorities as canon
+        rows = []
+        for r in conn.execute(
+                "SELECT i.initiative_id, i.initiative_code AS code, i.initiative_name AS title, "
+                "       i.description AS description, NULL AS percent_complete, "
+                "       LEFT(i.initiative_code, 3) AS yr, "
+                "       ap.priority_code AS priority_code "
+                "FROM dbo.initiative i "
+                "LEFT JOIN dbo.initiative_priority ip ON ip.initiative_id = i.initiative_id AND ip.relationship_type = 'Primary' "
+                "LEFT JOIN dbo.annual_priority ap ON ap.priority_id = ip.priority_id "
+                "WHERE i.initiative_level = 'Dean' AND i.active_flag = 1 "
+                "ORDER BY i.initiative_code"):
+            code = r["code"] or ""
+            fy = 27 if "D27" in code else 26
+            pcode = r["priority_code"]
+            rows.append({
+                "DeanInitiativeID": r["initiative_id"], "fiscal_year": fy, "code": code,
+                "title": r["title"], "description": r["description"],
+                "percent_complete": r["percent_complete"],
+                "priority_code": pcode,
+                "priority_title": canon.title_for_code(pcode) if pcode else None,
+                "priority_colour": None,
+            })
+        rolled = {}
+        for r in conn.execute(
+                "SELECT kl.to_initiative_id AS did, d.initiative_code AS MIId, d.initiative_name AS Title "
+                "FROM dbo.initiative_relationship kl JOIN dbo.initiative d ON d.initiative_id = kl.from_initiative_id "
+                "WHERE kl.relationship_type = 'Supports' AND d.initiative_level = 'D-1' AND d.active_flag = 1 "
+                "ORDER BY d.initiative_code"):
+            rolled.setdefault(r["did"], []).append({"mi_id": r["MIId"], "title": r["Title"]})
+        for r in rows:
+            r["initiatives"] = rolled.get(r["DeanInitiativeID"], [])
+        return rows
+    rows = [_d(r) for r in conn.execute(
+        "SELECT DeanInitiativeID, FiscalYear AS fiscal_year, Code AS code, "
+        "       Title AS title, Description AS description, "
+        "       PercentComplete AS percent_complete, "
+        "       PriorityCode AS priority_code, PriorityTitle AS priority_title, "
+        "       PriorityColour AS priority_colour "
+        "FROM vw_DeanInitiatives ORDER BY FiscalYear, Code").fetchall()]
+    rolled = {}
+    for r in conn.execute(
+            "SELECT kl.DeanInitiativeID, k.MIId, k.Title "
+            "FROM TeamInitiativeDeanLinks kl "
+            "JOIN TeamInitiatives k ON k.TeamInitiativeID = kl.TeamInitiativeID "
+            "WHERE k.IsActive = 1 ORDER BY k.MIId"):
+        rolled.setdefault(r["DeanInitiativeID"], []).append({"mi_id": r["MIId"], "title": r["Title"]})
+    for r in rows:
+        r["initiatives"] = rolled.get(r["DeanInitiativeID"], [])
+    return rows
+
+
+def team_initiative_dean_links(conn, mi_id):
+    """The Dean items a Team Initiative contributes to, keyed by the dean code."""
+    if engine(conn) == "mssql":
+        return [_d(r) for r in conn.execute(
+            "SELECT p.initiative_code AS dean_code, p.initiative_name AS dean_title "
+            "FROM dbo.initiative_relationship kl JOIN dbo.initiative p ON p.initiative_id = kl.to_initiative_id "
+            "WHERE kl.from_initiative_id = (SELECT initiative_id FROM dbo.initiative WHERE initiative_code = %s) "
+            "  AND kl.relationship_type = 'Supports' AND p.initiative_level = 'Dean' "
+            "ORDER BY p.initiative_code", (mi_id,)).fetchall()]
+    return [_d(r) for r in conn.execute(
+        "SELECT DeanCode AS dean_code, DeanTitle AS dean_title "
+        "FROM vw_TeamInitiativeDeanLinks WHERE MIId = ? ORDER BY DeanCode", (mi_id,)).fetchall()]
+
+
+def data_checks(conn):
+    """The data-quality checks: active initiatives with no goal or no priority."""
+    if engine(conn) == "mssql":
+        return [_d(r) for r in conn.execute(
+            "SELECT i.initiative_code AS Code, 'No goal tagged' AS Issue FROM dbo.initiative i "
+            "WHERE i.active_flag = 1 AND i.initiative_level = 'D-1' "
+            "  AND NOT EXISTS (SELECT 1 FROM dbo.initiative_goal g WHERE g.initiative_id = i.initiative_id) "
+            "UNION ALL "
+            "SELECT i.initiative_code, 'No priority tagged' FROM dbo.initiative i "
+            "WHERE i.active_flag = 1 AND i.initiative_level = 'D-1' "
+            "  AND NOT EXISTS (SELECT 1 FROM dbo.initiative_priority p WHERE p.initiative_id = i.initiative_id) "
+            "ORDER BY Code, Issue").fetchall()]
+    return [_d(r) for r in conn.execute(
+        "SELECT Code, Issue FROM vw_DataChecks ORDER BY Code, Issue").fetchall()]
+
+
+def recent_changes(conn, limit=100):
+    """The change log, newest first, with who made each change."""
+    if engine(conn) == "mssql":
+        return [_d(r) for r in conn.execute(
+            "SELECT a.created_at AS created_at, per.display_name AS person, a.action AS action, "
+            "       a.entity_type AS entity_type, a.entity_key AS entity_key, "
+            "       a.reason AS reason, a.source AS source, a.correlation_id AS correlation_id "
+            "FROM dbo.audit_log a LEFT JOIN dbo.person per ON per.person_id = a.person_id "
+            "ORDER BY a.created_at DESC, a.audit_id DESC "
+            "OFFSET 0 ROWS FETCH NEXT " + str(int(limit)) + " ROWS ONLY").fetchall()]
+    return [_d(r) for r in conn.execute(
+        "SELECT a.CreatedAt AS created_at, p.Name AS person, a.Action AS action, "
+        "       a.EntityType AS entity_type, a.EntityKey AS entity_key, "
+        "       a.Reason AS reason, a.Source AS source, "
+        "       a.CorrelationID AS correlation_id "
+        "FROM AuditLog a LEFT JOIN People p ON p.PersonID = a.PersonID "
+        "ORDER BY a.CreatedAt DESC, a.AuditID DESC LIMIT ?", (limit,)).fetchall()]

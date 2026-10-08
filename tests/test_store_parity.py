@@ -450,3 +450,71 @@ def test_audit_error_message_parity():
     # (that call ran against sqlite by default; the mssql branch is validated by
     # the shared validation above, which runs before either engine's body.)
 
+
+# --- remaining surfaces (rev2-remaining-surfaces) ---------------------------
+
+
+def test_initiative_signals_parity(both):
+    from app import port
+
+    sq, ms = both
+    a = {(r["Code"], r["InitiativeName"], r["Owner"]) for r in port.initiative_signals(sq)}
+    b = {(r["Code"], r["InitiativeName"], r["Owner"]) for r in port.initiative_signals(ms)}
+    assert a == b
+
+
+def test_relationships_for_parity(both):
+    from app import port
+
+    sq, ms = both
+    codes = ["MI-001", "MI-014", "MI-029"]
+    a = port.relationships_for(sq, codes)
+    b = port.relationships_for(ms, codes)
+    for code in codes:
+        ak = sorted(c["Code"] for c in a.get(code, []))
+        bk = sorted(c["Code"] for c in b.get(code, []))
+        assert ak == bk, code
+
+
+def test_dean_initiatives_parity(both):
+    from app import port
+
+    sq, ms = both
+    a = port.dean_initiatives(sq)
+    b = port.dean_initiatives(ms)
+    an = {(r["code"], r["title"], r["fiscal_year"]) for r in a}
+    bn = {(r["code"], r["title"], r["fiscal_year"]) for r in b}
+    assert an == bn
+    # roll-up set agrees per Dean row
+    am = {r["code"]: sorted(i["mi_id"] for i in r["initiatives"]) for r in a}
+    bm = {r["code"]: sorted(i["mi_id"] for i in r["initiatives"]) for r in b}
+    assert am == bm
+
+
+def test_team_initiative_dean_links_parity(both):
+    from app import port
+
+    sq, ms = both
+    for code in ("MI-001", "MI-014"):
+        a = {(l["dean_code"], l["dean_title"]) for l in port.team_initiative_dean_links(sq, code)}
+        b = {(l["dean_code"], l["dean_title"]) for l in port.team_initiative_dean_links(ms, code)}
+        assert a == b, code
+
+
+def test_data_checks_parity(both):
+    from app import port
+
+    sq, ms = both
+    a = {(r["Code"], r["Issue"]) for r in port.data_checks(sq)}
+    b = {(r["Code"], r["Issue"]) for r in port.data_checks(ms)}
+    assert a == b
+
+
+def test_recent_changes_parity(both):
+    """The reconciled seed ships no audit rows, so both /changes sources are empty."""
+    from app import port
+
+    sq, ms = both
+    assert port.recent_changes(sq) == []
+    assert port.recent_changes(ms) == []
+
