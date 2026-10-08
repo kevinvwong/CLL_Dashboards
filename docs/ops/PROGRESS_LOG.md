@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **4** days of work recorded, **160** changes in total.
+- **4** days of work recorded, **161** changes in total.
 - Most recent day: **Thursday 08 October 2026**.
-- Across all days: 53 what we added; 33 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 19 documentation; 17 more changes.
+- Across all days: 53 what we added; 34 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 19 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -39,6 +39,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 - Sign out through clerk-js, not a cookie delete
 - Serve a favicon instead of 404ing on every page
+- Commit the rebuilt database with the six canonical roles
 
 **Documentation**
 
