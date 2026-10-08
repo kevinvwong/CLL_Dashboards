@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **4** days of work recorded, **166** changes in total.
+- **4** days of work recorded, **167** changes in total.
 - Most recent day: **Thursday 08 October 2026**.
-- Across all days: 55 what we added; 34 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 22 documentation; 17 more changes.
+- Across all days: 55 what we added; 34 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 23 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -51,6 +51,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Name the six application roles in the provisioning request
 - State the Entra role boundary and the role-assignment licensing question
 - Record the user/role roster and the Clerk provisioning
+- Record each person's two addresses (account + alias)
 
 
 ## Wednesday 07 October 2026
