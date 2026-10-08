@@ -43,6 +43,13 @@ if "--empty" not in sys.argv:
     milestones = os.path.join(HERE, "seed_milestones.sql")
     if os.path.exists(milestones):
         con.executescript(open(milestones, encoding="utf-8").read())
+    # A LOCAL overlay, gitignored, applied after every seed. Environment-specific
+    # data that must not be committed (the Clerk user ids that link an SSO identity
+    # to a People row) lives here, so a rebuild no longer wipes it. Absent in a
+    # fresh checkout, which is the committed state.
+    overlay = os.path.join(HERE, "local_overlay.sql")
+    if os.path.exists(overlay):
+        con.executescript(open(overlay, encoding="utf-8").read())
 con.commit()
 for t in ["Goals","Priorities","People","Teams","SourceAreas",
           "TeamInitiatives","TeamInitiativePriorities","TeamInitiativeGoals",

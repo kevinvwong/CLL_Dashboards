@@ -27,3 +27,7 @@ deploy.zip
 app/cll_initiatives.db
 # The brainstorming visual companion's session files (mockups, state).
 .superpowers/
+
+# The local build overlay (db/local_overlay.sql): environment-specific data such
+# as Clerk user ids, applied by build_db.py but never committed.
+db/local_overlay.sql
