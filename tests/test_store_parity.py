@@ -122,3 +122,83 @@ def test_app_config_read_from_rev2(both):
            port._appmeta(sq, "current_plan_year") == "2027"
     assert port._appmeta(ms, "dataset_provenance") == \
            port._appmeta(sq, "dataset_provenance") == "mock"
+
+
+# --- group 3: cascade + index -------------------------------------------
+
+
+def _key(row):
+    # the public key is the canon MI-### on both stores
+    return row["Code"]
+
+
+def test_goal_rows_parity(both):
+    from app import port
+
+    sq, ms = both
+    for gn in (1, 2, 3, 4, 5):
+        a = {(_key(r), r["InitiativeName"], r["Owner"]) for r in port.goal_rows(sq, gn)}
+        b = {(_key(r), r["InitiativeName"], r["Owner"]) for r in port.goal_rows(ms, gn)}
+        assert a == b, f"goal {gn} differs"
+
+
+def test_priority_rows_parity(both):
+    from app import port
+
+    sq, ms = both
+    for name in ("Identity", "Innovation", "Pathways", "Scale", "Data", "Culture"):
+        a = {(_key(r), r["InitiativeName"], r["PlanYear"]) for r in port.priority_rows(sq, name)}
+        b = {(_key(r), r["InitiativeName"], r["PlanYear"]) for r in port.priority_rows(ms, name)}
+        assert a == b, f"priority {name} differs"
+
+
+def test_all_initiatives_parity(both):
+    from app import port
+
+    sq, ms = both
+    a = port.all_initiatives(sq)
+    b = port.all_initiatives(ms)
+    assert len(a) == len(b) == 29
+    ak = {(_key(r), r["InitiativeName"], r["Owner"], r["Status"]) for r in a}
+    bk = {(_key(r), r["InitiativeName"], r["Owner"], r["Status"]) for r in b}
+    assert ak == bk
+    # tag collection must join identically on each engine
+    ag, ap = port.initiative_tag_names(sq)
+    bg, bp = port.initiative_tag_names(ms)
+    aid_to_code = {r["InitiativeID"]: r["Code"] for r in a}
+    bid_to_code = {r["InitiativeID"]: r["Code"] for r in b}
+    agg = {aid_to_code[i]: sorted(v) for i, v in ag.items()}
+    bgg = {bid_to_code[i]: sorted(v) for i, v in bg.items()}
+    assert agg == bgg
+    app_ = {aid_to_code[i]: sorted(v) for i, v in ap.items()}
+    bpp = {bid_to_code[i]: sorted(v) for i, v in bp.items()}
+    assert app_ == bpp
+
+
+def test_all_people_parity(both):
+    from app import port
+
+    sq, ms = both
+    a, _ = port.all_people(sq)
+    b, _ = port.all_people(ms)
+    an = {(p["PersonID"], p["Name"]) for p in a}
+    bn = {(p["PersonID"], p["Name"]) for p in b}
+    assert an == bn
+
+
+def test_admin_semantics_agree(both):
+    """is_admin is role-based by PlatformAdmin (auth.is_admin reads the role; the
+    stored People.IsAdmin is only an honored migration fallback). The port derives
+    the Rev2 bit from person_role/role. Assert the PORT's answer matches the
+    role-derived answer on each store — i.e. 'has the PlatformAdmin role' agrees
+    across stores."""
+    from app import port
+
+    sq, ms = both
+    # sqlite's role-derived admin set, from PeopleRoles + Roles (auth's source).
+    sq_admins = {r["PersonID"] for r in sq.execute(
+        "SELECT DISTINCT pr.PersonID FROM PeopleRoles pr JOIN Roles r "
+        " ON r.RoleID = pr.RoleID WHERE r.Name IN ('PlatformAdmin')")}
+    ms_people, _ = port.all_people(ms)
+    ms_admins = {p["PersonID"] for p in ms_people if p["IsAdmin"]}
+    assert sq_admins == ms_admins

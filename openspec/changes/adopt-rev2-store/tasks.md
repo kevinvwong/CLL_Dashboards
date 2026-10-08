@@ -29,11 +29,11 @@ fully green.
 
 ## 3. Cascade + index reads
 
-- [ ] 3.1 `goal_rows` — via `vw_goal_initiatives`.
-- [ ] 3.2 `priority_rows` — via `vw_priority_initiatives`.
-- [ ] 3.3 `all_initiatives` — initiative list + collected goal/priority names.
-- [ ] 3.4 `all_people` — people + counts. Pure-Python groupers (`split_for_list`, `group_rows`, `status_counts`, `rollup_label`) are engine-agnostic and unchanged.
-- [ ] 3.5 **parity test** for the cascade screens.
+- [x] 3.1 `goal_rows` — via `vw_goal_initiatives`. (parity: goals 1-5 identical)
+- [x] 3.2 `priority_rows` — via `vw_priority_initiatives`. (canon.code resolves the short-name arg to a code; PriorityName/PlanYear normalized to app shape)
+- [x] 3.3 `all_initiatives` — initiative list + collected goal/priority names. (vw_initiative_summary; tag dicts keyed by the row's InitiativeID so the caller joins identically)
+- [x] 3.4 `all_people` — people + counts. (IsAdmin derived from person_role/PlatformAdmin to match auth.is_admin; PERS-N projected back to the app's int PersonID; a P11 TechnicalAdmin-is-not-admin nuance was caught by the parity test)
+- [x] 3.5 **parity test** for the cascade screens. (5 new tests; vw_initiative_summary doesn't project active_flag — it pre-filters — so the port dropped the outer predicate)
 
 ## 4. Team-initiative layer reads
 

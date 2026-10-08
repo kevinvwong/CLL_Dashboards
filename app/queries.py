@@ -213,48 +213,13 @@ def goal_rows(goal_number: int) -> list[dict]:
     register's goal columns are plain marks, with no primary among them).
     """
     with _conn() as conn:
-        rows = conn.execute(
-            "SELECT g.GoalNumber, g.ShortName AS Goal, k.TeamInitiativeID AS InitiativeID, "
-            "       'Team Initiative' AS Level, k.MIId AS Code, k.Title AS InitiativeName, "
-            "       p.PersonID AS OwnerID, p.Name AS Owner, 0 AS IsPrimary, "
-            "       lp.PercentComplete, lp.Status "
-            "FROM TeamInitiativeGoals ig "
-            "JOIN Goals g       ON g.GoalID = ig.GoalID "
-            "JOIN TeamInitiatives k ON k.TeamInitiativeID = ig.TeamInitiativeID AND k.IsActive = 1 "
-            "LEFT JOIN People p ON p.PersonID = k.OwnerID "
-            "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
-            "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
-            "WHERE g.GoalNumber = ? ORDER BY k.MIId",
-            (goal_number,),
-        ).fetchall()
-    out = [dict(r) for r in rows]
-    for r in out:
-        r["Code"] = r["Code"] or ""
-    return out
+        return port.goal_rows(conn, goal_number)
 
 
 def priority_rows(priority_name: str) -> list[dict]:
     """Team Initiatives feeding one priority (the dropped vw_PriorityInitiatives)."""
     with _conn() as conn:
-        rows = conn.execute(
-            "SELECT pr.PriorityName AS Priority, pr.PlanYear, "
-            "       k.TeamInitiativeID AS InitiativeID, 'Team Initiative' AS Level, "
-            "       k.MIId AS Code, k.Title AS InitiativeName, "
-            "       p.PersonID AS OwnerID, p.Name AS Owner, tp.IsPrimary, "
-            "       lp.PercentComplete, lp.Status "
-            "FROM TeamInitiativePriorities tp "
-            "JOIN Priorities pr ON pr.PriorityID = tp.PriorityID "
-            "JOIN TeamInitiatives k ON k.TeamInitiativeID = tp.TeamInitiativeID AND k.IsActive = 1 "
-            "LEFT JOIN People p ON p.PersonID = k.OwnerID "
-            "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
-            "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
-            "WHERE pr.PriorityName = ? ORDER BY k.MIId",
-            (priority_name,),
-        ).fetchall()
-    out = [dict(r) for r in rows]
-    for r in out:
-        r["Code"] = r["Code"] or ""
-    return out
+        return port.priority_rows(conn, priority_name)
 
 
 def split_for_list(rows: list[dict]):
@@ -705,36 +670,8 @@ def all_initiatives(filters: dict | None = None) -> list[dict]:
     names are collected per initiative rather than joined, for the same reason.
     """
     with _conn() as conn:
-        rows = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT k.TeamInitiativeID AS InitiativeID, k.MIId AS Code, "
-                "       k.Title AS InitiativeName, 'Team Initiative' AS Level, "
-                "       p.PersonID AS OwnerID, p.Name AS Owner, "
-                "       lp.PercentComplete, lp.Status, lp.UpdateDate AS LastUpdated "
-                "FROM TeamInitiatives k "
-                "LEFT JOIN People p ON p.PersonID = k.OwnerID "
-                "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
-                "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
-                "WHERE k.IsActive = 1 "
-                "ORDER BY k.MIId"
-            )
-        ]
-        goals: dict = {}
-        for r in conn.execute(
-            "SELECT kg.TeamInitiativeID, g.ShortName FROM TeamInitiativeGoals kg "
-            "JOIN Goals g ON g.GoalID = kg.GoalID ORDER BY g.GoalNumber"
-        ):
-            goals.setdefault(r["TeamInitiativeID"], []).append(r["ShortName"])
-        priorities: dict = {}
-        for r in conn.execute(
-            "SELECT tp.TeamInitiativeID, pr.PriorityName, pr.Code FROM TeamInitiativePriorities tp "
-            "JOIN Priorities pr ON pr.PriorityID = tp.PriorityID "
-            "ORDER BY pr.PriorityName"
-        ):
-            # The short CODE, so the table reads "P03" like its other columns,
-            # rather than the bare short name ("Pathways", #7).
-            priorities.setdefault(r["TeamInitiativeID"], []).append(r["Code"] or r["PriorityName"])
+        rows = port.all_initiatives(conn)
+        goals, priorities = port.initiative_tag_names(conn)
 
     today = _today()
     for row in rows:
@@ -778,23 +715,7 @@ def all_people() -> list[dict]:
     attention.
     """
     with _conn() as conn:
-        people = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT PersonID, Name, Title, IsAdmin FROM People "
-                "WHERE IsActive = 1 ORDER BY Name"
-            )
-        ]
-        rows = [
-            dict(r)
-            for r in conn.execute(
-                "SELECT k.OwnerID AS PersonID, COALESCE(lp.Status, 'Not started') AS Status "
-                "FROM TeamInitiatives k "
-                "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
-                "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
-                "WHERE k.IsActive = 1 AND k.OwnerID IS NOT NULL"
-            )
-        ]
+        people, rows = port.all_people(conn)
     by_person: dict = {}
     for r in rows:
         by_person.setdefault(r["PersonID"], []).append(r["Status"])
