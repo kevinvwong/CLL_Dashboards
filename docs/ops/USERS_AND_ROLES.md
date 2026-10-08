@@ -55,6 +55,16 @@ adds assigned-update capabilities rather than replacing read access.
   Microsoft SSO, which Clerk matches to a user **by email** — so the roster's GT
   email is the identity key. Kevin signs in as
   `kevin.wong@lifetimelearning.gatech.edu`.
+- **Aliases (two addresses per person):** a GT person often has two addresses —
+  a username form (`<username>@gatech.edu`) and an alias
+  (e.g. `first.last@lifetimelearning.gatech.edu`), and Microsoft SSO returns ONE
+  of them. Clerk auto-links an SSO sign-in only when the returned address matches
+  a **verified** email already on the user. So each person should carry **both**
+  addresses, both verified: if only the username is on file and the person signs
+  in with their alias, Clerk creates a *second* user instead of linking. Add the
+  second address with
+  `python scripts/add_clerk_email.py <clerk_user_id> <alias>`. (Kevin carries
+  both.)
 - **Link to the app:** each Clerk user id is stored in `People.ClerkUserID`
   (set locally by `scripts/link_clerk_user.py`). Clerk ids are per-environment, so
   they are **not committed** — the committed database carries none.
@@ -67,7 +77,10 @@ adds assigned-update capabilities rather than replacing read access.
 ## Re-provisioning
 
 1. Create the users in Clerk with their username + email (SSO matches on email).
-2. Link each to their person: `python scripts/link_clerk_user.py <clerk_user_id> <person_id>`
+2. Add each person's alias as a second **verified** email
+   (`python scripts/add_clerk_email.py <clerk_user_id> <alias>`), so whichever
+   address Microsoft returns links to the same user.
+3. Link each to their person: `python scripts/link_clerk_user.py <clerk_user_id> <person_id>`
    (`clerk users list --app <app_id>` shows the ids).
-3. Roles come from the seed; adjust the roster in `db/build_milestones_seed.py`
+4. Roles come from the seed; adjust the roster in `db/build_milestones_seed.py`
    and rebuild (`python db/build_db.py`).
