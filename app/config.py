@@ -27,6 +27,16 @@ class Config:
         # Like DB_PATH, a single named path so the app and the renderer cannot
         # disagree; the deploy sets DOCS_PATH to the shipped copy.
         self.DOCS_PATH = os.getenv("DOCS_PATH", "./docs")
+
+        # --- the store (ADR-0004-style seam) -----------------------------------
+        # Which database answers: `sqlite` (the local file) or `mssql` (the Rev2
+        # model on Azure SQL). The two are different schemas; this only selects
+        # the engine (see app/db.py).
+        self.DB_PROVIDER = os.getenv("DB_PROVIDER", "sqlite").strip().lower()
+        self.MSSQL_SERVER = os.getenv("MSSQL_SERVER", "")
+        self.MSSQL_DATABASE = os.getenv("MSSQL_DATABASE", "")
+        self.MSSQL_USER = os.getenv("MSSQL_USER", "")
+        self.MSSQL_PASSWORD = os.getenv("MSSQL_PASSWORD", "")
         self.BACKUP_DIR = os.getenv("BACKUP_DIR", "./backups")
         self.PORT = int(os.getenv("PORT", "8000"))
         # The meeting surface is ICED (2026-10-06): hidden from the nav and its

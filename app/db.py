@@ -1,32 +1,140 @@
+"""One connection factory, two providers (ADR-0004-style seam for storage).
+
+`connect()` is the single answer to "how do I get a connection?" (design D3). A
+second question now has one answer too: **which store**. `DB_PROVIDER` selects it:
+
+    sqlite  (default) the local file, cll_initiatives.db
+    mssql             the Rev2 model on Azure SQL (serverless GP_S_Gen5)
+
+The two are NOT interchangeable: they are different schemas (the app's 17-table
+model vs Rev2's 28). Porting a query from SQLite to Rev2 is a real translation,
+done one query at a time; this module only decides which engine answers.
+
+A connection is a thin wrapper so callers keep writing `conn.execute(sql, args)`
+and reading rows by name regardless of engine:
+
+    sqlite: sqlite3.Connection, rows are sqlite3.Row
+    mssql : pymssql.Connection, rows are tuples wrapped so name access works
+"""
+import os
 import sqlite3
 
 from app.config import Config
 
-# A connection is obtained through connect() only, and always for the path
-# named by Config.DB_PATH. There is deliberately no default path here: a second
-# default is what let an empty database be opened (and once shipped in a deploy
-# archive). See the `data-connection` spec and design D3.
 
+class _Row(dict):
+    """A row that supports both `row['Name']` and `row[0]` / `dict(row)`.
 
-def connect(write: bool = False) -> sqlite3.Connection:
-    """Open the configured database with the pragmas every caller needs.
-
-    One interface for every caller: read and write differ only by ``write``, so
-    "how do I get a connection?" has one answer (design D3).
-
-    * Foreign-key enforcement is on, so the schema's referential rules hold.
-    * Write-ahead logging, for concurrent reads while a write is in flight.
-    * ``busy_timeout`` 5000 ms, so a writer waits for a reader instead of
-      failing.
-    * ``row_factory`` returns rows as ``sqlite3.Row``, so callers use names.
-    * ``write=True`` takes the write lock up front, so a read inside the same
-      transaction sees a consistent snapshot and two writers cannot interleave.
+    SQLite returns sqlite3.Row, which supports name and index access. pymssql
+    returns plain tuples. This bridges the two so a ported query reads the same
+    whichever engine ran it.
     """
-    conn = sqlite3.connect(Config().DB_PATH, timeout=5.0)  # seconds; 5 s = 5000 ms
+
+    def __init__(self, columns, values):
+        super().__init__(zip(columns, values))
+        self._values = tuple(values)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return dict.__getitem__(self, key)
+
+
+class MssqlCursor:
+    """A sqlite3-Cursor-shaped wrapper over a pymssql cursor."""
+
+    def __init__(self, cur):
+        self._cur = cur
+
+    def execute(self, sql, args=()):
+        self._cur.execute(sql, args) if args else self._cur.execute(sql)
+        return self
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        if row is None:
+            return None
+        cols = [d[0] for d in self._cur.description]
+        return _Row(cols, row)
+
+    def fetchall(self):
+        rows = self._cur.fetchall()
+        cols = [d[0] for d in self._cur.description]
+        return [_Row(cols, r) for r in rows]
+
+    def __iter__(self):
+        return iter(self.fetchall())
+
+
+class MssqlConnection:
+    """A sqlite3-Connection-shaped wrapper over a pymssql connection.
+
+    Only the surface the app actually uses: `execute`, `commit`, `close`, and
+    context-manager use. `execute` returns a MssqlCursor; a caller may iterate it
+    or call fetchone/fetchall.
+    """
+
+    def __init__(self, raw, write=False):
+        self._conn = raw
+        self._conn.autocommit(False)
+        if write:
+            self._conn.autocommit(False)
+
+    def execute(self, sql, args=()):
+        cur = self._conn.cursor()
+        if args:
+            cur.execute(sql, args)
+        else:
+            cur.execute(sql)
+        return MssqlCursor(cur)
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if exc_type is None:
+            self.commit()
+        else:
+            self.rollback()
+        self.close()
+        return False
+
+
+def _mssql_connect(write=False):
+    import pymssql
+
+    cfg = Config()
+    conn = pymssql.connect(
+        server=cfg.MSSQL_SERVER, user=cfg.MSSQL_USER, password=cfg.MSSQL_PASSWORD,
+        database=cfg.MSSQL_DATABASE, login_timeout=60, timeout=60,
+    )
+    return MssqlConnection(conn, write=write)
+
+
+def connect(write: bool = False):
+    """Open the configured store with the pragmas every caller needs.
+
+    * sqlite: foreign keys on, WAL, 5 s busy timeout, rows as sqlite3.Row;
+      ``write=True`` takes the write lock up front (BEGIN IMMEDIATE).
+    * mssql: a connection to Rev2 on Azure SQL; ``write=True`` begins a
+      transaction the caller commits.
+    """
+    if Config().DB_PROVIDER == "mssql":
+        return _mssql_connect(write=write)
+
+    conn = sqlite3.connect(Config().DB_PATH, timeout=5.0)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
     conn.row_factory = sqlite3.Row
     if write:
         conn.execute("BEGIN IMMEDIATE")
     return conn
-
