@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **4** days of work recorded, **169** changes in total.
+- **4** days of work recorded, **170** changes in total.
 - Most recent day: **Thursday 08 October 2026**.
-- Across all days: 55 what we added; 36 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 23 documentation; 17 more changes.
+- Across all days: 56 what we added; 36 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 23 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -36,6 +36,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Separate executive authority from routine updates (DR-23)
 - Reconcile role names to the roster and add the Strategic Operations roster
 - Support a second (alias) email per user, so either address links
+- Apply the Rev2 schema and seed it from the app data
 
 **What we fixed**
 
