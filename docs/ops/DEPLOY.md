@@ -3,7 +3,7 @@
 How to deploy the live service, verify it, and roll it back.
 
 **Service:** `clldashproto2kwong27.azurewebsites.net`
-**Resource group:** `rg-cll-dash-proto` (region `westus`)
+**Resource group:** `rg-cll-dash-proto` (region `northcentralus`)
 
 Written because the deploy path existed only as shell history, its exit code
 reports failure while succeeding, and a bad archive takes the site down.
