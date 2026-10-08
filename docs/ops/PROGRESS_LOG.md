@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **149** changes in total.
+- **3** days of work recorded, **151** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 49 what we added; 30 what we fixed; 5 appearance and design; 20 behind the scenes; 12 quality and testing; 16 documentation; 17 more changes.
+- Across all days: 49 what we added; 31 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 16 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -79,6 +79,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Render the nav and goal SVGs, not their escaped text
 - Priority chips keep a readable label over their swatch
 - Let the content column shrink, and fix the rail item contrast
+- Rebuild the shipped database for the multi-year schema
 
 **Appearance and design**
 
@@ -106,6 +107,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Migrate intake to the merged model; importer keys on MIId or Code
 - Finish the flows/intake/synthetic migration; fix edit-result redirect
 - Complete the merged-model migration - suite green (546 passing)
+- Guard the shipped database against a schema change without a rebuild
 
 **Documentation**
 
