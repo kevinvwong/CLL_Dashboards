@@ -665,6 +665,54 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 .login input { width: 100%; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-sm); }
 .login button { margin-top: var(--space-3); padding: var(--space-2) var(--space-4); cursor: pointer; }
 
+/* --- the auth surface (sign-in / sign-out) --------------------------------
+   A single, quiet, centred column: the brand intro above a card that holds the
+   sign-in widget. The page is pre-auth, so it renders without the app rail
+   (app-shell--bare) and centres its content. Clerk's widget is themed to the
+   app's tokens in the template, so this block only handles the frame. */
+.auth {
+  max-width: 26rem;
+  margin: clamp(2rem, 8vh, 6rem) auto 0;
+}
+.auth-intro { text-align: center; margin-bottom: var(--space-4); }
+.auth-intro h1 { font-size: var(--text-2xl); margin: var(--space-1) 0 var(--space-2); }
+.auth .eyebrow { justify-content: center; }
+.auth-lede { margin: 0; color: var(--ink-muted); font-size: var(--text-sm); }
+/* The card is drawn by Clerk itself (themed in the template); this is just the
+   frame. min-width:0 stops the grid/flex child overflowing on a narrow screen. */
+.auth-card { width: 100%; min-width: 0; }
+.auth-center { text-align: center; }
+/* A gold hairline rule under the intro, echoing the app bar's brand rule. */
+.auth-intro h1::after {
+  content: ""; display: block; width: 3rem; height: 3px; margin: var(--space-3) auto 0;
+  background: var(--gold);
+}
+.auth-mount { min-height: 8rem; }
+/* Clerk's sign-in card carries a fixed 25rem width under a HASHED class
+   (.cl-internal-…), so a rule on .cl-card does not win; and Clerk replaces the
+   mount element, dropping my .auth-mount class. Scope to the stable .auth-card
+   frame instead; !important because Clerk's generated style lands later. */
+.auth-card [class*="cl-card"],
+.auth-card [class*="cl-rootBox"] {
+  width: 100% !important; min-width: 0 !important; max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+/* Clerk's "Secured by Clerk" badge is absolutely positioned at the card's
+   bottom edge and CANNOT be styled away (no appearance key; the docs say it is
+   a Dashboard > Branding toggle). On development keys it is removed by the
+   mount script in the template; this reserves no space in case it is gone. */
+.auth-card [class*="cl-card"] { padding-bottom: 1.5rem !important; }
+/* Clerk's widget must not exceed its column on a phone. */
+.auth-mount .cl-rootBox, .auth-mount .cl-cardBox, .auth-mount .cl-card { max-width: 100%; }
+.auth-loading { margin: 0; color: var(--ink-muted); font-size: var(--text-sm); text-align: center; }
+.auth-failed { margin: 0 0 var(--space-2); color: var(--status-off-track); font-size: var(--text-sm); text-align: center; }
+.auth-help { margin: var(--space-4) 0 0; color: var(--ink-subtle); font-size: var(--text-xs); text-align: center; }
+
+@media (max-width: 480px) {
+  .auth { margin-top: var(--space-5); }
+  .auth-intro h1 { font-size: var(--text-xl); }
+}
+
 .people { list-style: none; margin: 0; padding: 0; }
 .people li + li { margin-top: 0.4rem; }
 .people button {

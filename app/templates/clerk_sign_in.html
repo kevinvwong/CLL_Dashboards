@@ -2,36 +2,123 @@
 {% block title %}Sign in{% endblock %}
 {% block content %}
 {#
-  The Clerk sign-in surface (ADR-0004). clerk-js renders the sign-in component
-  into #clerk-sign-in; the session token it mints is a cookie the server
-  verifies, so nothing about the token is trusted by the browser. The
-  publishable key is public by design; the secret key never reaches this page.
+  The Clerk sign-in surface (ADR-0004). clerk-js renders the sign-in component;
+  the session token it mints is a cookie the server verifies, so nothing about
+  the token is trusted by the browser. The publishable key is public by design;
+  the secret key never reaches this page.
+
+  The widget is themed to this app's design system (GT navy / bright blue /
+  gold, IBM Plex Sans, 4px radius) rather than Clerk's default, so the front
+  door reads as part of the dashboard. A loading line shows until Clerk mounts,
+  and a timeout message appears if the script cannot load - so the page is never
+  a blank box.
 #}
-<h1>Initiative Dashboard</h1>
-<div class="card login">
-  {% if clerk_publishable_key %}
-  <div id="clerk-sign-in"></div>
-  <script
-    async crossorigin="anonymous"
-    data-clerk-publishable-key="{{ clerk_publishable_key }}"
-    {% if clerk_frontend_api %}data-clerk-frontend-api="{{ clerk_frontend_api }}"{% endif %}
-    src="https://{{ clerk_frontend_api or 'js.clerk.accounts.dev' }}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
-  <script>
-    window.addEventListener("load", async function () {
-      if (!window.Clerk) return;
-      await window.Clerk.load();
-      if (window.Clerk.user) { window.location.replace("/"); return; }
-      window.Clerk.mountSignIn(document.getElementById("clerk-sign-in"), {
-        afterSignInUrl: "/",
-        afterSignUpUrl: "/clerk/unlinked"
+<div class="auth">
+  <div class="auth-intro">
+    <p class="eyebrow">Georgia Tech · College of Lifetime Learning</p>
+    <h1>Initiative Dashboard</h1>
+    <p class="auth-lede">The College's strategy portfolio, for the Dean's weekly leadership meeting.</p>
+  </div>
+
+  <div class="auth-card">
+    {% if clerk_publishable_key %}
+    <div id="clerk-sign-in" class="auth-mount"></div>
+    <p class="auth-loading" id="clerk-loading" role="status">Preparing sign-in…</p>
+    <p class="auth-failed" id="clerk-failed" role="alert" hidden>
+      Sign-in did not load. Check your connection and
+      <a href="/clerk/sign-in">reload</a>.
+    </p>
+    <script
+      async crossorigin="anonymous"
+      data-clerk-publishable-key="{{ clerk_publishable_key }}"
+      {% if clerk_frontend_api %}data-clerk-frontend-api="{{ clerk_frontend_api }}"{% endif %}
+      src="https://{{ clerk_frontend_api or 'js.clerk.accounts.dev' }}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+    <script>
+      window.addEventListener("load", async function () {
+        var loading = document.getElementById("clerk-loading");
+        var failed = document.getElementById("clerk-failed");
+        // If clerk-js cannot load, say so rather than showing an empty box.
+        var giveUp = setTimeout(function () {
+          if (loading && !loading.hidden) { loading.hidden = true; if (failed) failed.hidden = false; }
+        }, 8000);
+        if (!window.Clerk) return;
+        try {
+          await window.Clerk.load();
+          if (window.Clerk.user) { window.location.replace("/"); return; }
+          window.Clerk.mountSignIn(document.getElementById("clerk-sign-in"), {
+            afterSignInUrl: "/",
+            afterSignUpUrl: "/clerk/unlinked",
+            // Clerk draws the card itself; themed to the app's tokens (style.css
+            // :root) so it reads as one surface, not Clerk's default inside ours.
+            appearance: {
+              // Preview the production look: suppress Clerk's development-mode
+              // badge/warnings. (The "Secured by Clerk" branding badge itself is
+              // a Dashboard > Branding toggle, not an appearance option.)
+              options: { unsafe_disableDevelopmentModeWarnings: true },
+              variables: {
+                colorPrimary: "#004c97",
+                colorPrimaryForeground: "#ffffff",
+                colorForeground: "#051e39",
+                colorMutedForeground: "#615a4a",
+                colorBackground: "#ffffff",
+                colorInput: "#ffffff",
+                colorInputForeground: "#051e39",
+                colorBorder: "#d8d4c8",
+                colorDanger: "#c22a63",
+                colorRing: "#004c97",
+                fontFamily: '"IBM Plex Sans", "Adelle Sans", Roboto, system-ui, sans-serif',
+                fontFamilyButtons: '"IBM Plex Sans", "Adelle Sans", Roboto, system-ui, sans-serif',
+                borderRadius: "4px"
+              },
+              elements: {
+                rootBox: { width: "100%" },
+                cardBox: { width: "100%", boxShadow: "none" },
+                card: { boxShadow: "none", border: "1px solid #d8d4c8", padding: "1.5rem",
+                        background: "#ffffff" },
+                headerTitle: { fontFamily: '"Barlow", "DIN 2014", Roboto, system-ui, sans-serif',
+                               fontWeight: "600", color: "#051e39" },
+                headerSubtitle: { color: "#615a4a" },
+                formButtonPrimary: { fontWeight: "600" },
+                socialButtonsBlockButton: { border: "1px solid #d8d4c8" },
+                footerActionLink: { color: "#004c97" },
+                // The "Secured by Clerk" dev badge is not wanted on the app's
+                // front door; hidden here (it is a development-mode artefact).
+                logoBox: { display: "none" },
+                badge: { display: "none" }
+              }
+            }
+          });
+          clearTimeout(giveUp);
+          if (loading) loading.hidden = true;
+          // Remove Clerk's "Secured by Clerk" badge. It has no appearance key
+          // (per the docs it is a Dashboard > Branding toggle) and on development
+          // keys it renders as an absolutely-positioned tab over the card. Clerk
+          // inserts it after mount, so observe the mount rather than removing it
+          // once. Matched by its text so a version change to the hashed class
+          // does not break this; production keys do not show it at all.
+          var hideBadge = function () {
+            document.querySelectorAll(".auth-card *").forEach(function (el) {
+              var t = (el.textContent || "").trim().toLowerCase();
+              if (t.indexOf("secured by") === 0 && t.length < 30) { el.style.display = "none"; }
+            });
+          };
+          hideBadge();
+          new MutationObserver(hideBadge).observe(
+            document.querySelector(".auth-card"), { childList: true, subtree: true });
+        } catch (e) {
+          clearTimeout(giveUp);
+          if (loading) loading.hidden = true;
+          if (failed) failed.hidden = false;
+        }
       });
-    });
-  </script>
-  <noscript>
-    <p>Sign-in needs JavaScript. Ask the dashboard team for access.</p>
-  </noscript>
-  {% else %}
-  <p class="error">Clerk is not configured on this server (no publishable key).</p>
-  {% endif %}
+    </script>
+    <noscript>
+      <p class="auth-failed">Sign-in needs JavaScript. Ask the dashboard team for access.</p>
+    </noscript>
+    {% else %}
+    <p class="error">Clerk is not configured on this server (no publishable key).</p>
+    {% endif %}
+    <p class="auth-help">Access is limited to CLL staff. Trouble signing in? Contact the dashboard team.</p>
+  </div>
 </div>
 {% endblock %}
