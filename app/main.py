@@ -51,7 +51,7 @@ itself is never stored client-side.
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -244,6 +244,18 @@ async def access_gate(request: Request, call_next):
 async def robots_txt():
     """Disallow all (task 9.2). Served outside the passcode gate."""
     return PlainTextResponse("User-agent: *\nDisallow: /\n")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Serve the favicon at the browser's conventional path.
+
+    The pages declare an SVG icon, but a browser (and Chrome DevTools) still
+    probes /favicon.ico, which was a 404 on every page. Served outside the gate,
+    matching its exempt path.
+    """
+    return FileResponse(Path(__file__).parent / "static" / "brand" / "favicon.svg",
+                        media_type="image/svg+xml")
 
 
 # --- styled error pages (the Styled Error Pages requirement) -----------------
