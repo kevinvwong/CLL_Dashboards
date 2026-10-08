@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **148** changes in total.
+- **3** days of work recorded, **149** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 48 what we added; 30 what we fixed; 5 appearance and design; 20 behind the scenes; 12 quality and testing; 16 documentation; 17 more changes.
+- Across all days: 49 what we added; 30 what we fixed; 5 appearance and design; 20 behind the scenes; 12 quality and testing; 16 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -59,6 +59,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Split the four views of the portfolio onto their own pages
 - Key priorities by (plan year, code) so a second year is representable
 - Be specific about 2027, and make the year a first-class concept
+- One shared card component across the goal, team, person and priority cards
 
 **What we fixed**
 
