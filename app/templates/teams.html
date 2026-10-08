@@ -19,14 +19,13 @@
 
 <ul class="team-grid">
   {% for t in teams %}
-  <li class="team-card" style="--team: var({{ t.TeamID | team_colour_token }});">
-    <a class="team-link" href="/teams/{{ t.TeamID }}">
-      <h2 class="team-name"><span class="team-swatch" aria-hidden="true"></span>{{ t.Name }}</h2>
+  <li class="team-card card" style="--team: var({{ t.TeamID | team_colour_token }});">
+    <a class="team-link card-link" href="/teams/{{ t.TeamID }}">
+      <h2 class="team-name card-title"><span class="team-swatch" aria-hidden="true"></span>{{ t.Name }}</h2>
+      <span class="team-desc card-sub">{{ t.Description }}</span>
+      <span class="card-sub"><strong>{{ t.team_initiatives | length }}</strong> Team Initiative{{ '' if t.team_initiatives | length == 1 else 's' }}</span>
     </a>
-    <p class="team-desc">{{ t.Description }}</p>
-    <p class="team-count">
-      <a href="/teams/{{ t.TeamID }}"><strong>{{ t.team_initiatives | length }}</strong> Team Initiative{{ '' if t.team_initiatives | length == 1 else 's' }} →</a>
-    </p>
+    {% with counts = t.counts %}{% include "_status_mix.html" %}{% endwith %}
   </li>
   {% endfor %}
 </ul>

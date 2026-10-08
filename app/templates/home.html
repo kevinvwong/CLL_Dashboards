@@ -72,17 +72,17 @@
 
   <ul class="oct16-grid">
     {% for o in outcomes %}
-    <li class="oct16-card oct16-{{ o.Code|lower }}">
-      <a class="oct16-hero-link" href="/outcomes">
-        <div class="oct16-head">
-          <span class="oct16-id">{{ o.Code }} <span class="oct16-id-year">&middot; {{ o.PlanYear }}</span></span>
+    <li class="oct16-card card oct16-{{ o.Code|lower }}">
+      <a class="oct16-hero-link card-link" href="/outcomes">
+        <div class="oct16-head card-head">
+          <span class="card-id">{{ o.Code }} <span class="oct16-id-year">&middot; {{ o.PlanYear }}</span></span>
           {% if o.Status %}<span class="oct16-outcome-status badge {{ o.Status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ o.Status | status_icon }}</span> {{ o.Status }}</span>{% endif %}
         </div>
-        <h3 class="oct16-name">{{ o.FullTitle }}</h3>
-        <p class="oct16-count">{{ o.Reached }} of {{ o.Planned }} milestones reached</p>
-        <div class="oct16-bar" role="img"
+        <h3 class="oct16-name card-title">{{ o.FullTitle }}</h3>
+        <p class="oct16-count card-count">{{ o.Reached }} of {{ o.Planned }} milestones reached</p>
+        <div class="oct16-bar card-bar" role="img"
              aria-label="{{ o.Reached }} of {{ o.Planned }} milestones reached">
-          <span class="oct16-fill" style="width: {{ o.Percent }}%"></span>
+          <span class="oct16-fill card-fill" style="width: {{ o.Percent }}%"></span>
         </div>
       </a>
     </li>
@@ -103,32 +103,32 @@
   </div>
 
   <ul class="lens-grid">
-    <li class="lens-card">
-      <a class="lens-link" href="/goals">
+    <li class="lens-card card">
+      <a class="lens-link card-link" href="/goals">
         <span class="lens-count">{{ stats.goals }}</span>
-        <span class="lens-name">Strategy 2035 Goals</span>
-        <span class="lens-desc">The five goals the work aligns to</span>
+        <span class="lens-name card-title">Strategy 2035 Goals</span>
+        <span class="lens-desc card-sub">The five goals the work aligns to</span>
       </a>
     </li>
-    <li class="lens-card">
-      <a class="lens-link" href="/outcomes">
+    <li class="lens-card card">
+      <a class="lens-link card-link" href="/outcomes">
         <span class="lens-count">{{ stats.priorities }}</span>
-        <span class="lens-name">Annual Priorities</span>
-        <span class="lens-desc">The six execution lenses for {{ plan_year }}</span>
+        <span class="lens-name card-title">Annual Priorities</span>
+        <span class="lens-desc card-sub">The six execution lenses for {{ plan_year }}</span>
       </a>
     </li>
-    <li class="lens-card">
-      <a class="lens-link" href="/teams">
+    <li class="lens-card card">
+      <a class="lens-link card-link" href="/teams">
         <span class="lens-count">{{ stats.teams }}</span>
-        <span class="lens-name">Teams</span>
-        <span class="lens-desc">The four teams accountable for the work</span>
+        <span class="lens-name card-title">Teams</span>
+        <span class="lens-desc card-sub">The four teams accountable for the work</span>
       </a>
     </li>
-    <li class="lens-card">
-      <a class="lens-link" href="/dean-initiatives">
+    <li class="lens-card card">
+      <a class="lens-link card-link" href="/dean-initiatives">
         <span class="lens-count">{{ dean_initiatives | length }}</span>
-        <span class="lens-name">Dean Initiatives</span>
-        <span class="lens-desc">The Dean's own priorities above the work</span>
+        <span class="lens-name card-title">Dean Initiatives</span>
+        <span class="lens-desc card-sub">The Dean's own priorities above the work</span>
       </a>
     </li>
   </ul>

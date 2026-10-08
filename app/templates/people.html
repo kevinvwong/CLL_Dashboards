@@ -8,12 +8,12 @@
 {% if people %}
 <ul class="people-list">
   {% for p in people %}
-  <li class="person-card">
-    <a class="person-link" href="/people/{{ p.PersonID }}">
-      <span class="person-name">{{ p.Name }}</span>
-      {% if p.Title %}<span class="person-title">{{ p.Title }}</span>{% endif %}
+  <li class="person-card card">
+    <a class="person-link card-link" href="/people/{{ p.PersonID }}">
+      <span class="person-name card-title">{{ p.Name }}</span>
+      {% if p.Title %}<span class="person-title card-sub">{{ p.Title }}</span>{% endif %}
     </a>
-    <span class="person-counts">
+    <span class="person-counts card-foot">
       {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}
       {% for c in p.Counts %}{% if c.Count %}
       <span class="badge {{ c.Status | status_class }}">{{ c.Count }} {{ c.Status }}</span>

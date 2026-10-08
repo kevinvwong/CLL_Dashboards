@@ -17,15 +17,18 @@
 {% include "_lens_note.html" with context %}
 <ul class="goal-grid">
   {% for g in goals %}
-  <li class="goal-card" style="--goal: var({{ g.GoalNumber | goal_colour_token }});">
-    <a class="goal-link" href="/goals/{{ g.GoalNumber }}">
-      <span class="goal-identity">
-        {{ g.GoalNumber | goal_icon }}
-        <span class="goal-number">Goal {{ g.GoalNumber }}</span>
+  <li class="goal-card card" style="--goal: var({{ g.GoalNumber | goal_colour_token }});">
+    <a class="goal-link card-link" href="/goals/{{ g.GoalNumber }}">
+      <span class="card-head">
+        <span class="goal-identity">
+          {{ g.GoalNumber | goal_icon }}
+          <span class="card-id">Goal {{ g.GoalNumber }}</span>
+        </span>
       </span>
-      <span class="goal-name">{{ g.ShortName }}</span>
+      <span class="card-title">{{ g.ShortName }}</span>
+      <span class="card-sub">{{ g.TeamInitiativeCount }} Team Initiative{{ '' if g.TeamInitiativeCount == 1 else 's' }}</span>
     </a>
-    <p class="goal-counts">{{ g.TeamInitiativeCount }} Team Initiative{{ '' if g.TeamInitiativeCount == 1 else 's' }}</p>
+    {% with counts = g.counts %}{% include "_status_mix.html" %}{% endwith %}
   </li>
   {% endfor %}
 </ul>

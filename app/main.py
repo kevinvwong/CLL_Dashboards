@@ -373,7 +373,10 @@ async def goals_index(request: Request):
     """
     goals = queries.goal_tiles()
     for g in goals:
-        g["TeamInitiativeCount"] = len(queries.goal_team_initiatives(g["GoalNumber"]))
+        mis = queries.goal_team_initiatives(g["GoalNumber"])
+        g["TeamInitiativeCount"] = len(mis)
+        # The status mix, via the shared card component (card unification).
+        g["counts"] = queries.status_counts(mis)
     return templates.TemplateResponse(
         request, "goals.html",
         _ctx(request, goals=goals, crumbs=[("Goals", None)],
@@ -462,6 +465,9 @@ async def teams_index(request: Request):
     """The four teams, as an index. The breadcrumb on a team page links here, and
     before this existed that link 404'd."""
     teams = queries.team_overview()
+    for t in teams:
+        # The status mix per team, via the shared card component (card unification).
+        t["counts"] = queries.status_counts(t["team_initiatives"])
     return templates.TemplateResponse(
         request, "teams.html",
         _ctx(request, teams=teams, crumbs=[("Teams", None)],

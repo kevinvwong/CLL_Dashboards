@@ -89,7 +89,7 @@ def test_a_priorities_measure_target_and_cadence_actually_render(logged_in):
 
 def test_the_four_teams_render_with_descriptions(logged_in):
     body = _page(logged_in, "/teams")
-    assert body.count('class="team-card"') == 4
+    assert body.count("team-card") == 4
     for team in ("Learning Experiences", "Learning Ecosystems",
                  "Learning Infrastructure", "Learning Futures"):
         assert team in body

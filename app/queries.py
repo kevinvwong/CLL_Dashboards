@@ -1067,10 +1067,13 @@ def goal_team_initiatives(goal_number: int) -> list[dict]:
         rows = conn.execute(
             "SELECT DISTINCT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
             "       k.ProposedTarget, k.TargetStatus, t.Name AS Team, "
+            "       COALESCE(lp.Status, k.Status, 'Not started') AS Status, "
             "       sa.Name AS SourceArea "
             "FROM TeamInitiativeGoals kg "
             "JOIN TeamInitiatives k ON k.TeamInitiativeID = kg.TeamInitiativeID "
             "JOIN Goals g ON g.GoalID = kg.GoalID "
+            "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
+            "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
             "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
             "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
             "WHERE g.GoalNumber = ? ORDER BY k.Code",

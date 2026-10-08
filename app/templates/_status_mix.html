@@ -1,0 +1,17 @@
+{# A status-mix bar: one thin segment per status, width proportional to the count.
+   The shared card component's way of showing "how is this group doing" without a
+   score. Colour is repeated as text in the legend row beneath, so it reads
+   without colour vision.
+
+   Expects: `counts` (a list of {Status, Count} from queries.status_counts). #}
+{% if counts %}
+<div class="card-bar card-mix" role="img"
+     aria-label="{% for c in counts %}{{ c.Count }} {{ c.Status | lower }}{% if not loop.last %}, {% endif %}{% endfor %}">
+  {% for c in counts %}
+  <span class="card-mix-seg {{ c.Status | status_class }}" style="flex: {{ c.Count }}"></span>
+  {% endfor %}
+</div>
+<p class="card-foot card-mix-legend">
+  {% for c in counts %}<span class="card-mix-key"><span class="card-mix-dot {{ c.Status | status_class }}"></span>{{ c.Count }} {{ c.Status | lower }}</span>{% if not loop.last %} · {% endif %}{% endfor %}
+</p>
+{% endif %}

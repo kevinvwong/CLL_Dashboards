@@ -649,7 +649,9 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 
 /* --- login / whoami ------------------------------------------------------ */
 
-.card {
+/* The auth cards only (login, whoami). Scoped so the shared `.card` component
+   (goals, teams, priorities) is not capped to this width. */
+.card.login, .card.whoami {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: var(--space-4);
@@ -688,6 +690,51 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 @media print {
   .reason { color: var(--ink-print); }
 }
+
+/* ---- The shared card component (card unification, 2026-10-08) --------------
+   One card family, composed by every card page: the goal, priority, team,
+   person, lens and initiative cards all share these parts. `.card` is the
+   surface; `.card-head` carries an id/eyebrow and a status badge; `.card-title`
+   and `.card-sub` the heading and the muted line under it; `.card-count` a
+   small figure; `.card-bar`/`.card-fill` the progress track; `.card-foot` the
+   trailing row. The old names (.goal-card, .priority-card, ...) are aliased to
+   these, so nothing that renders them changes shape. */
+.card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background: var(--surface);
+}
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+.card-id { font-weight: 700; letter-spacing: .04em; }
+.card-title { margin: .35rem 0 .3rem; font-size: var(--text-lg); font-family: var(--font-sans); }
+.card-sub { margin: 0 0 .5rem; font-size: var(--text-sm); color: var(--ink-muted); }
+.card-count { margin: 0 0 .35rem; font-size: var(--text-sm); }
+.card-bar { height: 10px; border-radius: 5px; background: var(--line-track);
+            border: 1px solid var(--line-strong); overflow: hidden; }
+.card-fill { display: block; height: 100%; background: var(--status-on-track); }
+.card-foot { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--ink-muted); }
+.card-link { display: block; color: inherit; text-decoration: none; height: 100%; }
+
+/* A status-mix bar (the shared card component): one segment per status. */
+.card-mix { display: flex; gap: 1px; height: 0.55rem; }
+.card-mix-seg { display: block; min-width: 0.3rem; }
+.card-mix-seg.status-on-track { background: var(--status-on-track); }
+.card-mix-seg.status-at-risk { background: var(--status-at-risk); }
+.card-mix-seg.status-off-track { background: var(--status-off-track); }
+.card-mix-seg.status-not-started { background: var(--status-not-started); }
+.card-mix-seg.status-paused { background: var(--status-paused); }
+.card-mix-seg.status-complete { background: var(--status-complete); }
+.card-mix-legend { display: flex; flex-wrap: wrap; gap: 0.15rem 0.7rem; }
+.card-mix-key { display: inline-flex; align-items: center; font-size: var(--text-xs); color: var(--ink-muted); }
+.card-mix-dot { display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+                margin-right: 0.25rem; }
+.card-mix-dot.status-on-track { background: var(--status-on-track); }
+.card-mix-dot.status-at-risk { background: var(--status-at-risk); }
+.card-mix-dot.status-off-track { background: var(--status-off-track); }
+.card-mix-dot.status-not-started { background: var(--status-not-started); }
+.card-mix-dot.status-paused { background: var(--status-paused); }
+.card-mix-dot.status-complete { background: var(--status-complete); }
 
 /* ---- October 16 deliverable: the six Dean outcomes -------------------------
    Option A of the wireframes. Cards in a grid, each showing milestones reached
