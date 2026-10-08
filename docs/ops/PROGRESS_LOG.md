@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **4** days of work recorded, **161** changes in total.
+- **4** days of work recorded, **162** changes in total.
 - Most recent day: **Thursday 08 October 2026**.
-- Across all days: 53 what we added; 34 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 19 documentation; 17 more changes.
+- Across all days: 53 what we added; 34 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 20 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -46,6 +46,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Add the stack specification for handoff and provisioning
 - Reframe the Azure request as a forward-looking two-environment build
 - Correct the live region in the repo assessment (westus -> northcentralus)
+- Name the six application roles in the provisioning request
 
 
 ## Wednesday 07 October 2026
