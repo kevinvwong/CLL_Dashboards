@@ -129,9 +129,10 @@ provisioning and is listed so the resource request and the roadmap agree.
 | Item | Detail | Cost |
 |---|---|---|
 | **Entra ID App Registration + Enterprise Application** | Registered in the GT tenant for the service. Institutional sign-in is provided through the identity provider wired to this registration. | $0 |
+| **Application roles** (six, capability-oriented) | `Administrator`, `ExecutiveSponsor`, `DataOwner`, `Operator`, `Contributor`, `Viewer`. These are **not a hierarchy** (DR-05/DR-23): each carries a different authority — technical, strategic-decision, data-governance, operational, contribution, consumption. The Executive Sponsor (the Dean) holds portfolio-wide read plus executive-action authority but **no** routine data-maintenance authority. Entra group claims (if adopted) map onto these rows; the app holds the finer-grained assignments. | $0 |
 | **System-assigned Managed Identity** (per Web App) | Lets each web app read Key Vault and authenticate to Azure SQL **without a password** (Entra token auth), removing the connection-string secret entirely. One per environment. | $0 |
 | **Entra ID admin + app identity on Azure SQL** (AAD-only auth) | The managed identity is granted database access; SQL password authentication is disabled. Required for passwordless DB access. | $0 |
-| **RBAC assignments for the CLL team** | Role assignments so named CLL staff can administer and monitor the service (e.g. Contributor on the resource groups, Monitoring Reader on the shared workspace, Key Vault secrets access as appropriate). Exact roles and principals to be confirmed with A&I at scoping. | $0 |
+| **RBAC assignments for the CLL team** | Azure role assignments so named CLL staff can administer and monitor the service (e.g. Contributor on the resource groups, Monitoring Reader on the shared workspace, Key Vault secrets access as appropriate). These are Azure-plane roles, distinct from the **application** roles above. Exact roles and principals to be confirmed with A&I at scoping. | $0 |
 
 ---
 

@@ -28,9 +28,11 @@ development** — on the Georgia Tech tenant.
 
 **Shared across both:** a Log Analytics workspace and an Azure Monitor Action Group.
 
-**Identity and access:** an Entra ID App Registration + Enterprise Application;
-a system-assigned Managed Identity per Web App; the Entra ID admin and app
-identity on Azure SQL (AAD-only auth); and RBAC assignments for the CLL team.
+**Identity and access:** an Entra ID App Registration + Enterprise Application
+with six application roles — `Administrator`, `ExecutiveSponsor`, `DataOwner`,
+`Operator`, `Contributor`, `Viewer`; a system-assigned Managed Identity per Web
+App; the Entra ID admin and app identity on Azure SQL (AAD-only auth); and RBAC
+assignments for the CLL team.
 
 **Networking:** a custom domain with a managed certificate for production (DNS
 via GT OIT), and a managed database reachable privately if the data
