@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **4** days of work recorded, **177** changes in total.
+- **4** days of work recorded, **178** changes in total.
 - Most recent day: **Thursday 08 October 2026**.
-- Across all days: 63 what we added; 36 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 23 documentation; 17 more changes.
+- Across all days: 64 what we added; 36 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 23 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -44,6 +44,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Port the team-initiative layer to Rev2 (adopt-rev2-store group 4)
 - Port the card + priority + edit reads to Rev2 (adopt-rev2-store group 5)
 - Port the write path to Rev2 + close adopt-rev2-store (groups 6-7)
+- Port the remaining six surfaces to Rev2 (rev2-remaining-surfaces)
 
 **What we fixed**
 

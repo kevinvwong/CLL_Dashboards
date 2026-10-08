@@ -30,6 +30,7 @@ ORDER = [
     "007_integrity_report.sql",
     "008_app_layer.sql",
     "009_team_layer.sql",
+    "010_auth.sql",
 ]
 
 

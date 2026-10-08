@@ -56,7 +56,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app import auth, docs, guards, identity, priorities, queries, repo, status
+from app import auth, docs, guards, identity, port, priorities, queries, repo, status
 
 app = FastAPI()
 
@@ -409,15 +409,20 @@ async def whoami_submit(request: Request):
     # identity, which was the real escalation vector. A person with no PIN set
     # still falls back to the passcode-held picker, so nothing breaks before PINs
     # are provisioned.
-    if auth.person_credential(person_id):
-        if not auth.verify_person_pin(person_id, pin):
-            return templates.TemplateResponse(
-                request,
-                "whoami.html",
-                _ctx(request, people=auth.active_people(),
-                     error="That PIN is not right."),
-                status_code=401,
-            )
+    #
+    # On the Rev2 store the PIN stopgap does not exist (no credential is kept
+    # there at all - DEVIATIONS 010), so the gate is skipped rather than failed:
+    # production identity is Clerk, and this picker is the local-only path.
+    if auth.pin_stopgap_enabled():
+        if auth.person_credential(person_id):
+            if not auth.verify_person_pin(person_id, pin):
+                return templates.TemplateResponse(
+                    request,
+                    "whoami.html",
+                    _ctx(request, people=auth.active_people(),
+                         error="That PIN is not right."),
+                    status_code=401,
+                )
     response = RedirectResponse(url="/", status_code=303)
     return auth.set_person_cookie(response, request, int(person_id))
 
@@ -429,7 +434,12 @@ async def set_pin(request: Request, person_id: int, _=Depends(guards.admin_only)
     pin = str(form.get("pin", "")).strip()
     if len(pin) < 4 or not pin.isdigit():
         raise HTTPException(status_code=400, detail="A PIN must be at least 4 digits.")
-    auth.set_person_pin(person_id, pin)
+    try:
+        auth.set_person_pin(person_id, pin)
+    except port.AuthPortRefused as exc:
+        # The Rev2 store keeps no credential; say so rather than 500 on a
+        # control that cannot apply to the production store.
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return RedirectResponse(url="/people", status_code=303)
 
 

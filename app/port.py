@@ -1579,3 +1579,134 @@ def recent_changes(conn, limit=100):
         "       a.CorrelationID AS correlation_id "
         "FROM AuditLog a LEFT JOIN People p ON p.PersonID = a.PersonID "
         "ORDER BY a.CreatedAt DESC, a.AuditID DESC LIMIT ?", (limit,)).fetchall()]
+
+
+#: ---------------------------------------------------------------------------
+#: Auth surface (change `port-auth-to-rev2`). The app's key shape is preserved:
+#: PersonID is the app's int (PERS-N on Rev2 projected back), Name/Title are the
+#: display fields. Roles come from the reconciled role/person_role.
+#: ---------------------------------------------------------------------------
+
+
+class AuthPortRefused(RuntimeError):
+    """Raised when a local-only auth path is attempted against the Rev2 store.
+
+    The PIN stopgap is a development seam. Under mssql it refuses rather than
+    silently degrading, and never writes credential material to the production
+    store (recorded in DEVIATIONS.md under 010).
+    """
+
+
+def _person_row_mssql(conn, person_id):
+    row = conn.execute(
+        "SELECT person_id, display_name, working_title FROM dbo.person "
+        "WHERE person_id = %s AND active_flag = 1", ("PERS-%d" % person_id,)).fetchone()
+    if row is None:
+        return None
+    return {"PersonID": person_id, "Name": row["display_name"],
+            "Title": row["working_title"], "ReportsToID": None, "IsAdmin": None}
+
+
+def auth_person(conn, person_id):
+    """The person record for current_person / person_exists, or None."""
+    if engine(conn) == "mssql":
+        return _person_row_mssql(conn, person_id)
+    row = conn.execute(
+        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin, Credential "
+        "FROM People WHERE PersonID = ? AND IsActive = 1", (person_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def auth_active_people(conn):
+    if engine(conn) == "mssql":
+        out = []
+        for r in conn.execute(
+                "SELECT person_id, display_name, working_title FROM dbo.person "
+                "WHERE active_flag = 1 ORDER BY display_name"):
+            out.append({"PersonID": _pid_int(r["person_id"]), "Name": r["display_name"],
+                        "Title": r["working_title"]})
+        return out
+    return [_d(r) for r in conn.execute(
+        "SELECT PersonID, Name, Title FROM People WHERE IsActive = 1 ORDER BY Name").fetchall()]
+
+
+def auth_get_initiative(conn, mi_id):
+    """Resolve a Team Initiative by its canon key, if active."""
+    if engine(conn) == "mssql":
+        row = conn.execute(
+            "SELECT initiative_id, initiative_code, initiative_name, "
+            "       (SELECT TOP 1 o.person_id FROM dbo.initiative_owner o "
+            "        WHERE o.initiative_id = i.initiative_id AND o.ownership_role = 'Reporting Owner' "
+            "          AND o.primary_flag = 1 AND o.effective_end IS NULL) AS owner_id "
+            "FROM dbo.initiative i WHERE i.initiative_code = %s AND i.active_flag = 1 "
+            "  AND i.initiative_level = 'D-1'", (mi_id,)).fetchone()
+        if row is None:
+            return None
+        return {"TeamInitiativeID": row["initiative_id"], "MIId": row["initiative_code"],
+                "InitiativeName": row["initiative_name"], "OwnerID": _pid_int(row["owner_id"])}
+    row = conn.execute(
+        "SELECT TeamInitiativeID, MIId, Title AS InitiativeName, OwnerID "
+        "FROM TeamInitiatives WHERE MIId = ? AND IsActive = 1", (mi_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def auth_roles_of(conn, person_id):
+    """The role names a person holds, from the reconciled role store."""
+    if engine(conn) == "mssql":
+        return {r["name"] for r in conn.execute(
+            "SELECT ro.name FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id "
+            "WHERE pr.person_id = %s", ("PERS-%d" % person_id,))}
+    return {r["Name"] for r in conn.execute(
+        "SELECT r.Name FROM PeopleRoles pr JOIN Roles r ON r.RoleID = pr.RoleID "
+        "WHERE pr.PersonID = ?", (person_id,))}
+
+
+def auth_person_by_clerk_id(conn, clerk_user_id):
+    if engine(conn) == "mssql":
+        row = conn.execute(
+            "SELECT person_id, display_name, working_title FROM dbo.person "
+            "WHERE clerk_user_id = %s AND active_flag = 1", (clerk_user_id,)).fetchone()
+        if row is None:
+            return None
+        return {"PersonID": _pid_int(row["person_id"]), "Name": row["display_name"],
+                "Title": row["working_title"], "ReportsToID": None, "IsAdmin": None}
+    row = conn.execute(
+        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin, Credential "
+        "FROM People WHERE ClerkUserID = ? AND IsActive = 1", (clerk_user_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def auth_link_person_to_clerk(conn, person_id, clerk_user_id):
+    if engine(conn) == "mssql":
+        conn.execute("UPDATE dbo.person SET clerk_user_id = %s WHERE person_id = %s",
+                     (clerk_user_id or None, "PERS-%d" % person_id))
+        return
+    conn.execute("UPDATE People SET ClerkUserID = ? WHERE PersonID = ?",
+                 ((clerk_user_id or None), int(person_id)))
+
+
+def auth_pin_refused():
+    """The message a PIN set/verify raises under mssql. One place, so the
+    wording cannot drift between the three callers."""
+    return AuthPortRefused(
+        "The PIN stopgap is a local-development seam and does not run against "
+        "the Rev2 store. Production identity is Clerk (set AUTH_PROVIDER=clerk); "
+        "no credential is stored in Rev2. Run the PIN stopgap with DB_PROVIDER=sqlite."
+    )
+
+
+def auth_role_ids(conn):
+    """role name -> role id, read once. Empty if the store predates roles."""
+    if engine(conn) == "mssql":
+        return {r["name"]: r["role_id"] for r in conn.execute(
+            "SELECT name, role_id FROM dbo.role")}
+    return {r["Name"]: r["RoleID"] for r in conn.execute("SELECT RoleID, Name FROM Roles")}
+
+
+def auth_database_reachable(conn):
+    """A trivial read proving the configured store answers (/healthz)."""
+    if engine(conn) == "mssql":
+        conn.execute("SELECT TOP 1 initiative_id FROM dbo.initiative").fetchone()
+    else:
+        conn.execute("SELECT 1 FROM TeamInitiatives LIMIT 1").fetchone()
+    return True

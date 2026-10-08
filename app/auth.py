@@ -24,7 +24,8 @@ from fastapi import Request
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from app.config import Config
-from app.db import connect
+from app.db import connect, engine
+from app import port
 
 PASSCODE_COOKIE = "cll_passcode"
 PERSON_COOKIE = "cll_person"
@@ -144,12 +145,7 @@ def current_person(request: Request) -> dict | None:
         request.state.person_resolved = True
         return None
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT PersonID, Name, Title, ReportsToID, IsAdmin, Credential "
-            "FROM People WHERE PersonID = ? AND IsActive = 1",
-            (person_id,),
-        ).fetchone()
-    person: dict | None = dict(row) if row else None
+        person = port.auth_person(conn, person_id)
     request.state.person = person
     request.state.person_resolved = True
     return person
@@ -157,10 +153,7 @@ def current_person(request: Request) -> dict | None:
 
 def active_people() -> list[dict]:
     with _conn() as conn:
-        rows = conn.execute(
-            "SELECT PersonID, Name, Title FROM People WHERE IsActive = 1 ORDER BY Name"
-        ).fetchall()
-    return [dict(r) for r in rows]
+        return port.auth_active_people(conn)
 
 
 def person_exists(person_id) -> bool:
@@ -169,21 +162,13 @@ def person_exists(person_id) -> bool:
     except (TypeError, ValueError):
         return False
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT 1 FROM People WHERE PersonID = ? AND IsActive = 1", (person_id,)
-        ).fetchone()
-    return row is not None
+        return port.auth_person(conn, person_id) is not None
 
 
 def get_initiative(mi_id: str):
     """Resolve a Team Initiative by its canon key, if active."""
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT TeamInitiativeID, MIId, Title AS InitiativeName, OwnerID "
-            "FROM TeamInitiatives WHERE MIId = ? AND IsActive = 1",
-            (mi_id,),
-        ).fetchone()
-    return dict(row) if row else None
+        return port.auth_get_initiative(conn, mi_id)
 
 
 def is_admin(person) -> bool:
@@ -259,11 +244,12 @@ _CAPABILITIES = {
 
 #: role name -> RoleID, read once. Empty if the schema predates the roles tables.
 def _role_ids() -> dict:
+    # Any store error means "no role ids"; the caller treats an empty map as
+    # "roles unavailable", which is the same outcome the sqlite3.Error guard gave.
     try:
         with _conn() as conn:
-            return {r["Name"]: r["RoleID"] for r in
-                    conn.execute("SELECT RoleID, Name FROM Roles")}
-    except sqlite3.Error:
+            return port.auth_role_ids(conn)
+    except Exception:
         return {}
 
 
@@ -272,10 +258,7 @@ def roles_of(person) -> set:
     if not person:
         return set()
     with _conn() as conn:
-        rows = conn.execute(
-            "SELECT r.Name FROM PeopleRoles pr JOIN Roles r ON r.RoleID = pr.RoleID "
-            "WHERE pr.PersonID = ?", (person["PersonID"],)).fetchall()
-    return {r["Name"] for r in rows}
+        return port.auth_roles_of(conn, person["PersonID"])
 
 
 def has_role(person, role: str) -> bool:
@@ -311,13 +294,34 @@ def check_pin(stored: str, pin: str) -> bool:
         return False
 
 
+def pin_stopgap_enabled(conn=None) -> bool:
+    """Whether the local PIN stopgap is in force for the configured store.
+
+    True on sqlite. False on the Rev2 store, which keeps no credential material
+    (DEVIATIONS 010) because production identity is Clerk there. Callers skip the
+    PIN gate rather than failing, so the picker is a local-only path.
+
+    Asks the CONNECTION when given one (authoritative — a test or a caller may
+    hold a store other than the ambient config), else the configured store.
+    """
+    if conn is not None:
+        return engine(conn) != "mssql"
+    return Config().DB_PROVIDER != "mssql"
+
+
 def person_credential(person_id):
-    """The stored credential hash for a person, or None (no PIN set)."""
+    """The stored credential hash for a person, or None (no PIN set).
+
+    Local stopgap only: refuses on the Rev2 store, which never holds a
+    credential (see DEVIATIONS 010).
+    """
     try:
         pid = int(person_id)
     except (TypeError, ValueError):
         return None
     with _conn() as conn:
+        if engine(conn) == "mssql":
+            raise port.auth_pin_refused()
         row = conn.execute(
             "SELECT Credential FROM People WHERE PersonID = ? AND IsActive = 1",
             (pid,)).fetchone()
@@ -333,6 +337,8 @@ def verify_person_pin(person_id, pin) -> bool:
 
 def set_person_pin(person_id, pin: str):
     with connect(write=True) as conn:
+        if engine(conn) == "mssql":
+            raise port.auth_pin_refused()
         conn.execute("UPDATE People SET Credential = ? WHERE PersonID = ?",
                      (hash_pin(pin), int(person_id)))
         conn.commit()
@@ -369,18 +375,13 @@ def person_by_clerk_id(clerk_user_id):
     if not clerk_user_id:
         return None
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT PersonID, Name, Title, ReportsToID, IsAdmin, Credential "
-            "FROM People WHERE ClerkUserID = ? AND IsActive = 1",
-            (clerk_user_id,)).fetchone()
-    return dict(row) if row else None
+        return port.auth_person_by_clerk_id(conn, clerk_user_id)
 
 
 def link_person_to_clerk(person_id, clerk_user_id: str):
-    """An admin links a person to a Clerk user id (People.ClerkUserID)."""
+    """An admin links a person to a Clerk user id (Rev2: person.clerk_user_id)."""
     with connect(write=True) as conn:
-        conn.execute("UPDATE People SET ClerkUserID = ? WHERE PersonID = ?",
-                     ((clerk_user_id or None), int(person_id)))
+        port.auth_link_person_to_clerk(conn, person_id, clerk_user_id)
         conn.commit()
 
 
@@ -440,8 +441,8 @@ def is_admin_request(request: Request) -> bool:
 def database_reachable() -> bool:
     try:
         with _conn() as conn:
-            conn.execute("SELECT 1 FROM TeamInitiatives LIMIT 1").fetchone()
-    except sqlite3.Error:
+            port.auth_database_reachable(conn)
+    except Exception:
         return False
     return True
 

@@ -518,3 +518,104 @@ def test_recent_changes_parity(both):
     assert port.recent_changes(sq) == []
     assert port.recent_changes(ms) == []
 
+
+# --- auth surface (port-auth-to-rev2) ---------------------------------------
+
+
+def test_auth_person_and_active_people_parity(both):
+    from app import port
+
+    sq, ms = both
+    for pid in (1, 3, 5, 11):
+        a = port.auth_person(sq, pid)
+        b = port.auth_person(ms, pid)
+        assert (a is None) == (b is None), pid
+        if a is None:
+            continue
+        assert a["PersonID"] == b["PersonID"] == pid
+        assert a["Name"] == b["Name"], pid
+        assert a["Title"] == b["Title"], pid
+    an = {(p["PersonID"], p["Name"], p["Title"]) for p in port.auth_active_people(sq)}
+    bn = {(p["PersonID"], p["Name"], p["Title"]) for p in port.auth_active_people(ms)}
+    assert an == bn
+    assert len(an) == 11
+
+
+def test_auth_roles_and_guards_parity(both):
+    """Roles come from the reconciled role store, so every guard must agree."""
+    import app.auth as auth
+    from app import port
+
+    sq, ms = both
+    for pid in range(1, 12):
+        assert port.auth_roles_of(sq, pid) == port.auth_roles_of(ms, pid), pid
+    for pid in range(1, 12):
+        a = port.auth_person(sq, pid)
+        b = port.auth_person(ms, pid)
+        for fn in (auth.is_admin, auth.is_executive_sponsor, auth.is_operator,
+                   auth.is_data_owner):
+            assert fn(a) == fn(b), (pid, fn.__name__)
+        for cap in ("maintain_data", "govern_data", "execute_action", "contribute"):
+            assert auth.has_capability(a, cap) == auth.has_capability(b, cap), (pid, cap)
+
+
+def test_auth_get_initiative_parity(both):
+    from app import port
+
+    sq, ms = both
+    for code in ("MI-001", "MI-014", "MI-029"):
+        a = port.auth_get_initiative(sq, code)
+        b = port.auth_get_initiative(ms, code)
+        assert (a is None) == (b is None), code
+        if a is None:
+            continue
+        assert a["MIId"] == b["MIId"] == code
+        assert a["InitiativeName"] == b["InitiativeName"], code
+        assert a["OwnerID"] == b["OwnerID"], code
+
+
+def test_pin_stopgap_refused_on_rev2(monkeypatch):
+    """The decision under test: the PIN stopgap does not run on the Rev2 store.
+
+    A refusal, not a silent pass and not a stored credential. The ambient
+    DB_PROVIDER is set for the duration because the auth helpers open their own
+    connection through the seam (that is what a request does)."""
+    from app import auth, port
+
+    monkeypatch.setenv("DB_PROVIDER", "mssql")
+    with pytest.raises(port.AuthPortRefused) as ei:
+        auth.person_credential(3)
+    assert "local-development seam" in str(ei.value)
+    with pytest.raises(port.AuthPortRefused):
+        auth.set_person_pin(3, "1234")
+    with pytest.raises(port.AuthPortRefused):
+        auth.verify_person_pin(3, "1234")
+    # the gate is reported off on this store, so the picker skips it
+    assert auth.pin_stopgap_enabled() is False
+
+    # and nothing was written to the person row
+    from app.db import connect
+    ms = connect(provider="mssql")
+    try:
+        assert ms.execute(
+            "SELECT COUNT(*) FROM dbo.person WHERE clerk_user_id IS NOT NULL").fetchone()[0] == 0
+    finally:
+        ms.close()
+
+
+def test_clerk_link_roundtrip_rollback():
+    """link_person_to_clerk then read back on mssql; rolled back after."""
+    from app.db import connect
+    from app import port
+
+    ms = connect(provider="mssql", write=True)
+    try:
+        assert port.auth_person_by_clerk_id(ms, "user_probe_zz") is None
+        port.auth_link_person_to_clerk(ms, 3, "user_probe_zz")
+        got = port.auth_person_by_clerk_id(ms, "user_probe_zz")
+        assert got is not None and got["PersonID"] == 3
+        assert got["Name"] == "Tim Jacobbe"
+    finally:
+        ms.rollback()
+        ms.close()
+

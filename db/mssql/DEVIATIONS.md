@@ -198,6 +198,18 @@ register data and a new register year may add one, so a CHECK would block the
 next year (the recurring-entity lesson). The columns are NULL-capable so an
 initiative without them stays valid.
 
+**010 addition (auth).** `person.clerk_user_id` — the Clerk identity link, so the
+authentication layer can resolve a person from a verified Clerk session on Rev2.
+It is an *identifier*, not a secret, so it belongs on the person row; unique where
+present via a filtered index (`WHERE clerk_user_id IS NOT NULL`), the same
+NULL-not-equal trap 004 fixed for the nullable business email.
+
+**Deliberately NOT added: a credential column.** The local PIN stopgap
+(`People.Credential`) is a development-only seam; production identity is Clerk
+(ADR-0004). Its PBKDF2 hash is secret material and stays out of the production
+store, so under `DB_PROVIDER=mssql` the PIN set/verify paths raise a clear error
+instead of storing anything. This is a recorded decision, not an omission.
+
 None of these is claimed to be a port of a reference mechanism. They are new
 tables that let the whole app surface run on Rev2. `milestone` keyed to the
 annual instance preserves the 2026-10-08 multi-year fix (P01 recurs each year;
