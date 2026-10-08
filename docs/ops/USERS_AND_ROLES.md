@@ -7,19 +7,22 @@ review; the database decides.
 
 ## The roster
 
-| Person | GT username | Email | Application roles | Functional role |
-|---|---|---|---|---|
-| Kevin Wong | kwong318 | kwong318@gatech.edu | PlatformAdmin, Operator, Viewer | Strategic Operations — primary developer & administrator |
-| Cassie Parkin | cparkin6 | cparkin6@gatech.edu | PlatformAdmin, Operator, Viewer | Strategic Operations |
-| Chris Reyes | creyes39 | creyes39@gatech.edu | PlatformAdmin, Operator, Viewer | Strategic Operations |
-| DeMarco Williams | dwilliams406 | dwilliams406@gatech.edu | PlatformAdmin, Operator, Viewer | Strategic Operations |
-| Elizabeth Smith | esmith460 | esmith460@gatech.edu | DataOwner, Viewer | Data Owner / Portfolio Governor |
-| Bill Gaudelli | wgaudelli3 | wgaudelli3@gatech.edu | ExecutiveSponsor, Viewer | Dean / Executive Sponsor |
-| Grace Flavin | eflavin6 | eflavin6@gatech.edu | Viewer | Leadership Viewer (Contributor later) |
-| Mario Herane | mherane3 | mherane3@gatech.edu | Viewer | Leadership Viewer (Contributor later) |
-| Meltem Alemdar | ma128 | ma128@gatech.edu | Viewer | Leadership Viewer (Contributor later) |
-| Tim Jacobbe | tjacobbe3 | tjacobbe3@gatech.edu | Viewer | Leadership Viewer (Contributor later) |
-| Mike Sewell | msewell7 | msewell7@gatech.edu | TechnicalAdmin, Viewer | OIT Technical Contact |
+| Person | GT username | GT account email | Directory alias email | Application roles | Functional role |
+|---|---|---|---|---|---|
+| Kevin Wong | kwong318 | kwong318@gatech.edu | kevin.wong@lifetimelearning.gatech.edu | PlatformAdmin, Operator, Viewer | Strategic Operations — primary developer & administrator |
+| Cassie Parkin | cparkin6 | cparkin6@gatech.edu | cassie.parkin@gatech.edu | PlatformAdmin, Operator, Viewer | Strategic Operations |
+| Chris Reyes | creyes39 | creyes39@gatech.edu | chris.reyes@lifetimelearning.gatech.edu | PlatformAdmin, Operator, Viewer | Strategic Operations |
+| DeMarco Williams | dwilliams406 | dwilliams406@gatech.edu | demarco.williams@lifetimelearning.gatech.edu | PlatformAdmin, Operator, Viewer | Strategic Operations |
+| Elizabeth Smith | esmith460 | esmith460@gatech.edu | elizabeth.smith@gatech.edu | DataOwner, Viewer | Data Owner / Portfolio Governor |
+| Bill Gaudelli | wgaudelli3 | wgaudelli3@gatech.edu | gaudelli@lifetimelearning.gatech.edu | ExecutiveSponsor, Viewer | Dean / Executive Sponsor |
+| Grace Flavin | eflavin6 | eflavin6@gatech.edu | eflavin@gatech.edu | Viewer | Leadership Viewer (Contributor later) |
+| Mario Herane | mherane3 | mherane3@gatech.edu | mario.herane@lifetimelearning.gatech.edu | Viewer | Leadership Viewer (Contributor later) |
+| Meltem Alemdar | ma128 | ma128@gatech.edu | meltem@gatech.edu | Viewer | Leadership Viewer (Contributor later) |
+| Tim Jacobbe | tjacobbe3 | tjacobbe3@gatech.edu | jacobbe@gatech.edu | Viewer | Leadership Viewer (Contributor later) |
+| Mike Sewell | msewell7 | msewell7@gatech.edu | mike.sewell@lifetimelearning.gatech.edu | TechnicalAdmin, Viewer | OIT Technical Contact |
+
+Each person's **both** addresses are on their Clerk user and verified, so either
+one signs them in to the same account.
 
 A person may hold more than one role; the app presents the **union** of the
 authorized functions. The roles are **not a hierarchy** (DR-23): each carries a
