@@ -162,6 +162,9 @@ def add_progress_update(
         raise RuleError("Percent must be between 0 and 100.")
 
     def body(conn):
+        if _engine(conn) == "mssql":
+            from app import port  # local import: repo -> port -> repo(_friendly) needs the cycle broken
+            return port.write_add_progress_update(conn, mi_id, percent, status, note, entered_by_id)
         row = conn.execute(
             "SELECT TeamInitiativeID FROM TeamInitiatives "
             "WHERE MIId = ? AND IsActive = 1",
@@ -187,6 +190,10 @@ def update_initiative_details(mi_id: str, name: str, description: str, person_id
         raise RuleError("An initiative needs a name.")
 
     def body(conn):
+        if _engine(conn) == "mssql":
+            from app import port
+            port.write_update_initiative_details(conn, mi_id, name, description, person_id, _audit)
+            return
         row = conn.execute(
             "SELECT TeamInitiativeID, Title, Description FROM TeamInitiatives "
             "WHERE MIId = ? AND IsActive = 1",
@@ -233,6 +240,10 @@ def replace_tags(mi_id: str, goal_tags: list, priority_tags: list, person_id: in
         raise RuleError("Only one primary priority is allowed.")
 
     def body(conn):
+        if _engine(conn) == "mssql":
+            from app import port
+            port.write_replace_tags(conn, mi_id, goal_tags, priority_tags, person_id, _audit)
+            return
         row = conn.execute(
             "SELECT TeamInitiativeID FROM TeamInitiatives "
             "WHERE MIId = ? AND IsActive = 1",
@@ -273,6 +284,10 @@ def replace_links(mi_id: str, dean_initiative_ids: list, person_id: int):
     real DeanInitiative row.
     """
     def body(conn):
+        if _engine(conn) == "mssql":
+            from app import port
+            port.write_replace_links(conn, mi_id, dean_initiative_ids, person_id, _audit)
+            return
         row = conn.execute(
             "SELECT TeamInitiativeID FROM TeamInitiatives "
             "WHERE MIId = ? AND IsActive = 1",
@@ -319,6 +334,10 @@ def create_initiative(code: str, name: str, owner_id: int, description: str, per
         raise RuleError("An initiative needs a name.")
 
     def body(conn):
+        if _engine(conn) == "mssql":
+            from app import port
+            port.write_create_initiative(conn, code, name, owner_id, description, person_id, _audit)
+            return
         conn.execute(
             "INSERT INTO TeamInitiatives (Code, Title, Description, OwnerID) "
             "VALUES (?, ?, ?, ?)",
@@ -345,6 +364,10 @@ def retire_initiative(mi_id: str, person_id: int):
     """Retire rather than delete. History is kept, and a retired initiative
     disappears from every list and card."""
     def body(conn):
+        if _engine(conn) == "mssql":
+            from app import port
+            port.write_retire_initiative(conn, mi_id, person_id, _audit)
+            return
         row = conn.execute(
             "SELECT TeamInitiativeID, IsActive FROM TeamInitiatives WHERE MIId = ?",
             (mi_id,),
@@ -367,6 +390,10 @@ def restore_initiative(mi_id: str, person_id: int, reason: str = None):
     path" the change-management review found missing. Audited like any write.
     """
     def body(conn):
+        if _engine(conn) == "mssql":
+            from app import port
+            port.write_restore_initiative(conn, mi_id, person_id, reason, _audit)
+            return
         row = conn.execute(
             "SELECT TeamInitiativeID, IsActive FROM TeamInitiatives WHERE MIId = ?",
             (mi_id,),
@@ -392,6 +419,10 @@ def update_entry_description(
     column = "GoalNumber" if kind == "goal" else "PriorityName"
 
     def body(conn):
+        if _engine(conn) == "mssql":
+            from app import port
+            port.write_update_entry_description(conn, kind, key, description, person_id, _audit)
+            return
         row = conn.execute(
             f"SELECT Description FROM {table} WHERE {column} = ?", (key,)
         ).fetchone()

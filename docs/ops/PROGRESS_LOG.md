@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **4** days of work recorded, **175** changes in total.
+- **4** days of work recorded, **176** changes in total.
 - Most recent day: **Thursday 08 October 2026**.
-- Across all days: 61 what we added; 36 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 23 documentation; 17 more changes.
+- Across all days: 62 what we added; 36 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 23 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -42,6 +42,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Complete the reconciliation - carry the four app layers Rev2 lacked
 - Port the cascade + index reads to Rev2 (adopt-rev2-store group 3)
 - Port the team-initiative layer to Rev2 (adopt-rev2-store group 4)
+- Port the card + priority + edit reads to Rev2 (adopt-rev2-store group 5)
 
 **What we fixed**
 

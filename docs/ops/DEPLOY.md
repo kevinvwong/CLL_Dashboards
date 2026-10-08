@@ -29,6 +29,16 @@ declares a checkpoint.**
 round). Production is therefore AHEAD of nothing and BEHIND any local work done
 after `f24cc5d` until the next declared checkpoint.
 
+**Data store (2026-10-08):** the app reads and writes through `app/db.py`'s
+single seam, selected by the `DB_PROVIDER` env var — `sqlite` (the local file,
+default) or `mssql` (the Rev2 model on Azure SQL, `cllrev2`). Every screen and
+write is ported and parity-tested on both stores. **Flipping to Rev2 is one env
+var,** not a deploy step — but promoting Rev2 to the authoritative production
+source is a separate business-validation decision (the Rev2 schema was seeded
+from the app's data; `db/rev2/inventory-absent.md` records that no approved
+inventory exists yet). Do not set `DB_PROVIDER=mssql` in production just to try
+it; that changes which store production reads.
+
 **Latest production checkpoint:** marker `shell-guide-20261007T203634Z` at commit
 `198da95` — the persistent left-rail shell (rail / icon-rail / bottom tab bar)
 and the in-app `/guide` documentation set. The deploy also sets

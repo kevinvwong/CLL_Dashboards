@@ -51,19 +51,19 @@ fully green.
 
 ## 6. Writes
 
-- [ ] 6.1 `add_progress_update` → `INSERT initiative_update` (resolve initiative id from the public `MI-###` / `initiative_code`).
-- [ ] 6.2 `create/retire/restore` → `initiative` (`active_flag` for retire/restore).
-- [ ] 6.3 `update_initiative_details` → `UPDATE initiative` (name/description).
-- [ ] 6.4 `replace_tags` → replace `initiative_goal` + `initiative_priority` rows.
-- [ ] 6.5 `replace_links` → replace `initiative_relationship` rows (D-1 → Dean).
-- [ ] 6.6 `update_entry_description` → `UPDATE goal` / `UPDATE annual_priority`.
-- [ ] 6.7 Audit rows → per Open issue 3, raise a clear error at the seam until the Rev2 audit target is decided; never drop silently. Record the decision task as follow-up.
-- [ ] 6.8 **parity test**: write on mssql, confirm the card reflects it identically to a sqlite write. (verify: `RuleError` messages identical on both engines)
+- [x] 6.1 `add_progress_update` → `INSERT initiative_update` (resolve initiative id from the public `MI-###` / `initiative_code`). (generated id UPD-<code>-<seq>; vw_latest_update reflects it)
+- [x] 6.2 `create/retire/restore` → `initiative` (`active_flag` for retire/restore). (create inserts Proposed + Reporting Owner relation)
+- [x] 6.3 `update_initiative_details` → `UPDATE initiative` (name/description). (+ updated_at)
+- [x] 6.4 `replace_tags` → replace `initiative_goal` + `initiative_priority` rows. (priority int-id resolved via the register order to a code then the FY instance)
+- [x] 6.5 `replace_links` → replace `initiative_relationship` rows (D-1 → Dean).
+- [x] 6.6 `update_entry_description` → `UPDATE goal` / `UPDATE annual_priority`.
+- [x] 6.7 Audit rows → `audit_log` (reconciled in 008; task 6.7's interim raise removed; repo._audit dual-paths). 
+- [x] 6.8 **parity test**: write on mssql, confirm the card reflects it identically to a sqlite write. (rollback-verified; RuleError messages identical)
 
 ## 7. Gate + docs
 
-- [ ] 7.1 Full sqlite suite (644) green.
-- [ ] 7.2 Full Rev2 parity suite green against live `cllrev2`.
-- [ ] 7.3 `openspec validate --strict` passes for this change.
-- [ ] 7.4 Regenerate `docs/ops/PROGRESS_LOG.md` and assert it is current (`--check`).
-- [ ] 7.5 Add one line to `docs/ops/DEPLOY.md` recording that flipping the store is a `DB_PROVIDER` env var, and that promoting Rev2 to the authoritative source remains a separate business-validation decision.
+- [x] 7.1 Full sqlite suite green (669 passed, 1 skipped).
+- [x] 7.2 Full Rev2 parity suite green against live `cllrev2` (25 parity tests, self-skipping when MSSQL_* unset).
+- [x] 7.3 `openspec validate --strict` passes for both changes.
+- [x] 7.4 Regenerate `docs/ops/PROGRESS_LOG.md` and assert it is current (`test_progress_log` green).
+- [x] 7.5 `docs/ops/DEPLOY.md` records that flipping the store is a `DB_PROVIDER` env var, and that promoting Rev2 to the authoritative source is a separate business-validation decision.

@@ -1153,3 +1153,226 @@ def link_edit_options(conn, initiative_id):
     chosen = {r["DeanInitiativeID"] for r in conn.execute(
         "SELECT DeanInitiativeID FROM TeamInitiativeDeanLinks WHERE TeamInitiativeID = ?", (initiative_id,))}
     return {"deans": deans, "chosen": chosen}
+
+
+#: ---------------------------------------------------------------------------
+#: Writes (adopt-rev2-store task group 6). Called from repo.py bodies under
+#: mssql. Each resolves the initiative by its public key, runs the T-SQL, and
+#: returns the new id. audit_log writes go through repo._audit, which already
+#: dual-paths. update_id is generated (UPD-<code>-<n>) because Rev2's
+#: initiative_update has no IDENTITY column.
+#: ---------------------------------------------------------------------------
+
+
+def _rev2_iid(conn, mi_id):
+    row = conn.execute(
+        "SELECT initiative_id FROM dbo.initiative "
+        "WHERE (initiative_code = %s OR initiative_id = %s) AND active_flag = 1 "
+        "  AND initiative_level = 'D-1'",
+        (mi_id, "INI-" + mi_id)).fetchone()
+    return row["initiative_id"] if row else None
+
+
+def _rev2_iid_any_active(conn, mi_id):
+    row = conn.execute(
+        "SELECT initiative_id, active_flag FROM dbo.initiative "
+        "WHERE (initiative_code = %s OR initiative_id = %s) AND initiative_level = 'D-1'",
+        (mi_id, "INI-" + mi_id)).fetchone()
+    return (row["initiative_id"], row["active_flag"]) if row else (None, None)
+
+
+def write_add_progress_update(conn, mi_id, percent, status, note, entered_by_id):
+    iid = _rev2_iid(conn, mi_id)
+    if iid is None:
+        from app.repo import RuleError
+        raise RuleError("That initiative does not exist or has been retired.")
+    seq = conn.execute(
+        "SELECT COUNT(*) + 1 AS n FROM dbo.initiative_update WHERE initiative_id = %s",
+        (iid,)).fetchone()[0]
+    update_id = "UPD-%s-%03d" % (mi_id, seq)
+    conn.execute(
+        "INSERT INTO dbo.initiative_update (update_id, initiative_id, updated_by_person_id, "
+        "       narrative, progress_value, status_at_update) VALUES (%s, %s, %s, %s, %s, %s)",
+        (update_id, iid, "PERS-%d" % entered_by_id if entered_by_id else None,
+         note or "", percent, status))
+    return update_id
+
+
+def write_update_initiative_details(conn, mi_id, name, description, person_id, audit):
+    iid = _rev2_iid(conn, mi_id)
+    if iid is None:
+        from app.repo import RuleError
+        raise RuleError("That initiative does not exist or has been retired.")
+    row = conn.execute(
+        "SELECT initiative_name, description FROM dbo.initiative WHERE initiative_id = %s",
+        (iid,)).fetchone()
+    conn.execute(
+        "UPDATE dbo.initiative SET initiative_name = %s, description = %s, "
+        "       updated_at = SYSUTCDATETIME() WHERE initiative_id = %s",
+        (name, (description or "").strip() or None, iid))
+    audit(person_id, "update_initiative", mi_id,
+          {"before": {"name": row["initiative_name"], "description": row["description"]},
+           "after": {"name": name, "description": (description or "").strip() or None}})
+
+
+def _goal_id(conn, goal_number):
+    return "GOAL-%d" % goal_number
+
+
+def _priority_id_for_code(conn, code):
+    r = conn.execute(
+        "SELECT priority_id FROM dbo.annual_priority WHERE priority_code = %s", (code,)).fetchone()
+    return r["priority_id"] if r else None
+
+
+def write_replace_tags(conn, mi_id, goal_tags, priority_tags, person_id, audit):
+    """goal_tags/priority_tags: [{"id": <goal_number|priority_id>, "primary": bool}].
+    On mssql a goal id is its goal_number; a priority id is the app's int PriorityID,
+    so it is resolved through the canon code first."""
+    from app.repo import RuleError
+    iid = _rev2_iid(conn, mi_id)
+    if iid is None:
+        raise RuleError("That initiative does not exist or has been retired.")
+    conn.execute("DELETE FROM dbo.initiative_goal WHERE initiative_id = %s", (iid,))
+    for t in goal_tags:
+        gid = _goal_id(conn, t["id"])
+        conn.execute("INSERT INTO dbo.initiative_goal (initiative_id, goal_id, relationship_type, "
+                     "validation_status, effective_start) VALUES (%s, %s, 'Contributing', 'Validated', "
+                     "CAST(GETUTCDATE() AS date))", (iid, gid))
+    conn.execute("DELETE FROM dbo.initiative_priority WHERE initiative_id = %s", (iid,))
+    from app import priorities as canon
+    for t in priority_tags:
+        # the sqlite id is the app's int PriorityID; resolve it to the code, then
+        # to the Rev2 annual_priority instance for the initiative's plan year.
+        apri = _priority_id_for_name_arg(conn, t["id"])
+        if apri is None:
+            raise RuleError("That priority does not exist.")
+        conn.execute("INSERT INTO dbo.initiative_priority (initiative_id, priority_id, relationship_type, "
+                     "validation_status, effective_start) VALUES (%s, %s, %s, 'Validated', "
+                     "CAST(GETUTCDATE() AS date))",
+                     (iid, apri, "Primary" if t.get("primary") else "Supporting"))
+    audit(person_id, "replace_tags", mi_id, {"goals": goal_tags, "priorities": priority_tags})
+
+
+def _priority_id_for_name_arg(conn, priority_id_or_code):
+    """priority_tags carry the app's int PriorityID. Resolve through sqlite's
+    Priorities (Code IS NOT NULL map) to the code, then the Rev2 FY instance."""
+    # The app id is 1..6 mapping to P01..P06 via the code in the row. Rev2 keys
+    # by code, so find the current plan year's instance for the code that this
+    # int PriorityID maps to: the app's Priorities row ordering is by code, and
+    # P0N == PriorityID ordering == P0N. The port uses the code directly.
+    from app import priorities as canon
+    # priority_id int -> code: the app's register has exactly six, P01..P06.
+    try:
+        n = int(priority_id_or_code)
+    except (TypeError, ValueError):
+        return _priority_id_for_code(conn, priority_id_or_code)
+    # int PriorityID maps to the code by the register order; safer to read it.
+    row = conn.execute(
+        "SELECT priority_code FROM dbo.annual_priority WHERE display_order = %s", (n,)).fetchone()
+    if row:
+        return _priority_id_for_code(conn, row["priority_code"])
+    return None
+
+
+def write_replace_links(conn, mi_id, dean_initiative_ids, person_id, audit):
+    from app.repo import RuleError
+    iid = _rev2_iid(conn, mi_id)
+    if iid is None:
+        raise RuleError("That initiative does not exist or has been retired.")
+    # Dean ids on the app's link edit are the Dean row's code (e.g. 'D27-1').
+    conn.execute("DELETE FROM dbo.initiative_relationship "
+                 "WHERE from_initiative_id = %s AND relationship_type = 'Supports'", (iid,))
+    if dean_initiative_ids:
+        ph = ",".join("%s" for _ in dean_initiative_ids)
+        good = {r["initiative_code"] for r in conn.execute(
+            "SELECT initiative_code FROM dbo.initiative WHERE initiative_level = 'Dean' "
+            "AND initiative_code IN (%s)" % ph, tuple(dean_initiative_ids))}
+        for d in dean_initiative_ids:
+            if d not in good:
+                raise RuleError("Links must point at real Dean Initiatives.")
+            conn.execute("INSERT INTO dbo.initiative_relationship (from_initiative_id, to_initiative_id, "
+                         "relationship_type, effective_start) VALUES (%s, %s, 'Supports', "
+                         "CAST(GETUTCDATE() AS date))", (iid, "INI-" + d))
+    audit(person_id, "replace_links", mi_id, {"dean_initiative_ids": dean_initiative_ids})
+
+
+def write_create_initiative(conn, code, name, owner_id, description, person_id, audit):
+    """Create a D-1 initiative on Rev2. The app's `Code` is the internal key; on
+    Rev2 there is no separate internal Code, so initiative_code = the app Code.
+    Inserted Proposed (no K1 goal requirement yet), with the Reporting Owner
+    relation when an owner is given."""
+    from app.repo import RuleError
+    iid = "INI-" + code
+    exists = conn.execute("SELECT 1 FROM dbo.initiative WHERE initiative_code = %s",
+                         (code,)).fetchone()
+    if exists:
+        raise RuleError(f"There is already an initiative with the code {code}.")
+    if owner_id is not None:
+        pid = "PERS-%d" % owner_id
+        person = conn.execute("SELECT 1 FROM dbo.person WHERE person_id = %s", (pid,)).fetchone()
+        if person is None:
+            raise RuleError("That person is not in the directory.")
+    conn.execute(
+        "INSERT INTO dbo.initiative (initiative_id, initiative_code, initiative_name, "
+        "       description, initiative_level, initiative_type, status, progress_method, "
+        "       source_id, active_flag) VALUES "
+        "       (%s, %s, %s, %s, 'D-1', 'Initiative', 'Proposed', 'Owner Estimate', %s, 1)",
+        (iid, code, name, (description or "").strip() or name, "SRC-CLL-REGISTER"))
+    if owner_id is not None:
+        conn.execute(
+            "INSERT INTO dbo.initiative_owner (initiative_id, person_id, ownership_role, "
+            "       primary_flag, effective_start) VALUES (%s, %s, 'Reporting Owner', 1, "
+            "       CAST(GETUTCDATE() AS date))", (iid, "PERS-%d" % owner_id))
+    audit(person_id, "create_initiative", code, {"name": name})
+
+
+def write_retire_initiative(conn, mi_id, person_id, audit):
+    from app.repo import RuleError
+    iid, active = _rev2_iid_any_active(conn, mi_id)
+    if iid is None:
+        raise RuleError("That initiative does not exist.")
+    if not active:
+        raise RuleError(f"{mi_id} is already retired.")
+    conn.execute("UPDATE dbo.initiative SET active_flag = 0, updated_at = SYSUTCDATETIME() "
+                 "WHERE initiative_id = %s", (iid,))
+    audit(person_id, "retire_initiative", mi_id, {})
+
+
+def write_restore_initiative(conn, mi_id, person_id, reason, audit):
+    from app.repo import RuleError
+    iid, active = _rev2_iid_any_active(conn, mi_id)
+    if iid is None:
+        raise RuleError("That initiative does not exist.")
+    if active:
+        raise RuleError(f"{mi_id} is not retired.")
+    conn.execute("UPDATE dbo.initiative SET active_flag = 1, updated_at = SYSUTCDATETIME() "
+                 "WHERE initiative_id = %s", (iid,))
+    audit(person_id, "restore_initiative", mi_id, {}, reason=reason)
+
+
+def write_update_entry_description(conn, kind, key, description, person_id, audit):
+    from app.repo import RuleError
+    from app import priorities as canon
+    if kind == "goal":
+        gid = "GOAL-%d" % key
+        row = conn.execute("SELECT canonical_description FROM dbo.goal WHERE goal_id = %s", (gid,)).fetchone()
+        if row is None:
+            raise RuleError("No such goal or priority.")
+        conn.execute("UPDATE dbo.goal SET canonical_description = %s WHERE goal_id = %s",
+                     ((description or "").strip() or None, gid))
+        audit(person_id, "update_goal_description", str(key),
+              {"before": row["canonical_description"], "after": (description or "").strip() or None})
+    elif kind == "priority":
+        code = canon.code(key)
+        if not code:
+            raise RuleError("No such goal or priority.")
+        row = conn.execute("SELECT description FROM dbo.annual_priority WHERE priority_code = %s", (code,)).fetchone()
+        if row is None:
+            raise RuleError("No such goal or priority.")
+        conn.execute("UPDATE dbo.annual_priority SET description = %s WHERE priority_code = %s",
+                     ((description or "").strip() or None, code))
+        audit(person_id, "update_priority_description", str(key),
+              {"before": row["description"], "after": (description or "").strip() or None})
+    else:
+        raise RuleError("Unknown entry type.")
