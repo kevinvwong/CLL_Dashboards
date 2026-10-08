@@ -850,23 +850,7 @@ def priority_detail(name: str) -> dict | None:
 def team_overview() -> list[dict]:
     """The four teams, each with its Team Initiatives, and every field they carry."""
     with _conn() as conn:
-        teams = [dict(r) for r in conn.execute(
-            "SELECT TeamID, Name, Description FROM Teams ORDER BY Name")]
-        mis = [dict(r) for r in conn.execute(
-            "SELECT TeamInitiativeID, Code, MIId, Title, TeamID, SourceAreaID, StrategyAlign, "
-            "       Initiatives, ProposedTarget, TargetStatus, "
-            "       Status, Note FROM TeamInitiatives "
-            # Order by the canon's public key, not the internal Code: the Code
-            # follows the prototype's order, so the MI-id column read
-            # MI-014, MI-016, MI-018, MI-015… (#N8).
-            "ORDER BY MIId")]
-        areas = {r["SourceAreaID"]: r["Name"]
-                 for r in conn.execute("SELECT SourceAreaID, Name FROM SourceAreas")}
-        for k in mis:
-            k["SourceArea"] = areas.get(k["SourceAreaID"])
-        for team in teams:
-            team["team_initiatives"] = [k for k in mis if k["TeamID"] == team["TeamID"]]
-    return teams
+        return port.team_overview(conn)
 
 
 def team_initiative_cards() -> list[dict]:
@@ -876,30 +860,10 @@ def team_initiative_cards() -> list[dict]:
     render without a second query per initiative.
     """
     with _conn() as conn:
-        mis = [dict(r) for r in conn.execute(
-            "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Initiatives, "
-            "       k.ProposedTarget, k.TargetStatus, "
-            "       k.Status, k.Note, k.TeamID, t.Name AS Team, "
-            "       sa.Name AS SourceArea "
-            "FROM TeamInitiatives k LEFT JOIN Teams t ON t.TeamID = k.TeamID "
-            "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
-            "ORDER BY k.Code")]
-        links: dict = {}
-        for r in conn.execute(
-                "SELECT tp.TeamInitiativeID, p.PriorityName, p.Code, p.Colour "
-                "FROM TeamInitiativePriorities tp JOIN Priorities p ON p.PriorityID = tp.PriorityID "
-                "ORDER BY p.Code"):
-            links.setdefault(r["TeamInitiativeID"], []).append(dict(r))
-        # The goal edge, so the table can show and link each initiative's goals.
-        goals: dict = {}
-        for r in conn.execute(
-                "SELECT kg.TeamInitiativeID, g.GoalNumber, g.ShortName "
-                "FROM TeamInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
-                "ORDER BY g.GoalNumber"):
-            goals.setdefault(r["TeamInitiativeID"], []).append(dict(r))
+        mis = port.team_initiative_cards(conn)
     for k in mis:
-        k["priorities"] = links.get(k["TeamInitiativeID"], [])
-        k["goals"] = goals.get(k["TeamInitiativeID"], [])
+        k["priorities"] = k.get("priorities", [])
+        k["goals"] = k.get("goals", [])
         k["_GroupLabel"] = None
     return mis
 
@@ -936,22 +900,7 @@ def goal_team_initiatives(goal_number: int) -> list[dict]:
     page can render it without a query per row.
     """
     with _conn() as conn:
-        rows = conn.execute(
-            "SELECT DISTINCT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
-            "       k.ProposedTarget, k.TargetStatus, t.Name AS Team, "
-            "       COALESCE(lp.Status, k.Status, 'Not started') AS Status, "
-            "       sa.Name AS SourceArea "
-            "FROM TeamInitiativeGoals kg "
-            "JOIN TeamInitiatives k ON k.TeamInitiativeID = kg.TeamInitiativeID "
-            "JOIN Goals g ON g.GoalID = kg.GoalID "
-            "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
-            "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
-            "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
-            "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
-            "WHERE g.GoalNumber = ? ORDER BY k.Code",
-            (goal_number,),
-        ).fetchall()
-    return [dict(r) for r in rows]
+        return port.goal_team_initiatives(conn, goal_number)
 
 
 def team_detail(team_id: int):
@@ -961,21 +910,11 @@ def team_detail(team_id: int):
     route can 404 rather than render an empty page.
     """
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT TeamID, Name, Description FROM Teams WHERE TeamID = ?",
-            (team_id,),
-        ).fetchone()
-        if row is None:
+        out = port.team_detail(conn, team_id)
+        if out is None:
             return None
-        out = dict(row)
-        out["team_initiatives"] = [dict(r) for r in conn.execute(
-            "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
-            "       k.ProposedTarget, k.TargetStatus, sa.Name AS SourceArea "
-            "FROM TeamInitiatives k LEFT JOIN SourceAreas sa "
-            "       ON sa.SourceAreaID = k.SourceAreaID "
-            "WHERE k.TeamID = ? ORDER BY k.Code", (team_id,))]
-        # The source areas this team's initiatives came from. A team is a different
-        # axis from a source area, so the page names both.
+    # The source areas this team's initiatives came from. A team is a different
+    # axis from a source area, so the page names both.
     areas = []
     for k in out["team_initiatives"]:
         if k["SourceArea"] and k["SourceArea"] not in areas:
@@ -992,29 +931,7 @@ def team_initiative_detail(mi_id: str):
     key; one without an MI-id is reachable by code instead.
     """
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
-            "       k.Initiatives, k.ProposedTarget, k.Description, "
-            "       k.TargetStatus, k.Status, k.Note, "
-            "       t.TeamID, t.Name AS Team, sa.Name AS SourceArea "
-            "FROM TeamInitiatives k "
-            "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
-            "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
-            "WHERE k.MIId = ? OR k.Code = ?",
-            (mi_id, mi_id),
-        ).fetchone()
-        if row is None:
-            return None
-        out = dict(row)
-        out["goals"] = [dict(r) for r in conn.execute(
-            "SELECT g.GoalNumber, g.ShortName, g.FullName "
-            "FROM TeamInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
-            "WHERE kg.TeamInitiativeID = ? ORDER BY g.GoalNumber", (out["TeamInitiativeID"],))]
-        out["priorities"] = [dict(r) for r in conn.execute(
-            "SELECT p.PriorityName, p.Code, p.Colour "
-            "FROM TeamInitiativePriorities tp JOIN Priorities p ON p.PriorityID = tp.PriorityID "
-            "WHERE tp.TeamInitiativeID = ? ORDER BY p.Code", (out["TeamInitiativeID"],))]
-    return out
+        return port.team_initiative_detail(conn, mi_id)
 
 
 # --- search (overhaul-ui-ux-navigation 3.5) ---------------------------------
@@ -1030,50 +947,21 @@ def search(term: str, limit: int = 10) -> list[dict]:
     """
     from urllib.parse import urlencode
 
-    q = (term or "").strip()
-    if not q:
-        return []
-    like = "%" + q.lower() + "%"
-    code_like = q.lower() + "%"
-    out = []
     with _conn() as conn:
-        for kind, rows in (
-            ("person", conn.execute(
-                "SELECT PersonID AS key, Name AS label, '' AS code FROM People "
-                "WHERE IsActive = 1 AND LOWER(Name) LIKE ? ORDER BY Name LIMIT ?",
-                (like, limit))),
-            ("goal", conn.execute(
-                "SELECT GoalNumber AS key, ShortName AS label, '' AS code FROM Goals "
-                "WHERE LOWER(ShortName) LIKE ? OR LOWER(COALESCE(FullName,'')) LIKE ? "
-                "ORDER BY GoalNumber LIMIT ?",
-                (like, like, limit))),
-            ("priority", conn.execute(
-                "SELECT PriorityName AS key, COALESCE(Code || ' ' || PriorityName, PriorityName) AS label, COALESCE(Code,'') AS code "
-                "FROM Priorities WHERE LOWER(PriorityName) LIKE ? "
-                "OR LOWER(COALESCE(FullTitle,'')) LIKE ? ORDER BY PriorityName LIMIT ?",
-                (like, like, limit))),
-            # The one initiative kind: the register's Team Initiatives, matched
-            # by their canon id (MI-001) or their title. The prototype's
-            # `Initiatives` were dropped in the 2026-10-07 merge.
-            ("team-initiative", conn.execute(
-                "SELECT MIId AS key, Title AS label, COALESCE(MIId,'') AS code "
-                "FROM TeamInitiatives "
-                "WHERE IsActive = 1 AND (LOWER(COALESCE(MIId,'')) LIKE ? OR LOWER(Title) LIKE ?) "
-                "ORDER BY (LOWER(COALESCE(MIId,'')) LIKE ?) DESC, Code LIMIT ?",
-                (like, like, code_like, limit))),
-        ):
-            for r in rows:
-                r = dict(r)
-                if kind == "person":
-                    href = "/people/" + str(r["key"])
-                elif kind == "goal":
-                    href = "/goals/" + str(r["key"])
-                elif kind == "team-initiative":
-                    href = "/team-initiatives/" + str(r["key"])
-                else:
-                    href = "/priorities/" + urlencode({"": r["key"]})[1:]
-                out.append({"kind": kind, "label": r["label"],
-                            "code": r["code"], "href": href})
+        rows = port.search(conn, term, limit)
+    out = []
+    for r in rows:
+        kind = r["kind"]
+        if kind == "person":
+            href = "/people/" + str(r["key"])
+        elif kind == "goal":
+            href = "/goals/" + str(r["key"])
+        elif kind == "team-initiative":
+            href = "/team-initiatives/" + str(r["key"])
+        else:
+            href = "/priorities/" + urlencode({"": r["label"]})[1:]
+        out.append({"kind": kind, "label": r["label"],
+                    "code": r["code"], "href": href})
     # Codes first (an exact-ish code hit is usually what was meant), then label.
     out.sort(key=lambda r: (r["code"] == "", r["code"] or r["label"]))
     return out[:limit]

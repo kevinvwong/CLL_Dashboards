@@ -37,9 +37,9 @@ fully green.
 
 ## 4. Team-initiative layer reads
 
-- [ ] 4.1 `team_overview`, `team_initiative_cards`, `goal_team_initiatives`, `team_detail`, `team_initiative_detail`.
-- [ ] 4.2 `search` (the four per-kind queries) — translate LIKE expressions.
-- [ ] 4.3 **parity test** for the team-initiative screens.
+- [x] 4.1 `team_overview`, `team_initiative_cards`, `goal_team_initiatives`, `team_detail`, `team_initiative_detail`. (needed 009_team_layer.sql: Rev2 initiative had none of the register's richer fields; added strategy_align/initiatives_text/proposed_target/target_status + team_id/source_area_id FK, seeded 29/29, recorded in DEVIATIONS)
+- [x] 4.2 `search` (the four per-kind queries) — translated LIKE expressions. ([key] is reserved in T-SQL; eagerly fetchall per query since a pymssql connection has one result buffer; priority label recomposed as code+short-name via canon)
+- [x] 4.3 **parity test** for the team-initiative screens. (6 new tests; the `Code` vs `MIId` display-key distinction pinned - MIId is the durable parity key)
 
 ## 5. Card reads
 

@@ -190,6 +190,14 @@ deliberate, not drift.
 | `source_area` | the five source areas the team screens carry (`SourceAreas`) | `name` UNIQUE |
 | `milestone` | per-year priority milestones (`Milestones`); the priorities screen + meeting agenda | keyed to `annual_priority` `(code, period)`, ADR-0002 vocabulary preserved, `UNIQUE(priority_id, name)` |
 
+**009 additions (team layer).** The `initiative` row gains the register's richer
+columns the team screens read 29/29: `team_id` (FK `dbo.team`), `source_area_id`
+(FK the 008 lookup), `strategy_align`, `initiatives_text`, `proposed_target`, and
+`target_status`. `target_status` is intentionally un-CHECKed: its values are
+register data and a new register year may add one, so a CHECK would block the
+next year (the recurring-entity lesson). The columns are NULL-capable so an
+initiative without them stays valid.
+
 None of these is claimed to be a port of a reference mechanism. They are new
 tables that let the whole app surface run on Rev2. `milestone` keyed to the
 annual instance preserves the 2026-10-08 multi-year fix (P01 recurs each year;

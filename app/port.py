@@ -416,12 +416,6 @@ def all_people(conn):
     PersonID) joins identically on both engines. IsAdmin is derived from
     person_role/role (reconciled in 008), not the dropped People column.
     """
-    def _pid_int(pid):
-        try:
-            return int(str(pid).split("-", 1)[1])
-        except (IndexError, ValueError, TypeError):
-            return None
-
     if engine(conn) == "mssql":
         admins = {r["PersonID"] for r in conn.execute(
             "SELECT pr.person_id AS PersonID FROM dbo.person_role pr "
@@ -455,3 +449,378 @@ def all_people(conn):
         "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
         "WHERE k.IsActive = 1 AND k.OwnerID IS NOT NULL").fetchall())
     return people, stats
+
+
+#: ---------------------------------------------------------------------------
+#: Team-initiative layer (adopt-rev2-store task group 4). mssql sources the
+#: register's richer fields from the 009 columns on dbo.initiative and resolves
+#: team/source-area names through dbo.team / dbo.source_area. TeamID/TeamInitiativeID
+#: are projected to the app's int form where the caller keys on an int.
+#: ---------------------------------------------------------------------------
+
+
+def _team_id_int(team_id):
+    try:
+        return int(str(team_id).split("-", 1)[1])
+    except (IndexError, ValueError, TypeError):
+        return None
+
+
+#: 'PERS-N' -> the app's int PersonID. Defined once here so the person-facing
+#: ports (all_people, search, person_card) and the owner mapping share it.
+def _pid_int(person_id):
+    try:
+        return int(str(person_id).split("-", 1)[1])
+    except (IndexError, ValueError, TypeError):
+        return None
+
+
+def _source_area_name_map(conn):
+    """Rev2 source_area.id -> name; the app's SourceArea key is its name, so this
+    is how the richer rows carry SourceArea. Returns {source_area_id: name}."""
+    return {r["iid"]: r["nm"] for r in conn.execute(
+        "SELECT source_area_id AS iid, name AS nm FROM dbo.source_area")}
+
+
+def team_overview(conn):
+    """The four teams, each with its Team Initiatives, and every field they carry."""
+    if engine(conn) == "mssql":
+        areas = {r["iid"]: r["nm"] for r in conn.execute(
+            "SELECT source_area_id AS iid, name AS nm FROM dbo.source_area")}
+        teams = []
+        for t in conn.execute(
+                "SELECT team_id AS tid, team_name AS Name, description AS Description "
+                "FROM dbo.team WHERE active_flag = 1 ORDER BY team_name"):
+            teams.append({"TeamID": _team_id_int(t["tid"]), "Name": t["Name"],
+                          "Description": t["Description"]})
+        mis = []
+        for r in conn.execute(
+                "SELECT i.initiative_id AS TeamInitiativeID, i.initiative_code AS Code, "
+                "       i.initiative_code AS MIId, i.initiative_name AS Title, "
+                "       i.strategy_align AS StrategyAlign, i.initiatives_text AS Initiatives, "
+                "       i.proposed_target AS ProposedTarget, i.target_status AS TargetStatus, "
+                "       s.status_current AS Status, NULL AS Note, "
+                "       i.team_id AS teamid, i.source_area_id AS said "
+                "FROM dbo.initiative i "
+                "LEFT JOIN dbo.vw_initiative_summary s ON s.initiative_id = i.initiative_id "
+                "WHERE i.initiative_level = 'D-1' AND i.active_flag = 1 "
+                "ORDER BY i.initiative_code"):
+            mis.append({
+                "TeamInitiativeID": r["TeamInitiativeID"], "Code": r["Code"],
+                "MIId": r["MIId"], "Title": r["Title"], "StrategyAlign": r["StrategyAlign"],
+                "Initiatives": r["Initiatives"], "ProposedTarget": r["ProposedTarget"],
+                "TargetStatus": r["TargetStatus"], "Status": r["Status"], "Note": r["Note"],
+                "TeamID": _team_id_int(r["teamid"]), "SourceArea": areas.get(r["said"]),
+            })
+        for team in teams:
+            team["team_initiatives"] = [k for k in mis if k["TeamID"] == team["TeamID"]]
+        return teams
+    teams = _dicts(conn.execute(
+        "SELECT TeamID, Name, Description FROM Teams ORDER BY Name").fetchall())
+    mis = _dicts(conn.execute(
+        "SELECT TeamInitiativeID, Code, MIId, Title, TeamID, SourceAreaID, StrategyAlign, "
+        "       Initiatives, ProposedTarget, TargetStatus, Status, Note FROM TeamInitiatives "
+        "ORDER BY MIId").fetchall())
+    areas = {r["SourceAreaID"]: r["Name"] for r in conn.execute("SELECT SourceAreaID, Name FROM SourceAreas")}
+    for k in mis:
+        k["SourceArea"] = areas.get(k["SourceAreaID"])
+    for team in teams:
+        team["team_initiatives"] = [k for k in mis if k["TeamID"] == team["TeamID"]]
+    return teams
+
+
+def team_initiative_cards(conn):
+    """The 29 Team Initiatives, each with the priorities and goals it feeds."""
+    if engine(conn) == "mssql":
+        areas = _source_area_name_map(conn)
+        by_id = {r["iid"]: r["tid"] for r in conn.execute(
+            "SELECT initiative_id AS iid, team_id AS tid FROM dbo.initiative "
+            "WHERE initiative_level='D-1'")}
+        mis = []
+        for r in conn.execute(
+                "SELECT i.initiative_id AS iid, i.initiative_code AS Code, "
+                "       i.initiative_code AS MIId, i.initiative_name AS Title, "
+                "       i.strategy_align AS StrategyAlign, i.initiatives_text AS Initiatives, "
+                "       i.proposed_target AS ProposedTarget, i.target_status AS TargetStatus, "
+                "       s.status_current AS Status, NULL AS Note, "
+                "       i.team_id AS teamid, t.team_name AS Team, "
+                "       i.source_area_id AS said "
+                "FROM dbo.initiative i "
+                "LEFT JOIN dbo.vw_initiative_summary s ON s.initiative_id = i.initiative_id "
+                "LEFT JOIN dbo.team t ON t.team_id = i.team_id "
+                "WHERE i.initiative_level = 'D-1' AND i.active_flag = 1 "
+                "ORDER BY i.initiative_code"):
+            k = {"TeamInitiativeID": r["iid"], "Code": r["Code"], "MIId": r["MIId"],
+                 "Title": r["Title"], "StrategyAlign": r["StrategyAlign"],
+                 "Initiatives": r["Initiatives"], "ProposedTarget": r["ProposedTarget"],
+                 "TargetStatus": r["TargetStatus"], "Status": r["Status"], "Note": r["Note"],
+                 "TeamID": _team_id_int(r["teamid"]), "Team": r["Team"],
+                 "SourceArea": areas.get(r["said"])}
+            mis.append(k)
+        links: dict = {}
+        for r in conn.execute(
+                "SELECT ip.initiative_id AS iid, "
+                "       (SELECT priority_name FROM dbo.priority_definition pd "
+                "        WHERE pd.priority_code = ap.priority_code) AS PriorityName, "
+                "       ap.priority_code AS Code, NULL AS Colour "
+                "FROM dbo.initiative_priority ip "
+                "JOIN dbo.annual_priority ap ON ap.priority_id = ip.priority_id "
+                "ORDER BY ap.priority_code"):
+            links.setdefault(r["iid"], []).append({"TeamInitiativeID": r["iid"],
+                "PriorityName": r["PriorityName"], "Code": r["Code"], "Colour": r["Colour"]})
+        goals: dict = {}
+        for r in conn.execute(
+                "SELECT ig.initiative_id AS iid, g.goal_number AS GoalNumber, g.short_label AS ShortName "
+                "FROM dbo.initiative_goal ig JOIN dbo.goal g ON g.goal_id = ig.goal_id "
+                "JOIN dbo.initiative i ON i.initiative_id = ig.initiative_id "
+                "WHERE i.initiative_level = 'D-1' ORDER BY g.goal_number"):
+            goals.setdefault(r["iid"], []).append(
+                {"TeamInitiativeID": r["iid"], "GoalNumber": r["GoalNumber"], "ShortName": r["ShortName"]})
+        for k in mis:
+            k["priorities"] = links.get(k["TeamInitiativeID"], [])
+            k["goals"] = goals.get(k["TeamInitiativeID"], [])
+            k["_GroupLabel"] = None
+        return mis
+    mis = _dicts(conn.execute(
+        "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Initiatives, "
+        "       k.ProposedTarget, k.TargetStatus, "
+        "       k.Status, k.Note, k.TeamID, t.Name AS Team, "
+        "       sa.Name AS SourceArea "
+        "FROM TeamInitiatives k LEFT JOIN Teams t ON t.TeamID = k.TeamID "
+        "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
+        "ORDER BY k.Code").fetchall())
+    links: dict = {}
+    for r in conn.execute(
+            "SELECT tp.TeamInitiativeID, p.PriorityName, p.Code, p.Colour "
+            "FROM TeamInitiativePriorities tp JOIN Priorities p ON p.PriorityID = tp.PriorityID "
+            "ORDER BY p.Code"):
+        links.setdefault(r["TeamInitiativeID"], []).append(dict(r))
+    goals: dict = {}
+    for r in conn.execute(
+            "SELECT kg.TeamInitiativeID, g.GoalNumber, g.ShortName "
+            "FROM TeamInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
+            "ORDER BY g.GoalNumber"):
+        goals.setdefault(r["TeamInitiativeID"], []).append(dict(r))
+    for k in mis:
+        k["priorities"] = links.get(k["TeamInitiativeID"], [])
+        k["goals"] = goals.get(k["TeamInitiativeID"], [])
+        k["_GroupLabel"] = None
+    return mis
+
+
+def goal_team_initiatives(conn, goal_number):
+    """Team Initiatives aligned to one goal, with team/source-area/target."""
+    if engine(conn) == "mssql":
+        areas = _source_area_name_map(conn)
+        return _dicts(conn.execute(
+            "SELECT i.initiative_id AS TeamInitiativeID, i.initiative_code AS Code, "
+            "       i.initiative_code AS MIId, i.initiative_name AS Title, "
+            "       i.strategy_align AS StrategyAlign, i.proposed_target AS ProposedTarget, "
+            "       i.target_status AS TargetStatus, t.team_name AS Team, "
+            "       COALESCE(s.status_current, i.status, 'Not started') AS Status, "
+            "       i.source_area_id AS said "
+            "FROM dbo.initiative_goal kg "
+            "JOIN dbo.initiative i ON i.initiative_id = kg.initiative_id "
+            "JOIN dbo.goal g ON g.goal_id = kg.goal_id "
+            "LEFT JOIN dbo.vw_initiative_summary s ON s.initiative_id = i.initiative_id "
+            "LEFT JOIN dbo.team t ON t.team_id = i.team_id "
+            "WHERE g.goal_number = %s AND i.initiative_level = 'D-1' AND i.active_flag = 1 "
+            "ORDER BY i.initiative_code",
+            (goal_number,)).fetchall())
+    return _dicts(conn.execute(
+        "SELECT DISTINCT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
+        "       k.ProposedTarget, k.TargetStatus, t.Name AS Team, "
+        "       COALESCE(lp.Status, k.Status, 'Not started') AS Status, "
+        "       sa.Name AS SourceArea "
+        "FROM TeamInitiativeGoals kg "
+        "JOIN TeamInitiatives k ON k.TeamInitiativeID = kg.TeamInitiativeID "
+        "JOIN Goals g ON g.GoalID = kg.GoalID "
+        "LEFT JOIN vw_LatestTeamInitiativeProgress lp "
+        "       ON lp.TeamInitiativeID = k.TeamInitiativeID "
+        "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
+        "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
+        "WHERE g.GoalNumber = ? ORDER BY k.Code",
+        (goal_number,)).fetchall())
+
+
+def team_detail(conn, team_id):
+    if engine(conn) == "mssql":
+        tid = "TEAM-%d" % team_id
+        row = conn.execute(
+            "SELECT team_id, team_name AS Name, description AS Description FROM dbo.team "
+            "WHERE team_id = %s", (tid,)).fetchone()
+        if row is None:
+            return None
+        areas = _source_area_name_map(conn)
+        out = {"TeamID": _team_id_int(row["team_id"]), "Name": row["Name"],
+               "Description": row["Description"]}
+        ti = []
+        for r in conn.execute(
+                "SELECT initiative_id AS TeamInitiativeID, initiative_code AS Code, "
+                "       initiative_code AS MIId, initiative_name AS Title, "
+                "       strategy_align AS StrategyAlign, proposed_target AS ProposedTarget, "
+                "       target_status AS TargetStatus, source_area_id AS said "
+                "FROM dbo.initiative WHERE team_id = %s AND initiative_level='D-1' "
+                "AND active_flag = 1 ORDER BY initiative_code", (row["team_id"],)):
+            ti.append({"TeamInitiativeID": r["TeamInitiativeID"], "Code": r["Code"],
+                       "MIId": r["MIId"], "Title": r["Title"], "StrategyAlign": r["StrategyAlign"],
+                       "ProposedTarget": r["ProposedTarget"], "TargetStatus": r["TargetStatus"],
+                       "SourceArea": areas.get(r["said"])})
+        out["team_initiatives"] = ti
+        return out
+    row = conn.execute(
+        "SELECT TeamID, Name, Description FROM Teams WHERE TeamID = ?",
+        (team_id,)).fetchone()
+    if row is None:
+        return None
+    out = dict(row)
+    out["team_initiatives"] = _dicts(conn.execute(
+        "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
+        "       k.ProposedTarget, k.TargetStatus, sa.Name AS SourceArea "
+        "FROM TeamInitiatives k LEFT JOIN SourceAreas sa "
+        "       ON sa.SourceAreaID = k.SourceAreaID "
+        "WHERE k.TeamID = ? ORDER BY k.Code", (team_id,)).fetchall())
+    return out
+
+
+def team_initiative_detail(conn, mi_id):
+    """One Team Initiative by code, with its team/source-area/goals/priorities."""
+    if engine(conn) == "mssql":
+        areas = _source_area_name_map(conn)
+        row = conn.execute(
+            "SELECT i.initiative_id AS TeamInitiativeID, i.initiative_code AS Code, "
+            "       i.initiative_code AS MIId, i.initiative_name AS Title, "
+            "       i.strategy_align AS StrategyAlign, i.initiatives_text AS Initiatives, "
+            "       i.proposed_target AS ProposedTarget, i.description AS Description, "
+            "       i.target_status AS TargetStatus, s.status_current AS Status, NULL AS Note, "
+            "       i.team_id, t.team_name AS Team, i.source_area_id AS said "
+            "FROM dbo.initiative i "
+            "LEFT JOIN dbo.vw_initiative_summary s ON s.initiative_id = i.initiative_id "
+            "LEFT JOIN dbo.team t ON t.team_id = i.team_id "
+            "WHERE i.initiative_code = %s OR i.initiative_id = %s",
+            (mi_id, "INI-" + mi_id)).fetchone()
+        if row is None:
+            return None
+        out = {"TeamInitiativeID": row["TeamInitiativeID"], "Code": row["Code"],
+               "MIId": row["MIId"], "Title": row["Title"], "StrategyAlign": row["StrategyAlign"],
+               "Initiatives": row["Initiatives"], "ProposedTarget": row["ProposedTarget"],
+               "Description": row["Description"], "TargetStatus": row["TargetStatus"],
+               "Status": row["Status"], "Note": row["Note"],
+               "TeamID": _team_id_int(row["team_id"]), "Team": row["Team"],
+               "SourceArea": areas.get(row["said"])}
+        iid = row["TeamInitiativeID"]
+        out["goals"] = _dicts(conn.execute(
+            "SELECT g.goal_number AS GoalNumber, g.short_label AS ShortName, g.canonical_title AS FullName "
+            "FROM dbo.initiative_goal kg JOIN dbo.goal g ON g.goal_id = kg.goal_id "
+            "WHERE kg.initiative_id = %s ORDER BY g.goal_number", (iid,)).fetchall())
+        pris = []
+        for r in conn.execute(
+                "SELECT pdef.priority_name AS PriorityName, ap.priority_code AS Code, NULL AS Colour "
+                "FROM dbo.initiative_priority tp JOIN dbo.annual_priority ap ON ap.priority_id = tp.priority_id "
+                "JOIN dbo.priority_definition pdef ON pdef.priority_code = ap.priority_code "
+                "WHERE tp.initiative_id = %s ORDER BY ap.priority_code", (iid,)):
+            pris.append({"PriorityName": r["PriorityName"], "Code": r["Code"], "Colour": r["Colour"]})
+        out["priorities"] = pris
+        return out
+    row = conn.execute(
+        "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
+        "       k.Initiatives, k.ProposedTarget, k.Description, "
+        "       k.TargetStatus, k.Status, k.Note, "
+        "       t.TeamID, t.Name AS Team, sa.Name AS SourceArea "
+        "FROM TeamInitiatives k "
+        "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
+        "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
+        "WHERE k.MIId = ? OR k.Code = ?",
+        (mi_id, mi_id)).fetchone()
+    if row is None:
+        return None
+    out = dict(row)
+    out["goals"] = _dicts(conn.execute(
+        "SELECT g.GoalNumber, g.ShortName, g.FullName "
+        "FROM TeamInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
+        "WHERE kg.TeamInitiativeID = ? ORDER BY g.GoalNumber", (out["TeamInitiativeID"],)).fetchall())
+    out["priorities"] = _dicts(conn.execute(
+        "SELECT p.PriorityName, p.Code, p.Colour "
+        "FROM TeamInitiativePriorities tp JOIN Priorities p ON p.PriorityID = tp.PriorityID "
+        "WHERE tp.TeamInitiativeID = ? ORDER BY p.Code", (out["TeamInitiativeID"],)).fetchall())
+    return out
+
+
+def search(conn, term, limit=10):
+    """Match people, goals, priorities and team initiatives by name or code.
+    Returns (kind, label, code) rows; the caller composes hrefs (engine-agnostic)."""
+    q = (term or "").strip()
+    if not q:
+        return []
+    like = "%" + q.lower() + "%"
+    code_like = q.lower() + "%"
+    out = []
+    if engine(conn) == "mssql":
+        lim = str(int(limit))
+        # Eagerly fetchall each query: a pymssql connection holds one result
+        # buffer, so a later execute() would empty an earlier unread cursor.
+        queries = (
+            ("person",
+             "SELECT person_id AS [key], display_name AS label, '' AS code FROM dbo.person "
+             "WHERE active_flag = 1 AND LOWER(display_name) LIKE %s "
+             "ORDER BY display_name OFFSET 0 ROWS FETCH NEXT " + lim + " ROWS ONLY",
+             (like,)),
+            ("goal",
+             "SELECT goal_number AS [key], short_label AS label, '' AS code FROM dbo.goal "
+             "WHERE LOWER(short_label) LIKE %s OR LOWER(COALESCE(canonical_title,'')) LIKE %s "
+             "ORDER BY goal_number OFFSET 0 ROWS FETCH NEXT " + lim + " ROWS ONLY",
+             (like, like)),
+            ("priority",
+             "SELECT pdef.priority_name AS [key], pdef.priority_name AS label, pdef.priority_code AS code "
+             "FROM dbo.priority_definition pdef WHERE LOWER(pdef.priority_name) LIKE %s "
+             "ORDER BY pdef.priority_code OFFSET 0 ROWS FETCH NEXT " + lim + " ROWS ONLY",
+             (like,)),
+            ("team-initiative",
+             "SELECT initiative_code AS [key], initiative_name AS label, initiative_code AS code "
+             "FROM dbo.initiative WHERE active_flag = 1 AND initiative_level='D-1' "
+             "AND (LOWER(initiative_code) LIKE %s OR LOWER(initiative_name) LIKE %s) "
+             "ORDER BY (CASE WHEN LOWER(initiative_code) LIKE %s THEN 0 ELSE 1 END), initiative_code "
+             "OFFSET 0 ROWS FETCH NEXT " + lim + " ROWS ONLY",
+             (like, like, code_like)),
+        )
+        for kind, sql, params in queries:
+            for r in conn.execute(sql, params).fetchall():
+                key = r["key"]
+                label = r["label"]
+                if kind == "person":
+                    key = _pid_int(key) if isinstance(key, str) and "-" in str(key) else key
+                elif kind == "priority":
+                    # sqlite labels a priority hit 'P06 Culture' (code + SHORT
+                    # name); Rev2's priority_name is the full title, so recompose
+                    # with the canon's short name to match.
+                    from app import priorities as canon
+                    label = "%s %s" % (r["code"], canon.short_for_code(r["code"]) or label)
+                out.append({"kind": kind, "label": label,
+                            "code": r["code"], "key": key})
+        return out
+    for kind, rows in (
+        ("person", conn.execute(
+            "SELECT PersonID AS key, Name AS label, '' AS code FROM People "
+            "WHERE IsActive = 1 AND LOWER(Name) LIKE ? ORDER BY Name LIMIT ?",
+            (like, limit))),
+        ("goal", conn.execute(
+            "SELECT GoalNumber AS key, ShortName AS label, '' AS code FROM Goals "
+            "WHERE LOWER(ShortName) LIKE ? OR LOWER(COALESCE(FullName,'')) LIKE ? "
+            "ORDER BY GoalNumber LIMIT ?",
+            (like, like, limit))),
+        ("priority", conn.execute(
+            "SELECT PriorityName AS key, COALESCE(Code || ' ' || PriorityName, PriorityName) AS label, COALESCE(Code,'') AS code "
+            "FROM Priorities WHERE LOWER(PriorityName) LIKE ? "
+            "OR LOWER(COALESCE(FullTitle,'')) LIKE ? ORDER BY PriorityName LIMIT ?",
+            (like, like, limit))),
+        ("team-initiative", conn.execute(
+            "SELECT MIId AS key, Title AS label, COALESCE(MIId,'') AS code "
+            "FROM TeamInitiatives "
+            "WHERE IsActive = 1 AND (LOWER(COALESCE(MIId,'')) LIKE ? OR LOWER(Title) LIKE ?) "
+            "ORDER BY (LOWER(COALESCE(MIId,'')) LIKE ?) DESC, Code LIMIT ?",
+            (like, like, code_like, limit))),
+    ):
+        for r in rows:
+            out.append({"kind": kind, "label": r["label"],
+                        "code": r["code"], "key": r["key"]})
+    return out

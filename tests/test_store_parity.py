@@ -202,3 +202,89 @@ def test_admin_semantics_agree(both):
     ms_people, _ = port.all_people(ms)
     ms_admins = {p["PersonID"] for p in ms_people if p["IsAdmin"]}
     assert sq_admins == ms_admins
+
+
+# --- group 4: team-initiative layer -------------------------------------
+
+
+def test_team_overview_parity(both):
+    from app import port
+
+    sq, ms = both
+    a = [(t["Name"], len(t["team_initiatives"])) for t in port.team_overview(sq)]
+    b = [(t["Name"], len(t["team_initiatives"])) for t in port.team_overview(ms)]
+    assert sorted(a) == sorted(b)
+
+
+def test_team_initiative_cards_parity(both):
+    from app import port
+
+    sq, ms = both
+    def norm(k):
+        return (k["MIId"], k["Title"], k["Team"], k["SourceArea"], k["TargetStatus"],
+                tuple(sorted(p["Code"] for p in k["priorities"])),
+                tuple(sorted(g["GoalNumber"] for g in k["goals"])))
+    a = sorted(norm(k) for k in port.team_initiative_cards(sq))
+    b = sorted(norm(k) for k in port.team_initiative_cards(ms))
+    assert a == b
+
+
+def test_goal_team_initiatives_parity(both):
+    from app import port
+
+    sq, ms = both
+    # MIId is the durable display key on both stores; the internal Code differs
+    # (sqlite '1-01' vs Rev2 has no internal code, so Rev2's Code == MIId).
+    for gn in (1, 2, 3, 4, 5):
+        a = {(r["MIId"], r["Title"], r["Team"]) for r in port.goal_team_initiatives(sq, gn)}
+        b = {(r["MIId"], r["Title"], r["Team"]) for r in port.goal_team_initiatives(ms, gn)}
+        assert a == b, f"goal {gn} differs"
+
+
+def test_team_detail_parity(both):
+    from app import port
+
+    sq, ms = both
+    for tid in (1, 2, 3, 4):
+        # The route-facing function composes source_areas; compare its parts.
+        a_rows = port.team_detail(sq, tid)
+        b_rows = port.team_detail(ms, tid)
+        assert (a_rows is None) == (b_rows is None), tid
+        if a_rows is None:
+            continue
+        assert a_rows["Name"] == b_rows["Name"]
+        a_sa = sorted({k["SourceArea"] for k in a_rows["team_initiatives"] if k["SourceArea"]})
+        b_sa = sorted({k["SourceArea"] for k in b_rows["team_initiatives"] if k["SourceArea"]})
+        assert a_sa == b_sa
+        assert sorted(k["MIId"] for k in a_rows["team_initiatives"]) == \
+               sorted(k["MIId"] for k in b_rows["team_initiatives"])
+
+
+def test_team_initiative_detail_parity(both):
+    from app import port
+
+    sq, ms = both
+    for code in ("MI-001", "MI-014", "MI-029"):
+        a = port.team_initiative_detail(sq, code)
+        b = port.team_initiative_detail(ms, code)
+        assert (a is None) == (b is None), code
+        if a is None:
+            continue
+        assert a["Title"] == b["Title"] and a["Team"] == b["Team"] and \
+               a["SourceArea"] == b["SourceArea"] and a["TargetStatus"] == b["TargetStatus"]
+        assert sorted(g["GoalNumber"] for g in a["goals"]) == \
+               sorted(g["GoalNumber"] for g in b["goals"])
+        assert sorted(p["Code"] for p in a["priorities"]) == \
+               sorted(p["Code"] for p in b["priorities"])
+
+
+def test_search_parity(both):
+    from app import port
+
+    sq, ms = both
+    a = {(r["kind"], r["code"], r["label"]) for r in port.search(sq, "Learning")}
+    b = {(r["kind"], r["code"], r["label"]) for r in port.search(ms, "Learning")}
+    assert a == b
+    ai = {(r["kind"], r["code"]) for r in port.search(sq, "MI-0")}
+    bi = {(r["kind"], r["code"]) for r in port.search(ms, "MI-0")}
+    assert ai == bi

@@ -333,6 +333,27 @@ def build(out=OUT):
                     m["SortOrder"], m["IsActive"]))
     L.append("GO")
 
+    # -----------------------------------------------------------------------
+    # 009 team layer: backfill the register's richer initiative fields.
+    # -----------------------------------------------------------------------
+    L.append("\n-- Team-layer fields on the D-1 initiatives (009_team_layer.sql).")
+    for k in con.execute(
+            "SELECT (COALESCE(MIId, Code)) AS Key_, TeamID, SourceAreaID, StrategyAlign, "
+            "       Initiatives, ProposedTarget, TargetStatus FROM TeamInitiatives "
+            "WHERE IsActive = 1 ORDER BY MIId"):
+        iid = "INI-" + k["Key_"]
+        team = _s("TEAM-%d" % k["TeamID"]) if k["TeamID"] else "NULL"
+        area_name = con.execute("SELECT Name FROM SourceAreas WHERE SourceAreaID = ?",
+                                 (k["SourceAreaID"],)).fetchone()
+        area = "(SELECT source_area_id FROM dbo.source_area WHERE name = %s)" \
+               % _s(area_name[0]) if (k["SourceAreaID"] and area_name) else "NULL"
+        L.append("UPDATE dbo.initiative SET team_id = %s, source_area_id = %s, "
+                 "strategy_align = %s, initiatives_text = %s, proposed_target = %s, "
+                 "target_status = %s WHERE initiative_id = %s;"
+                 % (team, area, _s(k["StrategyAlign"]), _s(k["Initiatives"]),
+                    _s(k["ProposedTarget"]), _s(k["TargetStatus"]), _s(iid)))
+    L.append("GO")
+
     L.append("PRINT 'Rev2 seed applied.';")
     L.append("GO")
 

@@ -29,6 +29,7 @@ ORDER = [
     "006_read_models.sql",
     "007_integrity_report.sql",
     "008_app_layer.sql",
+    "009_team_layer.sql",
 ]
 
 
