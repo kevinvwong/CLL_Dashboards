@@ -136,32 +136,60 @@ def dataset_provenance() -> str:
     return row["Value"] if row else "unknown"
 
 
-def priority_outcomes() -> list[dict]:
-    """The six priorities as the Outcomes view needs them.
+def current_plan_year() -> int | None:
+    """The plan year the app shows by default, from AppMeta.
 
-    One entry per priority with its milestone progress, its reported outcome
-    state, and the milestones themselves. Progress comes from
-    vw_PriorityMilestoneProgress, so a priority with no milestones reads 0 of 0
-    rather than vanishing. Ordered by code, so the cards read P01..P06.
+    The six priorities recur each year, so every annual view is scoped to one
+    plan year. Set in the seed; None if unset.
     """
     with _conn() as conn:
+        row = conn.execute(
+            "SELECT Value FROM AppMeta WHERE Key = 'current_plan_year'").fetchone()
+    try:
+        return int(row["Value"]) if row else None
+    except (TypeError, ValueError):
+        return None
+
+
+def plan_years() -> list[int]:
+    """Every plan year that has priorities, newest first."""
+    with _conn() as conn:
+        return [r["PlanYear"] for r in conn.execute(
+            "SELECT DISTINCT PlanYear FROM Priorities "
+            "WHERE Code IS NOT NULL ORDER BY PlanYear DESC")]
+
+
+def priority_outcomes(year: int | None = None) -> list[dict]:
+    """The six priorities for one plan year, as the priorities view needs them.
+
+    One entry per priority with its milestone progress, its reported state, and
+    the milestones themselves. Scoped to a plan year (default: the current one),
+    because the same six recur each year and a milestone belongs to one year's
+    priority (multi-year, 2026-10-08). Progress comes from
+    vw_PriorityMilestoneProgress, joined by PriorityID, so a priority with no
+    milestones reads 0 of 0 rather than vanishing. Ordered by code, P01..P06.
+    """
+    if year is None:
+        year = current_plan_year()
+    with _conn() as conn:
         rows = conn.execute(
-            "SELECT p.Code, p.FullTitle, p.PriorityName, p.Description, "
-            "       p.Measure, p.Target, p.OwnerLabel, p.Status, p.LastUpdated, "
+            "SELECT p.PriorityID, p.Code, p.PlanYear, p.FullTitle, p.PriorityName, "
+            "       p.Description, p.Measure, p.Target, p.OwnerLabel, p.Status, "
+            "       p.LastUpdated, "
             "       COALESCE(v.Planned, 0) AS Planned, COALESCE(v.Reached, 0) AS Reached "
             "FROM Priorities p "
-            "LEFT JOIN vw_PriorityMilestoneProgress v ON v.PriorityCode = p.Code "
-            "WHERE p.Code IS NOT NULL ORDER BY p.Code").fetchall()
-        by_code: dict = {}
+            "LEFT JOIN vw_PriorityMilestoneProgress v ON v.PriorityID = p.PriorityID "
+            "WHERE p.Code IS NOT NULL AND p.PlanYear = ? ORDER BY p.Code", (year,)).fetchall()
+        by_id: dict = {}
         for m in conn.execute(
-                "SELECT PriorityCode, Name, Status, PlannedDate, DateMet, "
+                "SELECT PriorityID, Name, Status, PlannedDate, DateMet, "
                 "       OwnerLabel, EvidenceURL FROM Milestones "
-                "WHERE IsActive = 1 ORDER BY PriorityCode, SortOrder, MilestoneID"):
-            by_code.setdefault(m["PriorityCode"], []).append(dict(m))
+                "WHERE IsActive = 1 ORDER BY PriorityID, SortOrder, MilestoneID"):
+            by_id.setdefault(m["PriorityID"], []).append(dict(m))
     out = []
     for r in rows:
         d = dict(r)
-        d["milestones"] = by_code.get(r["Code"], [])
+        d["milestones"] = by_id.get(r["PriorityID"], [])
         # Floored, not rounded: a bar reading 50% when fewer than half the
         # milestones are Met would overstate progress.
         d["Percent"] = (100 * d["Reached"]) // d["Planned"] if d["Planned"] else 0

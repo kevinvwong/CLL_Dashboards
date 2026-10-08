@@ -58,7 +58,7 @@ CREATE TABLE Goals (
 CREATE TABLE Priorities (
     PriorityID   INTEGER PRIMARY KEY,
     PriorityName TEXT    NOT NULL,
-    PlanYear     INTEGER NOT NULL,
+    PlanYear     INTEGER NOT NULL,   -- the plan year this priority belongs to
     Description  TEXT,
     -- The prototype's governed definition, per priority (blueprint-redesign
     -- scope correction). These four are its fields we did not hold.
@@ -75,12 +75,13 @@ CREATE TABLE Priorities (
     -- status (ADR-0002): 'On track','At risk','Behind','Not started'.
     Status       TEXT,
     LastUpdated  TEXT,      -- ISO date the state was last confirmed
+    -- A PRIORITY IS IDENTIFIED BY (YEAR, CODE), not by code alone: the same six
+    -- recur every plan year, so 'P01' names a priority and the year names which
+    -- plan. Keying on code alone (the earlier UNIQUE(Code)) made a 2028 'P01'
+    -- unstorable - the multi-year fix (2026-10-08).
+    UNIQUE (PlanYear, Code),
     UNIQUE (PriorityName, PlanYear)
 );
-
--- Priorities.Code ('P01'..'P06') is the key the Milestones table and the intake
--- reference, so it needs a uniqueness guarantee for the foreign key.
-CREATE UNIQUE INDEX UX_Priorities_Code ON Priorities(Code);
 
 -- ---------- Milestones (enhancement work, 2026-10-07) -------------------------
 -- A Milestone is a concrete, checkable event that evidences a PRIORITY. It hangs
@@ -91,7 +92,10 @@ CREATE UNIQUE INDEX UX_Priorities_Code ON Priorities(Code);
 -- Data"), and every one is populated by the intake, never by hand.
 CREATE TABLE Milestones (
     MilestoneID  INTEGER PRIMARY KEY,
-    PriorityCode TEXT    NOT NULL REFERENCES Priorities(Code),
+    -- Keyed to the PRIORITY ROW, not its code: a milestone belongs to one
+    -- year's priority, and the code 'P01' recurs each year (multi-year fix,
+    -- 2026-10-08).
+    PriorityID   INTEGER NOT NULL REFERENCES Priorities(PriorityID),
     Name         TEXT    NOT NULL,      -- a checkable event, not an activity
     -- A milestone's own status vocabulary (ADR-0002): an event is Met or Missed;
     -- it is never "On track" and never "Complete".
@@ -103,20 +107,23 @@ CREATE TABLE Milestones (
     EvidenceURL  TEXT,                  -- approving doc / minutes / release note
     SortOrder    INTEGER NOT NULL DEFAULT 0,
     IsActive     INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1)),
-    UNIQUE (PriorityCode, Name)
+    UNIQUE (PriorityID, Name)
 );
 
 -- Milestones reached / planned per priority, for the Outcomes cards and the
 -- rings. LEFT JOIN so a priority with no milestones yet still appears, reading
--- 0 of 0 rather than vanishing.
+-- 0 of 0 rather than vanishing. Keyed by PriorityID, so each year's priorities
+-- report their own milestones.
 CREATE VIEW vw_PriorityMilestoneProgress AS
-SELECT p.Code AS PriorityCode,
+SELECT p.PriorityID AS PriorityID,
+       p.Code AS PriorityCode,
+       p.PlanYear AS PlanYear,
        p.FullTitle AS PriorityTitle,
        COUNT(m.MilestoneID) AS Planned,
        SUM(CASE WHEN m.Status = 'Met' THEN 1 ELSE 0 END) AS Reached
 FROM Priorities p
-LEFT JOIN Milestones m ON m.PriorityCode = p.Code AND m.IsActive = 1
-GROUP BY p.Code, p.FullTitle;
+LEFT JOIN Milestones m ON m.PriorityID = p.PriorityID AND m.IsActive = 1
+GROUP BY p.PriorityID, p.Code, p.PlanYear, p.FullTitle;
 
 -- ---------- Dataset provenance -----------------------------------------------
 -- Whether the data is a seeded MOCK or imported-and-confirmed. The UI reads this
@@ -351,7 +358,10 @@ JOIN Goals g    ON g.GoalID = kg.GoalID;
 
 CREATE TABLE DeanInitiatives (
     DeanInitiativeID  INTEGER PRIMARY KEY,
-    FiscalYear      INTEGER NOT NULL CHECK (FiscalYear IN (26,27)),
+    -- A 2-digit fiscal year. FY26/FY27 are the seeded years; the range is open
+    -- so later years are storable without another migration (multi-year fix,
+    -- 2026-10-08).
+    FiscalYear      INTEGER NOT NULL CHECK (FiscalYear BETWEEN 26 AND 99),
     Code            TEXT    NOT NULL UNIQUE,   -- 'D26-1'..'D26-3', 'D27-1'..'D27-8'
     Title           TEXT    NOT NULL,
     Description     TEXT,

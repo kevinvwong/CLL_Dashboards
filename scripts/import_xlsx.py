@@ -83,20 +83,33 @@ def _sheet_rows(ws):
             yield r, dict(zip(header, values))
 
 
+def _current_plan_year(conn):
+    """The plan year the intake targets, from AppMeta (multi-year, 2026-10-08)."""
+    row = conn.execute(
+        "SELECT Value FROM AppMeta WHERE Key = 'current_plan_year'").fetchone()
+    try:
+        return int(row[0]) if row else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _import_milestones(conn, wb, problems) -> int:
     """Replace the Milestones from the Milestones sheet; return how many.
 
     A PRESENT sheet replaces the milestone set: supplying the confirmed rows IS
     the confirmation act (ADR-0001). An empty sheet is ignored, so an admin who
-    leaves it blank does not wipe the model by accident.
+    leaves it blank does not wipe the model by accident. Milestones attach to a
+    priority ROW (year + code), since the code recurs each year.
     """
     if "Milestones" not in wb.sheetnames:
         return 0
     rows = list(_sheet_rows(wb["Milestones"]))
     if not rows:
         return 0
-    known = {r["Code"] for r in conn.execute(
-        "SELECT Code FROM Priorities WHERE Code IS NOT NULL")}
+    year = _current_plan_year(conn)
+    by_code = {r["Code"]: r["PriorityID"] for r in conn.execute(
+        "SELECT PriorityID, Code FROM Priorities WHERE Code IS NOT NULL AND PlanYear = ?",
+        (year,))}
     conn.execute("DELETE FROM Milestones")
     n = 0
     for excel_row, r in rows:
@@ -106,19 +119,21 @@ def _import_milestones(conn, wb, problems) -> int:
         if not name:
             problems.append(Problem("Milestones", excel_row, "missing Milestone"))
             continue
-        if code not in known:
+        if code not in by_code:
             problems.append(Problem("Milestones", excel_row,
-                                    f"{name!r}: priority {code!r} is not a known priority"))
+                                    f"{name!r}: priority {code!r} is not a known priority "
+                                    f"for plan year {year}"))
             continue
         if status not in MILESTONE_STATUSES:
             problems.append(Problem("Milestones", excel_row,
                                     f"{name!r}: status {status!r} is not a milestone status"))
             continue
         conn.execute(
-            "INSERT INTO Milestones (PriorityCode, Name, Status, PlannedDate, "
+            "INSERT INTO Milestones (PriorityID, Name, Status, PlannedDate, "
             "DateMet, OwnerLabel, EvidenceURL, SortOrder) VALUES (?,?,?,?,?,?,?,?)",
-            (code, name, status, r.get("Planned date") or None, r.get("Date met") or None,
-             r.get("Owner") or None, r.get("Evidence URL") or None, n + 1))
+            (by_code[code], name, status, r.get("Planned date") or None,
+             r.get("Date met") or None, r.get("Owner") or None,
+             r.get("Evidence URL") or None, n + 1))
         n += 1
     return n
 
@@ -127,8 +142,10 @@ def _import_outcomes(conn, wb, problems) -> int:
     """Set each priority's reported outcome state from the Outcomes sheet."""
     if "Outcomes" not in wb.sheetnames:
         return 0
+    year = _current_plan_year(conn)
     known = {r["Code"] for r in conn.execute(
-        "SELECT Code FROM Priorities WHERE Code IS NOT NULL")}
+        "SELECT Code FROM Priorities WHERE Code IS NOT NULL AND PlanYear = ?",
+        (year,))}
     n = 0
     for excel_row, r in _sheet_rows(wb["Outcomes"]):
         code = r.get("Priority", "")
@@ -139,14 +156,15 @@ def _import_outcomes(conn, wb, problems) -> int:
             continue
         if code not in known:
             problems.append(Problem("Outcomes", excel_row,
-                                    f"priority {code!r} is not a known priority"))
+                                    f"priority {code!r} is not a known priority "
+                                    f"for plan year {year}"))
             continue
         if status and status not in OUTCOME_STATUSES:
             problems.append(Problem("Outcomes", excel_row,
                                     f"{code}: status {status!r} is not an outcome status"))
             continue
-        conn.execute("UPDATE Priorities SET Status=?, LastUpdated=? WHERE Code=?",
-                     (status or None, updated or None, code))
+        conn.execute("UPDATE Priorities SET Status=?, LastUpdated=? WHERE Code=? AND PlanYear=?",
+                     (status or None, updated or None, code, year))
         n += 1
     return n
 

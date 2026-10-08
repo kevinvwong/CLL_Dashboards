@@ -30,6 +30,10 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "seed_milestones.sql")
 
+#: The plan year these milestones belong to. The six priorities recur each year;
+#: this seed is for 2027, and Priorities rows are keyed by (PlanYear, Code).
+PLAN_YEAR = 2027
+
 #: (priority_code, name, status, planned_date, sort) -- MOCK, see module docstring.
 MILESTONES = [
     ("P01", "Message architecture approved", "Met", None, 1),
@@ -73,27 +77,31 @@ def build(out=OUT):
          "-- MOCK data: illustrative milestones pending the intake (see the",
          "-- generator's docstring). Provenance is tagged 'mock' below.", ""]
 
-    L.append("-- Milestones: a checkable event per Priority (ADR-0001).")
+    L.append("-- Milestones: a checkable event per Priority (ADR-0001). Keyed to the")
+    L.append("-- Priorities ROW for this plan year, since the code recurs each year.")
     L.append("DELETE FROM Milestones;")
-    L.append("INSERT INTO Milestones (PriorityCode, Name, Status, PlannedDate, SortOrder) VALUES")
+    L.append("INSERT INTO Milestones (PriorityID, Name, Status, PlannedDate, SortOrder) VALUES")
     vals = []
     for code, name, status, planned, sort in MILESTONES:
-        vals.append("  (%s, %s, %s, %s, %d)"
-                    % (_sq(code), _sq(name), _sq(status), _sq(planned), sort))
+        vals.append("  ((SELECT PriorityID FROM Priorities WHERE Code=%s AND PlanYear=%d), "
+                    "%s, %s, %s, %d)"
+                    % (_sq(code), PLAN_YEAR, _sq(name), _sq(status), _sq(planned), sort))
     L.append(",\n".join(vals) + ";")
     L.append("")
 
     L.append("-- The reported outcome state per Priority (workbook A-05/A-06).")
     for code, (status, updated) in OUTCOME_STATE.items():
-        L.append("UPDATE Priorities SET Status=%s, LastUpdated=%s WHERE Code=%s;"
-                 % (_sq(status), _sq(updated), _sq(code)))
+        L.append("UPDATE Priorities SET Status=%s, LastUpdated=%s "
+                 "WHERE Code=%s AND PlanYear=%d;"
+                 % (_sq(status), _sq(updated), _sq(code), PLAN_YEAR))
     L.append("")
 
     L.append("-- Dataset provenance: the importer overwrites this with 'confirmed'.")
     L.append("DELETE FROM AppMeta;")
     L.append("INSERT INTO AppMeta (Key, Value) VALUES")
     L.append("  ('dataset_provenance', 'mock'),")
-    L.append("  ('dataset_source', 'seed: illustrative milestones for build/layout review');")
+    L.append("  ('dataset_source', 'seed: illustrative milestones for build/layout review'),")
+    L.append("  ('current_plan_year', '%d');" % PLAN_YEAR)
     L.append("")
 
     # Local roles (ADR-0005). Assignment is by the person's current state, so it

@@ -2,41 +2,43 @@
 -- MOCK data: illustrative milestones pending the intake (see the
 -- generator's docstring). Provenance is tagged 'mock' below.
 
--- Milestones: a checkable event per Priority (ADR-0001).
+-- Milestones: a checkable event per Priority (ADR-0001). Keyed to the
+-- Priorities ROW for this plan year, since the code recurs each year.
 DELETE FROM Milestones;
-INSERT INTO Milestones (PriorityCode, Name, Status, PlannedDate, SortOrder) VALUES
-  ('P01', 'Message architecture approved', 'Met', NULL, 1),
-  ('P01', 'Teams adopted (1 of 4)', 'In progress', NULL, 2),
-  ('P01', 'First asset audit', 'Not started', NULL, 3),
-  ('P02', 'RDI baseline complete', 'Met', NULL, 1),
-  ('P02', 'Innovation call launched', 'Met', NULL, 2),
-  ('P02', 'First stage-gate decisions', 'Not started', '2026-12-31', 3),
-  ('P03', 'Unified approval process', 'In progress', NULL, 1),
-  ('P03', 'First badged pathway', 'In progress', NULL, 2),
-  ('P03', 'Mapping rule approved', 'Met', NULL, 3),
-  ('P04', 'Quality standard approved', 'Not started', NULL, 1),
-  ('P04', 'Reuse baseline', 'In progress', NULL, 2),
-  ('P04', 'Build-time baseline', 'Not started', NULL, 3),
-  ('P05', 'KPI definitions drafted', 'Met', NULL, 1),
-  ('P05', 'College dashboard', 'In progress', NULL, 2),
-  ('P05', 'Owners named', 'Not started', NULL, 3),
-  ('P06', 'Target structure approved', 'Not started', NULL, 1),
-  ('P06', 'Q1 learning reviews', 'In progress', NULL, 2),
-  ('P06', 'Operating model template', 'Met', NULL, 3);
+INSERT INTO Milestones (PriorityID, Name, Status, PlannedDate, SortOrder) VALUES
+  ((SELECT PriorityID FROM Priorities WHERE Code='P01' AND PlanYear=2027), 'Message architecture approved', 'Met', NULL, 1),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P01' AND PlanYear=2027), 'Teams adopted (1 of 4)', 'In progress', NULL, 2),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P01' AND PlanYear=2027), 'First asset audit', 'Not started', NULL, 3),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P02' AND PlanYear=2027), 'RDI baseline complete', 'Met', NULL, 1),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P02' AND PlanYear=2027), 'Innovation call launched', 'Met', NULL, 2),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P02' AND PlanYear=2027), 'First stage-gate decisions', 'Not started', '2026-12-31', 3),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P03' AND PlanYear=2027), 'Unified approval process', 'In progress', NULL, 1),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P03' AND PlanYear=2027), 'First badged pathway', 'In progress', NULL, 2),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P03' AND PlanYear=2027), 'Mapping rule approved', 'Met', NULL, 3),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P04' AND PlanYear=2027), 'Quality standard approved', 'Not started', NULL, 1),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P04' AND PlanYear=2027), 'Reuse baseline', 'In progress', NULL, 2),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P04' AND PlanYear=2027), 'Build-time baseline', 'Not started', NULL, 3),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P05' AND PlanYear=2027), 'KPI definitions drafted', 'Met', NULL, 1),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P05' AND PlanYear=2027), 'College dashboard', 'In progress', NULL, 2),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P05' AND PlanYear=2027), 'Owners named', 'Not started', NULL, 3),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P06' AND PlanYear=2027), 'Target structure approved', 'Not started', NULL, 1),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P06' AND PlanYear=2027), 'Q1 learning reviews', 'In progress', NULL, 2),
+  ((SELECT PriorityID FROM Priorities WHERE Code='P06' AND PlanYear=2027), 'Operating model template', 'Met', NULL, 3);
 
 -- The reported outcome state per Priority (workbook A-05/A-06).
-UPDATE Priorities SET Status='On track', LastUpdated='2026-10-07' WHERE Code='P01';
-UPDATE Priorities SET Status='On track', LastUpdated='2026-10-07' WHERE Code='P02';
-UPDATE Priorities SET Status='At risk', LastUpdated='2026-10-07' WHERE Code='P03';
-UPDATE Priorities SET Status='At risk', LastUpdated='2026-10-07' WHERE Code='P04';
-UPDATE Priorities SET Status='On track', LastUpdated='2026-10-07' WHERE Code='P05';
-UPDATE Priorities SET Status='On track', LastUpdated='2026-10-07' WHERE Code='P06';
+UPDATE Priorities SET Status='On track', LastUpdated='2026-10-07' WHERE Code='P01' AND PlanYear=2027;
+UPDATE Priorities SET Status='On track', LastUpdated='2026-10-07' WHERE Code='P02' AND PlanYear=2027;
+UPDATE Priorities SET Status='At risk', LastUpdated='2026-10-07' WHERE Code='P03' AND PlanYear=2027;
+UPDATE Priorities SET Status='At risk', LastUpdated='2026-10-07' WHERE Code='P04' AND PlanYear=2027;
+UPDATE Priorities SET Status='On track', LastUpdated='2026-10-07' WHERE Code='P05' AND PlanYear=2027;
+UPDATE Priorities SET Status='On track', LastUpdated='2026-10-07' WHERE Code='P06' AND PlanYear=2027;
 
 -- Dataset provenance: the importer overwrites this with 'confirmed'.
 DELETE FROM AppMeta;
 INSERT INTO AppMeta (Key, Value) VALUES
   ('dataset_provenance', 'mock'),
-  ('dataset_source', 'seed: illustrative milestones for build/layout review');
+  ('dataset_source', 'seed: illustrative milestones for build/layout review'),
+  ('current_plan_year', '2027');
 
 -- Roles and their assignment (ADR-0005). App-local, not provider groups.
 DELETE FROM PeopleRoles;

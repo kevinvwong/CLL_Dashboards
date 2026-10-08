@@ -29,10 +29,12 @@ def test_the_view_returns_every_priority_even_with_no_milestones(fresh_db):
 
 
 def test_the_seeded_milestones_match_the_wireframe_counts(fresh_db):
-    """18 milestones, 3 per priority, and the reached counts the wireframe drew."""
+    """18 milestones, 3 per priority, and the reached counts the wireframe drew.
+    Milestones join to Priorities by PriorityID (multi-year fix, 2026-10-08)."""
     assert _count(fresh_db, "SELECT COUNT(*) FROM Milestones") == 18
     per = dict(sqlite3.connect(fresh_db).execute(
-        "SELECT PriorityCode, COUNT(*) FROM Milestones GROUP BY PriorityCode"))
+        "SELECT p.Code, COUNT(*) FROM Milestones m JOIN Priorities p "
+        "ON p.PriorityID = m.PriorityID GROUP BY p.Code"))
     assert per == {"P01": 3, "P02": 3, "P03": 3, "P04": 3, "P05": 3, "P06": 3}
     reached = dict(sqlite3.connect(fresh_db).execute(
         "SELECT PriorityCode, Reached FROM vw_PriorityMilestoneProgress"))

@@ -157,8 +157,12 @@ def build(db_path: str, out_path: str):
     ms_ws.add_data_validation(dv_ms_met)
     dv_ms_met.add("F2:F500")
     for m in conn.execute(
-            "SELECT PriorityCode, Name, Status, PlannedDate, DateMet, OwnerLabel, EvidenceURL "
-            "FROM Milestones WHERE IsActive = 1 ORDER BY PriorityCode, SortOrder, MilestoneID"):
+            "SELECT p.Code AS PriorityCode, m.Name, m.Status, m.PlannedDate, m.DateMet, "
+            "       m.OwnerLabel, m.EvidenceURL "
+            "FROM Milestones m JOIN Priorities p ON p.PriorityID = m.PriorityID "
+            "WHERE m.IsActive = 1 AND p.PlanYear = ("
+            "  SELECT Value FROM AppMeta WHERE Key = 'current_plan_year') "
+            "ORDER BY p.Code, m.SortOrder, m.MilestoneID"):
         ms_ws.append([m["PriorityCode"], m["Name"], m["Status"], m["PlannedDate"] or "",
                       m["DateMet"] or "", m["OwnerLabel"] or "", m["EvidenceURL"] or ""])
 

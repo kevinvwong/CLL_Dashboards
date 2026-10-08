@@ -55,10 +55,25 @@ def test_auditlog_indexes_exist():
 
 
 def test_fiscal_year_check():
+    """A 2-digit fiscal year; the range is open so later years are storable
+    (multi-year fix, 2026-10-08). FY26 works and FY28 works; 99 is out of range."""
     con = _schema_con()
     con.execute("INSERT INTO DeanInitiatives (FiscalYear, Code, Title) VALUES (26,'D26-1','x')")
+    con.execute("INSERT INTO DeanInitiatives (FiscalYear, Code, Title) VALUES (28,'D28-1','x')")
     with pytest.raises(sqlite3.IntegrityError):
-        con.execute("INSERT INTO DeanInitiatives (FiscalYear, Code, Title) VALUES (99,'D99-1','x')")
+        con.execute("INSERT INTO DeanInitiatives (FiscalYear, Code, Title) VALUES (12,'D12-1','x')")
+    con.close()
+
+
+def test_a_priority_code_recurs_across_plan_years():
+    """Priorities are keyed by (PlanYear, Code): a 2028 'P01' is storable beside
+    the 2027 one (multi-year fix, 2026-10-08)."""
+    con = _schema_con()
+    con.execute("INSERT INTO Priorities (PriorityName, PlanYear, Code) VALUES ('Identity',2027,'P01')")
+    con.execute("INSERT INTO Priorities (PriorityName, PlanYear, Code) VALUES ('Identity',2028,'P01')")
+    # But the same (year, code) twice is refused.
+    with pytest.raises(sqlite3.IntegrityError):
+        con.execute("INSERT INTO Priorities (PriorityName, PlanYear, Code) VALUES ('X',2027,'P01')")
     con.close()
 
 
