@@ -709,5 +709,132 @@ GO
 -- Diary (append-only; the app seed ships none).
 -- (no initiative_update rows in the committed sample)
 GO
+
+-- app_meta: engine-agnostic config (AppMeta).
+IF NOT EXISTS (SELECT 1 FROM dbo.app_meta WHERE [key] = N'current_plan_year')
+INSERT INTO dbo.app_meta ([key], [value]) VALUES (N'current_plan_year', N'2027');
+IF NOT EXISTS (SELECT 1 FROM dbo.app_meta WHERE [key] = N'dataset_provenance')
+INSERT INTO dbo.app_meta ([key], [value]) VALUES (N'dataset_provenance', N'mock');
+IF NOT EXISTS (SELECT 1 FROM dbo.app_meta WHERE [key] = N'dataset_source')
+INSERT INTO dbo.app_meta ([key], [value]) VALUES (N'dataset_source', N'seed: illustrative milestones for build/layout review');
+GO
+
+-- audit_log: schema only (the app seed ships no audit rows).
+-- (no audit_log rows in the committed sample)
+GO
+
+-- role / person_role: the app's role vocabulary (Roles/PeopleRoles),
+-- mirrored by NAME because role_id is IDENTITY-generated in Rev2.
+IF NOT EXISTS (SELECT 1 FROM dbo.role WHERE name = N'PlatformAdmin')
+INSERT INTO dbo.role (name, description) VALUES (N'PlatformAdmin', N'technical/application administration and approved access administration');
+IF NOT EXISTS (SELECT 1 FROM dbo.role WHERE name = N'ExecutiveSponsor')
+INSERT INTO dbo.role (name, description) VALUES (N'ExecutiveSponsor', N'the Dean: portfolio read plus executive actions (never routine data edits)');
+IF NOT EXISTS (SELECT 1 FROM dbo.role WHERE name = N'DataOwner')
+INSERT INTO dbo.role (name, description) VALUES (N'DataOwner', N'governs portfolio data: approvals, exceptions, quality, accountability');
+IF NOT EXISTS (SELECT 1 FROM dbo.role WHERE name = N'Operator')
+INSERT INTO dbo.role (name, description) VALUES (N'Operator', N'Strategic Operations: portfolio and data maintenance');
+IF NOT EXISTS (SELECT 1 FROM dbo.role WHERE name = N'Contributor')
+INSERT INTO dbo.role (name, description) VALUES (N'Contributor', N'edits assigned initiatives (future phase; unassigned initially)');
+IF NOT EXISTS (SELECT 1 FROM dbo.role WHERE name = N'Viewer')
+INSERT INTO dbo.role (name, description) VALUES (N'Viewer', N'reads published content');
+IF NOT EXISTS (SELECT 1 FROM dbo.role WHERE name = N'TechnicalAdmin')
+INSERT INTO dbo.role (name, description) VALUES (N'TechnicalAdmin', N'OIT/Azure infrastructure support; platform health, not portfolio data');
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-1' AND ro.name = N'ExecutiveSponsor')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-1', role_id FROM dbo.role WHERE name = N'ExecutiveSponsor';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-1' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-1', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-2' AND ro.name = N'DataOwner')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-2', role_id FROM dbo.role WHERE name = N'DataOwner';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-2' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-2', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-3' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-3', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-4' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-4', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-5' AND ro.name = N'Operator')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-5', role_id FROM dbo.role WHERE name = N'Operator';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-5' AND ro.name = N'PlatformAdmin')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-5', role_id FROM dbo.role WHERE name = N'PlatformAdmin';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-5' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-5', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-6' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-6', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-7' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-7', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-8' AND ro.name = N'Operator')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-8', role_id FROM dbo.role WHERE name = N'Operator';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-8' AND ro.name = N'PlatformAdmin')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-8', role_id FROM dbo.role WHERE name = N'PlatformAdmin';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-8' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-8', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-9' AND ro.name = N'Operator')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-9', role_id FROM dbo.role WHERE name = N'Operator';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-9' AND ro.name = N'PlatformAdmin')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-9', role_id FROM dbo.role WHERE name = N'PlatformAdmin';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-9' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-9', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-10' AND ro.name = N'Operator')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-10', role_id FROM dbo.role WHERE name = N'Operator';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-10' AND ro.name = N'PlatformAdmin')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-10', role_id FROM dbo.role WHERE name = N'PlatformAdmin';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-10' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-10', role_id FROM dbo.role WHERE name = N'Viewer';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-11' AND ro.name = N'TechnicalAdmin')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-11', role_id FROM dbo.role WHERE name = N'TechnicalAdmin';
+IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr JOIN dbo.role ro ON ro.role_id = pr.role_id WHERE pr.person_id = N'PERS-11' AND ro.name = N'Viewer')
+INSERT INTO dbo.person_role (person_id, role_id) SELECT N'PERS-11', role_id FROM dbo.role WHERE name = N'Viewer';
+GO
+
+-- source_area: the five source areas.
+IF NOT EXISTS (SELECT 1 FROM dbo.source_area WHERE name = N'Content & Product Strategy')
+INSERT INTO dbo.source_area (name) VALUES (N'Content & Product Strategy');
+IF NOT EXISTS (SELECT 1 FROM dbo.source_area WHERE name = N'Administration & Operations')
+INSERT INTO dbo.source_area (name) VALUES (N'Administration & Operations');
+IF NOT EXISTS (SELECT 1 FROM dbo.source_area WHERE name = N'Strategic Solutions')
+INSERT INTO dbo.source_area (name) VALUES (N'Strategic Solutions');
+IF NOT EXISTS (SELECT 1 FROM dbo.source_area WHERE name = N'Research, Development & Innovation')
+INSERT INTO dbo.source_area (name) VALUES (N'Research, Development & Innovation');
+IF NOT EXISTS (SELECT 1 FROM dbo.source_area WHERE name = N'Academic Affairs')
+INSERT INTO dbo.source_area (name) VALUES (N'Academic Affairs');
+GO
+
+-- milestone: the per-year priority milestones.
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P01-FY2027' AND name = N'Message architecture approved')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P01-FY2027', N'Message architecture approved', N'Met', NULL, NULL, NULL, NULL, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P01-FY2027' AND name = N'Teams adopted (1 of 4)')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P01-FY2027', N'Teams adopted (1 of 4)', N'In progress', NULL, NULL, NULL, NULL, 2, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P01-FY2027' AND name = N'First asset audit')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P01-FY2027', N'First asset audit', N'Not started', NULL, NULL, NULL, NULL, 3, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P02-FY2027' AND name = N'RDI baseline complete')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P02-FY2027', N'RDI baseline complete', N'Met', NULL, NULL, NULL, NULL, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P02-FY2027' AND name = N'Innovation call launched')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P02-FY2027', N'Innovation call launched', N'Met', NULL, NULL, NULL, NULL, 2, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P02-FY2027' AND name = N'First stage-gate decisions')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P02-FY2027', N'First stage-gate decisions', N'Not started', '2026-12-31', NULL, NULL, NULL, 3, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P03-FY2027' AND name = N'Unified approval process')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P03-FY2027', N'Unified approval process', N'In progress', NULL, NULL, NULL, NULL, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P03-FY2027' AND name = N'First badged pathway')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P03-FY2027', N'First badged pathway', N'In progress', NULL, NULL, NULL, NULL, 2, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P03-FY2027' AND name = N'Mapping rule approved')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P03-FY2027', N'Mapping rule approved', N'Met', NULL, NULL, NULL, NULL, 3, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P04-FY2027' AND name = N'Quality standard approved')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P04-FY2027', N'Quality standard approved', N'Not started', NULL, NULL, NULL, NULL, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P04-FY2027' AND name = N'Reuse baseline')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P04-FY2027', N'Reuse baseline', N'In progress', NULL, NULL, NULL, NULL, 2, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P04-FY2027' AND name = N'Build-time baseline')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P04-FY2027', N'Build-time baseline', N'Not started', NULL, NULL, NULL, NULL, 3, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P05-FY2027' AND name = N'KPI definitions drafted')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P05-FY2027', N'KPI definitions drafted', N'Met', NULL, NULL, NULL, NULL, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P05-FY2027' AND name = N'College dashboard')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P05-FY2027', N'College dashboard', N'In progress', NULL, NULL, NULL, NULL, 2, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P05-FY2027' AND name = N'Owners named')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P05-FY2027', N'Owners named', N'Not started', NULL, NULL, NULL, NULL, 3, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P06-FY2027' AND name = N'Target structure approved')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P06-FY2027', N'Target structure approved', N'Not started', NULL, NULL, NULL, NULL, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P06-FY2027' AND name = N'Q1 learning reviews')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P06-FY2027', N'Q1 learning reviews', N'In progress', NULL, NULL, NULL, NULL, 2, 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = N'PRI-P06-FY2027' AND name = N'Operating model template')
+INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, owner_label, evidence_url, sort_order, active_flag) VALUES (N'PRI-P06-FY2027', N'Operating model template', N'Met', NULL, NULL, NULL, NULL, 3, 1);
+GO
 PRINT 'Rev2 seed applied.';
 GO

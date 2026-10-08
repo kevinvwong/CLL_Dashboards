@@ -181,13 +181,12 @@ def plan_years(conn):
 
 
 def _appmeta(conn, key):
-    """AppMeta has no Rev2 equivalent (design Open issue 2); it stays
-    sqlite-backed whatever the store, because it holds engine-agnostic config
-    (current_plan_year, dataset_provenance), not portfolio data."""
+    """Read one AppMeta key. Rev2 has held this as `app_meta` since change
+    `rev2-full-reconciliation` / 008_app_layer.sql, so both engines read their
+    own store. ([Key]/[Value] are reserved words, bracketed on mssql.)"""
     if engine(conn) == "mssql":
-        with connect(provider="sqlite") as sq:
-            row = sq.execute(
-                "SELECT Value FROM AppMeta WHERE Key = ?", (key,)).fetchone()
+        row = conn.execute(
+            "SELECT [value] AS Value FROM dbo.app_meta WHERE [key] = %s", (key,)).fetchone()
         return row["Value"] if row else None
     row = conn.execute(
         "SELECT Value FROM AppMeta WHERE Key = ?", (key,)).fetchone()
@@ -204,3 +203,37 @@ def current_plan_year(conn):
 
 def dataset_provenance(conn):
     return _appmeta(conn, "dataset_provenance") or "unknown"
+
+
+def milestones_for_year(conn, year: int):
+    """The milestones for one plan year's priorities, keyed by priority code.
+
+    Rev2's milestone.priority_id is PRI-<Code>-FY<year>; sqlite joins Milestones
+    to the year-scoped Priorities row. Returns {code: [milestone dict,...]}.
+    (change `rev2-full-reconciliation` task 3.x / adopt-rev2-store Open issue 1.)
+    """
+    if engine(conn) == "mssql":
+        rows = _dicts(conn.execute(
+            "SELECT ap.priority_code AS Code, m.name AS Name, m.status AS Status, "
+            "       CONVERT(VARCHAR(10), m.planned_date, 23) AS PlannedDate, "
+            "       CONVERT(VARCHAR(10), m.date_met, 23) AS DateMet, "
+            "       m.owner_label AS OwnerLabel, m.evidence_url AS EvidenceURL "
+            "FROM dbo.milestone m JOIN dbo.annual_priority ap ON ap.priority_id = m.priority_id "
+            "WHERE m.active_flag = 1 AND ap.planning_period = %s "
+            "ORDER BY ap.priority_code, m.sort_order, m.milestone_id",
+            ("FY%d" % year,)).fetchall())
+        by_code: dict = {}
+        for r in rows:
+            by_code.setdefault(r.pop("Code"), []).append(r)
+        return by_code
+    rows = _dicts(conn.execute(
+        "SELECT p.Code, m.Name, m.Status, m.PlannedDate, m.DateMet, "
+        "       m.OwnerLabel, m.EvidenceURL "
+        "FROM Milestones m JOIN Priorities p ON p.PriorityID = m.PriorityID "
+        "WHERE m.IsActive = 1 AND p.Code IS NOT NULL AND p.PlanYear = ? "
+        "ORDER BY p.Code, m.SortOrder, m.MilestoneID",
+        (year,)).fetchall())
+    by_code = {}
+    for r in rows:
+        by_code.setdefault(r.pop("Code"), []).append(r)
+    return by_code

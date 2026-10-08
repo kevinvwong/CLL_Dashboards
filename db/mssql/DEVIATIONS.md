@@ -174,6 +174,28 @@ python -m pytest tests -q      # 33 passed
 Credentials come from `%TEMP%\rev2sql.txt` or `REV2_CREDS`.
 
 
+## Adopted-app-layer additions (not deviations — additions)
+
+Change `rev2-full-reconciliation` (`008_app_layer.sql`). These tables carry app
+layers the Rev2 package (000..007) never modeled. They are **additions**, the
+same category as D9's `validation_event`, and are recorded here for the same
+reason: they are not in the reference, so a reviewer needs to know they are
+deliberate, not drift.
+
+| table | why | key note |
+|---|---|---|
+| `app_meta` | engine-agnostic config (`current_plan_year`, `dataset_provenance`); Rev2 had no equivalent and the port fell back to SQLite | PK `[key]` |
+| `audit_log` | append-only change-management record every write emits; deliberately NOT `validation_event` (design R2) | `audit_id INT IDENTITY`; `person_id` a string ref, no FK (an audit may outlive the person) |
+| `role` / `person_role` | the application's role vocabulary (`Roles`/`PeopleRoles`); `People.IsAdmin` derives from these | mirrored by NAME (role_id is IDENTITY) |
+| `source_area` | the five source areas the team screens carry (`SourceAreas`) | `name` UNIQUE |
+| `milestone` | per-year priority milestones (`Milestones`); the priorities screen + meeting agenda | keyed to `annual_priority` `(code, period)`, ADR-0002 vocabulary preserved, `UNIQUE(priority_id, name)` |
+
+None of these is claimed to be a port of a reference mechanism. They are new
+tables that let the whole app surface run on Rev2. `milestone` keyed to the
+annual instance preserves the 2026-10-08 multi-year fix (P01 recurs each year;
+its milestones belong to one year's priority row).
+
+
 ## A deploy note that cost a live outage
 
 The synthetic-label deploy (task 8.2) took the live prototype down with

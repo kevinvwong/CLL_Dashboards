@@ -96,3 +96,29 @@ def test_goal_and_priority_lookups(both):
     assert a is not None and b is not None
     assert a["PriorityName"] == b["PriorityName"] == "Data"
     assert a["PlanYear"] == b["PlanYear"]
+
+
+def test_milestones_parity(both):
+    """Milestones, the biggest reconciliation lift, agree on both stores."""
+    from app import port
+
+    sq, ms = both
+    year = port.current_plan_year(ms) or 2027
+    a = port.milestones_for_year(sq, year)
+    b = port.milestones_for_year(ms, year)
+    assert a.keys() == b.keys(), "a priority has milestones on one store only"
+    for code in a:
+        assert [(m["Name"], m["Status"]) for m in a[code]] == \
+               [(m["Name"], m["Status"]) for m in b[code]], code
+
+
+def test_app_config_read_from_rev2(both):
+    """app_meta lives on Rev2 now: both engines resolve the same value from
+    their own store (no sqlite fallback under mssql)."""
+    from app import port
+
+    sq, ms = both
+    assert port._appmeta(ms, "current_plan_year") == \
+           port._appmeta(sq, "current_plan_year") == "2027"
+    assert port._appmeta(ms, "dataset_provenance") == \
+           port._appmeta(sq, "dataset_provenance") == "mock"

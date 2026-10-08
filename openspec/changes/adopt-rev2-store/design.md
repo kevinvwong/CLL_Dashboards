@@ -92,24 +92,25 @@ mssql the driver raises `pymssql` exceptions; the port wraps them into the same
 
 ## Open issues (recorded, not silently decided)
 
-These are genuine gaps between the SQLite model and Rev2 as applied. Each item
-is named, given an interim behaviour, and flagged for a follow-up rather than
-guessed at here:
+> **Resolved by `rev2-full-reconciliation` (008_app_layer.sql), 2026-10-08.**
+> Milestones, AppMeta and audit now have Rev2 tables (`milestone`, `app_meta`,
+> `audit_log`), so the four "interim" behaviours below are superseded: AppMeta
+> reads from Rev2, an audited write inserts a Rev2 `audit_log` row, and the
+> milestones read can port. The text below is kept as the record of what the gap
+> was and the interim that was in force.
 
-1. **Milestones** — the SQLite `Milestones` table and
-   `vw_PriorityMilestoneProgress` feed the priorities screen (`priority_outcomes`)
-   and the meeting view. Rev2 001..007 has no milestone table. *Interim:* keep
-   `priority_outcomes` on sqlite only; do not port it in this change. *Flagged
-   for follow-up:* either add a milestone table to Rev2 (a separate schema
-   change) or accept the priorities screen is sqlite-backed until then.
-2. **AppMeta** — `current_plan_year` and `dataset_provenance` are read from a
-   key/value table. Rev2 has no equivalent. *Interim:* these two small reads stay
-   sqlite-backed regardless of `DB_PROVIDER` (they are engine-agnostic config).
-   *Flagged:* decide whether an `app_meta` table belongs in Rev2.
-3. **AuditLog** — the change-management record. Rev2 001..007 has no audit
-   table. *Interim:* writes raise a clear error on mssql until the audit target
-   is decided, so the port never silently drops an audit row. *Flagged:* add an
-   audit table to Rev2, or confirm the existing table list already covers it.
+These are genuine gaps between the SQLite model and Rev2 as applied **[at the time
+this change was written; 000..007 only]** — all now closed by the reconciliation
+change. Each item is named, given an interim behaviour, and flagged for a
+follow-up rather than guessed at here:
+
+1. **Milestones** — `milestone` now keys each milestone to the `annual_priority`
+   instance (design R1 there). ~~keep `priority_outcomes` on sqlite only~~ —
+   superseded.
+2. **AppMeta** — `app_meta` now exists; `port._appmeta` reads it on mssql.
+   ~~stays sqlite-backed~~ — superseded.
+3. **AuditLog** — `audit_log` now exists; `repo._audit` writes it on mssql (the
+   "raise at the seam" interim removed). ~~raise a clear error~~ — superseded.
 4. **Meeting view** — the meeting surface is ICED (`MEETING_ENABLED=0`,
    404'd). Its reads (`meeting_updates`, `update_deltas`, `attention_list`) are
    ported only if they share a read model already ported for another screen;

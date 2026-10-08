@@ -413,10 +413,23 @@ def _audit(conn, person_id: int, action: str, entity_key: str, details: dict,
            reason: str = None, source: str = None, correlation_id: str = None):
     """Record one change. Reason, source and correlation id are the change-
     management fields (2026-10-07); all optional, so existing writers are
-    unchanged."""
+    unchanged.
+
+    On mssql the target is audit_log (change `rev2-full-reconciliation` /
+    008_app_layer.sql) and person_id is the Rev2 string id 'PERS-N', resolved
+    from the app's int PersonID; the rest of the shape is unchanged."""
     import json
 
     entity = _ACTION_ENTITY.get(action, "Unknown")
+    if _engine(conn) == "mssql":
+        pid = "PERS-%d" % person_id if person_id is not None else None
+        conn.execute(
+            "INSERT INTO dbo.audit_log (person_id, action, entity_type, entity_key, details, "
+            "reason, source, correlation_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+            (pid, action, entity, entity_key, json.dumps(details),
+             reason, source, correlation_id),
+        )
+        return
     conn.execute(
         "INSERT INTO AuditLog (PersonID, Action, EntityType, EntityKey, Details, "
         "Reason, Source, CorrelationID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

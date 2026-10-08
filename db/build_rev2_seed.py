@@ -276,6 +276,63 @@ def build(out=OUT):
     L.append("-- (no initiative_update rows in the committed sample)")
     L.append("GO")
 
+    # -----------------------------------------------------------------------
+    # App-layer additions (008_app_layer.sql; change `rev2-full-reconciliation`)
+    # -----------------------------------------------------------------------
+    L.append("\n-- app_meta: engine-agnostic config (AppMeta).")
+    for r in con.execute("SELECT [Key], [Value] FROM AppMeta ORDER BY [Key]"):
+        L.append("IF NOT EXISTS (SELECT 1 FROM dbo.app_meta WHERE [key] = %s)" % _s(r["Key"]))
+        L.append("INSERT INTO dbo.app_meta ([key], [value]) VALUES (%s, %s);"
+                 % (_s(r["Key"]), _s(r["Value"])))
+    L.append("GO")
+
+    L.append("\n-- audit_log: schema only (the app seed ships no audit rows).")
+    L.append("-- (no audit_log rows in the committed sample)")
+    L.append("GO")
+
+    L.append("\n-- role / person_role: the app's role vocabulary (Roles/PeopleRoles),")
+    L.append("-- mirrored by NAME because role_id is IDENTITY-generated in Rev2.")
+    for r in con.execute("SELECT RoleID, Name, Description FROM Roles ORDER BY RoleID"):
+        L.append("IF NOT EXISTS (SELECT 1 FROM dbo.role WHERE name = %s)" % _s(r["Name"]))
+        L.append("INSERT INTO dbo.role (name, description) VALUES (%s, %s);"
+                 % (_s(r["Name"]), _s(r["Description"])))
+    for c in con.execute("SELECT pr.PersonID, ro.Name FROM PeopleRoles pr "
+                         "JOIN Roles ro ON ro.RoleID = pr.RoleID ORDER BY pr.PersonID, ro.Name"):
+        pid = "PERS-%d" % c["PersonID"]
+        rname = c["Name"]
+        L.append("IF NOT EXISTS (SELECT 1 FROM dbo.person_role pr "
+                 "JOIN dbo.role ro ON ro.role_id = pr.role_id "
+                 "WHERE pr.person_id = %s AND ro.name = %s)" % (_s(pid), _s(rname)))
+        L.append("INSERT INTO dbo.person_role (person_id, role_id) "
+                 "SELECT %s, role_id FROM dbo.role WHERE name = %s;" % (_s(pid), _s(rname)))
+    L.append("GO")
+
+    L.append("\n-- source_area: the five source areas.")
+    for s in con.execute("SELECT SourceAreaID, Name FROM SourceAreas ORDER BY SourceAreaID"):
+        L.append("IF NOT EXISTS (SELECT 1 FROM dbo.source_area WHERE name = %s)" % _s(s["Name"]))
+        L.append("INSERT INTO dbo.source_area (name) VALUES (%s);" % _s(s["Name"]))
+    L.append("GO")
+
+    # milestone: keyed to the annual_priority instance (PRI-<Code>-FY<year>),
+    # resolving the SQLite priority row's (PlanYear, Code) so P01-FY2027's
+    # milestones never attach to another year's P01.
+    L.append("\n-- milestone: the per-year priority milestones.")
+    for m in con.execute(
+            "SELECT m.Name, m.Status, m.PlannedDate, m.DateMet, m.OwnerLabel, "
+            "       m.EvidenceURL, m.SortOrder, m.IsActive, p.Code, p.PlanYear "
+            "FROM Milestones m JOIN Priorities p ON p.PriorityID = m.PriorityID "
+            "ORDER BY p.Code, m.SortOrder, m.MilestoneID"):
+        apri = "PRI-%s-FY%d" % (m["Code"], m["PlanYear"])
+        L.append("IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = %s AND name = %s)"
+                 % (_s(apri), _s(m["Name"])))
+        L.append("INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, "
+                 "owner_label, evidence_url, sort_order, active_flag) VALUES "
+                 "(%s, %s, %s, %s, %s, %s, %s, %d, %d);"
+                 % (_s(apri), _s(m["Name"]), _s(m["Status"]), _d(m["PlannedDate"]),
+                    _d(m["DateMet"]), _s(m["OwnerLabel"]), _s(m["EvidenceURL"]),
+                    m["SortOrder"], m["IsActive"]))
+    L.append("GO")
+
     L.append("PRINT 'Rev2 seed applied.';")
     L.append("GO")
 

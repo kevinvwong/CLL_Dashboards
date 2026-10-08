@@ -18,7 +18,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CREDS = os.path.join(os.environ.get("TEMP", "/tmp"), "opencode", "rev2sql.txt")
 # Order matters: tables, constraints, cardinality, conformance, canonical
-# protection, read models, integrity report.
+# protection, read models, integrity report; the app-layer additions last (they
+# only reference tables 001 created).
 ORDER = [
     "001_rev2_tables.sql",
     "002_constraints.sql",
@@ -27,6 +28,7 @@ ORDER = [
     "005_canonical_protection.sql",
     "006_read_models.sql",
     "007_integrity_report.sql",
+    "008_app_layer.sql",
 ]
 
 
