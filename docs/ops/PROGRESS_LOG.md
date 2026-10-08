@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **145** changes in total.
+- **3** days of work recorded, **146** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 45 what we added; 30 what we fixed; 5 appearance and design; 20 behind the scenes; 12 quality and testing; 16 documentation; 17 more changes.
+- Across all days: 46 what we added; 30 what we fixed; 5 appearance and design; 20 behind the scenes; 12 quality and testing; 16 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -56,6 +56,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Close the picker escalation with a PIN, add local roles, and extend the change log
 - A persistent left rail with a mobile tab bar
 - An in-app documentation set, single-sourced from docs/*.md
+- Split the four views of the portfolio onto their own pages
 
 **What we fixed**
 
