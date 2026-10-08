@@ -22,6 +22,39 @@ import sqlite3
 from app.config import Config
 
 
+def engine(conn) -> str:
+    """The engine tag for a connection: 'sqlite' or 'mssql'.
+
+    Each read/write asks the CONNECTION this, not `Config()`, so the choice is
+    made once at connect and cannot drift per call (change `adopt-rev2-store`
+    D1). A mssql connection is an MssqlConnection wrapper (`engine` attr); a
+    sqlite connection is anything else.
+    """
+    return getattr(conn, "engine", "sqlite")
+
+
+def dialect(conn) -> dict:
+    """The dialect helpers for a connection's engine (see DIALECT)."""
+    return DIALECT[engine(conn)]
+
+
+#: Dialect helpers, the single place cross-engine differences live (change
+#: `adopt-rev2-store` D1/1.2). `today_sql` reads the clock the data was written
+#: with - UTC - in each dialect; queries use it so ageing is on one clock on
+#: both engines. `today_clause` is the same comparison inline for filtering a
+#: date column >= today. Everything else about a port is explicit SQL per engine.
+DIALECT = {
+    "sqlite": {
+        "today": "SELECT date('now')",
+        "today_clause": "date({col}) >= date('now')",
+    },
+    "mssql": {
+        "today": "SELECT CAST(GETUTCDATE() AS date)",
+        "today_clause": "CAST({col} AS date) >= CAST(GETUTCDATE() AS date)",
+    },
+}
+
+
 class _Row(dict):
     """A row that supports both `row['Name']` and `row[0]` / `dict(row)`.
 
@@ -74,6 +107,8 @@ class MssqlConnection:
     or call fetchone/fetchall.
     """
 
+    engine = "mssql"
+
     def __init__(self, raw, write=False):
         self._conn = raw
         self._conn.autocommit(False)
@@ -120,15 +155,20 @@ def _mssql_connect(write=False):
     return MssqlConnection(conn, write=write)
 
 
-def connect(write: bool = False):
+def connect(write: bool = False, provider: str | None = None):
     """Open the configured store with the pragmas every caller needs.
 
     * sqlite: foreign keys on, WAL, 5 s busy timeout, rows as sqlite3.Row;
       ``write=True`` takes the write lock up front (BEGIN IMMEDIATE).
     * mssql: a connection to Rev2 on Azure SQL; ``write=True`` begins a
       transaction the caller commits.
+
+    ``provider`` overrides DB_PROVIDER for this one connection. The AppMeta
+    fallback uses it: under DB_PROVIDER=mssql it still needs a sqlite handle for
+    the engine-agnostic config Rev2 has no table for (design Open issue 2), and
+    must not re-enter connect() and open a second mssql connection.
     """
-    if Config().DB_PROVIDER == "mssql":
+    if (provider or Config().DB_PROVIDER) == "mssql":
         return _mssql_connect(write=write)
 
     conn = sqlite3.connect(Config().DB_PATH, timeout=5.0)

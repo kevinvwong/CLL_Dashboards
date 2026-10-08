@@ -11,7 +11,7 @@ a progress update never modifies its initiative.
 
 import sqlite3
 
-from app.db import connect
+from app.db import connect, engine as _engine
 
 # The vocabulary the TeamInitiativeUpdates CHECK constraint enforces.
 STATUSES = (
@@ -73,17 +73,39 @@ def _friendly(exc: sqlite3.IntegrityError) -> RuleError:
     return RuleError("That change does not follow the initiative rules.")
 
 
+def _friendly_integrity(exc) -> RuleError:
+    """The existing sqlite constraint mapper (unchanged wording)."""
+    return _friendly(exc)
+
+
+def _friendly_mssql(exc) -> RuleError:
+    """Map a pymssql constraint/integrity failure to the same actionable
+    messages the sqlite path produces (change `adopt-rev2-store` D6). Keyed on
+    the constraint/column names T-SQL reports."""
+    text = str(exc)
+    if "progress" in text.lower() or "ck_update_progress" in text or "ck_initiative_progress" in text:
+        return RuleError("Percent must be between 0 and 100.")
+    if "ck_initiative_code" in text or "unique" in text.lower():
+        return RuleError("That code is already in use.")
+    if "foreign key" in text.lower() or text.lower().startswith("fk_"):
+        return RuleError("That change references something that does not exist.")
+    return RuleError("That change does not follow the initiative rules.")
+
+
 def write(body, on_integrity=None):
     """Run ``body(conn)`` as one atomic write. Returns what the body returns.
 
     This is the one write seam (design D1). It owns the whole transaction
     discipline so that each write below states only its own rules:
 
-    * opens a write connection (``BEGIN IMMEDIATE``, from db.connect);
+    * opens a write connection (``BEGIN IMMEDIATE`` on sqlite; a transaction on
+      mssql, from db.connect);
     * commits when the body returns;
     * rolls back on any failure and closes the connection;
     * maps a constraint failure to an actionable RuleError, never letting a
-      driver error escape -- callers are routes and templates, not tests.
+      driver error escape -- callers are routes and templates, not tests. The
+      mapping is engine-aware: sqlite raises sqlite3.IntegrityError, mssql raises
+      a pymssql error, and both land on the same messages (D6).
 
     ``on_integrity`` lets a write supply its own mapping when the shared one
     cannot tell its cases apart (for example, a duplicate code versus an
@@ -100,8 +122,16 @@ def write(body, on_integrity=None):
         conn.rollback()
         mapper = on_integrity or _friendly
         raise mapper(exc) from exc
-    except Exception:
+    except Exception as exc:
         conn.rollback()
+        # Only an integrity/constraint failure maps to a RuleError. A RuleError
+        # the body raised, or any other real error (a ValueError, a bug),
+        # propagates unchanged on both engines.
+        if isinstance(exc, RuleError):
+            raise
+        if _engine(conn) == "mssql" and not isinstance(exc, sqlite3.IntegrityError):
+            mapper = on_integrity or _friendly_mssql
+            raise mapper(exc) from exc
         raise
     finally:
         conn.close()

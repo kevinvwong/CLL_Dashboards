@@ -7,7 +7,8 @@ provides, so it lives here. Writes go through app/repo.py instead.
 
 import datetime as _dt
 
-from app.db import connect
+from app.db import connect, engine
+from app import port
 
 
 def _conn():
@@ -25,7 +26,8 @@ def _today() -> _dt.date:
     so the comparison is on one clock. See the meeting-view spec.
     """
     with connect() as conn:
-        return _dt.date.fromisoformat(conn.execute("SELECT date('now')").fetchone()[0])
+        sql = port.dialect(conn)["today"]
+        return _dt.date.fromisoformat(str(conn.execute(sql).fetchone()[0]))
 
 
 
@@ -36,21 +38,7 @@ def goal_tiles() -> list[dict]:
     it ever carries the same goal tag more than once.
     """
     with _conn() as conn:
-        rows = conn.execute(
-            """
-            SELECT g.GoalNumber,
-                   g.ShortName,
-                   g.FullName,
-                   COUNT(DISTINCT k.TeamInitiativeID) AS InitiativeCount
-            FROM Goals g
-            LEFT JOIN TeamInitiativeGoals kg ON kg.GoalID = g.GoalID
-            LEFT JOIN TeamInitiatives k
-                   ON k.TeamInitiativeID = kg.TeamInitiativeID AND k.IsActive = 1
-            GROUP BY g.GoalID, g.GoalNumber, g.ShortName, g.FullName
-            ORDER BY g.GoalNumber
-            """
-        ).fetchall()
-    return [dict(r) for r in rows]
+        return port.goal_tiles(conn)
 
 
 def priority_tiles() -> list[dict]:
@@ -60,25 +48,7 @@ def priority_tiles() -> list[dict]:
     so every priority is shown and labelled with the year it belongs to.
     """
     with _conn() as conn:
-        rows = conn.execute(
-            """
-            SELECT p.PriorityName,
-                   p.PlanYear,
-                   p.Description,
-                   p.Code, p.FullTitle, p.Measure, p.Target, p.Cadence,
-                   p.OwnerLabel, p.Colour,
-                   COUNT(DISTINCT k.TeamInitiativeID) AS InitiativeCount
-            FROM Priorities p
-            LEFT JOIN TeamInitiativePriorities ip ON ip.PriorityID = p.PriorityID
-            LEFT JOIN TeamInitiatives k
-                   ON k.TeamInitiativeID = ip.TeamInitiativeID AND k.IsActive = 1
-            GROUP BY p.PriorityID, p.PriorityName, p.PlanYear, p.Description,
-                     p.Code, p.FullTitle, p.Measure, p.Target, p.Cadence,
-                     p.OwnerLabel, p.Colour
-            ORDER BY p.PriorityName
-            """
-        ).fetchall()
-    return [dict(r) for r in rows]
+        return port.priority_tiles(conn)
 
 
 def blueprint_priorities() -> list[dict]:
@@ -131,9 +101,7 @@ def dataset_provenance() -> str:
     reads 'unknown', which is also not 'confirmed'.
     """
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT Value FROM AppMeta WHERE Key = 'dataset_provenance'").fetchone()
-    return row["Value"] if row else "unknown"
+        return port.dataset_provenance(conn)
 
 
 def current_plan_year() -> int | None:
@@ -143,20 +111,13 @@ def current_plan_year() -> int | None:
     plan year. Set in the seed; None if unset.
     """
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT Value FROM AppMeta WHERE Key = 'current_plan_year'").fetchone()
-    try:
-        return int(row["Value"]) if row else None
-    except (TypeError, ValueError):
-        return None
+        return port.current_plan_year(conn)
 
 
 def plan_years() -> list[int]:
     """Every plan year that has priorities, newest first."""
     with _conn() as conn:
-        return [r["PlanYear"] for r in conn.execute(
-            "SELECT DISTINCT PlanYear FROM Priorities "
-            "WHERE Code IS NOT NULL ORDER BY PlanYear DESC")]
+        return port.plan_years(conn)
 
 
 def priority_outcomes(year: int | None = None) -> list[dict]:
@@ -233,22 +194,12 @@ def initiative_signals(limit: int = 12) -> list[dict]:
 
 def goal_by_number(goal_number: int):
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT GoalNumber, ShortName, FullName, Description "
-            "FROM Goals WHERE GoalNumber = ?",
-            (goal_number,),
-        ).fetchone()
-    return dict(row) if row else None
+        return port.goal_by_number(conn, goal_number)
 
 
 def priority_by_name(name: str):
     with _conn() as conn:
-        row = conn.execute(
-            "SELECT PriorityName, PlanYear, Description "
-            "FROM Priorities WHERE PriorityName = ?",
-            (name,),
-        ).fetchone()
-    return dict(row) if row else None
+        return port.priority_by_name(conn, name)
 
 
 # --- list screens (tasks 4.1-4.3) ----------------------------------------

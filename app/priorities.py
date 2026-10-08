@@ -98,5 +98,24 @@ def number(name: str) -> str:
     return "Priority %s" % n
 
 
+#: code -> short name, the inverse of PRIORITIES. Rev2 keys a priority by code
+#: (priority_code) and stores the full title as its name; the app keys a
+#: priority by its short name. This resolves one to the other (change
+#: `adopt-rev2-store`), so a Rev2 row can be projected into the app's key shape.
+_SHORT_BY_CODE = {entry[0]: name for name, entry in PRIORITIES.items()}
+TITLE_BY_CODE = {entry[0]: entry[1] for entry in PRIORITIES.values()}
+
+
+def short_for_code(code_: str) -> str:
+    """The app's short name for a priority code ('P05' -> 'Data'), '' if unknown."""
+    return _SHORT_BY_CODE.get((code_ or "").strip(), "")
+
+
+def title_for_code(code_: str) -> str:
+    """The canonical full title for a priority code ('P05' -> 'Data-Informed
+    Action'), '' if unknown. Matches Rev2's annual_priority.priority_name."""
+    return TITLE_BY_CODE.get((code_ or "").strip(), "")
+
+
 #: Register the template filters, so a template can write `| priority_label`.
 FILTERS = {"code": code, "title": title, "description": description, "label": label}
