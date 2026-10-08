@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **3** days of work recorded, **141** changes in total.
+- **3** days of work recorded, **142** changes in total.
 - Most recent day: **Wednesday 07 October 2026**.
-- Across all days: 44 what we added; 29 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 15 documentation; 17 more changes.
+- Across all days: 44 what we added; 30 what we fixed; 5 appearance and design; 19 behind the scenes; 12 quality and testing; 15 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -73,6 +73,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Priority chips render their real colour, not var(var(...))
 - Render the nav and goal SVGs, not their escaped text
 - Priority chips keep a readable label over their swatch
+- Let the content column shrink, and fix the rail item contrast
 
 **Appearance and design**
 
