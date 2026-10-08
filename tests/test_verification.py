@@ -67,11 +67,14 @@ def test_the_drawer_traps_and_restores_focus():
     assert 'addEventListener("close"' in base
 
 
-def test_the_nav_collapse_is_keyboard_operable():
-    """A checkbox and label, so it needs no JavaScript and is reachable."""
+def test_the_nav_is_reachable_and_has_a_skip_link():
+    """The rail is a real nav; a skip link past it is the app-shell contract
+    (supersedes the checkbox-collapse test, 2026-10-07)."""
     base = open(BASE, encoding="utf-8").read()
-    assert 'id="nav-toggle"' in base
-    assert 'for="nav-toggle"' in base
+    assert 'aria-label="Primary"' in base
+    assert 'class="skip-link"' in base
+    assert 'href="#content"' in base
+    assert 'id="content"' in base
 
 
 def test_the_user_menu_is_a_details_element():

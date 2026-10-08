@@ -349,10 +349,36 @@ a { color: var(--accent); }
   .brand::before { display: none; }
 }
 
-.site-nav { display: flex; gap: 0.9rem; }
-.site-nav a { font-family: var(--font-sans); font-weight: 500; color: var(--on-chrome);
-              text-decoration: none; }
-.site-nav a:hover { text-decoration: underline; }
+/* --- the app shell: a persistent left rail (app-shell, 2026-10-07) ---------
+   The rail holds the primary destinations; the branded header sits above it.
+   Desktop >=1025px shows the rail beside the content; tablet 768-1024 shows it
+   icon-only; mobile <=767px replaces it with the bottom tab bar (.tabbar). One
+   `nav[aria-label=Primary]` is visible per breakpoint (see the media queries). */
+.app-shell { display: grid; grid-template-columns: 15rem 1fr; align-items: start; }
+.site-nav {
+  position: sticky; top: 0; align-self: start;
+  display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-4) var(--space-3);
+  border-right: 1px solid var(--line);
+}
+.nav-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.site-nav a {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);
+  font-family: var(--font-sans); font-weight: 500; font-size: var(--text-sm);
+  color: var(--ink-muted); text-decoration: none;
+}
+.site-nav a:hover { background: var(--surface-hover); color: var(--ink); }
+.site-nav a[aria-current="page"] { background: var(--surface-selected); color: var(--ink); font-weight: 600; }
+.site-nav .nav-icon { color: var(--ink-subtle); }
+.site-nav a[aria-current="page"] .nav-icon { color: var(--accent); }
+.nav-group-label {
+  margin: var(--space-3) 0 var(--space-1); padding: 0 var(--space-3);
+  font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--ink-subtle);
+}
+/* Mobile bottom tab bar. Hidden until the <=767px breakpoint. */
+.tabbar { display: none; }
 
 /* The whoami/user-menu block is navy chrome in the header. Scoped to
    .site-header: .whoami and .person-name are ALSO used on light-ground pages
@@ -1146,41 +1172,57 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 @media print {
   }
 
-/* ---- Responsive layout (task 2.5) -----------------------------------------
-   Three layouts: up to 640px stacked with a collapsed nav; 641-1024px two
-   columns; above 1024px full width. No page scrolls horizontally at any width. */
+/* ---- Responsive layout (app-shell, 2026-10-07) -----------------------------
+   Desktop >=1025px: rail + content. Tablet 768-1024px: rail icon-only.
+   Mobile <=767px: rail hidden, bottom tab bar. No page scrolls horizontally. */
 main { padding-inline: var(--space-5); }
 .site-header { flex-wrap: wrap; }
 body { overflow-x: hidden; }
 
-/* Collapsing nav: a checkbox toggles the list with no JavaScript, so it works
-   before hydration and cannot break. */
-.nav-toggle { display: none; }
-.nav-toggle-label {
-  display: none;
-  cursor: pointer;
-  padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
+/* The skip link (app-shell): off-screen until focused, then it drops into view
+   over the header. */
+.skip-link {
+  position: absolute; left: var(--space-3); top: -3rem; z-index: 100;
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--ink); font-weight: 600;
+  transition: top 0.15s var(--ease-standard);
 }
+.skip-link:focus { top: var(--space-2); }
 
-@media (max-width: 640px) {
-  .nav-toggle-label { display: inline-block; }
-  .site-nav {
-    display: none;
-    flex-basis: 100%;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-2) 0;
+@media (max-width: 767px) {
+  /* Mobile: the rail is replaced by the bottom tab bar. */
+  .app-shell { display: block; }
+  .site-nav { display: none; }
+  .tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    justify-content: space-around; align-items: stretch;
+    background: var(--chrome); border-top: 1px solid var(--chrome-divider);
+    padding-bottom: env(safe-area-inset-bottom);
   }
-  .nav-toggle:checked ~ .site-nav { display: flex; }
+  .tabbar a {
+    flex: 1 1 0; min-height: 44px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px; padding: var(--space-1) 0;
+    color: var(--on-chrome); text-decoration: none; font-size: var(--text-xs);
+  }
+  .tabbar a[aria-current="page"] { color: var(--focus-on-chrome); }
+  .tabbar .nav-icon { color: currentColor; }
+  /* Keep content clear of the fixed bar and the gesture area. */
+  body { padding-bottom: calc(3.85rem + env(safe-area-inset-bottom)); }
   .tiles { grid-template-columns: 1fr; }
   .initiative-row { grid-template-columns: 1fr; }
   .site-header { gap: var(--space-2); }
+  .build-stamp { display: none; }
 }
 
-@media (min-width: 641px) and (max-width: 1024px) {
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Tablet: icon-only rail. The label is hidden visually but kept for AT. */
+  .app-shell { grid-template-columns: 3.5rem 1fr; }
+  .site-nav { padding: var(--space-3) var(--space-1); }
+  .site-nav a { justify-content: center; padding: var(--space-2); }
+  .site-nav .nav-label { position: absolute; width: 1px; height: 1px; overflow: hidden;
+                         clip: rect(0 0 0 0); white-space: nowrap; }
+  .nav-group-label { position: absolute; width: 1px; height: 1px; overflow: hidden;
+                     clip: rect(0 0 0 0); white-space: nowrap; }
   .tiles { grid-template-columns: repeat(2, 1fr); }
   .oct16-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -1188,6 +1230,7 @@ body { overflow-x: hidden; }
 @media (min-width: 1025px) {
   .tiles { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
 }
+
 
 /* ---- Focus and overlay behaviour (task 2.6) -------------------------------
    A visible focus ring on every interactive element, and the drawer/modal
@@ -1209,7 +1252,7 @@ body.overlay-open { overflow: hidden; }
 
 @media print {
   :focus-visible { outline: none; }
-  .site-nav, .nav-toggle-label { display: none; }
+  .site-nav, .tabbar, .skip-link { display: none; }
 }
 
 /* ---- Section heading pattern -----------------------------------------------

@@ -33,11 +33,15 @@ def test_the_active_destination_is_marked(logged_in):
     assert 'aria-current="page"' in body
 
 
-def test_the_nav_collapses_at_a_narrow_width():
+def test_the_nav_is_the_left_rail_and_a_mobile_tab_bar():
+    """The app shell (2026-10-07): a persistent rail on desktop, a bottom tab
+    bar on mobile. Supersedes the checkbox-collapse nav, which this replaces."""
     from app.main import templates
     css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
-    assert ".nav-toggle:checked ~ .site-nav" in css
-    assert "@media (max-width: 640px)" in css
+    assert ".app-shell" in css and ".site-nav" in css, "no left rail"
+    assert ".tabbar" in css, "no mobile bottom tab bar"
+    assert "@media (max-width: 767px)" in css, "no mobile breakpoint"
+    assert ".nav-toggle" not in css, "the retired checkbox nav is still styled"
 
 
 # --- 5.2 the stable outcomes route and breadcrumbs --------------------------
@@ -148,7 +152,8 @@ def test_the_meeting_route_is_iced(logged_in):
 def test_the_outcomes_page_prints_without_chrome():
     css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
     assert "@media print" in css
-    assert ".site-nav, .nav-toggle-label { display: none; }" in css
+    # The rail and the mobile tab bar are chrome, hidden in print (app-shell).
+    assert ".site-nav, .tabbar, .skip-link { display: none; }" in css
 
 
 def test_outcomes_shows_the_six_outcomes(logged_in):

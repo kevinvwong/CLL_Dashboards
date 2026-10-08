@@ -38,9 +38,10 @@ def _base():
 # when the register was approved.
 
 def test_the_three_breakpoints_are_defined():
+    """Mobile ≤767, tablet 768-1024, desktop ≥1025 (app-shell, 2026-10-07)."""
     css = _sheet()
-    assert "@media (max-width: 640px)" in css
-    assert "@media (min-width: 641px) and (max-width: 1024px)" in css
+    assert "@media (max-width: 767px)" in css
+    assert "@media (min-width: 768px) and (max-width: 1024px)" in css
     assert "@media (min-width: 1025px)" in css
 
 
@@ -49,13 +50,15 @@ def test_no_horizontal_overflow_guard():
     assert "overflow-x: hidden" in css
 
 
-def test_the_nav_collapses_without_javascript():
-    """A checkbox toggle, so the nav works before hydration."""
+def test_the_nav_is_a_rail_and_a_tab_bar_not_a_checkbox():
+    """Supersedes the checkbox-collapse nav: the shell is a grid rail plus a
+    mobile tab bar (app-shell, 2026-10-07)."""
     base = _base()
-    assert 'class="nav-toggle"' in base
-    assert 'class="nav-toggle-label"' in base
+    assert 'class="app-shell"' in base
+    assert 'class="site-nav"' in base
+    assert 'class="tabbar"' in base
     css = _sheet()
-    assert ".nav-toggle:checked ~ .site-nav" in css
+    assert ".nav-toggle" not in css, "the retired checkbox nav is still styled"
 
 
 # --- 2.6 focus and overlay behaviour ---------------------------------------

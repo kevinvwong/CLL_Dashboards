@@ -9,10 +9,17 @@
   <script src="/static/htmx.min.js" defer></script>
 </head>
 <body>
+  {# Skip link (app-shell 2026-10-07): the rail adds destinations before the
+     content, so a keyboard user needs a way past them. #}
+  <a class="skip-link" href="#content">Skip to content</a>
   {# The sample-data banner is REMOVED (2026-10-07): the initiatives are now an
      approved register, so "these initiatives are invented for this prototype,
      not governance-approved records" was no longer true. The Outcomes page keeps
      its own "Illustrative" marker - that page is separate, still-hardcoded data. #}
+  {# The branded app bar stays full width across the top (app-shell 2026-10-07):
+     the logo and gold rule are the strongest brand asset, and the rail sits
+     BELOW them rather than replacing them. It carries brand, search, the user
+     menu and the build stamp; the primary destinations live in the rail. #}
   <header class="site-header">
     <a class="brand" href="/"><span class="visually-hidden">Georgia Tech </span>Initiative Dashboard</a>
     {# Global search (overhaul 3.5): a dialog opened with Cmd/Ctrl+K. The input
@@ -31,41 +38,22 @@
       </form>
       <div id="search-results" role="listbox" aria-label="Search results"><p class="search-hint">Type to search.</p></div>
     </dialog>
-    {# Collapsing nav (task 2.5): a checkbox and label toggle the list with no
-       JavaScript, so the nav works before hydration and cannot break. #}
-    <input type="checkbox" id="nav-toggle" class="nav-toggle" hidden>
-    <label for="nav-toggle" class="nav-toggle-label">Menu</label>
-    <nav class="site-nav" aria-label="Primary">
-      {# The hybrid nav (blueprint-redesign 5.1): the blueprint home, the two
-         indexes, the meeting, and the outcomes. Active derived from the path.
-         Each carries a small currentColor icon (blueprint Global), decorative:
-         the label is the accessible name. #}
-      <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>{{ "overview" | nav_icon }}Overview</a>
-      <a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}Initiatives</a>
-      <a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>{{ "people" | nav_icon }}People</a>
-      {# Meeting is ICED (2026-10-06): hidden unless MEETING_ENABLED is set. #}
-      {% if meeting_enabled %}
-      <a href="/meeting"{% if section == "meeting" %} aria-current="page"{% endif %}>{{ "meeting" | nav_icon }}Meeting</a>
-      {% endif %}
-      <a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>{{ "outcomes" | nav_icon }}Outcomes</a>
-      {# Data checks is an ADMIN entry now, not primary nav (5.4/3.4), with the
-         count of failing checks as a badge. It never appears for a non-admin. #}
-      {% if may_admin %}
-      <a class="nav-admin" href="/checks">Checks{% if failing_checks %} <span class="badge badge-warn">{{ failing_checks }}</span>{% endif %}</a>
-      <a class="nav-admin" href="/changes"{% if section == "changes" %} aria-current="page"{% endif %}>Change log</a>
-      {% endif %}
-    </nav>
     <div class="whoami">
       {% if person %}
-      {# The user menu (5.3). Switch user lives here, not in the primary nav. #}
+      {# The user menu (5.3). Switch user lives here, not in the primary nav.
+         The admin extras (Checks, Change log, Meeting) live here too on mobile,
+         where the rail is a bottom tab bar with only the primary five. #}
       <details class="user-menu">
         <summary class="person-name" aria-label="User menu for {{ person.Name }}">{{ person.Name }}</summary>
         <div class="user-menu-panel">
           <p class="user-menu-name">{{ person.Name }}{% if person.Title %} <span class="user-menu-role">{{ person.Title }}</span>{% endif %}</p>
-          {# Admin actions live in the menu, not the primary nav (5.1/5.4). #}
           {% if may_admin %}
           <a href="/team-initiatives/new">New initiative</a>
+          <a class="nav-admin" href="/checks">Checks{% if failing_checks %} <span class="badge badge-warn">{{ failing_checks }}</span>{% endif %}</a>
+          <a class="nav-admin" href="/changes">Change log</a>
           {% endif %}
+          {% if meeting_enabled %}<a href="/meeting">Meeting</a>{% endif %}
+          <a href="/guide">Guide</a>
           <a href="/whoami">Switch user</a>
         </div>
       </details>
@@ -78,23 +66,62 @@
     {% endif %}
   </header>
 
-  <main>
-    {# Breadcrumbs below the top level (5.2). Pages that want them pass `crumbs`,
-       a list of (label, href|None); the last is the current page. Inside <main>
-       so they share its gutter - outside, they sat at x = 0 against the window
-       edge. #}
-    {% if crumbs %}
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="/">Overview</a>
-      {% for label, href in crumbs %}
-      <span class="sep" aria-hidden="true">›</span>
-      {% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}<span aria-current="page">{{ label }}</span>{% endif %}
-      {% endfor %}
+  {# The app shell (app-shell 2026-10-07): a persistent left rail of primary
+     destinations beside the content on desktop, icon-only on tablet, and a
+     bottom tab bar on mobile. One mechanism (the rail) with one vocabulary; the
+     bottom bar is the same destinations for a thumb. Only one of the two
+     `nav[aria-label="Primary"]` elements is visible per breakpoint, so a screen
+     reader is never given two primary navs at once. #}
+  <div class="app-shell">
+    <nav class="site-nav" aria-label="Primary">
+      <ul class="nav-list">
+        <li><a href="/"{% if section == "home" %} aria-current="page"{% endif %}>{{ "overview" | nav_icon }}<span class="nav-label">Overview</span></a></li>
+        <li><a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}<span class="nav-label">Initiatives</span></a></li>
+        <li><a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>{{ "people" | nav_icon }}<span class="nav-label">People</span></a></li>
+        <li><a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>{{ "outcomes" | nav_icon }}<span class="nav-label">Outcomes</span></a></li>
+        {# Meeting is ICED (2026-10-06): hidden unless MEETING_ENABLED is set. #}
+        {% if meeting_enabled %}
+        <li><a href="/meeting"{% if section == "meeting" %} aria-current="page"{% endif %}>{{ "meeting" | nav_icon }}<span class="nav-label">Meeting</span></a></li>
+        {% endif %}
+        <li><a href="/guide"{% if section == "guide" %} aria-current="page"{% endif %}>{{ "guide" | nav_icon }}<span class="nav-label">Guide</span></a></li>
+      </ul>
+      {% if may_admin %}
+      <p class="nav-group-label" id="nav-admin-label">Admin</p>
+      <ul class="nav-list" aria-labelledby="nav-admin-label">
+        <li><a class="nav-admin" href="/checks"{% if section == "checks" %} aria-current="page"{% endif %}>{{ "checks" | nav_icon }}<span class="nav-label">Checks{% if failing_checks %} <span class="badge badge-warn">{{ failing_checks }}</span>{% endif %}</span></a></li>
+        <li><a class="nav-admin" href="/changes"{% if section == "changes" %} aria-current="page"{% endif %}>{{ "changelog" | nav_icon }}<span class="nav-label">Change log</span></a></li>
+        <li><a class="nav-admin" href="/team-initiatives/new">{{ "new" | nav_icon }}<span class="nav-label">New initiative</span></a></li>
+      </ul>
+      {% endif %}
     </nav>
-    {% endif %}
 
-    {% block content %}{% endblock %}
-  </main>
+    <main id="content">
+      {# Breadcrumbs below the top level (5.2). Pages that want them pass `crumbs`,
+         a list of (label, href|None); the last is the current page. #}
+      {% if crumbs %}
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Overview</a>
+        {% for label, href in crumbs %}
+        <span class="sep" aria-hidden="true">›</span>
+        {% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}<span aria-current="page">{{ label }}</span>{% endif %}
+        {% endfor %}
+      </nav>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {# Mobile: the same primary destinations as a bottom tab bar (app-shell
+     2026-10-07). Five at most - the admin extras and Meeting stay in the user
+     menu. Hidden on desktop/tablet by CSS. #}
+  <nav class="tabbar" aria-label="Primary">
+    <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>{{ "overview" | nav_icon }}<span class="tab-label">Overview</span></a>
+    <a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}<span class="tab-label">Initiatives</span></a>
+    <a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>{{ "people" | nav_icon }}<span class="tab-label">People</span></a>
+    <a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>{{ "outcomes" | nav_icon }}<span class="tab-label">Outcomes</span></a>
+    <a href="/guide"{% if section == "guide" %} aria-current="page"{% endif %}>{{ "guide" | nav_icon }}<span class="tab-label">Guide</span></a>
+  </nav>
 
   <footer class="site-footer">
     <span class="footer-note">CLL Initiative Dashboard</span>

@@ -100,6 +100,12 @@ _NAV_ICONS = {
                  '<path d="M8 19v-6M12 19V9M16 19v-3"/>'),  # bar chart
     "meeting": ('<rect x="4" y="5" width="16" height="15" rx="2"/>'
                 '<path d="M4 9h16M8 3v4M16 3v4"/>'),  # calendar
+    "guide": ('<path d="M4 5h7v14H4z"/><path d="M13 5h7v14h-7z"/>'
+              '<path d="M11 5v14"/>'),  # open book
+    "checks": ('<path d="M5 12.5l4 4 10-11"/>'),  # check
+    "changelog": ('<path d="M12 7v5l3 2"/>'
+                  '<circle cx="12" cy="12" r="8"/>'),  # clock
+    "new": ('<path d="M12 5v14M5 12h14"/>'),  # plus
 }
 
 
