@@ -23,6 +23,10 @@ class Config:
         # named; db.get_connection() has no default of its own, so nothing can
         # open a different file by accident (see the `data-connection` spec).
         self.DB_PATH = os.getenv("DB_PATH", "./cll_initiatives.db")
+        # Where the in-app guide renders its markdown from (the repo's docs/).
+        # Like DB_PATH, a single named path so the app and the renderer cannot
+        # disagree; the deploy sets DOCS_PATH to the shipped copy.
+        self.DOCS_PATH = os.getenv("DOCS_PATH", "./docs")
         self.BACKUP_DIR = os.getenv("BACKUP_DIR", "./backups")
         self.PORT = int(os.getenv("PORT", "8000"))
         # The meeting surface is ICED (2026-10-06): hidden from the nav and its

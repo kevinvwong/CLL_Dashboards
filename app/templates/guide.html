@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ current.title if current else "Guide" }} — CLL Initiative Dashboard{% endblock %}
+{% block content %}
+{#
+  The in-app guide (2026-10-07). Single-sourced from the repository's own
+  markdown (docs/*.md) through a manifest, so it cannot drift from the docs a
+  developer reads. The article is capped to a reading measure; the chapter list
+  is a secondary column on desktop and a disclosure on narrow screens.
+#}
+<div class="guide-layout">
+
+  <article class="guide-article prose">
+    {% if current %}
+    <p class="guide-kicker">{{ current.group }}</p>
+    <h1>{{ current.title }}</h1>
+    {{ current.html }}
+    {% else %}
+    <p class="guide-kicker">Documentation</p>
+    <h1>Guide</h1>
+    <p class="guide-intro">
+      How the CLL Initiative Dashboard works, and how to use it. The guide is
+      read from the project's own documentation, so it stays in step with the app.
+    </p>
+    {% for group, entries in groups.items() %}
+    <section class="guide-group">
+      <h2>{{ group }}</h2>
+      <ul class="guide-index">
+        {% for e in entries %}
+        <li>
+          {% if e.exists %}
+          <a href="/guide/{{ e.slug }}">{{ e.title }}</a>
+          {% else %}
+          <span class="guide-missing">{{ e.title }} <em>(not available)</em></span>
+          {% endif %}
+          {% if e.audience == "technical" %}<span class="chip chip-inline">technical</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+    {% endif %}
+  </article>
+
+  <nav class="guide-toc" aria-label="Guide chapters">
+    <p class="guide-toc-label">Chapters</p>
+    {% for group, entries in groups.items() %}
+    <p class="guide-toc-group">{{ group }}</p>
+    <ul>
+      {% for e in entries %}
+      <li>{% if e.exists %}<a href="/guide/{{ e.slug }}"{% if current and current.slug == e.slug %} aria-current="page"{% endif %}>{{ e.title }}</a>{% else %}<span class="guide-missing">{{ e.title }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% endfor %}
+  </nav>
+
+</div>
+{% endblock %}

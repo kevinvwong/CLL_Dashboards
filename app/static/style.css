@@ -1235,6 +1235,48 @@ body { overflow-x: hidden; }
   .tiles { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
 }
 
+/* ---- the in-app guide (2026-10-07) ----------------------------------------- */
+/* A reading column capped to a comfortable measure, with the chapter list as a
+   sticky secondary column on wide screens. */
+.guide-layout { display: grid; grid-template-columns: minmax(0, 1fr) 15rem; gap: var(--space-6); align-items: start; }
+.guide-article { max-width: 72ch; }
+.guide-kicker { margin: 0 0 var(--space-1); font-size: var(--text-xs); text-transform: uppercase;
+                letter-spacing: 0.04em; color: var(--gold-ink); font-weight: 600; }
+.guide-intro { color: var(--ink-muted); }
+.guide-group { margin-top: var(--space-5); }
+.guide-index { list-style: none; margin: 0; padding: 0; }
+.guide-index li { padding: var(--space-2) 0; border-bottom: 1px solid var(--line); }
+.guide-toc { position: sticky; top: var(--space-4); font-size: var(--text-sm); }
+.guide-toc-label { margin: 0 0 var(--space-2); font-weight: 600; }
+.guide-toc-group { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-xs);
+                   text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-subtle); }
+.guide-toc ul { list-style: none; margin: 0; padding: 0; }
+.guide-toc li { margin: 0 0 0.2rem; }
+.guide-toc a { color: var(--ink-muted); text-decoration: none; }
+.guide-toc a:hover { text-decoration: underline; color: var(--ink); }
+.guide-toc a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+.guide-missing { color: var(--ink-subtle); font-style: italic; }
+.chip-inline { margin-left: 0.4rem; }
+
+/* Rendered markdown: give it the same voice as the rest of the app. */
+.prose h2 { font-family: var(--font-display); margin-top: var(--space-5); }
+.prose h3 { font-family: var(--font-display); margin-top: var(--space-4); }
+.prose p, .prose li { line-height: 1.6; }
+.prose code { font-family: var(--font-mono); font-size: 0.9em;
+              background: var(--surface-sunken); padding: 0.05em 0.3em; border-radius: 3px; }
+.prose pre { background: var(--surface-sunken); padding: var(--space-3); border-radius: var(--radius-sm);
+             overflow-x: auto; }
+.prose pre code { background: none; padding: 0; }
+.prose table { border-collapse: collapse; width: 100%; }
+.prose th, .prose td { border-bottom: 1px solid var(--line); padding: var(--space-2) var(--space-3); text-align: left; }
+.prose th { border-bottom: 2px solid var(--line-strong); }
+.prose blockquote { margin: var(--space-3) 0; padding-left: var(--space-4); border-left: 3px solid var(--gold); color: var(--ink-muted); }
+
+@media (max-width: 1024px) {
+  .guide-layout { grid-template-columns: 1fr; }
+  .guide-toc { position: static; order: -1; border-bottom: 1px solid var(--line); padding-bottom: var(--space-3); }
+}
+
 
 /* ---- Focus and overlay behaviour (task 2.6) -------------------------------
    A visible focus ring on every interactive element, and the drawer/modal

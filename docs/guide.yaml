@@ -1,0 +1,76 @@
+# The in-app guide (2026-10-07).
+#
+# Curates which documentation appears inside the app, in what order and group,
+# and to whom. `path` is relative to the docs root (DOCS_PATH). `audience` is
+# `user` (any signed-in person) or `technical` (admin only, ADR-0005). Files are
+# the SAME ones a developer reads, so the guide cannot drift from the docs.
+chapters:
+  - slug: what-this-is
+    title: What this dashboard is
+    group: Getting started
+    order: 10
+    audience: user
+    path: guide/01-what-this-is.md
+
+  - slug: reading-a-page
+    title: Reading a page
+    group: Getting started
+    order: 20
+    audience: user
+    path: guide/02-reading-a-page.md
+
+  - slug: updating-an-initiative
+    title: Updating an initiative
+    group: Using the dashboard
+    order: 30
+    audience: user
+    path: guide/03-updating-an-initiative.md
+
+  - slug: roles-and-sign-in
+    title: Roles and signing in
+    group: Using the dashboard
+    order: 40
+    audience: user
+    path: guide/04-roles-and-sign-in.md
+
+  - slug: mock-vs-confirmed
+    title: Mock data vs confirmed data
+    group: Using the dashboard
+    order: 50
+    audience: user
+    path: guide/05-mock-vs-confirmed.md
+
+  - slug: glossary
+    title: Glossary
+    group: Reference
+    order: 60
+    audience: user
+    path: guide/06-glossary.md
+
+  - slug: authoritative-source
+    title: The authoritative source
+    group: Reference
+    order: 70
+    audience: technical
+    path: source/AUTHORITATIVE_SOURCE.md
+
+  - slug: dean-decisions
+    title: For the Dean — decisions
+    group: Reference
+    order: 80
+    audience: technical
+    path: source/DEAN_DECISIONS.md
+
+  - slug: architecture-decisions
+    title: Architecture decisions (ADRs)
+    group: Technical
+    order: 90
+    audience: technical
+    path: guide/07-architecture-decisions.md
+
+  - slug: deploying
+    title: Deploying the app
+    group: Technical
+    order: 100
+    audience: technical
+    path: ops/DEPLOY.md

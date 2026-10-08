@@ -8,3 +8,6 @@ openpyxl
 pytest
 httpx
 python-dotenv
+Markdown
+bleach
+PyYAML

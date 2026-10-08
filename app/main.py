@@ -56,7 +56,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app import auth, guards, identity, priorities, queries, repo, status
+from app import auth, docs, guards, identity, priorities, queries, repo, status
 
 app = FastAPI()
 
@@ -116,6 +116,7 @@ def _ctx(request: Request, **extra) -> dict:
                          ("/dean-initiatives", "initiatives"),
                          ("/checks", "checks"),
                          ("/changes", "changes"),
+                         ("/guide", "guide"),
                          ("/meeting", "meeting"), ("/outcomes", "outcomes")):
         if path == prefix or path.startswith(prefix + "/"):
             section = name
@@ -853,6 +854,59 @@ async def changes_route(request: Request,
     return templates.TemplateResponse(
         request, "changes.html",
         _ctx(request, rows=queries.recent_changes()),
+    )
+
+
+def _visible_chapters(request: Request) -> list[dict]:
+    """The guide chapters this viewer may see: user chapters to anyone signed
+    in, technical chapters only to an admin (ADR-0005)."""
+    person = auth.current_person(request)
+    may_see_technical = bool(person and auth.is_admin(person))
+    out = []
+    for entry in docs.load_manifest():
+        if entry["audience"] == "technical" and not may_see_technical:
+            continue
+        out.append(entry)
+    return out
+
+
+@app.get("/guide")
+async def guide_index(request: Request):
+    """The guide: the documentation set, curated and rendered in-app.
+
+    Behind the access gate like every page. The manifest chooses what appears
+    and to whom; a technical chapter is hidden from a non-admin here and refused
+    by the reader below.
+    """
+    chapters = _visible_chapters(request)
+    groups: dict = {}
+    for entry in chapters:
+        groups.setdefault(entry["group"], []).append(entry)
+    return templates.TemplateResponse(
+        request, "guide.html",
+        _ctx(request, chapters=chapters, groups=groups, current=None,
+             crumbs=[("Guide", None)]),
+    )
+
+
+@app.get("/guide/{slug}")
+async def guide_chapter(request: Request, slug: str):
+    entry = docs.chapter(slug)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="No such guide chapter")
+    # A technical chapter is admin-only, enforced here, not only in the index.
+    if entry["audience"] == "technical":
+        person = auth.current_person(request)
+        if not (person and auth.is_admin(person)):
+            raise HTTPException(status_code=403, detail="That chapter is admin-only.")
+    chapters = _visible_chapters(request)
+    groups: dict = {}
+    for e in chapters:
+        groups.setdefault(e["group"], []).append(e)
+    return templates.TemplateResponse(
+        request, "guide.html",
+        _ctx(request, chapters=chapters, groups=groups, current=entry,
+             crumbs=[("Guide", "/guide"), (entry["title"], None)]),
     )
 
 
