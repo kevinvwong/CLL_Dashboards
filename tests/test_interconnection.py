@@ -113,15 +113,15 @@ def test_a_team_initiative_page_links_to_its_priorities(page):
 # --- the home regression is closed -------------------------------------------
 
 
-def test_home_links_to_every_goal(page):
-    r = page.get("/")
+def test_the_goals_page_links_to_every_goal(page):
+    r = page.get("/goals")
     for n in range(1, 6):
-        assert "/goals/%d" % n in r.text, "home does not link to goal %d" % n
+        assert "/goals/%d" % n in r.text, "/goals does not link to goal %d" % n
 
 
-def test_home_has_a_goals_section(page):
-    r = page.get("/")
-    assert 'id="goals"' in r.text
+def test_the_goals_page_has_a_goals_section(page):
+    r = page.get("/goals")
+    assert 'id="goals"' in r.text or "The five goals" in r.text
 
 
 def test_the_overview_no_longer_carries_the_mi_table(page):
@@ -137,14 +137,13 @@ def test_the_overview_no_longer_carries_the_mi_table(page):
 
 
 def test_the_overview_has_no_duplicated_mi_list(page):
-    """Each row rendered twice before (team cards + table). With the cards
-    compacted and the table moved, no initiative is listed in a team card."""
+    """The landing lists no initiatives directly; each lens links out. (Overview
+    split 2026-10-07: the lens grids left the landing for their own pages.)"""
     from app import queries
     r = page.get("/")
-    # Teams link out instead of listing their Team Initiatives.
     assert 'class="mi-title"' not in r.text
     for t in queries.team_overview():
-        assert 'href="/teams/%d"' % t["TeamID"] in r.text
+        assert 'href="/teams/%d"' % t["TeamID"] in page.get("/teams").text
 
 
 # --- the MI table filter and grouping ----------------------------------------

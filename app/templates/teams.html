@@ -14,11 +14,14 @@
   <p class="section-note">{{ teams | length }} teams</p>
 </div>
 
+{% set active = "teams" %}
+{% include "_lens_note.html" with context %}
+
 <ul class="team-grid">
   {% for t in teams %}
-  <li class="team-card">
+  <li class="team-card" style="--team: var({{ t.TeamID | team_colour_token }});">
     <a class="team-link" href="/teams/{{ t.TeamID }}">
-      <h2 class="team-name">{{ t.Name }}</h2>
+      <h2 class="team-name"><span class="team-swatch" aria-hidden="true"></span>{{ t.Name }}</h2>
     </a>
     <p class="team-desc">{{ t.Description }}</p>
     <p class="team-count">
@@ -27,4 +30,9 @@
   </li>
   {% endfor %}
 </ul>
+
+<p class="identity-legend">
+  <span class="identity-legend-label">Teams:</span>
+  {% for t in teams %}<span class="legend-item team-legend" style="--team: var({{ t.TeamID | team_colour_token }});"><span class="team-swatch" aria-hidden="true"></span>{{ t.Name }}</span>{% endfor %}
+</p>
 {% endblock %}

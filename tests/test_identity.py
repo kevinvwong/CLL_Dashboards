@@ -54,12 +54,14 @@ def test_the_axes_do_not_share_a_colour():
     assert not (goals & priorities), "a goal colour equals a priority colour"
 
 
-def test_the_home_page_renders_goal_icons_and_team_swatches(logged_in):
-    body = logged_in("Bill Gaudelli").get("/").text
-    assert body.count("goal-icon") >= 5, "the goals render no icons"
-    assert body.count("team-swatch") >= 4, "the teams render no swatches"
-    assert "identity-legend" in body, "the goal/team legend is missing"
-    assert re.search(r"--goal: var\(--goal-\d\)", body), "no goal colour token rendered"
+def test_the_goals_page_renders_goal_icons_and_team_swatches(logged_in):
+    """Goal icons/legend live on /goals, team swatches on /teams (overview split)."""
+    goals = logged_in("Bill Gaudelli").get("/goals").text
+    assert goals.count("goal-icon") >= 5, "the goals render no icons"
+    assert "identity-legend" in goals, "the goal legend is missing"
+    assert re.search(r"--goal: var\(--goal-\d\)", goals), "no goal colour token rendered"
+    teams = logged_in("Bill Gaudelli").get("/teams").text
+    assert teams.count("team-swatch") >= 4, "the teams render no swatches"
 
 
 def test_priority_chips_carry_the_matching_priority_colour(logged_in):

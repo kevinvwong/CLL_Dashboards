@@ -362,6 +362,25 @@ async def set_pin(request: Request, person_id: int, _=Depends(guards.admin_only)
     return RedirectResponse(url="/people", status_code=303)
 
 
+@app.get("/goals")
+async def goals_index(request: Request):
+    """The five Strategy 2035 goals as their own index (overview split, 2026-10-07).
+
+    One of four views of the same 29 Team Initiatives. The goal cards used to sit
+    on the overview beside the priority and team cards, where the four views of
+    one portfolio read as four unrelated lists. Each view now has its own page,
+    and each states the relationship.
+    """
+    goals = queries.goal_tiles()
+    for g in goals:
+        g["TeamInitiativeCount"] = len(queries.goal_team_initiatives(g["GoalNumber"]))
+    return templates.TemplateResponse(
+        request, "goals.html",
+        _ctx(request, goals=goals, crumbs=[("Goals", None)],
+             lens_total=len(queries.team_initiative_cards())),
+    )
+
+
 @app.get("/goals/{goal_number}")
 async def goal_list(request: Request, goal_number: int, group: str | None = None):
     goal = queries.goal_by_number(goal_number)
@@ -391,6 +410,20 @@ async def goal_list(request: Request, goal_number: int, group: str | None = None
             # redesign 3.1): the new edge, shown from the goal side.
             team_initiatives=queries.goal_team_initiatives(goal_number),
         ),
+    )
+
+
+@app.get("/priorities")
+async def priorities_index(request: Request):
+    """The six annual priorities as their own index (overview split, 2026-10-07).
+
+    One of four views of the same 29 Team Initiatives; see goals_index.
+    """
+    return templates.TemplateResponse(
+        request, "priorities_index.html",
+        _ctx(request, priorities=queries.blueprint_priorities(),
+             crumbs=[("Priorities", None)],
+             lens_total=len(queries.team_initiative_cards())),
     )
 
 
@@ -434,7 +467,8 @@ async def teams_index(request: Request):
     teams = queries.team_overview()
     return templates.TemplateResponse(
         request, "teams.html",
-        _ctx(request, teams=teams, crumbs=[("Teams", None)]),
+        _ctx(request, teams=teams, crumbs=[("Teams", None)],
+             lens_total=len(queries.team_initiative_cards())),
     )
 
 
@@ -1108,7 +1142,8 @@ async def dean_initiatives_page(request: Request):
     return templates.TemplateResponse(
         request, "dean_initiatives.html",
         _ctx(request, dean_initiatives=queries.dean_initiatives(),
-             crumbs=[("Dean Initiatives", None)]),
+             crumbs=[("Dean Initiatives", None)],
+             lens_total=len(queries.team_initiative_cards())),
     )
 
 

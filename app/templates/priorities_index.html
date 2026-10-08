@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Priorities — CLL Initiative Dashboard{% endblock %}
+{% block content %}
+{#
+  The six annual priorities (overview split, 2026-10-07): their own index, moved
+  off the overview. One of four views of the same 29 Team Initiatives; the
+  governed fields (measure, target, cadence, owner) live on each priority page.
+#}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Annual priorities</p>
+    <h1>The six priorities</h1>
+  </div>
+  <p class="section-note">Measure, target and owner on each priority</p>
+</div>
+
+{% set active = "priorities" %}
+{% include "_lens_note.html" with context %}
+
+<ul class="priority-grid">
+  {% for p in priorities %}
+  <li class="priority-card" style="--priority: var({{ p.ColourToken }});">
+    <a class="priority-link" href="/priorities/{{ p.Name | urlencode }}">
+      <div class="priority-card-head">
+        <span class="priority-code">{{ p.Name | priority_number }}</span>
+        <span class="priority-colour" aria-hidden="true"></span>
+      </div>
+      <h2 class="priority-title">{{ p.Title }}</h2>
+    </a>
+    <p class="priority-foot">
+      {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}
+      · <a href="/priorities/{{ p.Name | urlencode }}">View cascade →</a>
+    </p>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

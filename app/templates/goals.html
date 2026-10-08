@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Goals — CLL Initiative Dashboard{% endblock %}
+{% block content %}
+{#
+  The five Strategy 2035 goals (overview split, 2026-10-07): their own index,
+  moved off the overview. One of four views of the same 29 Team Initiatives.
+#}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">Strategy 2035</p>
+    <h1>The five goals</h1>
+  </div>
+  <p class="section-note">The work aligned to each goal</p>
+</div>
+
+{% set active = "goals" %}
+{% include "_lens_note.html" with context %}
+<ul class="goal-grid">
+  {% for g in goals %}
+  <li class="goal-card" style="--goal: var({{ g.GoalNumber | goal_colour_token }});">
+    <a class="goal-link" href="/goals/{{ g.GoalNumber }}">
+      <span class="goal-identity">
+        {{ g.GoalNumber | goal_icon }}
+        <span class="goal-number">Goal {{ g.GoalNumber }}</span>
+      </span>
+      <span class="goal-name">{{ g.ShortName }}</span>
+    </a>
+    <p class="goal-counts">{{ g.TeamInitiativeCount }} Team Initiative{{ '' if g.TeamInitiativeCount == 1 else 's' }}</p>
+  </li>
+  {% endfor %}
+</ul>
+
+<p class="identity-legend">
+  <span class="identity-legend-label">Goals:</span>
+  {% for g in goals %}<span class="legend-item goal-legend" style="--goal: var({{ g.GoalNumber | goal_colour_token }});">{{ g.GoalNumber | goal_icon }} {{ g.ShortName }}</span>{% endfor %}
+</p>
+{% endblock %}

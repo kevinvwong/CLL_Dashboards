@@ -65,12 +65,9 @@ def _raw_priority_counts(fresh_db):
     return {r[0]: r[1] for r in rows}
 
 
-def test_home_shows_the_dashboard_and_keeps_everything_reachable(logged_in):
-    """The home is a portfolio dashboard (scope correction), not a tile grid or
-    the prototype's stage. The goals, priorities and initiatives stay reachable.
-
-    Replaces the earlier stage assertion: the stage was removed by direction.
-    """
+def test_home_shows_the_landing_and_keeps_everything_reachable(logged_in):
+    """The home is a landing (overview split, 2026-10-07): health, the stat band,
+    and four links to the lens pages. Everything stays reachable."""
     from app import queries
 
     response = logged_in("Bill Gaudelli").get("/")
@@ -82,15 +79,12 @@ def test_home_shows_the_dashboard_and_keeps_everything_reachable(logged_in):
     assert len(priorities) == PRIORITY_COUNT
 
     body = response.text
-    # The dashboard's parts, not the prototype's stage.
     assert "stat-band" in body
-    assert "priority-grid" in body
+    assert "lens-grid" in body, "the four-lens block is missing"
     assert "dean-node" not in body, "the prototype's stage still renders"
-    # Every priority is reachable from its card.
-    for priority in priorities:
-        assert f"/priorities/{priority['PriorityName']}" in body or \
-               priority["PriorityName"] in body
-    # The goals are reachable from the dashboard's tables and nav.
+    # Every lens is reachable from the landing.
+    for href in ("/goals", "/priorities", "/teams", "/dean-initiatives"):
+        assert ('href="%s"' % href) in body, "landing does not link %s" % href
     assert "/team-initiatives" in body
 
 
@@ -129,11 +123,11 @@ def test_goal_names_come_from_the_canonical_list(logged_in):
 
 
 def test_a_priority_and_its_count_appear_in_the_rendered_page(logged_in, fresh_db):
-    """A priority name and its initiative count render together (scope
-    correction: the tiles became full-field cards, so this checks the card)."""
+    """A priority name and its initiative count render together (on the
+    priorities index, where the cards moved, overview split 2026-10-07)."""
     from app import queries
 
-    body = logged_in("Bill Gaudelli").get("/").text
+    body = logged_in("Bill Gaudelli").get("/priorities").text
     p = queries.blueprint_priorities()[0]
     assert p["Title"] in body
     assert f">{p['InitiativeCount']}<" in body or \

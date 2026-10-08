@@ -2,23 +2,16 @@
 {% block title %}Portfolio — CLL Initiative Dashboard{% endblock %}
 {% block content %}
 {#
-  The portfolio overview (blueprint-redesign scope correction, reworked by
-  interconnection-redesign group 5).
+  The portfolio landing (overview split, 2026-10-07).
 
-  An OVERVIEW, not four full catalogs. Measured before the cut: 56 KB, of which
-  67% was the 29-row table, and every row rendered twice (inside the team cards
-  and again in the table). The table now has its own page, /team-initiatives,
-  and the sections here are compact entry points that state a count and link to
-  detail:
+  The overview used to show four views of the SAME 29 Team Initiatives - by goal,
+  by priority, by team, and the Dean roll-up - as four card grids in a row. From
+  the inside they are obviously four lenses on one portfolio; from the outside
+  they read as four unrelated lists, and each counted the same work differently.
 
-    1. the stat band   - the portfolio at a glance (counts, not a score)
-    2. the five goals  - each linking to its cascade
-    3. the six priorities - code, title, count, link
-    4. the four teams  - name, Team Initiative count, link
-
-  The governed fields (measure, target, cadence, owner) live on the priority
-  page; every Team Initiative lives on /team-initiatives. Nothing is lost, it
-  is one click away.
+  Each lens now has its own page (goals, priorities, teams, dean-initiatives) and
+  states the relationship. This landing answers "where do I go": the portfolio
+  health, the stat band, and one block that links the four lenses.
 #}
 
 <div class="section-heading">
@@ -29,7 +22,7 @@
   <p class="section-note">Six priorities · four teams · 29 Team Initiatives</p>
 </div>
 
-{# The health read, first (#8): the question on opening a dashboard is "how are we
+{# The health read (#8): the first question on opening a dashboard is "how are we
    doing?". Counts by status, not a score. When no update has been logged yet, say
    so plainly - "29 not started" reads as a scorecard of failure when it only means
    the diary is empty. #}
@@ -41,27 +34,23 @@
   {% if health.not_started %}<span class="badge status-not-started">{{ health.not_started }} not started</span>{% endif %}{% endif %}
 </p>
 
-{# --- 1. the stat band ----------------------------------------------------- #}
-{# One "Initiatives" tile, not two (review round, 2026-10-07): after the merge
-   "Initiatives" and "Team Initiatives" were the same 29. #}
+{# The stat band: counts, not a performance score. #}
 <section class="stat-band" aria-label="Portfolio summary">
   <a class="stat-tile" href="/team-initiatives">
     <span class="stat-value">{{ stats.team_initiatives }}</span>
     <span class="stat-label">Team Initiatives</span>
   </a>
-  <a class="stat-tile" href="#priorities">
+  <a class="stat-tile" href="/priorities">
     <span class="stat-value">{{ stats.priorities }}</span>
     <span class="stat-label">Priorities</span>
   </a>
-  <a class="stat-tile" href="#teams">
+  <a class="stat-tile" href="/teams">
     <span class="stat-value">{{ stats.teams }}</span>
     <span class="stat-label">Teams</span>
   </a>
   <a class="stat-tile stat-warn" href="/team-initiatives?target=needs_review">
     <span class="stat-value"><span class="stat-icon" aria-hidden="true">&#9888;</span>{{ stats.needs_review }}</span>
     <span class="stat-label">Need review</span>
-    {# The proportion, at a glance (blueprint Overview): the alarming number next
-       to the total it is a fraction of. The number is still the text. #}
     <span class="stat-fill"
           style="--fill: {{ (100 * stats.needs_review // stats.team_initiatives) if stats.team_initiatives else 0 }}%"
           role="img"
@@ -69,122 +58,47 @@
   </a>
 </section>
 
-{# --- 2. the five Strategy 2035 goals --------------------------------------- #}
-{# The goal entry point (interconnection-redesign 4.1). The portfolio redesign
-   dropped it, leaving /goals/n reachable only by URL. #}
-<section id="goals" aria-labelledby="goals-heading">
+{# The four lenses: the same 29 Team Initiatives viewed four ways. Each is its own
+   page; this block is the only place the overview shows them, so the four views
+   read as one set of doors rather than four lists. #}
+<section id="explore" aria-labelledby="explore-heading">
   <div class="section-heading">
     <div>
-      <p class="eyebrow">Strategy 2035</p>
-      <h2 id="goals-heading">The five goals</h2>
+      <p class="eyebrow">Explore</p>
+      <h2 id="explore-heading">Four views of the same work</h2>
     </div>
-    <p class="section-note">The work aligned to each goal</p>
+    <p class="section-note">The same {{ stats.team_initiatives }} Team Initiatives, grouped four ways</p>
   </div>
 
-  <ul class="goal-grid">
-    {% for g in goals %}
-    <li class="goal-card" style="--goal: var({{ g.GoalNumber | goal_colour_token }});">
-      <a class="goal-link" href="/goals/{{ g.GoalNumber }}">
-        <span class="goal-identity">
-          {{ g.GoalNumber | goal_icon }}
-          <span class="goal-number">Goal {{ g.GoalNumber }}</span>
-        </span>
-        <span class="goal-name">{{ g.ShortName }}</span>
+  <ul class="lens-grid">
+    <li class="lens-card">
+      <a class="lens-link" href="/goals">
+        <span class="lens-count">{{ stats.goals }}</span>
+        <span class="lens-name">Strategy 2035 Goals</span>
+        <span class="lens-desc">The five goals the work aligns to</span>
       </a>
-      <p class="goal-counts">{{ g.TeamInitiativeCount }} Team Initiative{{ '' if g.TeamInitiativeCount == 1 else 's' }}</p>
     </li>
-    {% endfor %}
-  </ul>
-  {# The goal identity key (#): the icons and colours are a system a reader learns
-     once. Shown here, where the goal list is. #}
-  <p class="identity-legend">
-    <span class="identity-legend-label">Goals:</span>
-    {% for g in goals %}<span class="legend-item goal-legend" style="--goal: var({{ g.GoalNumber | goal_colour_token }});">{{ g.GoalNumber | goal_icon }} {{ g.ShortName }}</span>{% endfor %}
-  </p>
-</section>
-
-{# --- 3. the six priorities (compact) -------------------------------------- #}
-<section id="priorities" aria-labelledby="priorities-heading">
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">Annual priorities</p>
-      <h2 id="priorities-heading">The six priorities</h2>
-    </div>
-    <p class="section-note">Measure, target and owner on each priority</p>
-  </div>
-
-  <ul class="priority-grid">
-    {% for p in priorities %}
-    <li class="priority-card" style="--priority: var({{ p.ColourToken }});">
-      <a class="priority-link" href="/priorities/{{ p.Name | urlencode }}">
-        <div class="priority-card-head">
-          <span class="priority-code">{{ p.Name | priority_number }}</span>
-          <span class="priority-colour" aria-hidden="true"></span>
-        </div>
-        <h3 class="priority-title">{{ p.Title }}</h3>
+    <li class="lens-card">
+      <a class="lens-link" href="/priorities">
+        <span class="lens-count">{{ stats.priorities }}</span>
+        <span class="lens-name">Annual Priorities</span>
+        <span class="lens-desc">The six execution lenses for {{ plan_year }}</span>
       </a>
-      <p class="priority-foot">
-        {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}
-        · <a href="/priorities/{{ p.Name | urlencode }}">View cascade →</a>
-      </p>
     </li>
-    {% endfor %}
+    <li class="lens-card">
+      <a class="lens-link" href="/teams">
+        <span class="lens-count">{{ stats.teams }}</span>
+        <span class="lens-name">Teams</span>
+        <span class="lens-desc">The four teams accountable for the work</span>
+      </a>
+    </li>
+    <li class="lens-card">
+      <a class="lens-link" href="/dean-initiatives">
+        <span class="lens-count">{{ dean_initiatives | length }}</span>
+        <span class="lens-name">Dean Initiatives</span>
+        <span class="lens-desc">The Dean's own priorities above the work</span>
+      </a>
+    </li>
   </ul>
 </section>
-
-{# --- 4. the four teams (compact) ------------------------------------------ #}
-<section id="teams" aria-labelledby="teams-heading">
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">Organizational layer</p>
-      <h2 id="teams-heading">The four teams</h2>
-    </div>
-    <p class="section-note">{{ stats.team_initiatives }} Team Initiatives across them</p>
-  </div>
-
-  <ul class="team-grid">
-    {% for t in teams %}
-    <li class="team-card" style="--team: var({{ t.TeamID | team_colour_token }});">
-      <a class="team-link" href="/teams/{{ t.TeamID }}">
-        <h3 class="team-name"><span class="team-swatch" aria-hidden="true"></span>{{ t.Name }}</h3>
-      </a>
-      <p class="team-desc">{{ t.Description }}</p>
-      <p class="team-count">
-        <a href="/teams/{{ t.TeamID }}"><strong>{{ t.team_initiatives | length }}</strong> Team Initiative{{ '' if t.team_initiatives | length == 1 else 's' }} →</a>
-      </p>
-    </li>
-    {% endfor %}
-  </ul>
-  <p class="identity-legend">
-    <span class="identity-legend-label">Teams:</span>
-    {% for t in teams %}<span class="legend-item team-legend" style="--team: var({{ t.TeamID | team_colour_token }});"><span class="team-swatch" aria-hidden="true"></span>{{ t.Name }}</span>{% endfor %}
-  </p>
-</section>
-
-{# The Dean's own priorities (register, 2026-10-07). A one-line roll-up here; the
-   full FY26/FY27 list with progress bars has its own page, /dean-initiatives, the
-   same way the 29-row table moved off the overview. #}
-{% if dean_initiatives %}
-<section id="dean-initiatives" aria-labelledby="dean-initiatives-heading">
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">Above the initiative layer</p>
-      <h2 id="dean-initiatives-heading">Dean Initiatives</h2>
-    </div>
-    <p class="section-note">
-      {{ dean_initiatives | length }} priorities ·
-      <a href="/dean-initiatives">View all →</a>
-    </p>
-  </div>
-  {% set fy26 = dean_initiatives | selectattr('fiscal_year', 'equalto', 26) | list | length %}
-  {% set fy27 = dean_initiatives | selectattr('fiscal_year', 'equalto', 27) | list | length %}
-  <p class="section-note">{{ fy26 }} complete in FY26 · {{ fy27 }} in flight in FY27</p>
-  {# The FY timeline, as a bar (blueprint: "highest executive visibility"). The
-     sentence above carries the figures; the bar is decorative. #}
-  <div class="fy-timeline" aria-hidden="true">
-    {% if fy26 %}<span class="fy-seg fy-26" style="flex: {{ fy26 }}"></span>{% endif %}
-    {% if fy27 %}<span class="fy-seg fy-27" style="flex: {{ fy27 }}"></span>{% endif %}
-  </div>
-</section>
-{% endif %}
 {% endblock %}

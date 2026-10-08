@@ -1235,6 +1235,33 @@ body { overflow-x: hidden; }
   .tiles { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
 }
 
+/* ---- the four lenses (overview split, 2026-10-07) -------------------------- */
+/* The landing links the four views of the same portfolio as one set of doors,
+   and each lens page states the relationship. */
+.lens-grid {
+  display: grid; gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  list-style: none; margin: 0; padding: 0;
+}
+.lens-card { border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.lens-card:hover { border-color: var(--accent); }
+.lens-link { display: block; padding: var(--space-4); text-decoration: none; color: var(--ink); height: 100%; }
+.lens-count { display: block; font-family: var(--font-display); font-weight: 700;
+              font-size: var(--text-2xl); color: var(--accent); }
+.lens-name { display: block; margin-top: var(--space-1); font-weight: 600; }
+.lens-desc { display: block; margin-top: 0.15rem; font-size: var(--text-sm); color: var(--ink-muted); }
+.lens-note {
+  display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: baseline;
+  margin: 0 0 var(--space-4); padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--gold); background: var(--surface-sunken);
+  font-size: var(--text-sm);
+}
+.lens-note-label { color: var(--ink-muted); }
+.lens-note-links { display: inline-flex; flex-wrap: wrap; gap: 0.75rem; }
+.lens-note-links a { color: var(--accent); text-decoration: none; }
+.lens-note-links a:hover { text-decoration: underline; }
+.lens-current { color: var(--ink); font-weight: 600; }
+
 /* ---- the in-app guide (2026-10-07) ----------------------------------------- */
 /* A reading column capped to a comfortable measure, with the chapter list as a
    sticky secondary column on wide screens. */
@@ -1852,6 +1879,19 @@ body.presenting .no-print { display: none; }
   align-items: center;
   gap: var(--space-4);
 }
+/* On a phone the three-column row overflows; stack it so the bar and percent
+   fall under the title instead of running off the edge. */
+@media (max-width: 767px) {
+  .dean-row { grid-template-columns: 1fr; gap: var(--space-2); }
+  .dean-row .bar { flex: none; }
+}
+/* A grid child defaults to min-content and refuses to shrink, so a long title
+   would push the row (and the page) past the viewport. Let them shrink. */
+.dean-row > * { min-width: 0; }
+.dean-title a { overflow-wrap: anywhere; }
+/* The roll-up chips wrap, or a row's Team Initiative names run off the edge. */
+.dean-rollup { display: flex; flex-wrap: wrap; gap: 0.35rem; min-width: 0; }
+.dean-rollup .chip { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .dean-title { display: flex; flex-direction: column; }
 .dean-title .dean-initiative { font-size: var(--text-sm); color: var(--ink-muted); }
 .dean-pct { font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-muted); }

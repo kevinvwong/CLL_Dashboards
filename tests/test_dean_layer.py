@@ -23,10 +23,14 @@ def test_dean_links_resolve(fresh_db):
 
 
 def test_home_shows_a_one_line_dean_rollup(logged_in):
+    """The Dean roll-up is a landing link; the full page moved off the overview
+    (overview split, 2026-10-07)."""
     html = logged_in("Bill Gaudelli").get("/").text
     assert "Dean Initiatives" in html
-    assert "FY26" in html and "FY27" in html
-    assert "/dean-initiatives" in html, "the roll-up must link to the full page"
+    assert "/dean-initiatives" in html, "the landing must link to the full page"
+    # The FY figures and the timeline bar now live on the Dean page itself.
+    dean = logged_in("Bill Gaudelli").get("/dean-initiatives").text
+    assert "FY26" in dean and "FY27" in dean
 
 
 def test_dean_initiatives_page_lists_all_eleven(logged_in):

@@ -23,6 +23,18 @@
   Initiatives that roll up to it.
 </p>
 
+{# The FY timeline bar (moved here from the overview, overview split 2026-10-07):
+   the Dean's own FY26/FY27 split, at the top of the Dean's own page. #}
+{% set fy26n = dean_initiatives | selectattr('fiscal_year', 'equalto', 26) | list | length %}
+{% set fy27n = dean_initiatives | selectattr('fiscal_year', 'equalto', 27) | list | length %}
+<div class="fy-timeline" aria-hidden="true">
+  {% if fy26n %}<span class="fy-seg fy-26" style="flex: {{ fy26n }}"></span>{% endif %}
+  {% if fy27n %}<span class="fy-seg fy-27" style="flex: {{ fy27n }}"></span>{% endif %}
+</div>
+
+{% set active = "dean" %}
+{% include "_lens_note.html" with context %}
+
 {% for fy, label in [(26, 'FY26 — complete'), (27, 'FY27 — in flight')] %}
   {% set group = dean_initiatives | selectattr('fiscal_year', 'equalto', fy) | list %}
   {% if group %}

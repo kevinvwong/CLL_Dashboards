@@ -23,15 +23,22 @@ def _page(logged_in, path):
 # --- the dashboard, not the prototype's stage -------------------------------
 
 
-def test_the_home_is_a_dashboard_not_a_stage(logged_in):
+def test_the_home_is_a_landing_not_a_stage(logged_in):
+    """The home is a landing (overview split, 2026-10-07): health + stat band +
+    the four-lens block. The lens card grids moved to their own pages."""
     body = _home(logged_in)
-    # The overview's parts: the stat band and three compact entry-point grids.
     assert "stat-band" in body
-    assert "goal-grid" in body
-    assert "priority-grid" in body
-    assert "team-grid" in body
-    # The 29-row table has its own page now (interconnection-redesign 5).
-    assert "mi-table" not in body, "the overview still renders the MI table"
+    assert "lens-grid" in body, "the four-lens block is missing"
+    # The lens grids are no longer on the landing.
+    assert "goal-grid" not in body
+    assert "priority-grid" not in body
+    assert "team-grid" not in body
+    # Each lens page carries its own grid.
+    assert "goal-grid" in _page(logged_in, "/goals")
+    assert "priority-grid" in _page(logged_in, "/priorities")
+    assert "team-grid" in _page(logged_in, "/teams")
+    # The 29-row table has its own page.
+    assert "mi-table" not in body, "the landing still renders the MI table"
     assert "mi-table" in _page(logged_in, "/team-initiatives")
     # The prototype's stage is gone.
     assert "dean-node" not in body, "the Dean node stage still renders"
@@ -49,7 +56,7 @@ def test_the_stat_band_reports_the_portfolio(logged_in):
 
 def test_all_six_priorities_render(logged_in):
     from app import queries
-    body = _home(logged_in)
+    body = _page(logged_in, "/priorities")
     assert body.count('class="priority-card"') == 6
     for p in queries.blueprint_priorities():
         assert p["Title"] in body
@@ -79,7 +86,7 @@ def test_a_priorities_measure_target_and_cadence_actually_render(logged_in):
 
 
 def test_the_four_teams_render_with_descriptions(logged_in):
-    body = _home(logged_in)
+    body = _page(logged_in, "/teams")
     assert body.count('class="team-card"') == 4
     for team in ("Learning Experiences", "Learning Ecosystems",
                  "Learning Infrastructure", "Learning Futures"):

@@ -254,12 +254,12 @@ def test_home_has_accessible_names(logged_in):
     # The nav destinations are named by their visible text.
     for dest in ("/team-initiatives", "/people", "/outcomes"):
         assert ('href="%s"' % dest) in body
-    # The priority cards carry their full title as text, not a bare code.
-    assert "One Shared Identity" in body
+    # The priority names live on the priorities index (overview split).
+    assert "One Shared Identity" in _html.unescape(logged_in("Bill Gaudelli").get("/priorities").text)
 
 
 def test_priority_cards_name_their_priority(logged_in):
     """A priority card names the priority; its count is beside it."""
-    body = _html.unescape(logged_in("Bill Gaudelli").get("/").text)
+    body = _html.unescape(logged_in("Bill Gaudelli").get("/priorities").text)
     assert "One Shared Identity" in body
     assert "initiative" in body

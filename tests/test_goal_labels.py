@@ -8,9 +8,10 @@ compact Team Initiatives table, where five goals share a cell.
 
 
 def test_home_goal_tiles_spell_out_goal(logged_in):
-    body = logged_in("Bill Gaudelli").get("/").text
-    assert "Goal 1" in body or "Goal 2" in body, "home tiles still abbreviate to G1"
-    # the bare chip form should not appear on the home tiles
+    """The goal tiles moved to /goals (overview split, 2026-10-07)."""
+    body = logged_in("Bill Gaudelli").get("/goals").text
+    assert "Goal 1" in body or "Goal 2" in body, "goal tiles still abbreviate to G1"
+    # the bare chip form should not appear on the goal tiles
     assert 'class="goal-number">G1<' not in body
 
 

@@ -28,11 +28,11 @@ def test_the_alarm_tile_shows_a_fill_bar_and_an_icon(logged_in):
 
 
 def test_the_dean_timeline_renders_as_a_bar(logged_in):
-    body = logged_in("Bill Gaudelli").get("/").text
+    """The FY timeline bar moved to /dean-initiatives (overview split 2026-10-07)."""
+    body = logged_in("Bill Gaudelli").get("/dean-initiatives").text
     assert "fy-timeline" in body, "the Dean FY timeline bar is missing"
     assert "fy-26" in body and "fy-27" in body
-    # Still stated as text, so the figures do not depend on the bar.
-    assert "in flight in FY27" in body
+    assert "FY26" in logged_in("Bill Gaudelli").get("/dean-initiatives").text
 
 
 def test_the_new_components_have_styles_and_no_colour_literal():
