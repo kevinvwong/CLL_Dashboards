@@ -224,6 +224,11 @@ CREATE TABLE People (
     -- this person; setting a PIN is what closes self-assertion for them. Kept
     -- out of the seed so no credential is committed; an admin sets it in-app.
     Credential   TEXT,
+    -- The Clerk user id (e.g. 'user_...') that maps a Clerk identity to this
+    -- person (Clerk integration, 2026-10-08). People carry no email, so this is
+    -- the explicit link; an admin sets it. NULL means Clerk cannot yet map this
+    -- person, and they are not reachable through the Clerk provider (ADR-0004).
+    ClerkUserID  TEXT UNIQUE,
     IsActive     INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1))
 );
 

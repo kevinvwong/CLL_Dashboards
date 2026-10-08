@@ -78,7 +78,8 @@
      bottom bar is the same destinations for a thumb. Only one of the two
      `nav[aria-label="Primary"]` elements is visible per breakpoint, so a screen
      reader is never given two primary navs at once. #}
-  <div class="app-shell">
+  <div class="app-shell{% if not person %} app-shell--bare{% endif %}">
+    {% if person %}
     <nav class="site-nav" aria-label="Primary">
       <ul class="nav-list">
         <li><a href="/"{% if section == "home" %} aria-current="page"{% endif %}>{{ "overview" | nav_icon }}<span class="nav-label">Overview</span></a></li>
@@ -100,6 +101,7 @@
       </ul>
       {% endif %}
     </nav>
+    {% endif %}
 
     <main id="content">
       {# Breadcrumbs below the top level (5.2). Pages that want them pass `crumbs`,
@@ -120,7 +122,8 @@
 
   {# Mobile: the same primary destinations as a bottom tab bar (app-shell
      2026-10-07). Five at most - the admin extras and Meeting stay in the user
-     menu. Hidden on desktop/tablet by CSS. #}
+     menu. Hidden on desktop/tablet by CSS. Shown only to a signed-in person. #}
+  {% if person %}
   <nav class="tabbar" aria-label="Primary">
     <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>{{ "overview" | nav_icon }}<span class="tab-label">Overview</span></a>
     <a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}<span class="tab-label">Initiatives</span></a>
@@ -128,6 +131,7 @@
     <a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>{{ "outcomes" | nav_icon }}<span class="tab-label">Outcomes</span></a>
     <a href="/guide"{% if section == "guide" %} aria-current="page"{% endif %}>{{ "guide" | nav_icon }}<span class="tab-label">Guide</span></a>
   </nav>
+  {% endif %}
 
   <footer class="site-footer">
     <span class="footer-note">CLL Initiative Dashboard</span>

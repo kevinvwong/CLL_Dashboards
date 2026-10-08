@@ -355,6 +355,9 @@ a { color: var(--accent); }
    icon-only; mobile <=767px replaces it with the bottom tab bar (.tabbar). One
    `nav[aria-label=Primary]` is visible per breakpoint (see the media queries). */
 .app-shell { display: grid; grid-template-columns: 15rem 1fr; align-items: start; }
+/* Pre-auth (login / Clerk sign-in / unlinked): no rail, so the content is not
+   confined to the second grid column - it fills the width and centres. */
+.app-shell--bare { grid-template-columns: 1fr; }
 /* The content column must be allowed to shrink, or a wide table forces the grid
    (and the page) past the viewport. min-width:0 is the fix for the classic
    grid-item-overflow: a grid item defaults to min-content and refuses to shrink. */

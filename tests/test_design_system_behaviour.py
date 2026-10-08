@@ -52,11 +52,13 @@ def test_no_horizontal_overflow_guard():
 
 def test_the_nav_is_a_rail_and_a_tab_bar_not_a_checkbox():
     """Supersedes the checkbox-collapse nav: the shell is a grid rail plus a
-    mobile tab bar (app-shell, 2026-10-07)."""
+    mobile tab bar (app-shell, 2026-10-07). The rail and tab bar render only for
+    a signed-in person (pre-auth pages are chrome-free)."""
     base = _base()
-    assert 'class="app-shell"' in base
-    assert 'class="site-nav"' in base
-    assert 'class="tabbar"' in base
+    assert "app-shell" in base, "the app-shell host is missing"
+    assert "site-nav" in base, "the rail is missing"
+    assert "tabbar" in base, "the mobile tab bar is missing"
+    assert "app-shell--bare" in base, "the pre-auth bare-shell variant is missing"
     css = _sheet()
     assert ".nav-toggle" not in css, "the retired checkbox nav is still styled"
 

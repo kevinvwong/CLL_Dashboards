@@ -79,6 +79,13 @@ def fresh_db(tmp_path, monkeypatch):
     monkeypatch.setenv("APP_PASSCODE", TEST_PASSCODE)
     monkeypatch.setenv("APP_SECRET", "testsecret")
     monkeypatch.setenv("APP_ENV", "test")
+    # Pin the auth provider. A developer's .env may set AUTH_PROVIDER=clerk to
+    # run the app locally; without this the whole suite would run under Clerk and
+    # the passcode login the fixtures use would not apply. Clerk tests override
+    # this explicitly, so the suite is deterministic either way.
+    monkeypatch.setenv("AUTH_PROVIDER", "local")
+    monkeypatch.delenv("CLERK_SECRET_KEY", raising=False)
+    monkeypatch.delenv("CLERK_PUBLISHABLE_KEY", raising=False)
     return db
 
 

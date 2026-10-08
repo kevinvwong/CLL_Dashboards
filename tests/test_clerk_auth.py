@@ -19,9 +19,14 @@ def _clerk_env(monkeypatch, key="pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk"):
     monkeypatch.setenv("CLERK_PUBLISHABLE_KEY", key)
 
 
-def test_the_provider_defaults_to_local(monkeypatch):
+def test_the_provider_defaults_to_local(monkeypatch, tmp_path):
+    # The DEFAULT, with no .env in play and nothing in the environment, is local.
+    # (Config re-reads .env on each call with override=False, so a developer's
+    # .env would refill a merely-deleted key; point it at a missing file.)
+    from app.config import Config
     monkeypatch.delenv("AUTH_PROVIDER", raising=False)
-    assert auth.settings().AUTH_PROVIDER == "local"
+    cfg = Config(env_path=str(tmp_path / "does-not-exist.env"))
+    assert cfg.AUTH_PROVIDER == "local"
 
 
 def test_no_token_redirects_to_the_clerk_sign_in(monkeypatch, fresh_db):
