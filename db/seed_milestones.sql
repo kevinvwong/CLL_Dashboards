@@ -44,16 +44,47 @@ INSERT INTO AppMeta (Key, Value) VALUES
 DELETE FROM PeopleRoles;
 DELETE FROM Roles;
 INSERT INTO Roles (RoleID, Name, Description) VALUES
-  (1, 'Administrator', 'platform administration: users, configuration, everything'),
+  (1, 'PlatformAdmin', 'technical/application administration and approved access administration'),
   (2, 'ExecutiveSponsor', 'the Dean: portfolio read plus executive actions (never routine data edits)'),
   (3, 'DataOwner', 'governs portfolio data: approvals, exceptions, quality, accountability'),
   (4, 'Operator', 'Strategic Operations: portfolio and data maintenance'),
-  (5, 'Contributor', 'edits assigned initiatives (future phase; assigned but not yet enforced)'),
-  (6, 'Viewer', 'reads published content');
-INSERT INTO PeopleRoles (PersonID, RoleID)
-  SELECT PersonID, 1 FROM People WHERE IsAdmin = 1
-  UNION SELECT PersonID, 2 FROM People WHERE lower(trim(COALESCE(Title,''))) = 'dean'
-  UNION SELECT PersonID, 3 FROM People WHERE Name = 'Elizabeth Smith'
-  UNION SELECT PersonID, 4 FROM People WHERE Title LIKE '%Strategic Operations%'
-  UNION SELECT PersonID, 5 FROM People WHERE TeamID IS NOT NULL
-  UNION SELECT PersonID, 6 FROM People WHERE IsActive = 1;
+  (5, 'Contributor', 'edits assigned initiatives (future phase; unassigned initially)'),
+  (6, 'Viewer', 'reads published content'),
+  (7, 'TechnicalAdmin', 'OIT/Azure infrastructure support; platform health, not portfolio data');
+-- Additional roster people (Strategic Operations, OIT support).
+INSERT INTO People (PersonID, Name, Title, Email, IsActive) VALUES (8, 'Cassie Parkin', 'Strategic Operations', 'cparkin6@gatech.edu', 1) ON CONFLICT(PersonID) DO UPDATE SET Name=excluded.Name, Title=excluded.Title, Email=excluded.Email, IsActive=1;
+INSERT INTO People (PersonID, Name, Title, Email, IsActive) VALUES (9, 'Chris Reyes', 'Strategic Operations', 'creyes39@gatech.edu', 1) ON CONFLICT(PersonID) DO UPDATE SET Name=excluded.Name, Title=excluded.Title, Email=excluded.Email, IsActive=1;
+INSERT INTO People (PersonID, Name, Title, Email, IsActive) VALUES (10, 'DeMarco Williams', 'Strategic Operations', 'dwilliams406@gatech.edu', 1) ON CONFLICT(PersonID) DO UPDATE SET Name=excluded.Name, Title=excluded.Title, Email=excluded.Email, IsActive=1;
+INSERT INTO People (PersonID, Name, Title, Email, IsActive) VALUES (11, 'Mike Sewell', 'OIT Technical Contact', 'msewell7@gatech.edu', 1) ON CONFLICT(PersonID) DO UPDATE SET Name=excluded.Name, Title=excluded.Title, Email=excluded.Email, IsActive=1;
+-- Emails for the register people (roster).
+UPDATE People SET Email='wgaudelli3@gatech.edu' WHERE Name='Bill Gaudelli';
+UPDATE People SET Email='esmith460@gatech.edu' WHERE Name='Elizabeth Smith';
+UPDATE People SET Email='tjacobbe3@gatech.edu' WHERE Name='Tim Jacobbe';
+UPDATE People SET Email='mherane3@gatech.edu' WHERE Name='Mario Herane';
+UPDATE People SET Email='ma128@gatech.edu' WHERE Name='Meltem Alemdar';
+UPDATE People SET Email='eflavin6@gatech.edu' WHERE Name='Grace Flavin';
+UPDATE People SET Email='kwong318@gatech.edu' WHERE Name='Kevin';
+-- Explicit role assignment (a roster, not a heuristic).
+INSERT INTO PeopleRoles (PersonID, RoleID) VALUES
+  ((SELECT PersonID FROM People WHERE Name='Kevin'), (SELECT RoleID FROM Roles WHERE Name='PlatformAdmin')),
+  ((SELECT PersonID FROM People WHERE Name='Kevin'), (SELECT RoleID FROM Roles WHERE Name='Operator')),
+  ((SELECT PersonID FROM People WHERE Name='Kevin'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Cassie Parkin'), (SELECT RoleID FROM Roles WHERE Name='PlatformAdmin')),
+  ((SELECT PersonID FROM People WHERE Name='Cassie Parkin'), (SELECT RoleID FROM Roles WHERE Name='Operator')),
+  ((SELECT PersonID FROM People WHERE Name='Cassie Parkin'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Chris Reyes'), (SELECT RoleID FROM Roles WHERE Name='PlatformAdmin')),
+  ((SELECT PersonID FROM People WHERE Name='Chris Reyes'), (SELECT RoleID FROM Roles WHERE Name='Operator')),
+  ((SELECT PersonID FROM People WHERE Name='Chris Reyes'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='DeMarco Williams'), (SELECT RoleID FROM Roles WHERE Name='PlatformAdmin')),
+  ((SELECT PersonID FROM People WHERE Name='DeMarco Williams'), (SELECT RoleID FROM Roles WHERE Name='Operator')),
+  ((SELECT PersonID FROM People WHERE Name='DeMarco Williams'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), (SELECT RoleID FROM Roles WHERE Name='DataOwner')),
+  ((SELECT PersonID FROM People WHERE Name='Elizabeth Smith'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Bill Gaudelli'), (SELECT RoleID FROM Roles WHERE Name='ExecutiveSponsor')),
+  ((SELECT PersonID FROM People WHERE Name='Bill Gaudelli'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Grace Flavin'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Mario Herane'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Meltem Alemdar'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Tim Jacobbe'), (SELECT RoleID FROM Roles WHERE Name='Viewer')),
+  ((SELECT PersonID FROM People WHERE Name='Mike Sewell'), (SELECT RoleID FROM Roles WHERE Name='TechnicalAdmin')),
+  ((SELECT PersonID FROM People WHERE Name='Mike Sewell'), (SELECT RoleID FROM Roles WHERE Name='Viewer'));

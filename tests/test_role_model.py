@@ -20,14 +20,14 @@ def _roles(db, name):
         conn.close()
 
 
-def test_the_six_canonical_roles_are_seeded(fresh_db):
+def test_the_canonical_roles_are_seeded(fresh_db):
     conn = sqlite3.connect(fresh_db)
     try:
         names = {r[0] for r in conn.execute("SELECT Name FROM Roles")}
     finally:
         conn.close()
-    assert names == {"Administrator", "ExecutiveSponsor", "DataOwner",
-                     "Operator", "Contributor", "Viewer"}
+    assert names == {"PlatformAdmin", "ExecutiveSponsor", "DataOwner",
+                     "Operator", "Contributor", "Viewer", "TechnicalAdmin"}
 
 
 def test_the_role_model_is_not_a_hierarchy(fresh_db):

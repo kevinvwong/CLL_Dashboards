@@ -34,6 +34,44 @@ OUT = os.path.join(HERE, "seed_milestones.sql")
 #: this seed is for 2027, and Priorities rows are keyed by (PlanYear, Code).
 PLAN_YEAR = 2027
 
+#: The people beyond the register's owners (Strategic Operations and OIT
+#: support), with the email Clerk matches an SSO identity to. (PersonID, name,
+#: title, email). The register seed owns PersonIDs 1-7.
+ROSTER_PEOPLE = [
+    (8, "Cassie Parkin", "Strategic Operations", "cparkin6@gatech.edu"),
+    (9, "Chris Reyes", "Strategic Operations", "creyes39@gatech.edu"),
+    (10, "DeMarco Williams", "Strategic Operations", "dwilliams406@gatech.edu"),
+    (11, "Mike Sewell", "OIT Technical Contact", "msewell7@gatech.edu"),
+]
+
+#: Emails for the people the register already seeds, from the roster.
+ROSTER_EMAILS = {
+    "Bill Gaudelli": "wgaudelli3@gatech.edu",
+    "Elizabeth Smith": "esmith460@gatech.edu",
+    "Tim Jacobbe": "tjacobbe3@gatech.edu",
+    "Mario Herane": "mherane3@gatech.edu",
+    "Meltem Alemdar": "ma128@gatech.edu",
+    "Grace Flavin": "eflavin6@gatech.edu",
+    "Kevin": "kwong318@gatech.edu",
+}
+
+#: Explicit role assignment: (person name, role name). A reviewable roster, not
+#: a heuristic. The Viewer role is granted to everyone (read access); the four
+#: leaders also hold it and gain Contributor later without losing Viewer.
+ROSTER_ROLES = [
+    ("Kevin", "PlatformAdmin"), ("Kevin", "Operator"), ("Kevin", "Viewer"),
+    ("Cassie Parkin", "PlatformAdmin"), ("Cassie Parkin", "Operator"), ("Cassie Parkin", "Viewer"),
+    ("Chris Reyes", "PlatformAdmin"), ("Chris Reyes", "Operator"), ("Chris Reyes", "Viewer"),
+    ("DeMarco Williams", "PlatformAdmin"), ("DeMarco Williams", "Operator"), ("DeMarco Williams", "Viewer"),
+    ("Elizabeth Smith", "DataOwner"), ("Elizabeth Smith", "Viewer"),
+    ("Bill Gaudelli", "ExecutiveSponsor"), ("Bill Gaudelli", "Viewer"),
+    ("Grace Flavin", "Viewer"),
+    ("Mario Herane", "Viewer"),
+    ("Meltem Alemdar", "Viewer"),
+    ("Tim Jacobbe", "Viewer"),
+    ("Mike Sewell", "TechnicalAdmin"), ("Mike Sewell", "Viewer"),
+]
+
 #: (priority_code, name, status, planned_date, sort) -- MOCK, see module docstring.
 MILESTONES = [
     ("P01", "Message architecture approved", "Met", None, 1),
@@ -104,26 +142,47 @@ def build(out=OUT):
     L.append("  ('current_plan_year', '%d');" % PLAN_YEAR)
     L.append("")
 
-    # Local roles (ADR-0005). The canonical set is the DR-05 role model: six
-    # capability-oriented roles, deliberately NOT a hierarchy (DR-23). Assignment
-    # is by the person's current state so it holds as the register changes.
+    # Local roles (ADR-0005). The canonical set is the DR-05 role model, recorded
+    # with the roster: capability-oriented roles, deliberately NOT a hierarchy
+    # (DR-23). Assignment is EXPLICIT by person (a roster), not inferred from a
+    # person's title/team, so the mapping is reviewable and stable. Emails come
+    # from the roster and are the key Clerk matches an SSO identity to.
     L.append("-- Roles and their assignment (ADR-0005, DR-05, DR-23). App-local.")
     L.append("DELETE FROM PeopleRoles;")
     L.append("DELETE FROM Roles;")
     L.append("INSERT INTO Roles (RoleID, Name, Description) VALUES")
-    L.append("  (1, 'Administrator', 'platform administration: users, configuration, everything'),")
+    L.append("  (1, 'PlatformAdmin', 'technical/application administration and approved access administration'),")
     L.append("  (2, 'ExecutiveSponsor', 'the Dean: portfolio read plus executive actions (never routine data edits)'),")
     L.append("  (3, 'DataOwner', 'governs portfolio data: approvals, exceptions, quality, accountability'),")
     L.append("  (4, 'Operator', 'Strategic Operations: portfolio and data maintenance'),")
-    L.append("  (5, 'Contributor', 'edits assigned initiatives (future phase; assigned but not yet enforced)'),")
-    L.append("  (6, 'Viewer', 'reads published content');")
-    L.append("INSERT INTO PeopleRoles (PersonID, RoleID)")
-    L.append("  SELECT PersonID, 1 FROM People WHERE IsAdmin = 1")
-    L.append("  UNION SELECT PersonID, 2 FROM People WHERE lower(trim(COALESCE(Title,''))) = 'dean'")
-    L.append("  UNION SELECT PersonID, 3 FROM People WHERE Name = 'Elizabeth Smith'")
-    L.append("  UNION SELECT PersonID, 4 FROM People WHERE Title LIKE '%Strategic Operations%'")
-    L.append("  UNION SELECT PersonID, 5 FROM People WHERE TeamID IS NOT NULL")
-    L.append("  UNION SELECT PersonID, 6 FROM People WHERE IsActive = 1;")
+    L.append("  (5, 'Contributor', 'edits assigned initiatives (future phase; unassigned initially)'),")
+    L.append("  (6, 'Viewer', 'reads published content'),")
+    L.append("  (7, 'TechnicalAdmin', 'OIT/Azure infrastructure support; platform health, not portfolio data');")
+
+    # The people beyond the register's owners (Strategic Operations + OIT
+    # support). Added here so the roster is complete; the register seed owns the
+    # seven it already names.
+    L.append("-- Additional roster people (Strategic Operations, OIT support).")
+    for pid, name, title, email in ROSTER_PEOPLE:
+        L.append("INSERT INTO People (PersonID, Name, Title, Email, IsActive) VALUES "
+                 "(%d, %s, %s, %s, 1) ON CONFLICT(PersonID) DO UPDATE SET "
+                 "Name=excluded.Name, Title=excluded.Title, Email=excluded.Email, IsActive=1;"
+                 % (pid, _sq(name), _sq(title), _sq(email)))
+
+    # Emails for the people the register already seeds (from the roster).
+    L.append("-- Emails for the register people (roster).")
+    for name, email in ROSTER_EMAILS.items():
+        L.append("UPDATE People SET Email=%s WHERE Name=%s;" % (_sq(email), _sq(name)))
+
+    # Explicit role assignment: (person name, role name).
+    L.append("-- Explicit role assignment (a roster, not a heuristic).")
+    L.append("INSERT INTO PeopleRoles (PersonID, RoleID) VALUES")
+    vals = []
+    for person_name, role_name in ROSTER_ROLES:
+        vals.append("  ((SELECT PersonID FROM People WHERE Name=%s), "
+                    "(SELECT RoleID FROM Roles WHERE Name=%s))"
+                    % (_sq(person_name), _sq(role_name)))
+    L.append(",\n".join(vals) + ";")
     L.append("")
 
     text = "\n".join(L)

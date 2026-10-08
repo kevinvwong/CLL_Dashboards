@@ -189,13 +189,12 @@ def get_initiative(mi_id: str):
 def is_admin(person) -> bool:
     """Platform administration: users, configuration, everything.
 
-    Reads the local `Administrator` role (ADR-0005, DR-05). The legacy `admin`
-    name and the deprecated `IsAdmin` column are honoured during the migration,
-    so the two agree.
+    Reads the local `PlatformAdmin` role (ADR-0005, DR-05). The earlier `admin`
+    name and the deprecated `IsAdmin` column are honoured during the migration.
     """
     if not person:
         return False
-    if has_role(person, "Administrator") or has_role(person, "admin"):
+    if has_role(person, "PlatformAdmin") or has_role(person, "admin"):
         return True
     return bool(person.get("IsAdmin"))
 
@@ -241,7 +240,7 @@ def has_capability(person, capability: str) -> bool:
     if not person:
         return False
     roles = roles_of(person)
-    if "Administrator" in roles or "admin" in roles or person.get("IsAdmin"):
+    if "PlatformAdmin" in roles or "Administrator" in roles or "admin" in roles or person.get("IsAdmin"):
         return True
     holders = _CAPABILITIES.get(capability, frozenset())
     return bool(roles & holders)

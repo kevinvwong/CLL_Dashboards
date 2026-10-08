@@ -67,7 +67,7 @@ def test_roles_are_seeded_with_the_canonical_set(fresh_db):
         "SELECT p.Name, group_concat(r.Name) FROM PeopleRoles pr "
         "JOIN People p ON p.PersonID=pr.PersonID JOIN Roles r ON r.RoleID=pr.RoleID "
         "GROUP BY p.PersonID")}
-    assert "Administrator" in rows["Kevin"]
+    assert "PlatformAdmin" in rows["Kevin"]
     assert "Operator" in rows["Kevin"]
     assert "ExecutiveSponsor" in rows["Bill Gaudelli"]
     assert "DataOwner" in rows["Elizabeth Smith"]
@@ -84,4 +84,4 @@ def test_authenticate_returns_a_principal_with_roles(logged_in):
     principal = auth.authenticate(Request(scope))
     assert principal is not None
     assert principal.name == "Kevin"
-    assert principal.has_role("Administrator")
+    assert principal.has_role("PlatformAdmin")
