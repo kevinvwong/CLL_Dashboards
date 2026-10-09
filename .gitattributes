@@ -1,0 +1,32 @@
+# Line endings are part of correctness here, not cosmetics.
+#
+# Measured 2026-10-08: with core.autocrlf=true and no .gitattributes,
+# scripts/diagnose_host.sh was stored in git with CRLF on all 204 lines. A bash
+# script with CRLF endings fails on Linux (`/usr/bin/env: 'bash\r': No such file
+# or directory`, and `$'\r': command not found` on every line) - so it would have
+# failed on the very host it was written for. Normalize in the REPOSITORY so the
+# bytes a Linux clone receives are correct regardless of each machine's config.
+
+# Shell scripts must be LF. Non-negotiable: CRLF breaks the shebang.
+*.sh text eol=lf
+
+# Sources and config: normalize to LF in the repository; git converts on
+# checkout only where a platform wants it.
+*.py    text eol=lf
+*.sql   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.txt   text eol=lf
+
+# The committed sample database is binary. Never let EOL conversion touch it:
+# a single flipped byte would corrupt the SQLite file. It is also a build
+# artefact - `python db/build_db.py` regenerates it byte-for-byte.
+*.db    binary
+*.db-wal binary
+*.db-shm binary
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.woff2 binary
