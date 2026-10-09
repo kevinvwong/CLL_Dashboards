@@ -43,18 +43,30 @@ def test_the_committed_db_carries_the_current_plan_year():
     assert int(row[0]) == 2027
 
 
-def test_the_committed_db_milestones_attach_by_priority_id():
-    """Milestones join by PriorityID, not the reused code."""
+def test_the_committed_db_milestones_attach_to_the_initiative():
+    """Milestones join by TeamInitiativeID, not the reused code.
+
+    They used to join by PriorityID, which put them one level too high in the
+    cascade: column F of the register lives on the register ROW, i.e. on the Team
+    Initiative, and six of the seeded milestones traced by name to one of its
+    clauses while rendering under a Dean priority.
+    """
     conn = sqlite3.connect(DB)
     try:
         cols = [d[1] for d in conn.execute("PRAGMA table_info(Milestones)")]
         orphan = conn.execute(
-            "SELECT COUNT(*) FROM Milestones WHERE PriorityID IS NULL").fetchone()[0]
+            "SELECT COUNT(*) FROM Milestones m WHERE NOT EXISTS ("
+            "  SELECT 1 FROM TeamInitiatives t WHERE t.TeamInitiativeID = m.TeamInitiativeID)"
+        ).fetchone()[0]
+        n = conn.execute("SELECT COUNT(*) FROM Milestones").fetchone()[0]
     finally:
         conn.close()
-    assert "PriorityID" in cols
+    assert "TeamInitiativeID" in cols
+    assert "PriorityID" not in cols, "the milestones still key on the priority"
     assert "PriorityCode" not in cols, "the milestones still key on the reused code"
     assert orphan == 0
+    # 84 real clauses, not the 18 mock rows this used to assert.
+    assert n == 84
 
 
 def test_a_signed_in_priority_page_renders_against_the_committed_db(logged_in):

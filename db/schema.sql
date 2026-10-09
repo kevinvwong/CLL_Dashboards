@@ -91,29 +91,97 @@ CREATE TABLE Priorities (
 -- own requirement rows A-07..A-17 (Oct16_Wireframe_Data_Lists.xlsx, "Option A
 -- Data"), and every one is populated by the intake, never by hand.
 CREATE TABLE Milestones (
-    MilestoneID  INTEGER PRIMARY KEY,
-    -- Keyed to the PRIORITY ROW, not its code: a milestone belongs to one
-    -- year's priority, and the code 'P01' recurs each year (multi-year fix,
-    -- 2026-10-08).
-    PriorityID   INTEGER NOT NULL REFERENCES Priorities(PriorityID),
-    Name         TEXT    NOT NULL,      -- a checkable event, not an activity
+    MilestoneID      INTEGER PRIMARY KEY,
+    -- PARENT IS THE TEAM INITIATIVE, NOT THE PRIORITY (2026-10-09).
+    --
+    -- These milestones were previously keyed to Priorities, which put them one
+    -- level too high in the cascade. Six of the previous eighteen traced by name
+    -- to a column F clause of the register, and column F lives on the register
+    -- ROW - i.e. on the Team Initiative - so those six were rendering under a
+    -- Dean priority while the initiative that owned them sat elsewhere on the
+    -- screen. The cascade the register actually describes is
+    --   Goal -> Priority -> Team Initiative -> Milestone
+    -- and the schema now matches it.
+    TeamInitiativeID INTEGER NOT NULL,
+    -- A milestone belongs to one year's initiative, and the initiative codes recur
+    -- each plan year (the same reason Priorities is keyed (PlanYear, Code)).
+    PlanYear         INTEGER NOT NULL,
+    SortOrder        INTEGER NOT NULL,
+
+    -- VERBATIM semicolon-delimited clause of register column F, "FY2027 Target /
+    -- Achievement Marks". Not summarised: the register's phrasing is the board's
+    -- own wording and is the atom being reported on.
+    Name             TEXT    NOT NULL,
+
+    -- Atomised out of the clause text. The register makes this hard to do
+    -- because one cell held the measure, the threshold and the event in a single
+    -- sentence - "at least 20% reuse" is all three at once. These are best-effort
+    -- extractions and MAY BE NULL; nothing depends on them being populated.
+    -- ALWAYS NULL. Four regex formulations failed to extract this from prose
+    -- ("pproved objects", "faculty collaborators from"), so the column is left
+    -- for a human rather than filled with plausible-looking junk. TargetQuarter
+    -- below IS machine-extracted; this one is not, and looks the same in a dump.
+    Measure          TEXT,
+    TargetValue      TEXT,   -- the threshold ('20%', '$1M', '45 days')
+    TargetQuarter    INTEGER CHECK (TargetQuarter BETWEEN 1 AND 4),
+
+    -- ROLLUP WEIGHTS. INFERRED, NOT SUPPLIED BY THE REGISTER.
+    --
+    -- The register gives 84 targets and zero per-clause achievement values, so a
+    -- rollup needs weights that do not exist. These are derived from two signals
+    -- the register's own text provides, and the derivation is recorded on every
+    -- row so it can be audited and corrected:
+    --   prominence  - clause 1 of a cell is that initiative's headline commitment
+    --   hardness    - a surviving numeral is a committed magnitude; a gate verb
+    --                 without one is softer; neither is directional
+    -- The weight is raw = prominence * hardness, normalised WITHIN the initiative
+    -- so the weights of one initiative sum to 1 and cannot steal attainment from
+    -- another. Two earlier formulations were rejected during calibration:
+    -- "contains any digit" scored 'B2B strategy launched' as quantified, and
+    -- requiring adjacency between numeral and unit noun scored 'More than 1,000
+    -- approved objects' as vague. Both were caught only by reading the clauses.
+    Weight           REAL    NOT NULL DEFAULT 1.0 CHECK (Weight > 0),
+    WeightBasis      TEXT    NOT NULL DEFAULT 'support-soft'
+                     CHECK (WeightBasis IN ('headline-quant','headline-gate',
+                                            'headline-soft','support-quant',
+                                            'support-gate','support-soft')),
+    -- 'inferred' means a machine derived it and no human has confirmed it. The
+    -- UI must be able to say so; an inferred weight presented as settled would
+    -- be a fabricated number in front of the board.
+    WeightSource     TEXT    NOT NULL DEFAULT 'inferred'
+                     CHECK (WeightSource IN ('inferred','confirmed')),
+
+    -- Twelve of the 84 clauses are not checkable events by the schema's own
+    -- definition ("personalized journey", "AI and Durable Skills"). They are
+    -- KEPT and they COUNT, because excluding them would quietly redefine the
+    -- denominator, but they are flagged so someone rewrites them into something
+    -- that can be Met or Missed without argument.
+    NeedsRewrite     INTEGER NOT NULL DEFAULT 0 CHECK (NeedsRewrite IN (0,1)),
+
     -- A milestone's own status vocabulary (ADR-0002): an event is Met or Missed;
     -- it is never "On track" and never "Complete".
-    Status       TEXT    NOT NULL DEFAULT 'Not started'
-                 CHECK (Status IN ('Met','In progress','Not started','Missed')),
-    PlannedDate  TEXT,                  -- ISO date the milestone is due
-    DateMet      TEXT,                  -- ISO date achieved, when Met
-    OwnerLabel   TEXT,                  -- who is responsible, as named
-    EvidenceURL  TEXT,                  -- approving doc / minutes / release note
-    SortOrder    INTEGER NOT NULL DEFAULT 0,
-    IsActive     INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1)),
-    UNIQUE (PriorityID, Name)
+    Status           TEXT    NOT NULL DEFAULT 'Not started'
+                     CHECK (Status IN ('Met','In progress','Not started','Missed')),
+    PlannedDate      TEXT,                  -- ISO date the milestone is due
+    DateMet          TEXT,                  -- ISO date achieved, when Met
+    OwnerLabel       TEXT,                  -- who is responsible, as named
+    EvidenceURL      TEXT,                  -- approving doc / minutes / release note
+    IsActive         INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1)),
+    UNIQUE (TeamInitiativeID, PlanYear, Name),
+    FOREIGN KEY (TeamInitiativeID, PlanYear)
+        REFERENCES TeamInitiatives(TeamInitiativeID, PlanYear)
 );
 
--- Milestones reached / planned per priority, for the Outcomes cards and the
--- rings. LEFT JOIN so a priority with no milestones yet still appears, reading
--- 0 of 0 rather than vanishing. Keyed by PriorityID, so each year's priorities
--- report their own milestones.
+-- ---------- Priority-level milestone progress (rebuilt 2026-10-09) ------------
+-- This view kept its name and its (Planned, Reached) contract, but its meaning
+-- changed. It used to read Milestones directly, because milestones were keyed to
+-- Priorities. They are now keyed to Team Initiatives, so a priority's progress
+-- is the aggregate of the milestones of the initiatives that feed it.
+--
+-- Consequences worth knowing: an initiative linked to BOTH its primary and its
+-- secondary priority contributes to both rollups (the register names two), so
+-- Planned summed across priorities exceeds 84. And a priority with no linked
+-- initiative reads 0 of 0, as before.
 CREATE VIEW vw_PriorityMilestoneProgress AS
 SELECT p.PriorityID AS PriorityID,
        p.Code AS PriorityCode,
@@ -122,8 +190,77 @@ SELECT p.PriorityID AS PriorityID,
        COUNT(m.MilestoneID) AS Planned,
        SUM(CASE WHEN m.Status = 'Met' THEN 1 ELSE 0 END) AS Reached
 FROM Priorities p
-LEFT JOIN Milestones m ON m.PriorityID = p.PriorityID AND m.IsActive = 1
+LEFT JOIN TeamInitiativePriorities tip ON tip.PriorityID = p.PriorityID
+LEFT JOIN Milestones m
+       ON m.TeamInitiativeID = tip.TeamInitiativeID
+      AND m.IsActive = 1
+      AND m.PlanYear = p.PlanYear
 GROUP BY p.PriorityID, p.Code, p.PlanYear, p.FullTitle;
+
+-- ---------- Initiative attainment: the rollup (2026-10-09) --------------------
+-- Milestones roll UP to the initiative. There is deliberately no stored status
+-- on TeamInitiatives any more: an earlier version kept both, and the two agree
+-- only until the first milestone is reported, after which they drift silently.
+-- One source of truth, computed.
+--
+-- Attainment is the WEIGHTED met fraction against the WHOLE plan, and it is NULL
+-- until something has been reported. Both halves of that matter:
+--
+--   * dividing by the total weight, not by the weight of the DECIDED milestones.
+--     Dividing by the decided subset scores "of what you have decided, how much
+--     did you achieve", which reads as 100% the moment one milestone is marked
+--     Met and the other three are untouched. Proven on 3-02: one of four met
+--     returned 100% instead of 40%.
+--   * NULL rather than 0 when nothing has been reported. "Nothing reported" and
+--     "nothing achieved" are different facts and AC-005 requires they are not
+--     shown as one. ReportedPct carries the 0% case instead, where it belongs.
+--
+-- NeedsRewriteCount is carried alongside so the UI can say how much of the
+-- attainment rests on clauses that are not yet checkable events.
+CREATE VIEW vw_TeamInitiativeAttainment AS
+SELECT ti.TeamInitiativeID AS TeamInitiativeID,
+       ti.Code AS Code,
+       ti.Title AS Title,
+       m.PlanYear AS PlanYear,
+       COUNT(m.MilestoneID) AS MilestoneCount,
+       SUM(CASE WHEN m.Status = 'Met' THEN 1 ELSE 0 END) AS MetCount,
+       SUM(CASE WHEN m.Status = 'Missed' THEN 1 ELSE 0 END) AS MissedCount,
+       SUM(CASE WHEN m.Status = 'In progress' THEN 1 ELSE 0 END) AS InProgressCount,
+       SUM(CASE WHEN m.Status = 'Not started' THEN 1 ELSE 0 END) AS NotStartedCount,
+       SUM(m.NeedsRewrite) AS NeedsRewriteCount,
+       -- how much of the plan has been REPORTED on at all (0 when none)
+       ROUND(100.0 * SUM(CASE WHEN m.Status <> 'Not started' THEN m.Weight ELSE 0 END)
+             / NULLIF(SUM(m.Weight), 0)) AS ReportedPct,
+       -- how much of the plan is ACHIEVED; NULL until something is reported
+       CASE WHEN SUM(CASE WHEN m.Status <> 'Not started' THEN 1 ELSE 0 END) = 0
+            THEN NULL
+            ELSE ROUND(100.0 * SUM(CASE WHEN m.Status = 'Met' THEN m.Weight ELSE 0 END)
+                       / NULLIF(SUM(m.Weight), 0))
+       END AS AttainmentPct
+FROM TeamInitiatives ti
+JOIN Milestones m ON m.TeamInitiativeID = ti.TeamInitiativeID AND m.IsActive = 1
+GROUP BY ti.TeamInitiativeID, ti.Code, ti.Title, m.PlanYear;
+
+-- The headline status is DERIVED from the rollup, never stored:
+--   Met          every milestone Met or Missed, and at least one Met, and no Missed
+--   Missed       any milestone Missed and nothing outstanding
+--   In progress  something reported underway, or something already achieved
+--   Not started  nothing reported
+-- An initiative with no milestones at all does not appear here and reads as
+-- 'Not started' at the call site - absence of reporting, not failure.
+CREATE VIEW vw_TeamInitiativeStatus AS
+SELECT a.TeamInitiativeID, a.Code, a.PlanYear,
+       a.MilestoneCount, a.MetCount, a.MissedCount,
+       a.InProgressCount, a.NotStartedCount, a.NeedsRewriteCount,
+       a.ReportedPct, a.AttainmentPct,
+       CASE
+         WHEN a.MetCount = a.MilestoneCount THEN 'Met'
+         WHEN a.MissedCount > 0 AND a.NotStartedCount = 0
+              AND a.InProgressCount = 0 THEN 'Missed'
+         WHEN a.MetCount > 0 OR a.InProgressCount > 0 OR a.MissedCount > 0 THEN 'In progress'
+         ELSE 'Not started'
+       END AS Status
+FROM vw_TeamInitiativeAttainment a;
 
 -- ---------- Dataset provenance -----------------------------------------------
 -- Whether the data is a seeded MOCK or imported-and-confirmed. The UI reads this
@@ -160,10 +297,15 @@ CREATE TABLE SourceAreas (
 -- workbook area they came from; the two are different axes.
 CREATE TABLE TeamInitiatives (
     TeamInitiativeID          INTEGER PRIMARY KEY,
-    Code           TEXT    NOT NULL UNIQUE,   -- e.g. '3-02'
+    -- Codes RECUR each plan year, so the identity is (PlanYear, Code) and not
+    -- Code alone - the same correction Priorities already carries. Without this
+    -- a 2028 register could not store '3-02' and its milestones would attach to
+    -- the 2027 row.
+    Code           TEXT    NOT NULL,          -- e.g. '3-02'
+    PlanYear       INTEGER NOT NULL DEFAULT 2027,
     -- The canon workbook's own stable key (MI-001..MI-029), so a row can be
     -- cited by the identifier the source register uses.
-    MIId           TEXT    UNIQUE,
+    MIId           TEXT,
     Title          TEXT    NOT NULL,
     TeamID         INTEGER REFERENCES Teams(TeamID),
     SourceAreaID   INTEGER REFERENCES SourceAreas(SourceAreaID),
@@ -179,12 +321,19 @@ CREATE TABLE TeamInitiatives (
     ProposedTarget TEXT,
     TargetStatus   TEXT NOT NULL DEFAULT 'needs_review'
                    CHECK (TargetStatus IN ('source','needs_review')),
-    Status         TEXT NOT NULL DEFAULT 'Not started',
+    -- No Status column: it is DERIVED from the milestones now (2026-09-10 ->
+    -- 2026-10-09 correction). See vw_TeamInitiativeStatus. All 29 rows read
+    -- 'Not started' today, so removing the stored value changed no displayed
+    -- figure - but keeping both would have let the register and the dashboard
+    -- disagree the first time a milestone was reported.
     Note           TEXT,
     -- Retire, don't delete (carried from the prototype model at the merge,
     -- 2026-10-07): a retired initiative disappears from every list and card but
     -- its history is kept.
-    IsActive       INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1))
+    IsActive       INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0,1)),
+    UNIQUE (PlanYear, Code),
+    UNIQUE (PlanYear, MIId),
+    UNIQUE (TeamInitiativeID, PlanYear)
 );
 
 -- Which priorities a Team Initiative feeds (its `priorities` array).
@@ -316,13 +465,22 @@ CREATE INDEX IX_AuditLog_Entity   ON AuditLog(EntityType, EntityKey);
 -- One view per screen, matching the existing convention. These expose the
 -- 29 Team Initiatives with their team, source area, and what they feed.
 
+-- Status is NOT selected from the table: it no longer exists there. It comes from
+-- the derived rollup, LEFT JOINed so an initiative with no milestones yet still
+-- appears, reading NULL rather than vanishing. A NULL means "nothing reported",
+-- which the UI must not render as 0% (AC-005).
 CREATE VIEW vw_TeamInitiatives AS
-SELECT k.TeamInitiativeID, k.Code, k.Title, k.StrategyAlign, k.Initiatives,
+SELECT k.TeamInitiativeID, k.Code, k.PlanYear, k.Title, k.StrategyAlign, k.Initiatives,
        k.ProposedTarget, k.TargetStatus,
-       k.Status, k.Note,
+       k.Note,
+       s.Status, s.AttainmentPct, s.MilestoneCount, s.MetCount,
+       s.InProgressCount, s.NotStartedCount, s.MissedCount,
+       s.NeedsRewriteCount,
        t.TeamID, t.Name AS Team,
        sa.SourceAreaID, sa.Name AS SourceArea
 FROM TeamInitiatives k
+LEFT JOIN vw_TeamInitiativeStatus s
+       ON s.TeamInitiativeID = k.TeamInitiativeID AND s.PlanYear = k.PlanYear
 LEFT JOIN Teams t       ON t.TeamID = k.TeamID
 LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID;
 

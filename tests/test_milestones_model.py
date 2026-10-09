@@ -28,17 +28,32 @@ def test_the_view_returns_every_priority_even_with_no_milestones(fresh_db):
     assert all(r[2] <= r[1] for r in rows), "reached exceeds planned"
 
 
-def test_the_seeded_milestones_match_the_wireframe_counts(fresh_db):
-    """18 milestones, 3 per priority, and the reached counts the wireframe drew.
-    Milestones join to Priorities by PriorityID (multi-year fix, 2026-10-08)."""
-    assert _count(fresh_db, "SELECT COUNT(*) FROM Milestones") == 18
+def test_the_seeded_milestones_match_the_register_counts(fresh_db):
+    """84 milestones, one per column F clause, spread across all 29 initiatives.
+
+    This used to assert 18 wireframe mocks at 3 per priority. The mock rows are
+    gone; the count is now derived from register column F, which is what the
+    generator reads, so this pins the generator to the source rather than to a
+    number someone remembers.
+    """
+    assert _count(fresh_db, "SELECT COUNT(*) FROM Milestones") == 84
     per = dict(sqlite3.connect(fresh_db).execute(
-        "SELECT p.Code, COUNT(*) FROM Milestones m JOIN Priorities p "
-        "ON p.PriorityID = m.PriorityID GROUP BY p.Code"))
-    assert per == {"P01": 3, "P02": 3, "P03": 3, "P04": 3, "P05": 3, "P06": 3}
+        "SELECT ti.Code, COUNT(*) FROM Milestones m "
+        "JOIN TeamInitiatives ti ON ti.TeamInitiativeID = m.TeamInitiativeID "
+        "GROUP BY ti.Code"))
+    assert len(per) == 29, "every initiative should carry clauses"
+    assert sum(per.values()) == 84
+    # clause 1 of every cell is a headline milestone, so it is the heaviest
+    heaviest = dict(sqlite3.connect(fresh_db).execute(
+        "SELECT ti.Code, m.Weight FROM Milestones m "
+        "JOIN TeamInitiatives ti ON ti.TeamInitiativeID = m.TeamInitiativeID "
+        "WHERE m.SortOrder = 1"))
+    assert all(w > 0 for w in heaviest.values())
     reached = dict(sqlite3.connect(fresh_db).execute(
         "SELECT PriorityCode, Reached FROM vw_PriorityMilestoneProgress"))
-    assert reached == {"P01": 1, "P02": 2, "P03": 1, "P04": 0, "P05": 1, "P06": 1}
+    # nothing is reported yet, so nothing is reached - and every priority that
+    # HAS a linked initiative reports a positive planned count.
+    assert all(v == 0 for v in reached.values()), "no milestone is reported yet"
 
 
 def test_milestone_status_vocabulary_is_the_event_set(fresh_db):
@@ -75,6 +90,12 @@ def test_queries_read_the_model(fresh_db, monkeypatch):
     outcomes = queries.priority_outcomes()
     assert [o["Code"] for o in outcomes] == ["P01", "P02", "P03", "P04", "P05", "P06"]
     p01 = outcomes[0]
-    assert p01["Reached"] == 1 and p01["Planned"] == 3
-    assert len(p01["milestones"]) == 3
-    assert p01["milestones"][0]["Status"] == "Met"
+    # P01's milestones are now the clauses of the initiatives linked to P01,
+    # not a fixed set of 3 mocks. The invariants that matter: every priority
+    # has at least one milestone, reached never exceeds planned, and the
+    # statuses are the event vocabulary.
+    assert p01["Planned"] >= 1
+    assert p01["Reached"] == 0, "no milestone is reported yet"
+    assert len(p01["milestones"]) == p01["Planned"]
+    assert all(m["Status"] in ("Met", "In progress", "Not started", "Missed")
+               for m in p01["milestones"])

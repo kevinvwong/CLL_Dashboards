@@ -235,7 +235,11 @@ def milestones_for_year(conn, year: int):
     rows = _dicts(conn.execute(
         "SELECT p.Code, m.Name, m.Status, m.PlannedDate, m.DateMet, "
         "       m.OwnerLabel, m.EvidenceURL "
-        "FROM Milestones m JOIN Priorities p ON p.PriorityID = m.PriorityID "
+        "FROM Milestones m "
+        "JOIN TeamInitiatives ti ON ti.TeamInitiativeID = m.TeamInitiativeID "
+        "JOIN TeamInitiativePriorities tip ON tip.TeamInitiativeID = ti.TeamInitiativeID "
+        "JOIN Priorities p ON p.PriorityID = tip.PriorityID "
+        " AND p.PlanYear = m.PlanYear "
         "WHERE m.IsActive = 1 AND p.Code IS NOT NULL AND p.PlanYear = ? "
         "ORDER BY p.Code, m.SortOrder, m.MilestoneID",
         (year,)).fetchall())
@@ -531,7 +535,11 @@ def team_overview(conn):
         "SELECT TeamID, Name, Description FROM Teams ORDER BY Name").fetchall())
     mis = _dicts(conn.execute(
         "SELECT TeamInitiativeID, Code, MIId, Title, TeamID, SourceAreaID, StrategyAlign, "
-        "       Initiatives, ProposedTarget, TargetStatus, Status, Note FROM TeamInitiatives "
+        "       Initiatives, ProposedTarget, TargetStatus, "
+        "       (SELECT s.Status FROM vw_TeamInitiativeStatus s"
+        "         WHERE s.TeamInitiativeID = TeamInitiatives.TeamInitiativeID"
+        "           AND s.PlanYear = TeamInitiatives.PlanYear) AS Status, "
+        "       Note FROM TeamInitiatives "
         "ORDER BY MIId").fetchall())
     areas = {r["SourceAreaID"]: r["Name"] for r in conn.execute("SELECT SourceAreaID, Name FROM SourceAreas")}
     for k in mis:
@@ -598,7 +606,7 @@ def team_initiative_cards(conn):
     mis = _dicts(conn.execute(
         "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Initiatives, "
         "       k.ProposedTarget, k.TargetStatus, "
-        "       k.Status, k.Note, k.TeamID, t.Name AS Team, "
+        "       (SELECT s.Status FROM vw_TeamInitiativeStatus s WHERE s.TeamInitiativeID = k.TeamInitiativeID AND s.PlanYear = k.PlanYear) AS Status, k.Note, k.TeamID, t.Name AS Team, "
         "       sa.Name AS SourceArea "
         "FROM TeamInitiatives k LEFT JOIN Teams t ON t.TeamID = k.TeamID "
         "LEFT JOIN SourceAreas sa ON sa.SourceAreaID = k.SourceAreaID "
@@ -644,7 +652,7 @@ def goal_team_initiatives(conn, goal_number):
     return _dicts(conn.execute(
         "SELECT DISTINCT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
         "       k.ProposedTarget, k.TargetStatus, t.Name AS Team, "
-        "       COALESCE(lp.Status, k.Status, 'Not started') AS Status, "
+        "       COALESCE(lp.Status, (SELECT s.Status FROM vw_TeamInitiativeStatus s WHERE s.TeamInitiativeID = k.TeamInitiativeID AND s.PlanYear = k.PlanYear), 'Not started') AS Status, "
         "       sa.Name AS SourceArea "
         "FROM TeamInitiativeGoals kg "
         "JOIN TeamInitiatives k ON k.TeamInitiativeID = kg.TeamInitiativeID "
@@ -739,7 +747,7 @@ def team_initiative_detail(conn, mi_id):
     row = conn.execute(
         "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, "
         "       k.Initiatives, k.ProposedTarget, k.Description, "
-        "       k.TargetStatus, k.Status, k.Note, "
+        "       k.TargetStatus, (SELECT s.Status FROM vw_TeamInitiativeStatus s WHERE s.TeamInitiativeID = k.TeamInitiativeID AND s.PlanYear = k.PlanYear) AS Status, k.Note, "
         "       t.TeamID, t.Name AS Team, sa.Name AS SourceArea "
         "FROM TeamInitiatives k "
         "LEFT JOIN Teams t ON t.TeamID = k.TeamID "
@@ -948,6 +956,17 @@ def initiative_card(conn, mi_id):
         "       (SELECT Name FROM People e WHERE e.PersonID = pu.EnteredByID) AS EnteredBy "
         "FROM TeamInitiativeUpdates pu WHERE TeamInitiativeID = ? "
         "ORDER BY UpdateDate DESC, UpdateID DESC", (card["InitiativeID"],))]
+    attainment = conn.execute(
+        "SELECT s.* FROM vw_TeamInitiativeStatus s "
+        "JOIN TeamInitiatives t ON t.TeamInitiativeID=s.TeamInitiativeID "
+        " AND t.PlanYear=s.PlanYear WHERE t.TeamInitiativeID=?",
+        (card['InitiativeID'],)).fetchone()
+    card['attainment'] = dict(attainment) if attainment else None
+    card['milestones'] = _dicts(conn.execute(
+        "SELECT m.* FROM Milestones m JOIN TeamInitiatives t "
+        "ON t.TeamInitiativeID=m.TeamInitiativeID AND t.PlanYear=m.PlanYear "
+        "WHERE m.TeamInitiativeID=? AND m.IsActive=1 ORDER BY m.SortOrder,m.MilestoneID",
+        (card['InitiativeID'],)).fetchall())
     return card
 
 
@@ -1054,7 +1073,7 @@ def priority_detail(conn, name):
         return None
     out = dict(row)
     out["team_initiatives"] = [dict(r) for r in conn.execute(
-        "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, k.Status, "
+        "SELECT k.TeamInitiativeID, k.Code, k.MIId, k.Title, k.StrategyAlign, (SELECT s.Status FROM vw_TeamInitiativeStatus s WHERE s.TeamInitiativeID = k.TeamInitiativeID AND s.PlanYear = k.PlanYear) AS Status, "
         "       k.TargetStatus, k.ProposedTarget, t.Name AS Team "
         "FROM TeamInitiativePriorities tp "
         "JOIN TeamInitiatives k ON k.TeamInitiativeID = tp.TeamInitiativeID "
@@ -1102,10 +1121,16 @@ def priority_outcomes(conn, year):
         "WHERE p.Code IS NOT NULL AND p.PlanYear = ? ORDER BY p.Code", (year,)).fetchall())
     by_id: dict = {}
     for m in conn.execute(
-            "SELECT PriorityID, Name, Status, PlannedDate, DateMet, "
-            "       OwnerLabel, EvidenceURL FROM Milestones "
-            "WHERE IsActive = 1 ORDER BY PriorityID, SortOrder, MilestoneID"):
-        by_id.setdefault(m["PriorityID"], []).append(dict(m))
+            "SELECT p.PriorityID AS OwnerID, m.Name, m.Status, m.PlannedDate, "
+            "       m.DateMet, m.OwnerLabel, m.EvidenceURL "
+            "FROM Milestones m "
+            "JOIN TeamInitiatives ti ON ti.TeamInitiativeID = m.TeamInitiativeID "
+            "JOIN TeamInitiativePriorities tip ON tip.TeamInitiativeID = ti.TeamInitiativeID "
+            "JOIN Priorities p ON p.PriorityID = tip.PriorityID "
+            "  AND p.PlanYear = m.PlanYear "
+            "WHERE m.IsActive = 1 "
+            "ORDER BY p.PriorityID, m.SortOrder, m.MilestoneID"):
+        by_id.setdefault(m["OwnerID"], []).append(dict(m))
     out = []
     for r in rows:
         d = dict(r)
@@ -1775,13 +1800,20 @@ def telemetry(conn):
     }
 
     # 2. Milestones - the only other layer with a status distribution loaded.
+    # The 18 mock rows this used to count are gone; the 84 real clauses are
+    # counted now, and the tile says so rather than carrying the old
+    # "exemplars only" caveat, which was true of the mock and false of the real.
     counts = {r["Status"]: r["n"] for r in ms}
     ms_total = sum(counts.values())
     ms_met = counts.get("Met", 0)
+    ms_flagged = conn.execute(
+        "SELECT COUNT(*) FROM Milestones WHERE IsActive = 1 AND NeedsRewrite = 1"
+    ).fetchone()[0]
     milestones = {
         "value": f"{ms_met}/{ms_total}",
         "label": "Milestones met",
-        "detail": "exemplars only, per D-006",
+        "detail": (f"{ms_flagged} clause{'s' if ms_flagged != 1 else ''} need{'s' if ms_flagged == 1 else ''} "
+                   f"rewording") if ms_flagged else "every clause is a checkable event",
         "href": "/outcomes",
     }
 

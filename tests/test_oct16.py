@@ -76,7 +76,7 @@ def test_the_page_reads_from_the_database(logged_in, fresh_db):
 
     before = _outcomes(logged_in)
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE Milestones SET Status='Met' WHERE Name='First asset audit'")
+    conn.execute("UPDATE Milestones SET Status='Met' WHERE Name='B2B strategy launched'")
     conn.commit()
     conn.close()
     after = _outcomes(logged_in)

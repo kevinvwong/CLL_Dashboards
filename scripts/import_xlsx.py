@@ -98,8 +98,19 @@ def _import_milestones(conn, wb, problems) -> int:
 
     A PRESENT sheet replaces the milestone set: supplying the confirmed rows IS
     the confirmation act (ADR-0001). An empty sheet is ignored, so an admin who
-    leaves it blank does not wipe the model by accident. Milestones attach to a
-    priority ROW (year + code), since the code recurs each year.
+    leaves it blank does not wipe the model by accident.
+
+    Milestones attach to a TEAM INITIATIVE ROW (year + code) since the code
+    recurs each year. They used to attach to a Priority, which put them one level
+    too high: column F of the register lives on the initiative row, and six of
+    the seeded milestones traced by name to one of its clauses.
+
+    The sheet also carries Weight and "Needs rewrite". Weight is what the
+    attainment rollup divides by, and every seeded weight is WeightSource
+    'inferred' - this import is where a human confirms or corrects one, so the
+    column is read and a supplied weight flips WeightSource to 'confirmed'.
+    Weights are re-normalised per initiative afterwards, so the sheet does not
+    have to sum to 1 by hand.
     """
     if "Milestones" not in wb.sheetnames:
         return 0
@@ -107,13 +118,16 @@ def _import_milestones(conn, wb, problems) -> int:
     if not rows:
         return 0
     year = _current_plan_year(conn)
-    by_code = {r["Code"]: r["PriorityID"] for r in conn.execute(
-        "SELECT PriorityID, Code FROM Priorities WHERE Code IS NOT NULL AND PlanYear = ?",
-        (year,))}
-    conn.execute("DELETE FROM Milestones")
+    by_code = {r["Code"]: r["TeamInitiativeID"] for r in conn.execute(
+        "SELECT TeamInitiativeID, Code FROM TeamInitiatives "
+        "WHERE Code IS NOT NULL AND PlanYear = ?", (year,))}
+    existing = {(r['TeamInitiativeID'], r['Name']): dict(r) for r in conn.execute(
+        'SELECT * FROM Milestones WHERE PlanYear=?', (year,))}
+    conn.execute("DELETE FROM Milestones WHERE PlanYear=?", (year,))
     n = 0
+    orders = {}
     for excel_row, r in rows:
-        code = r.get("Priority", "")
+        code = r.get("Initiative", "")
         name = r.get("Milestone", "")
         status = r.get("Status", "") or "Not started"
         if not name:
@@ -121,21 +135,76 @@ def _import_milestones(conn, wb, problems) -> int:
             continue
         if code not in by_code:
             problems.append(Problem("Milestones", excel_row,
-                                    f"{name!r}: priority {code!r} is not a known priority "
-                                    f"for plan year {year}"))
+                                    f"{name!r}: initiative {code!r} is not a known "
+                                    f"Team Initiative for plan year {year}"))
             continue
         if status not in MILESTONE_STATUSES:
             problems.append(Problem("Milestones", excel_row,
                                     f"{name!r}: status {status!r} is not a milestone status"))
             continue
+        supplied_weight = _parse_weight(r.get("Weight"))
+        if str(r.get('Weight') or '').strip() and supplied_weight is None:
+            problems.append(Problem('Milestones', excel_row, 'Weight must be a finite positive number'))
+            continue
+        previous = existing.get((by_code[code], name), {})
+        basis = r.get('Weight basis') or previous.get('WeightBasis', 'support-soft')
+        source = r.get('Weight source') or previous.get('WeightSource', 'inferred')
+        if source not in ('inferred', 'confirmed') or basis not in (
+                'headline-quant', 'headline-gate', 'headline-soft',
+                'support-quant', 'support-gate', 'support-soft'):
+            problems.append(Problem('Milestones', excel_row, 'Invalid weight basis or source'))
+            continue
+        orders[code] = orders.get(code, 0) + 1
         conn.execute(
-            "INSERT INTO Milestones (PriorityID, Name, Status, PlannedDate, "
-            "DateMet, OwnerLabel, EvidenceURL, SortOrder) VALUES (?,?,?,?,?,?,?,?)",
-            (by_code[code], name, status, r.get("Planned date") or None,
-             r.get("Date met") or None, r.get("Owner") or None,
-             r.get("Evidence URL") or None, n + 1))
+            "INSERT INTO Milestones (TeamInitiativeID, PlanYear, SortOrder, Name, "
+            "Status, PlannedDate, DateMet, OwnerLabel, EvidenceURL, Weight, "
+            "WeightBasis, WeightSource, NeedsRewrite) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (by_code[code], year, orders[code], name, status,
+             r.get("Planned date") or None, r.get("Date met") or None,
+             r.get("Owner") or None, r.get("Evidence URL") or None,
+             # A row the admin did not touch keeps a placeholder weight; the
+             # renormalise below makes the numbers consistent either way, and the
+             # placeholder is honest because WeightSource stays 'inferred'.
+              supplied_weight if supplied_weight is not None else previous.get('Weight', 1.0),
+              basis, source, 1 if _parse_flag(r.get("Needs rewrite")) else 0))
         n += 1
+    _renormalise_milestone_weights(conn, year)
     return n
+
+
+def _parse_weight(raw):
+    """The sheet's Weight cell -> float, or None when blank/unparseable."""
+    try:
+        import math
+        text = str(raw).strip()
+        value = float(text.rstrip('%')) / (100 if text.endswith('%') else 1)
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) and value > 0 else None
+
+
+def _parse_flag(raw):
+    return str(raw or "").strip().lower() in ("y", "yes", "true", "1")
+
+
+def _renormalise_milestone_weights(conn, year):
+    """Make the weights of each initiative sum to 1.
+
+    The sheet does not ask an admin to hand-total 84 rows, and a partial paste
+    should not silently change the rollup: normalising here keeps attainment
+    comparable across initiatives no matter how the weights arrived.
+    """
+    for (tid,) in conn.execute(
+            "SELECT DISTINCT TeamInitiativeID FROM Milestones WHERE PlanYear=?", (year,)).fetchall():
+        total = conn.execute(
+            "SELECT SUM(Weight) FROM Milestones WHERE TeamInitiativeID = ? AND PlanYear=?",
+            (tid, year)).fetchone()[0]
+        if not total:
+            continue
+        conn.execute(
+            "UPDATE Milestones SET Weight = ROUND(Weight / ?, 10) "
+            "WHERE TeamInitiativeID = ? AND PlanYear=?", (total, tid, year))
 
 
 def _import_outcomes(conn, wb, problems) -> int:

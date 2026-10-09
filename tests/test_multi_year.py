@@ -12,7 +12,12 @@ APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _add_2028(db):
-    """A 2028 plan with the same P01 code and its own milestone."""
+    """A 2028 plan with the same P01 code, its own initiative and its own milestone.
+
+    Milestones attach to a Team Initiative, not a Priority, so a 2028 milestone
+    needs a 2028 initiative to hang off - and that initiative must be linked to
+    the 2028 priority for the priority rollup to see it.
+    """
     conn = sqlite3.connect(db)
     conn.execute(
         "INSERT INTO Priorities (PriorityName, PlanYear, Code, FullTitle) "
@@ -20,8 +25,16 @@ def _add_2028(db):
     pid = conn.execute(
         "SELECT PriorityID FROM Priorities WHERE Code='P01' AND PlanYear=2028").fetchone()[0]
     conn.execute(
-        "INSERT INTO Milestones (PriorityID, Name, Status, SortOrder) VALUES (?,?,?,1)",
-        (pid, "A 2028 milestone", "Met"))
+        "INSERT INTO TeamInitiatives (Code, PlanYear, Title) "
+        "VALUES ('1-01', 2028, 'Portfolio & pathways (2028)')")
+    tid = conn.execute(
+        "SELECT TeamInitiativeID FROM TeamInitiatives WHERE Code='1-01' AND PlanYear=2028").fetchone()[0]
+    conn.execute(
+        "INSERT INTO TeamInitiativePriorities (TeamInitiativeID, PriorityID, IsPrimary) "
+        "VALUES (?, ?, 1)", (tid, pid))
+    conn.execute(
+        "INSERT INTO Milestones (TeamInitiativeID, PlanYear, Name, Status, SortOrder) "
+        "VALUES (?, 2028, ?, 'Met', 1)", (tid, "A 2028 milestone"))
     conn.commit()
     conn.close()
 
@@ -68,8 +81,8 @@ def test_priorities_index_folds_into_outcomes(logged_in):
 
 
 def test_a_milestone_cannot_attach_to_the_wrong_year(fresh_db):
-    """A milestone joins by PriorityID, so it cannot land on another year's
-    priority that shares a code."""
+    """A milestone is keyed by (TeamInitiativeID, PlanYear), so it cannot land on
+    another year's initiative that shares a code."""
     from app import queries
     _add_2028(fresh_db)
     for o in queries.priority_outcomes(2028):

@@ -139,15 +139,24 @@ def build(db_path: str, out_path: str):
     # leads"). Importing a workbook that supplies these rows is the confirmation
     # act, and flips the dataset provenance from 'mock' to 'confirmed'.
     ms_ws = wb.create_sheet("Milestones")
-    ms_cols = ["Priority", "Milestone", "Status", "Planned date", "Date met", "Owner", "Evidence URL"]
+    # Keyed by Team Initiative, not Priority (2026-10-09): column F of the
+    # register lives on the initiative row. Weight and "Needs rewrite" are here
+    # because the weights are INFERRED - this sheet is where a human confirms or
+    # corrects them, and a supplied Weight flips WeightSource to 'confirmed'.
+    ms_cols = ["Initiative", "Milestone", "Status", "Weight", "Needs rewrite",
+               "Planned date", "Date met", "Owner", "Evidence URL", "Weight basis", "Weight source"]
     _header(ms_ws, ms_cols,
-            {"Priority": 10, "Milestone": 52, "Status": 14, "Planned date": 14,
+            {"Initiative": 10, "Milestone": 48, "Status": 14, "Weight": 10,
+             "Needs rewrite": 14, "Planned date": 14,
              "Date met": 14, "Owner": 20, "Evidence URL": 40})
-    prio_codes = [r["Code"] for r in conn.execute(
-        "SELECT Code FROM Priorities WHERE Code IS NOT NULL ORDER BY Code")]
-    dv_ms_prio = DataValidation(type="list", formula1='"' + ",".join(prio_codes) + '"', allow_blank=True)
-    ms_ws.add_data_validation(dv_ms_prio)
-    dv_ms_prio.add("A2:A500")
+    ti_codes = [r["Code"] for r in conn.execute(
+        "SELECT Code FROM TeamInitiatives WHERE Code IS NOT NULL ORDER BY Code")]
+    dv_ms_ti = DataValidation(type="list", formula1='"' + ",".join(ti_codes) + '"', allow_blank=True)
+    ms_ws.add_data_validation(dv_ms_ti)
+    dv_ms_ti.add("A2:A500")
+    dv_ms_rw = DataValidation(type="list", formula1='"yes,no"', allow_blank=True)
+    ms_ws.add_data_validation(dv_ms_rw)
+    dv_ms_rw.add("E2:E500")
     dv_ms_status = DataValidation(
         type="list", formula1='"Met,In progress,Not started,Missed"', allow_blank=True)
     ms_ws.add_data_validation(dv_ms_status)
@@ -155,16 +164,20 @@ def build(db_path: str, out_path: str):
     dv_ms_met = DataValidation(
         type="list", formula1='"' + ",".join(p["Name"] for p in people) + '"', allow_blank=True)
     ms_ws.add_data_validation(dv_ms_met)
-    dv_ms_met.add("F2:F500")
+    dv_ms_met.add("H2:H500")
     for m in conn.execute(
-            "SELECT p.Code AS PriorityCode, m.Name, m.Status, m.PlannedDate, m.DateMet, "
-            "       m.OwnerLabel, m.EvidenceURL "
-            "FROM Milestones m JOIN Priorities p ON p.PriorityID = m.PriorityID "
-            "WHERE m.IsActive = 1 AND p.PlanYear = ("
+            "SELECT ti.Code AS InitiativeCode, m.Name, m.Status, m.Weight, m.NeedsRewrite, "
+            "       m.WeightBasis, m.WeightSource, "
+            "       m.PlannedDate, m.DateMet, m.OwnerLabel, m.EvidenceURL "
+            "FROM Milestones m JOIN TeamInitiatives ti "
+            "  ON ti.TeamInitiativeID = m.TeamInitiativeID "
+            "WHERE m.IsActive = 1 AND ti.PlanYear = ("
             "  SELECT Value FROM AppMeta WHERE Key = 'current_plan_year') "
-            "ORDER BY p.Code, m.SortOrder, m.MilestoneID"):
-        ms_ws.append([m["PriorityCode"], m["Name"], m["Status"], m["PlannedDate"] or "",
-                      m["DateMet"] or "", m["OwnerLabel"] or "", m["EvidenceURL"] or ""])
+            "ORDER BY ti.Code, m.SortOrder, m.MilestoneID"):
+        ms_ws.append([m["InitiativeCode"], m["Name"], m["Status"], m["Weight"],
+                      "yes" if m["NeedsRewrite"] else "no", m["PlannedDate"] or "",
+                      m["DateMet"] or "", m["OwnerLabel"] or "", m["EvidenceURL"] or "",
+                      m['WeightBasis'], m['WeightSource']])
 
     # --- Outcomes sheet (enhancement, 2026-10-07) ---------------------------
     # The reported outcome state per priority (workbook A-05/A-06). One row per
@@ -172,7 +185,12 @@ def build(db_path: str, out_path: str):
     out_ws = wb.create_sheet("Outcomes")
     _header(out_ws, ["Priority", "Outcome status", "Last updated"],
             {"Priority": 10, "Outcome status": 16, "Last updated": 16})
-    dv_out_prio = DataValidation(type="list", formula1='"' + ",".join(prio_codes) + '"', allow_blank=True)
+    # The Outcomes sheet is still keyed by PRIORITY and that is correct: the
+    # outcome state is the owner's judgement about a priority, not about an
+    # initiative. Only the Milestones sheet moved.
+    out_prio_codes = [r["Code"] for r in conn.execute(
+        "SELECT Code FROM Priorities WHERE Code IS NOT NULL ORDER BY Code")]
+    dv_out_prio = DataValidation(type="list", formula1='"' + ",".join(out_prio_codes) + '"', allow_blank=True)
     out_ws.add_data_validation(dv_out_prio)
     dv_out_prio.add("A2:A100")
     dv_out_status = DataValidation(

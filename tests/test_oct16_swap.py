@@ -158,7 +158,7 @@ def test_the_page_renders_from_the_database(fresh_db, logged_in):
     assert "milestones reached" in body
 
     conn = sqlite3.connect(fresh_db)
-    conn.execute("UPDATE Milestones SET Status='Met' WHERE Name='First asset audit'")
+    conn.execute("UPDATE Milestones SET Status='Met' WHERE Name='B2B strategy launched'")
     conn.commit()
     conn.close()
 

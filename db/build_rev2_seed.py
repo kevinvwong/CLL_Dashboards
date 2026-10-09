@@ -313,24 +313,30 @@ def build(out=OUT):
         L.append("INSERT INTO dbo.source_area (name) VALUES (%s);" % _s(s["Name"]))
     L.append("GO")
 
-    # milestone: keyed to the annual_priority instance (PRI-<Code>-FY<year>),
-    # resolving the SQLite priority row's (PlanYear, Code) so P01-FY2027's
-    # milestones never attach to another year's P01.
-    L.append("\n-- milestone: the per-year priority milestones.")
-    for m in con.execute(
-            "SELECT m.Name, m.Status, m.PlannedDate, m.DateMet, m.OwnerLabel, "
-            "       m.EvidenceURL, m.SortOrder, m.IsActive, p.Code, p.PlanYear "
-            "FROM Milestones m JOIN Priorities p ON p.PriorityID = m.PriorityID "
-            "ORDER BY p.Code, m.SortOrder, m.MilestoneID"):
-        apri = "PRI-%s-FY%d" % (m["Code"], m["PlanYear"])
-        L.append("IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE priority_id = %s AND name = %s)"
-                 % (_s(apri), _s(m["Name"])))
-        L.append("INSERT INTO dbo.milestone (priority_id, name, status, planned_date, date_met, "
-                 "owner_label, evidence_url, sort_order, active_flag) VALUES "
-                 "(%s, %s, %s, %s, %s, %s, %s, %d, %d);"
-                 % (_s(apri), _s(m["Name"]), _s(m["Status"]), _d(m["PlannedDate"]),
-                    _d(m["DateMet"]), _s(m["OwnerLabel"]), _s(m["EvidenceURL"]),
-                    m["SortOrder"], m["IsActive"]))
+    # milestone: REFUSES until Rev2 carries an initiative keyed milestone.
+    #
+    # Milestones used to hang off Priorities, and Rev2's 008_app_layer.sql matches
+    # that: dbo.milestone.priority_id is NOT NULL and FKs to dbo.annual_priority.
+    # They now hang off Team Initiatives (2026-10-09), because column F of the
+    # register lives on the register ROW, and six of the seeded milestones traced by
+    # name to one of its clauses while rendering under a Dean priority.
+    #
+    # Emitting the old shape here would silently translate an initiative-owned
+    # milestone into a priority-owned one - restoring the mis-parenting on Rev2
+    # while sqlite is correct, which is exactly the drift the parity tests exist to
+    # catch. So this generator stops instead. The repair is an additive 008
+    # follow-up (initiative_id + weight columns, UNIQUE (initiative_id, name)) and a
+    # re-run of this seed; it is NOT part of the sqlite-side change and touches a
+    # live store, so it needs an explicit go-ahead rather than being bundled in.
+    n_milestones = con.execute("SELECT COUNT(*) FROM Milestones").fetchone()[0]
+    if n_milestones:
+        raise SystemExit(
+            "REFUSING: the app now has %d milestones keyed to Team Initiatives, but "
+            "dbo.milestone.priority_id is NOT NULL REFERENCES dbo.annual_priority.\n"
+            "Add an initiative-scoped milestone table (or nullable priority_id plus "
+            "initiative_id, weight, weight_basis, weight_source, needs_rewrite) in a "
+            "008-level migration, then re-run." % n_milestones)
+    L.append("\n-- milestone: no rows (refused, see the note in build_rev2_seed.py).")
     L.append("GO")
 
     # -----------------------------------------------------------------------

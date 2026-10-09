@@ -43,6 +43,13 @@ if "--empty" not in sys.argv:
     milestones = os.path.join(HERE, "seed_milestones.sql")
     if os.path.exists(milestones):
         con.executescript(open(milestones, encoding="utf-8").read())
+    # The 84 REAL milestones, one per column F clause of the register, weighted
+    # for the rollup up to the initiative (2026-10-09). Loaded after the block
+    # above so its DELETE FROM Milestones wins: that seed's 18 mock rows are
+    # retired, and this one is generated from the register rather than invented.
+    clauses = os.path.join(HERE, "seed_milestone_clauses.sql")
+    if os.path.exists(clauses):
+        con.executescript(open(clauses, encoding="utf-8").read())
     # A LOCAL overlay, gitignored, applied after every seed. Environment-specific
     # data that must not be committed (the Clerk user ids that link an SSO identity
     # to a People row) lives here, so a rebuild no longer wipes it. Absent in a

@@ -14,6 +14,27 @@
   </p>
   {% if card.Description %}<p class="card-description">{{ card.Description }}</p>{% endif %}
 
+  {% if card.attainment is defined and card.attainment %}
+  <section aria-label="Weighted milestone attainment">
+    <h3>Weighted milestone attainment</h3>
+    <p><strong>{% if card.attainment.AttainmentPct is none %}Not yet reported{% else %}{{ card.attainment.AttainmentPct | int }}%{% endif %}</strong>
+      · {{ card.attainment.MetCount }} of {{ card.attainment.MilestoneCount }} milestones met
+      · {{ card.attainment.Status }}</p>
+    <p>Weights are provisional where marked inferred. All milestones count, including those flagged for rewrite.</p>
+    <ol class="milestone-list">
+    {% for milestone in card.milestones %}
+      <li>
+        {{ milestone.Name }} — {{ milestone.Status }}
+        <span class="chip">{{ (milestone.Weight * 100) | round(1) }}% weight · {{ milestone.WeightSource }}</span>
+        {% if milestone.TargetQuarter %}<span class="chip">Q{{ milestone.TargetQuarter }}</span>{% endif %}
+        {% if milestone.NeedsRewrite %}<span class="chip chip-warn">Needs rewrite</span>{% endif %}
+      </li>
+    {% endfor %}
+    </ol>
+  </section>
+  <h3>Owner estimate (reported separately)</h3>
+  {% endif %}
+
   {# The header band: status pill and progress, so the drawer opens with the
      facts the reader came for (blueprint-redesign 4.3). #}
   <div class="detail-header">
