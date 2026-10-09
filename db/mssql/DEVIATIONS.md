@@ -240,6 +240,15 @@ milestone" has no answer the data supplies) and the corrected seed re-emits the
 weighted and the weights are machine-inferred, not board-supplied — the
 `weight_source` column is what lets the UI say so.
 
+**Applied to the live store (2026-10-09),** and the ordering caveat that came
+with it: the read has no tie-break the two stores share — SQLite breaks a
+priority's tie on `MilestoneID`, mssql on the IDENTITY `milestone_id`, and the
+two ids are assigned by different traversals. The seed therefore inserts by
+`m.MilestoneID`, which makes the IDENTITY assignment follow the register clause
+order so both `ORDER BY`s coincide. Change that `ORDER BY` and parity fails with
+*identical data on both stores*, which reads as a migration defect and is not
+one.
+
 
 ## A deploy note that cost a live outage
 
