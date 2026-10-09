@@ -27,14 +27,24 @@ COPY db ./db
 # this the /guide page is empty in the container.
 COPY docs ./docs
 
+# Hand /app to appuser AFTER the copies above, not before. The earlier chown
+# only covered the then-empty directory, so every file COPY brought in
+# afterwards (cll_initiatives.db, app/, db/, docs/) landed owned by root:root.
+# The app runs as uid 10001, so opening the database raised "attempt to write a
+# readonly database" the moment connect() set PRAGMA journal_mode=WAL -- which
+# database_reachable() reports as "database unreachable", so /healthz answered
+# 503 against a perfectly readable database.
+#
+# /app is chowned whole rather than just the .db because SQLite also writes the
+# -wal and -shm sidecars into the directory holding the database, and BACKUP_DIR
+# defaults to ./backups underneath it.
+RUN chown -R appuser:appuser --from=root /app
+
 # Non-root from here on. Task 9.4 asked for this explicitly.
 #
-# NOTE: uid 10001 must be able to WRITE the database, including the -wal and
-# -shm files SQLite creates beside it. Under docker-compose the database is a
-# single-file bind mount from the host, so it is owned by whoever owns it on the
-# host, not by appuser. On Linux, either chown the file to 10001 or run
-# `docker compose run --user root` once to fix ownership. This is unverified
-# here - no Docker daemon on this machine - so treat first run as a test.
+# Under docker-compose the database may instead be a single-file bind mount from
+# the host, in which case this chown is masked by the host's ownership: either
+# chown the host file to 10001, or run `docker compose run --user root` once.
 USER appuser
 
 # The port comes from the environment at runtime: docker-compose publishes
