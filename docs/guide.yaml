@@ -47,11 +47,14 @@ chapters:
     audience: user
     path: guide/06-glossary.md
 
-  - slug: signing-in-with-clerk
-    title: Signing in with Clerk
-    group: Reference
-    order: 65
-    audience: user
+  # Development-only. Clerk is not a way in for readers (ADR-0006), and
+  # "Roles and signing in" already covers the sign-in they actually use, so this
+  # sits with the technical chapters rather than beside it as a peer.
+  - slug: clerk-sign-in
+    title: Clerk sign-in (development only)
+    group: Technical
+    order: 85
+    audience: technical
     path: guide/08-clerk-sign-in.md
 
   - slug: authoritative-source

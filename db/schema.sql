@@ -219,11 +219,6 @@ CREATE TABLE People (
     -- Dean, who leads none, and for the dashboard admin.
     TeamID       INTEGER REFERENCES Teams(TeamID),
     IsAdmin      INTEGER NOT NULL DEFAULT 0 CHECK (IsAdmin IN (0,1)),  -- dashboard team: edits everything
-    -- The stopgap credential (auth hardening, 2026-10-07): a PBKDF2 hash of the
-    -- person's PIN, or NULL if none is set. NULL means the picker still asserts
-    -- this person; setting a PIN is what closes self-assertion for them. Kept
-    -- out of the seed so no credential is committed; an admin sets it in-app.
-    Credential   TEXT,
     -- The Clerk user id (e.g. 'user_...') that maps a Clerk identity to this
     -- person (Clerk integration, 2026-10-08). People carry no email, so this is
     -- the explicit link; an admin sets it. NULL means Clerk cannot yet map this

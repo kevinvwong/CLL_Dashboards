@@ -8,8 +8,9 @@ Strategy 2035 plan. Identified `G1`..`G5`. Shown with a distinct icon and colour
 
 **Priority** (also *Annual Priority*) — one of the six FY2027 execution lenses:
 Identity, Innovation, Pathways, Scale, Data, Culture (`P01`..`P06`). A priority is
-an *execution lens*, not itself the thing measured. On screen it reads
-"Priority 1 · One Shared Identity".
+an *execution lens*, not itself the thing measured. Each has a full title, and
+that is what you see on screen — the six read "Priority 1 · One Shared Identity"
+through "Priority 6 · Culture & Learning", always in that one form.
 
 **Team Initiative** — one of the 29 bodies of work the College will execute,
 aligned to one or more Strategy 2035 goals. Identified `MI-001`..`MI-029`. A Team

@@ -7,12 +7,11 @@ setting; a reader does not choose.
 > available for development only, and will be replaced by Georgia Tech
 > single sign-on once the project is provisioned. If you were sent here to set up
 > a Clerk account, you do not need one — you will be asked for the shared
-> passcode, then to pick your name and possibly enter a PIN.
+> passcode, then to pick your name.
 
 ## The two ways
 
-- **Local (the stopgap).** A shared passcode, then you pick your name, and — if
-  an administrator has set one for you — enter your PIN.
+- **Local (the stopgap).** A shared passcode, then you pick your name.
 - **Clerk (the identity provider).** You sign in with Clerk, and the dashboard
   verifies your session and matches you to your name in its own directory.
 

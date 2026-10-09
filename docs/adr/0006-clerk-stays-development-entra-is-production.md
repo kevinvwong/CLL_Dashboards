@@ -6,11 +6,17 @@
 > **2026-10-09**. The local-passcode interim is therefore likely to be *days*, not
 > months, and Entra may be live almost immediately. The decision below is
 > unaffected — it still means no Clerk production spend — but read the
-> consequences accordingly: the PIN guidance matters for the live VPS host *now*,
-> and it is not worth building further stopgap investment against a window this
-> short. The genuine long pole is the **Entra app registration**, because that
-> needs GT tenant action rather than local work; everything else can follow it
-> quickly.
+> consequences accordingly: the identity work is not worth building out against a
+> window this short. The genuine long pole is the **Entra app registration**,
+> because that needs GT tenant action rather than local work; everything else can
+> follow it quickly.
+>
+> **Amended 2026-10-09:** the per-person PIN was **removed from the application**,
+> so the consequences below that describe PINs no longer apply. What survives is
+> the decision itself and its timing. The self-assertion exposure the PIN was
+> introduced to close is therefore now carried by the passcode and the network
+> boundary alone — which is an accepted trade for a fast-tracked internal tool,
+> not an oversight, and Entra removes it properly.
 
 ADR-0004 made authentication a swappable seam and anticipated "a Clerk/Entra
 token adapter later" without choosing between them. This records the choice,
@@ -27,24 +33,23 @@ provisioned there. That unblocks when the project is provisioned into the GT
 tenant — not before, and not by paying Clerk.
 
 **Decision:** every deployed environment runs `AUTH_PROVIDER=local` — the
-shared passcode, the admin-only person picker, and per-person PINs — from now
-until Entra is provisioned. Clerk is retained as a **development** adapter only.
-The `clerk` value of `AUTH_PROVIDER` stays supported and covered by
-`tests/test_clerk_auth.py` so the seam stays proven, but no deployed host points
-at a Clerk instance.
+shared passcode, then the person picker — from now until Entra is provisioned.
+Clerk is retained as a **development** adapter only. The `clerk` value of
+`AUTH_PROVIDER` stays supported and covered by `tests/test_clerk_auth.py` so the
+seam stays proven, but no deployed host points at a Clerk instance.
 
 ## Consequences
 
 - **No cost is incurred for identity** between now and Entra.
-- The person picker is the production sign-in path, so per-person PINs are what
-  close the self-assertion hole (ADR-0004). **A PIN must be set for the
-  PlatformAdmin at minimum** — without one, anyone holding the passcode can
-  become the admin. Note that on the VPS host no PIN is currently set
-  (`People.Credential` is empty), because no one has ever completed sign-in.
-- PINs are **not** available on the Rev2/Azure SQL store — no credential is
-  stored there (`db/mssql/DEVIATIONS.md`, entry 010). Staying on
-  `AUTH_PROVIDER=local` is therefore also what keeps the PIN gate available; a
-  Rev2 deployment would have the passcode picker with no PIN to close it.
+- **Anyone holding the passcode can become anyone**, including the
+  `PlatformAdmin`. The per-person PIN that closed this was removed on
+  2026-10-09, so for the remaining life of the stopgap the passcode and the
+  network boundary are the only controls. That is an accepted trade for an
+  internal fast-tracked tool, not an oversight — and it is the strongest
+  practical argument for getting Entra provisioned rather than extending the
+  stopgap.
+- No per-person secret is stored in either data store, so moving between SQLite
+  and Rev2 changes nothing about authentication.
 - Swapping to Entra is an env var plus one adapter, per ADR-0004. It is not a
   route rewrite, and the rest of the app never learns which provider is in use.
 - `People.ClerkUserID` and the linking scripts stay in place so the Clerk dev

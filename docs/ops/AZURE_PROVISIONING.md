@@ -36,7 +36,7 @@ Runtime and framework are fixed by the application:
 | `CLERK_SECRET_KEY` | Clerk backend secret (server-side only) | **Not required for provisioning.** Clerk is development-only; no production instance is being purchased (ADR-0006). Only needed if `AUTH_PROVIDER=clerk`. |
 | `CLERK_PUBLISHABLE_KEY` | Clerk publishable key (public) | **Not required** — same reason. |
 | `CLERK_AUTHORIZED_PARTY` | Origin(s) allowed to mint a session | **Not required** — same reason. |
-| `AUTH_PROVIDER` | Selects the authentication adapter | **`local`** (shared passcode + per-person PIN) in every provisioned environment, until the Entra app registration exists. Then `entra`. |
+| `AUTH_PROVIDER` | Selects the authentication adapter | **`local`** (shared passcode, then the person picker) in every provisioned environment, until the Entra app registration exists. Then `entra`. |
 | `APP_PASSCODE` | The shared access passcode — **the production sign-in path** while `AUTH_PROVIDER=local` | **Secret → Key Vault.** Required. Deliver out-of-band; never in this request. |
 | `APP_SECRET` | Signs session cookies | **Secret → Key Vault.** Rotating it invalidates all sessions. |
 | `APP_ENV` | `live` forces Secure cookies | Set to `live`. |

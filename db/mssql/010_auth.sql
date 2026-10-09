@@ -7,9 +7,8 @@
 -- column on `person`.
 --
 -- The Clerk link is an IDENTIFIER, not a secret, so it belongs on the person
--- row. There is deliberately NO credential column: the local PIN stopgap is a
--- development-only seam and its PBKDF2 hash never enters the production store.
--- Under DB_PROVIDER=mssql the PIN paths raise instead of storing anything.
+-- row. There is deliberately no credential column: the shared passcode is an
+-- environment setting and no per-person secret is stored in either store.
 --
 -- Unique where present (a filtered index), the same pattern 004 used for the
 -- nullable business_email: many people may be unlinked, but two may not share

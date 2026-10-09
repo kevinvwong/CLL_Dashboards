@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **4** days of work recorded, **180** changes in total.
-- Most recent day: **Thursday 08 October 2026**.
-- Across all days: 65 what we added; 36 what we fixed; 5 appearance and design; 20 behind the scenes; 13 quality and testing; 24 documentation; 17 more changes.
+- **5** days of work recorded, **185** changes in total.
+- Most recent day: **Friday 09 October 2026**.
+- Across all days: 65 what we added; 37 what we fixed; 5 appearance and design; 22 behind the scenes; 13 quality and testing; 26 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -25,6 +25,13 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - **Prototype** — an early, non-final version used to agree the design
 
 ---
+
+## Friday 09 October 2026
+
+**What we fixed**
+
+- Chown /app after the copies, so the app can write its database
+
 
 ## Thursday 08 October 2026
 
@@ -55,6 +62,11 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Stop a rebuild wiping environment-specific rows (Clerk links)
 - Copy docs into the image and add a .dockerignore
 
+**Behind the scenes**
+
+- Add a read-only host diagnostic script
+- Pin line endings so a shell script stays LF for a Linux clone
+
 **Documentation**
 
 - Add the stack specification for handoff and provisioning
@@ -65,6 +77,8 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Record the user/role roster and the Clerk provisioning
 - Record each person's two addresses (account + alias)
 - Record the Rev2 identity model in the deploy runbook
+- Record the rev2-store production deploy
+- Record that Clerk is development-only and Entra is production
 
 
 ## Wednesday 07 October 2026

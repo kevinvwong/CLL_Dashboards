@@ -1588,15 +1588,6 @@ def recent_changes(conn, limit=100):
 #: ---------------------------------------------------------------------------
 
 
-class AuthPortRefused(RuntimeError):
-    """Raised when a local-only auth path is attempted against the Rev2 store.
-
-    The PIN stopgap is a development seam. Under mssql it refuses rather than
-    silently degrading, and never writes credential material to the production
-    store (recorded in DEVIATIONS.md under 010).
-    """
-
-
 def _person_row_mssql(conn, person_id):
     row = conn.execute(
         "SELECT person_id, display_name, working_title FROM dbo.person "
@@ -1612,7 +1603,7 @@ def auth_person(conn, person_id):
     if engine(conn) == "mssql":
         return _person_row_mssql(conn, person_id)
     row = conn.execute(
-        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin, Credential "
+        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin "
         "FROM People WHERE PersonID = ? AND IsActive = 1", (person_id,)).fetchone()
     return dict(row) if row else None
 
@@ -1671,7 +1662,7 @@ def auth_person_by_clerk_id(conn, clerk_user_id):
         return {"PersonID": _pid_int(row["person_id"]), "Name": row["display_name"],
                 "Title": row["working_title"], "ReportsToID": None, "IsAdmin": None}
     row = conn.execute(
-        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin, Credential "
+        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin "
         "FROM People WHERE ClerkUserID = ? AND IsActive = 1", (clerk_user_id,)).fetchone()
     return dict(row) if row else None
 
@@ -1683,16 +1674,6 @@ def auth_link_person_to_clerk(conn, person_id, clerk_user_id):
         return
     conn.execute("UPDATE People SET ClerkUserID = ? WHERE PersonID = ?",
                  ((clerk_user_id or None), int(person_id)))
-
-
-def auth_pin_refused():
-    """The message a PIN set/verify raises under mssql. One place, so the
-    wording cannot drift between the three callers."""
-    return AuthPortRefused(
-        "The PIN stopgap is a local-development seam and does not run against "
-        "the Rev2 store. Production identity is Clerk (set AUTH_PROVIDER=clerk); "
-        "no credential is stored in Rev2. Run the PIN stopgap with DB_PROVIDER=sqlite."
-    )
 
 
 def auth_role_ids(conn):

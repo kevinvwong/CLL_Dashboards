@@ -204,21 +204,24 @@ It is an *identifier*, not a secret, so it belongs on the person row; unique whe
 present via a filtered index (`WHERE clerk_user_id IS NOT NULL`), the same
 NULL-not-equal trap 004 fixed for the nullable business email.
 
-**Deliberately NOT added: a credential column.** The local PIN stopgap
-(`People.Credential`) is the **production** sign-in path from now until Entra is
-provisioned — no Clerk production instance is being purchased (ADR-0006). Its
-PBKDF2 hash is secret material and stays out of the Rev2 store, so under
-`DB_PROVIDER=mssql` the PIN set/verify paths raise a clear error instead of
-storing anything. This is a recorded decision, not an omission.
+**No credential column, on either store.** The shared passcode is an
+environment setting, and no per-person secret is stored in Rev2 or in the local
+schema. The sign-in path is identical on both: the passcode, then the name
+picker.
 
 > **Correction 2026-10-08.** This paragraph previously read "production identity
 > is Clerk (ADR-0004)". That was inference from the seam being built, not a
 > measured fact: Azure's app settings carry `APP_PASSCODE`/`APP_SECRET` and no
-> `CLERK_*` keys, so it has always run the passcode. The **operative** half of
-> this entry — that a credential column is deliberately absent from Rev2 — is
-> unchanged and still stands. See `db/mssql/DEVIATIONS.md` entry 010 and
-> ADR-0006 for why the store still holds no PIN while the PIN is nonetheless the
-> production sign-in mechanism.
+> `CLERK_*` keys, so it has always run the passcode. See ADR-0006.
+
+**The credential column is gone entirely (2026-10-09).** This entry originally
+existed to explain why Rev2 held no `People.Credential` while the local store
+did — a deviation from a parity goal. The per-person PIN has now been removed
+from the application, so neither store has a credential column and there is no
+deviation to record. The remaining sign-in path is the shared passcode plus the
+name picker, on both stores. Nothing in this file changes as a result; the entry
+is retained because "no credential column" is now an invariant rather than a
+deviation, and that is worth stating in one place.
 
 None of these is claimed to be a port of a reference mechanism. They are new
 tables that let the whole app surface run on Rev2. `milestone` keyed to the

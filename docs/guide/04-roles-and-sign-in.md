@@ -2,9 +2,8 @@
 
 ## Signing in
 
-The dashboard is behind a shared passcode. You then pick your name, and — if an
-administrator has set one for you — enter your **PIN**. The PIN ties your session
-to you, so no one else can become you by choosing your name.
+The dashboard is behind a shared passcode. Once you have it, you pick your name
+and you are signed in as that person.
 
 ## Roles
 
@@ -13,19 +12,20 @@ directory. A role says what you may do here; your name says who you are.
 
 | Role | Meaning |
 |---|---|
-| `viewer` | may read every page |
-| `team_lead` | accountable for a team; updates its initiatives |
-| `dean` | updates any initiative and the Dean layer |
-| `admin` | the dashboard team: edits everything, manages users |
+| `Viewer` | may read every page |
+| `Operator` | updates the initiatives a team owns |
+| `Contributor` | adds updates, without changing the register itself |
+| `DataOwner` | curates the data definitions and their provenance |
+| `ExecutiveSponsor` | portfolio-wide read, plus the executive decisions |
+| `PlatformAdmin` | the dashboard team: edits everything, manages people |
+| `TechnicalAdmin` | infrastructure support |
 
-A person may hold more than one role. Roles are managed locally by an admin, so
-they keep working whichever sign-in method is used.
+A person may hold more than one role, and the roles are not a hierarchy — each
+carries a different kind of authority. The Executive Sponsor (the Dean) holds
+portfolio-wide read and executive-action authority but **no** routine
+data-maintenance authority.
 
-## Setting a PIN (administrators)
-
-An administrator sets a person's PIN from the app. Once a PIN is set, the shared
-passcode alone is no longer enough to become that person. Until PINs are rolled
-out, the name picker still works — so rolling out PINs is what closes the gap
-person by person.
+Roles are managed inside the app by a `PlatformAdmin`, so they keep working
+whichever sign-in method is in use.
 
 Next: [Mock data vs confirmed data](/guide/mock-vs-confirmed).

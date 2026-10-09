@@ -68,7 +68,7 @@ and HTMX drives the interactive parts.
 │   ├── main.py              routes, template context, filters, error pages (~983 lines)
 │   ├── queries.py           all reads; one function per screen (~1136 lines)
 │   ├── repo.py              all writes (one transaction per write) (~330 lines)
-│   ├── auth.py              access gate, cookies, PIN credential, roles (~297 lines)
+│   ├── auth.py              access gate, cookies, local sign-in, roles
 │   ├── guards.py            server-side permission checks (403, not just hidden buttons)
 │   ├── status.py            status vocabularies, slugs, glyphs
 │   ├── identity.py          goal/team colour tokens and inline SVG icons
@@ -316,14 +316,14 @@ hardened for public exposure. Known, unresolved items:
    history** if that has not been done. Treat any value that has appeared in a
    log, transcript or commit as compromised.
 2. **Authentication is a stopgap, with Clerk available behind the seam.** The
-   default is a shared passcode + a person picker; a PIN closes the
-   self-assertion hole for people who have one set. Setting `AUTH_PROVIDER=clerk`
-   switches to Clerk session-token verification (ADR-0004), mapping a Clerk user
-   to a `People.ClerkUserID`. Entra remains blocked (the host subscription is
-   outside the GT tenant). `authenticate()` is the seam either provider slots
+   default is a shared passcode, then a person picker. Setting
+   `AUTH_PROVIDER=clerk` switches to Clerk session-token verification
+   (ADR-0004), mapping a Clerk user to a `People.ClerkUserID`. Entra is the
+   destination once the project is provisioned into the GT tenant; Clerk is
+   development-only (ADR-0006). `authenticate()` is the seam any provider slots
    into.
 3. **Roles are app-local** (ADR-0005), seeded from the register; there is no
-   user administration UI beyond setting a PIN.
+   user administration UI.
 4. **No monitoring or alerting.** The only endpoint is `GET /healthz`
    (200 + marker; 503 if the database is unreachable).
 5. **SQLite, single instance.** One file on one instance; concurrent writes are

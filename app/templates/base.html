@@ -84,7 +84,7 @@
     <nav class="site-nav" aria-label="Primary">
       <ul class="nav-list">
         <li><a href="/"{% if section == "home" %} aria-current="page"{% endif %}>{{ "overview" | nav_icon }}<span class="nav-label">Overview</span></a></li>
-        <li><a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}<span class="nav-label">Initiatives</span></a></li>
+        <li><a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}<span class="nav-label">Team Initiatives</span></a></li>
         <li><a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>{{ "people" | nav_icon }}<span class="nav-label">People</span></a></li>
         <li><a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>{{ "outcomes" | nav_icon }}<span class="nav-label">Outcomes</span></a></li>
         {# Meeting is ICED (2026-10-06): hidden unless MEETING_ENABLED is set. #}
@@ -127,7 +127,7 @@
   {% if person %}
   <nav class="tabbar" aria-label="Primary">
     <a href="/"{% if section == "home" %} aria-current="page"{% endif %}>{{ "overview" | nav_icon }}<span class="tab-label">Overview</span></a>
-    <a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}<span class="tab-label">Initiatives</span></a>
+    <a href="/team-initiatives"{% if section == "initiatives" %} aria-current="page"{% endif %}>{{ "initiatives" | nav_icon }}<span class="tab-label">Team Initiatives</span></a>
     <a href="/people"{% if section == "people" %} aria-current="page"{% endif %}>{{ "people" | nav_icon }}<span class="tab-label">People</span></a>
     <a href="/outcomes"{% if section == "outcomes" %} aria-current="page"{% endif %}>{{ "outcomes" | nav_icon }}<span class="tab-label">Outcomes</span></a>
     <a href="/guide"{% if section == "guide" %} aria-current="page"{% endif %}>{{ "guide" | nav_icon }}<span class="tab-label">Guide</span></a>

@@ -39,8 +39,8 @@ was seeded from the app's data; `db/rev2/inventory-absent.md` records that no
 approved inventory exists yet). Do not set `DB_PROVIDER=mssql` in production just
 to try it; that changes which store production reads.
 
-**Identity (2026-10-08):** every deployed environment runs `AUTH_PROVIDER=local`
-— the shared passcode, the admin-only person picker, and per-person PINs.
+**Identity (2026-10-09):** every deployed environment runs `AUTH_PROVIDER=local`
+— the shared passcode, then the person picker.
 **No Clerk production instance is being purchased:** Clerk's free tier does not
 cover production users, and Entra is the destination once the project is
 provisioned into the GT tenant. Clerk is a development-only adapter. See
@@ -64,12 +64,10 @@ ADR-0006. Do not set `AUTH_PROVIDER=clerk` on a deployed host.
 > rather than deleted, because it is exactly what would otherwise lead someone
 > to the Clerk upgrade page.
 
-The PIN gate is deliberately **not** available on the Rev2/Azure SQL store — no
-credential is stored there (see `db/mssql/DEVIATIONS.md`, entry 010). If
-`DB_PROVIDER=mssql` is set with `AUTH_PROVIDER=local`, the PIN gate is skipped
-and the passcode picker is the sign-in path; per-person PINs will refuse with a
-clear message. Staying on SQLite for now is therefore also what keeps PINs
-available.
+The sign-in path is identical on both stores: the shared passcode, then the
+name picker. No per-person secret is stored in either store — the PIN was
+removed 2026-10-09, so switching between SQLite and Rev2 changes nothing about
+authentication.
 
 **Latest production checkpoint:** marker `rev2-store-20261008T194551Z` at commit
 `97484a1` — the Rev2 store port (four openspec changes: `adopt-rev2-store`,

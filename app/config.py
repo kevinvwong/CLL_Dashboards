@@ -47,9 +47,9 @@ class Config:
 
         # --- authentication provider (ADR-0004) -------------------------------
         # Which adapter `authenticate()` uses. `local` is the built-in stopgap
-        # (shared passcode + self-asserted picker, closed per person by a PIN).
-        # `clerk` verifies a Clerk session token instead. The routes do not
-        # change either way; only this switch does.
+        # (shared passcode, then you pick your name). `clerk` verifies a Clerk
+        # session token instead. The routes do not change either way; only this
+        # switch does.
         self.AUTH_PROVIDER = os.getenv("AUTH_PROVIDER", "local").strip().lower()
         # The Clerk backend secret key (server-side only; never sent to the
         # browser). Empty means the Clerk adapter is not usable.

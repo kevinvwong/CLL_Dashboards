@@ -500,7 +500,12 @@ def link_edit_options(initiative_id: int) -> dict:
 
 
 def all_initiatives(filters: dict | None = None) -> list[dict]:
-    """Every active initiative, one row each, for the /initiatives index.
+    """Every active Team Initiative, one row each.
+
+    `filters` narrows by status / owner / goal / priority / tier / stale. The live
+    index page does not use it - its filter is the `needs_review` chip in
+    _mi_table.html - but the parameter is load-bearing for the cascade tests and
+    for any future filter UI, so it stays.
 
     One row per initiative, not per tag, so the index does not repeat an
     initiative that carries several goals or priorities. The goal and priority

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Edit {{ entry.ShortName if kind == 'goal' else entry.PriorityName }}{% endblock %}
+{% block title %}Edit {% if kind == 'goal' %}Goal {{ entry.GoalNumber }}{% else %}{{ entry.PriorityName | priority_label }}{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if kind == 'goal' %}{{ entry.GoalNumber }} {{ entry.ShortName }}{% else %}{{ entry.PriorityName }}{% endif %}</h1>
+<h1>{% if kind == 'goal' %}Goal {{ entry.GoalNumber }}{% if entry.ShortName %}: {{ entry.ShortName }}{% endif %}{% else %}{{ entry.PriorityName | priority_label }}{% endif %}</h1>
 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
 <form method="post" action="/entries/{{ kind }}/{{ entry.GoalNumber if kind == 'goal' else entry.PriorityName }}/edit" class="card">
   <label for="description">Description</label>

@@ -53,7 +53,7 @@
         <td>{{ k.SourceArea or "—" }}</td>
         <td class="muted-cell">
           {% for g in k.goals %}
-          <a class="chip chip-goal" href="/goals/{{ g.GoalNumber }}">G{{ g.GoalNumber }}</a>
+          <a class="chip chip-goal" href="/goals/{{ g.GoalNumber }}" title="Goal {{ g.GoalNumber }}{% if g.ShortName %}: {{ g.ShortName }}{% endif %}">Goal {{ g.GoalNumber }}</a>
           {% endfor %}
           {% if not k.goals %}{{ k.StrategyAlign or "—" }}{% endif %}
         </td>

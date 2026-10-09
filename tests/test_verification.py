@@ -84,12 +84,17 @@ def test_the_user_menu_is_a_details_element():
 
 
 def test_filter_controls_are_native():
-    """The index filters use select/checkbox/button, all keyboard-native."""
-    body = open(os.path.join(APP, "app", "templates", "initiatives.html"),
+    """The index filter controls are keyboard-native.
+
+    Read from the LIVE partial (_mi_table.html), not from the superseded
+    initiatives.html. No route renders that template and its filter controls are
+    unreachable, so asserting on it would test dead markup - and would keep
+    passing even if the live filter were broken."""
+    body = open(os.path.join(APP, "app", "templates", "_mi_table.html"),
                 encoding="utf-8").read()
-    assert "<select" in body
-    assert 'type="checkbox"' in body
-    assert "<button" in body
+    assert 'class="chip' in body        # filter / group chips
+    assert "<nav" in body               # the controls are a landmark
+    assert "<a " in body                # links, so they work before hydration
 
 
 # --- 6.3 print ---------------------------------------------------------------

@@ -574,31 +574,28 @@ def test_auth_get_initiative_parity(both):
         assert a["OwnerID"] == b["OwnerID"], code
 
 
-def test_pin_stopgap_refused_on_rev2(monkeypatch):
-    """The decision under test: the PIN stopgap does not run on the Rev2 store.
+def test_no_credential_column_on_either_store():
+    """Neither store holds a per-person secret (the PIN was removed 2026-10-09).
 
-    A refusal, not a silent pass and not a stored credential. The ambient
-    DB_PROVIDER is set for the duration because the auth helpers open their own
-    connection through the seam (that is what a request does)."""
-    from app import auth, port
+    The sign-in path is the shared passcode plus the name picker, identically on
+    both stores. This asserts the *schema* invariant, because a credential column
+    reappearing is the thing that would silently reintroduce one."""
+    import sqlite3
 
-    monkeypatch.setenv("DB_PROVIDER", "mssql")
-    with pytest.raises(port.AuthPortRefused) as ei:
-        auth.person_credential(3)
-    assert "local-development seam" in str(ei.value)
-    with pytest.raises(port.AuthPortRefused):
-        auth.set_person_pin(3, "1234")
-    with pytest.raises(port.AuthPortRefused):
-        auth.verify_person_pin(3, "1234")
-    # the gate is reported off on this store, so the picker skips it
-    assert auth.pin_stopgap_enabled() is False
+    local = sqlite3.connect("cll_initiatives.db")
+    try:
+        cols = {r[1] for r in local.execute("PRAGMA table_info(People)")}
+    finally:
+        local.close()
+    assert "Credential" not in cols, "People still carries a credential column"
 
-    # and nothing was written to the person row
     from app.db import connect
     ms = connect(provider="mssql")
     try:
         assert ms.execute(
-            "SELECT COUNT(*) FROM dbo.person WHERE clerk_user_id IS NOT NULL").fetchone()[0] == 0
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+            "WHERE TABLE_NAME = 'person' AND COLUMN_NAME LIKE '%credential%'"
+        ).fetchone()[0] == 0
     finally:
         ms.close()
 
