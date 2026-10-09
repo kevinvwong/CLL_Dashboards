@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **5** days of work recorded, **194** changes in total.
+- **5** days of work recorded, **196** changes in total.
 - Most recent day: **Friday 09 October 2026**.
-- Across all days: 70 what we added; 37 what we fixed; 5 appearance and design; 25 behind the scenes; 13 quality and testing; 27 documentation; 17 more changes.
+- Across all days: 71 what we added; 37 what we fixed; 5 appearance and design; 25 behind the scenes; 13 quality and testing; 27 documentation; 18 more changes.
 
 ## Words used on this page
 
@@ -35,6 +35,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - A percent-complete is an owner estimate, and says so
 - Replace the static homepage counts with a telemetry row
 - Roll milestones up to the initiative, weighted
+- Migrate the milestone key to the initiative (011)
 
 **What we fixed**
 
@@ -49,6 +50,10 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 **Documentation**
 
 - Bring the Dean+COO meeting record into the repo, in full
+
+**More changes**
+
+- Register migration 011 last in the apply order
 
 
 ## Thursday 08 October 2026
