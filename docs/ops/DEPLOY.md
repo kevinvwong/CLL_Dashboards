@@ -46,7 +46,20 @@ If `DB_PROVIDER=mssql` is set with `AUTH_PROVIDER=local`, the PIN gate is skippe
 and the passcode picker is the sign-in path; per-person PINs will refuse with a
 clear message.
 
-**Latest production checkpoint:** marker `shell-guide-20261007T203634Z` at commit
+**Latest production checkpoint:** marker `rev2-store-20261008T194551Z` at commit
+`97484a1` — the Rev2 store port (four openspec changes: `adopt-rev2-store`,
+`rev2-full-reconciliation`, `rev2-remaining-surfaces`, `port-auth-to-rev2`).
+Every screen, write and the authentication layer are ported and parity-tested on
+both stores. **Note:** `/healthz` was already returning 503 immediately BEFORE
+this deploy (the control plane reported Running/Normal, so it was an app-serve
+failure, not a quota stop); this deploy restored service. Verified live
+2026-10-08 19:45 UTC: header stamp reads `97484a1 · deployed 2026-10-08 19:45 UTC`,
+`/healthz` 200, `/robots.txt` 200, `/login` 200, `/` 303 → `/login` unauthenticated,
+and every authenticated surface 200 (including `/changes`, `/checks`,
+`/dean-priorities`, `/guide`, search, and card pages). WP stop requests after the
+deploy: 0/15.
+
+**Previous checkpoint:** marker `shell-guide-20261007T203634Z` at commit
 `198da95` — the persistent left-rail shell (rail / icon-rail / bottom tab bar)
 and the in-app `/guide` documentation set. The deploy also sets
 `DOCS_PATH=./docs` so the guide renders from the shipped docs. Verified live
@@ -54,11 +67,12 @@ and the in-app `/guide` documentation set. The deploy also sets
 rail and guide render, a non-admin sees user chapters only, and the technical
 chapter is refused.
 
-**Previous checkpoint:** marker `enhance-20261007T195252Z` at commit `bae40b7` — the Milestones model, the intake, the DB-backed Outcomes page, goal
-and team identity, the enhancements and motion, and the auth stopgap (PIN +
-local roles + change-log fields). Verified live 2026-10-07 19:52 UTC: the header
-stamp reads `bae40b7 · deployed 2026-10-07 19:52 UTC`, and the gate and the new
-visuals were walked.
+**Earlier checkpoint:** marker `enhance-20261007T195252Z` at commit `bae40b7` — the
+Milestones model, the intake, the DB-backed Outcomes page, goal and team identity,
+the enhancements and motion, and the auth stopgap (PIN + local roles + change-log
+fields). Verified live 2026-10-07 19:52 UTC: the header stamp reads
+`bae40b7 · deployed 2026-10-07 19:52 UTC`, and the gate and the new visuals were
+walked.
 
 ### Two runbook notes that cost time this session
 
