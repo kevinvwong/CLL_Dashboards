@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **5** days of work recorded, **189** changes in total.
+- **5** days of work recorded, **190** changes in total.
 - Most recent day: **Friday 09 October 2026**.
-- Across all days: 66 what we added; 37 what we fixed; 5 appearance and design; 24 behind the scenes; 13 quality and testing; 27 documentation; 17 more changes.
+- Across all days: 67 what we added; 37 what we fixed; 5 appearance and design; 24 behind the scenes; 13 quality and testing; 27 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -31,6 +31,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 **What we added**
 
 - Show the team, not the title, everywhere a person is named
+- Full goal language, Source Area hidden, list/card views
 
 **What we fixed**
 

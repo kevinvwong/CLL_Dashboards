@@ -1,0 +1,28 @@
+{#
+  Percent-complete attribution - AC-004 / NFR-005 / R-001.
+
+  Every percentage in the product renders through here, because the decision is
+  that a percent-complete is never just a number: it is somebody's judgement
+  about their own work, and a reader must be able to see whose and from when.
+  Hand-editing five call sites is how the wording drifts between them.
+
+  Two states, and the distinction is the point:
+
+    an update exists  -> "Owner estimate Ã‚Â· <name> Ã‚Â· <date>"
+    no update exists   -> "Owner estimate - not yet supplied"
+
+  The second is not an empty state. "29 Not started" reads as a scorecard of
+  failure when it only means the diary is empty, and that is exactly the
+  misreading R-001 and AC-005 exist to prevent. Nothing here ever renders 0 for
+  work that has not been reported.
+
+  Params: latest (the latest-update row, or None), compact (drop the words when
+  space is tight - the full sentence still rides the title attribute).
+#}
+{% if latest %}
+<span class="estimate"{% if compact %} title="Owner estimate &middot; {{ latest.UpdatedBy or 'owner not recorded' }}{% if latest.UpdateDate %} &middot; {{ latest.UpdateDate }}{% endif %}"{% endif %}>
+  {%- if not compact %}Owner estimate{% if latest.UpdatedBy %} &middot; {{ latest.UpdatedBy }}{% endif %}{% if latest.UpdateDate %} &middot; {{ latest.UpdateDate }}{% endif %}{% endif -%}
+</span>
+{% else %}
+<span class="estimate estimate-pending">Owner estimate &mdash; not yet supplied</span>
+{% endif %}

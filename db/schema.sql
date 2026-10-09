@@ -258,8 +258,12 @@ CREATE TABLE TeamInitiativeUpdates (
 CREATE INDEX IX_MIU_MI_Date ON TeamInitiativeUpdates(TeamInitiativeID, UpdateDate);
 
 -- The latest diary entry per Team Initiative, for its card and the lists.
+-- AC-004 / NFR-005: a percent-complete must be identifiable as an owner
+-- estimate, which means carrying WHO supplied it and WHEN. EnteredByID is that
+-- attribution; Rev2's vw_latest_update already carries updated_by_person_id,
+-- so the two stores now agree on the fact rather than on the column name.
 CREATE VIEW vw_LatestTeamInitiativeProgress AS
-SELECT TeamInitiativeID, UpdateDate, PercentComplete, Status, Note
+SELECT TeamInitiativeID, UpdateDate, PercentComplete, Status, Note, EnteredByID
 FROM (
     SELECT u.*, ROW_NUMBER() OVER (PARTITION BY TeamInitiativeID
                                     ORDER BY UpdateDate DESC, UpdateID DESC) AS rn

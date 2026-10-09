@@ -21,6 +21,12 @@
                oninput="document.getElementById('percent-out').textContent = this.value + '%'">
         <output id="percent-out">{{ card.latest.PercentComplete if card.latest else 0 }}%</output>
       </div>
+      {# AC-004 / NFR-005: say what the number IS, at the moment it is entered
+         rather than only when it is later read. A person setting this is
+         supplying an owner estimate, and R-001 exists because a bare percentage
+         gets read as a measurement. #}
+      <span class="hint">Your own estimate of completion, not a measured figure.
+        It is recorded with your name and today's date.</span>
     </div>
 
     <div class="field">

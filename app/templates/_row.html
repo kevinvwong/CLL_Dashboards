@@ -21,12 +21,16 @@
     {% if row.PercentComplete is none %}
     {# No progress update at all: an empty bar labelled, never a zero bar. #}
     <div class="bar bar-empty" aria-label="No update yet">No update yet</div>
+    {# AC-004 / NFR-005: a percentage is always somebody's estimate, never just
+       a number. `row` carries the same fields the card's latest does. #}
+    {% with latest = none %}{% include "_estimate.html" with context %}{% endwith %}
     {% else %}
-    <div class="bar" role="img" aria-label="{{ row.Status }}, {{ row.PercentComplete }} percent">
+    <div class="bar" role="img" aria-label="{{ row.Status }}, {{ row.PercentComplete }} percent. Owner estimate{% if row.UpdatedBy %} by {{ row.UpdatedBy }}{% endif %}{% if row.UpdateDate %}, reported {{ row.UpdateDate }}{% endif %}.">
       <div class="bar-fill {{ row.Status | status_class }}"
            style="width: {{ row.PercentComplete }}%"></div>
     </div>
     <span class="bar-label">{{ row.PercentComplete }}% <span class="status-glyph" aria-hidden="true">{{ row.Status | status_icon }}</span> {{ row.Status }}</span>
+    {% with latest = row, compact = true %}{% include "_estimate.html" with context %}{% endwith %}
     {% endif %}
   </div>
   {% if row.OwnerID %}

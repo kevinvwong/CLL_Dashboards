@@ -17,17 +17,19 @@
   {# The header band: status pill and progress, so the drawer opens with the
      facts the reader came for (blueprint-redesign 4.3). #}
   <div class="detail-header">
-    {% if card.latest %}
+{% if card.latest %}
     <span class="badge {{ card.latest.Status | status_class }}"><span class="status-glyph" aria-hidden="true">{{ card.latest.Status | status_icon }}</span> {{ card.latest.Status }}</span>
     <div class="progress-track" role="progressbar"
          aria-valuenow="{{ card.latest.PercentComplete }}" aria-valuemin="0" aria-valuemax="100"
-         aria-label="{{ card.latest.Status }}, {{ card.latest.PercentComplete }} percent">
+         aria-label="{{ card.latest.Status }}, {{ card.latest.PercentComplete }} percent. Owner estimate{% if card.latest.UpdatedBy %} by {{ card.latest.UpdatedBy }}{% endif %}{% if card.latest.UpdateDate %}, reported {{ card.latest.UpdateDate }}{% endif %}.">
       <span class="progress-fill" style="width: {{ card.latest.PercentComplete }}%"></span>
     </div>
     <span class="bar-label">{{ card.latest.PercentComplete }}%</span>
+    {% with latest = card.latest %}{% include "_estimate.html" with context %}{% endwith %}
     {% else %}
     <span class="badge status-not-started">Not started</span>
     <span class="bar-empty">No update yet</span>
+    {% with latest = card.latest %}{% include "_estimate.html" with context %}{% endwith %}
     {% endif %}
   </div>
 
@@ -110,12 +112,13 @@
   </section>
   {% endif %}
 
-  <section class="card-latest">
+<section class="card-latest">
     <h3>Latest</h3>
     {% if card.latest %}
-    <p class="bar-label">{{ card.latest.PercentComplete }}% {{ card.latest.Status }} &middot; {{ card.latest.UpdateDate }}</p>
+    <p class="bar-label">{{ card.latest.PercentComplete }}% {{ card.latest.Status }} &middot; {{ card.latest.UpdateDate }}{% with latest = card.latest %}{% include "_estimate.html" with context %}{% endwith %}</p>
     {% else %}
     <p class="bar-empty">No update yet</p>
+    {% with latest = card.latest %}{% include "_estimate.html" with context %}{% endwith %}
     {% endif %}
     <p class="owner-note">Progress is the owner's own estimate of completion, reported with a status and a short note.</p>
   </section>

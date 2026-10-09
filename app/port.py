@@ -894,7 +894,9 @@ def initiative_card(conn, mi_id):
         latest = conn.execute(
             "SELECT CONVERT(VARCHAR(10), lu.update_date, 23) AS UpdateDate, "
             "       CAST(lu.progress_value AS FLOAT) AS PercentComplete, "
-            "       lu.status_at_update AS Status, lu.narrative AS Note "
+            "       lu.status_at_update AS Status, lu.narrative AS Note, "
+            "       (SELECT display_name FROM dbo.person p "
+            "         WHERE p.person_id = lu.updated_by_person_id) AS UpdatedBy "
             "FROM dbo.vw_latest_update lu WHERE lu.initiative_id = %s", (iid,)).fetchone()
         d["latest"] = dict(latest) if latest else None
         d["diary"] = []
@@ -936,8 +938,9 @@ def initiative_card(conn, mi_id):
         "FROM TeamInitiativeDeanLinks kl JOIN DeanInitiatives d ON d.DeanInitiativeID = kl.DeanInitiativeID "
         "WHERE kl.TeamInitiativeID = ? ORDER BY d.Code", (card["InitiativeID"],))]
     latest = conn.execute(
-        "SELECT UpdateDate, PercentComplete, Status, Note "
-        "FROM vw_LatestTeamInitiativeProgress WHERE TeamInitiativeID = ?",
+        "SELECT UpdateDate, PercentComplete, Status, Note, "
+        "       (SELECT Name FROM People e WHERE e.PersonID = v.EnteredByID) AS UpdatedBy "
+        "FROM vw_LatestTeamInitiativeProgress v WHERE TeamInitiativeID = ?",
         (card["InitiativeID"],)).fetchone()
     card["latest"] = dict(latest) if latest else None
     card["diary"] = [dict(r) for r in conn.execute(

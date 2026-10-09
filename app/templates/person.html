@@ -23,10 +23,15 @@
     <div class="row-progress">
       {% if row.PercentComplete is none %}
       <div class="bar bar-empty">No update yet</div>
+      {# AC-004 / NFR-005. This block duplicated the progress cell rather than
+         including _row.html; the attribution went live in _row.html and silently
+         did NOT come here, which is the drift the shared partial exists to stop. #}
+      {% with latest = none %}{% include "_estimate.html" with context %}{% endwith %}
       {% else %}
       <div class="bar"><div class="bar-fill {{ row.Status | status_class }}"
            style="width: {{ row.PercentComplete }}%"></div></div>
       <span class="bar-label">{{ row.PercentComplete }}% {{ row.Status }}</span>
+      {% with latest = row, compact = true %}{% include "_estimate.html" with context %}{% endwith %}
       {% endif %}
       {% if row.AgeDays is defined %}
       {# "1 days" reads wrong; a 1-day-old update is common enough to show. #}
