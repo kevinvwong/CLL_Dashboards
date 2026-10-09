@@ -582,12 +582,14 @@ def team_initiative_cards(conn):
                 "PriorityName": r["PriorityName"], "Code": r["Code"], "Colour": r["Colour"]})
         goals: dict = {}
         for r in conn.execute(
-                "SELECT ig.initiative_id AS iid, g.goal_number AS GoalNumber, g.short_label AS ShortName "
+                "SELECT ig.initiative_id AS iid, g.goal_number AS GoalNumber, "
+                "       g.short_label AS ShortName, g.canonical_title AS FullName "
                 "FROM dbo.initiative_goal ig JOIN dbo.goal g ON g.goal_id = ig.goal_id "
                 "JOIN dbo.initiative i ON i.initiative_id = ig.initiative_id "
                 "WHERE i.initiative_level = 'D-1' ORDER BY g.goal_number"):
             goals.setdefault(r["iid"], []).append(
-                {"TeamInitiativeID": r["iid"], "GoalNumber": r["GoalNumber"], "ShortName": r["ShortName"]})
+                {"TeamInitiativeID": r["iid"], "GoalNumber": r["GoalNumber"],
+                 "ShortName": r["ShortName"], "FullName": r["FullName"]})
         for k in mis:
             k["priorities"] = links.get(k["TeamInitiativeID"], [])
             k["goals"] = goals.get(k["TeamInitiativeID"], [])
@@ -609,7 +611,7 @@ def team_initiative_cards(conn):
         links.setdefault(r["TeamInitiativeID"], []).append(dict(r))
     goals: dict = {}
     for r in conn.execute(
-            "SELECT kg.TeamInitiativeID, g.GoalNumber, g.ShortName "
+            "SELECT kg.TeamInitiativeID, g.GoalNumber, g.ShortName, g.FullName "
             "FROM TeamInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
             "ORDER BY g.GoalNumber"):
         goals.setdefault(r["TeamInitiativeID"], []).append(dict(r))
@@ -866,7 +868,8 @@ def initiative_card(conn, mi_id):
         d["MIId"] = d["Code"]
         iid = d["InitiativeID"]
         d["goal_tags"] = [_d(r) for r in conn.execute(
-            "SELECT g.goal_number AS GoalNumber, g.short_label AS ShortName, 0 AS IsPrimary "
+            "SELECT g.goal_number AS GoalNumber, g.short_label AS ShortName, "
+            "       g.canonical_title AS FullName, 0 AS IsPrimary "
             "FROM dbo.initiative_goal kg JOIN dbo.goal g ON g.goal_id = kg.goal_id "
             "WHERE kg.initiative_id = %s ORDER BY g.goal_number", (iid,)).fetchall()]
         pris = []
@@ -920,7 +923,7 @@ def initiative_card(conn, mi_id):
     card = dict(row)
     card["Code"] = card["MIId"] or card["Code"]
     card["goal_tags"] = [dict(r) for r in conn.execute(
-        "SELECT g.GoalNumber, g.ShortName, 0 AS IsPrimary "
+        "SELECT g.GoalNumber, g.ShortName, g.FullName, 0 AS IsPrimary "
         "FROM TeamInitiativeGoals kg JOIN Goals g ON g.GoalID = kg.GoalID "
         "WHERE kg.TeamInitiativeID = ? ORDER BY g.GoalNumber", (card["InitiativeID"],))]
     card["priority_tags"] = [dict(r) for r in conn.execute(

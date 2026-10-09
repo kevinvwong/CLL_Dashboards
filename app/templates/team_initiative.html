@@ -32,7 +32,9 @@
 
 <dl class="field-list mi-fields">
   {% if mi.Team %}<dt>Team</dt><dd><a href="/teams/{{ mi.TeamID }}">{{ mi.Team }}</a></dd>{% endif %}
-  {% if mi.SourceArea %}<dt>Source area</dt><dd>{{ mi.SourceArea }}</dd>{% endif %}
+  {# D-009 / FR-009: Source Area is retained on the row (TeamInitiatives.SourceAreaID)
+     but is no longer shown here. It is a lineage field, not something a reader
+     acts on. #}
   <dt>Status</dt><dd>{{ mi.Status }}</dd>
   {% if mi.ProposedTarget %}<dt>Proposed target</dt><dd>{{ mi.ProposedTarget }}</dd>{% endif %}
 </dl>
@@ -58,9 +60,9 @@
   <ul class="mi-chip-list">
     {% for g in mi.goals %}
     <li class="mi-chip">
-      <a href="/goals/{{ g.GoalNumber }}">
-        <span class="goal-number">Goal {{ g.GoalNumber }}</span>
-        <span class="mi-chip-title">{{ g.ShortName }}</span>
+<a href="/goals/{{ g.GoalNumber }}"{% if g.FullName %} title="{{ g.FullName }}"{% endif %}>
+          <span class="goal-number">Goal {{ g.GoalNumber }}</span>
+          <span class="mi-chip-title">{{ g.FullName or g.ShortName }}</span>
       </a>
     </li>
     {% endfor %}

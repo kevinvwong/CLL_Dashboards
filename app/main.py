@@ -1158,7 +1158,8 @@ async def root(request: Request):
     )
 
 
-def _mi_index_ctx(request: Request, target: str | None, group: str | None) -> dict:
+def _mi_index_ctx(request: Request, target: str | None, group: str | None,
+                  view: str | None = None) -> dict:
     """Context for the /team-initiatives index.
 
     The counts in the controls describe the whole set, not the filtered view,
@@ -1166,7 +1167,7 @@ def _mi_index_ctx(request: Request, target: str | None, group: str | None) -> di
     """
     all_mis = queries.team_initiative_cards()
     mi_filter = target if target in ("needs_review",) else None
-    mi_group = group if group in ("team", "source_area") else None
+    mi_group = group if group in ("team",) else None
     mis = queries.filter_and_group_team_initiatives(all_mis, mi_filter, mi_group)
     params = []
     if mi_filter:
@@ -1181,9 +1182,37 @@ def _mi_index_ctx(request: Request, target: str | None, group: str | None) -> di
         needs_review_count=sum(1 for k in all_mis if k["TargetStatus"] == "needs_review"),
         mi_filter=mi_filter,
         mi_group=mi_group,
-        mi_groupings={"team": "Team", "source_area": "Source area"},
+        mi_groupings={"team": "Team"},
         mi_base=mi_base,
+        mi_view=resolve_mi_view(view, len(mis)),
     )
+
+
+#: Below this many rows a card grid reads better than a nine-column table (AC-007).
+MI_CARD_THRESHOLD = 12
+
+
+def resolve_mi_view(url_view: str | None, row_count: int) -> str:
+    """Which presentation the register should use (CR-003 / FR-007).
+
+    Precedence, and the reasoning:
+
+    1. ``?view=`` in the URL wins. The meeting record makes the URL the
+       demonstrable artefact (AC-009 rehearsed route, CR-018), so a presenter who
+       switches to cards must be able to hand someone a link *in that view*. A
+       purely client-side preference cannot travel.
+    2. Otherwise the density-aware default, which is why this is server-side and
+       why it is computed from the ROW COUNT, not the whole set.
+
+    The persisted preference lives in localStorage and is applied by the script
+    that ships with the toggle; it is deliberately not read here, because a
+    preference the server cannot see is a preference that leaks into shared
+    links. If the URL says nothing, the server picks the density default and the
+    client may override it for this browser only.
+    """
+    if url_view in ("list", "card"):
+        return url_view
+    return "card" if row_count <= MI_CARD_THRESHOLD else "list"
 
 
 @app.get("/dean-initiatives")
@@ -1200,7 +1229,8 @@ async def dean_initiatives_page(request: Request):
 
 
 @app.get("/team-initiatives")
-async def team_initiative_index(request: Request, target: str | None = None, group: str | None = None):
+async def team_initiative_index(request: Request, target: str | None = None,
+                                group: str | None = None, view: str | None = None):
     """The Team Initiatives index: all 29, filterable and groupable.
 
     Moved here from the overview, which measured 56 KB with this table as
@@ -1208,5 +1238,5 @@ async def team_initiative_index(request: Request, target: str | None = None, gro
     """
     return templates.TemplateResponse(
         request, "team_initiatives.html",
-        _mi_index_ctx(request, target, group),
+        _mi_index_ctx(request, target, group, view),
     )

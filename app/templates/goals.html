@@ -25,7 +25,12 @@
           <span class="card-id">Goal {{ g.GoalNumber }}</span>
         </span>
       </span>
-      <span class="card-title">{{ g.ShortName }}</span>
+      {# FR-003 / CR-005: the full Strategy 2035 goal language, not the short
+         label. ShortName is "Academic"; FullName is the canonical sentence. The
+         short label stays only as a supporting eyebrow, and the legend keeps it
+         because a legend needs a compact key. #}
+      <span class="card-eyebrow">{{ g.ShortName }}</span>
+      <span class="card-title">{{ g.FullName or g.ShortName }}</span>
       <span class="card-sub">{{ g.TeamInitiativeCount }} Team Initiative{{ '' if g.TeamInitiativeCount == 1 else 's' }}</span>
     </a>
     {% with counts = g.counts %}{% include "_status_mix.html" %}{% endwith %}
@@ -35,6 +40,6 @@
 
 <p class="identity-legend">
   <span class="identity-legend-label">Goals:</span>
-  {% for g in goals %}<span class="legend-item goal-legend" style="--goal: var({{ g.GoalNumber | goal_colour_token }});">{{ g.GoalNumber | goal_icon }} {{ g.ShortName }}</span>{% endfor %}
+  {% for g in goals %}<span class="legend-item goal-legend" style="--goal: var({{ g.GoalNumber | goal_colour_token }});" title="{{ g.FullName }}">{{ g.GoalNumber | goal_icon }} {{ g.ShortName }}</span>{% endfor %}
 </p>
 {% endblock %}

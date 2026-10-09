@@ -664,16 +664,19 @@ def filter_and_group_team_initiatives(mis: list, filter_: str | None, group: str
     """Apply the Team Initiatives table's filter and grouping (4.2), returning rows in
     display order with a `_GroupLabel` on the first row of each group.
 
-    A filter, not a search: `needs_review` is the state leadership must decide,
-    and grouping is by team or source area, the two axes the register uses.
+    A filter, not a search: `needs_review` is the state leadership must decide.
+    Grouping is by team only — grouping by source area was removed on 2026-10-09
+    with the rest of the Source Area field (D-009 / FR-009). A "Group by: Source
+    area" control presents the axis to a reader, which is the thing that decision
+    was about; the field stays in the row and in the store.
     """
     rows = mis
     if filter_ == "needs_review":
         rows = [k for k in rows if k["TargetStatus"] == "needs_review"]
-    if group not in ("team", "source_area"):
+    if group != "team":
         # Default order is the canon's public key, matching the query.
         return sorted(rows, key=lambda k: k.get("MIId") or k["Code"])
-    field = "Team" if group == "team" else "SourceArea"
+    field = "Team"
     rows = sorted(rows, key=lambda k: (k.get(field) or "~", k.get("MIId") or k["Code"]))
     last = None
     for k in rows:

@@ -67,7 +67,7 @@
     {% if card.goal_tags %}
     <p class="tags"><span class="tags-label">Goals:</span>
       {% for t in card.goal_tags %}
-      <a href="/goals/{{ t.GoalNumber }}">Goal {{ t.GoalNumber }}{% if t.ShortName %}: {{ t.ShortName }}{% endif %}</a>{% if t.IsPrimary %} <span class="badge">Primary</span>{% endif %}{% if not loop.last %},{% endif %}
+      <a href="/goals/{{ t.GoalNumber }}"{% if t.FullName %} title="{{ t.FullName }}"{% endif %}>Goal {{ t.GoalNumber }}</a>{% if t.IsPrimary %} <span class="badge">Primary</span>{% endif %}{% if not loop.last %},{% endif %}
       {% endfor %}
     </p>
     {% endif %}

@@ -1963,3 +1963,37 @@ body.presenting .no-print { display: none; }
 .stat-tile, .priority-card, .goal-card, .team-card, .oct16-card { transition: none; }
 .priority-card { display: flex; flex-direction: column; padding: var(--space-4); border: 1px solid var(--line); border-top: 3px solid var(--priority, var(--accent)); border-radius: var(--radius-md); background: var(--surface); }
 .priority-card-head { display: flex; align-items: center; justify-content: space-between; }
+
+/* ---- register presentation: list vs cards (CR-003 / FR-007 / AC-007) ------- */
+/* Both markups are always rendered and CSS reveals one. That keeps the choice
+   instant and working before hydration; the cost is that the hidden one is still
+   in the DOM, which is why the hidden side is display:none rather than visually
+   clipped - it has to leave the accessibility tree too. */
+.mi-view-switch {
+  display: inline-flex; gap: var(--space-1); margin: 0 0 var(--space-3);
+}
+.view-toggle {
+  font: inherit; font-size: var(--text-sm); line-height: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--ink-muted); cursor: pointer;
+}
+.view-toggle[aria-pressed="true"] {
+  border-color: var(--accent); color: var(--accent); font-weight: 600;
+}
+.view-toggle:hover { border-color: var(--accent); background: var(--surface-hover); }
+
+/* The wrapper carries the choice; exactly one of its two children shows. */
+.index-table-wrap[data-mi-view="list"] .mi-card-grid { display: none; }
+.index-table-wrap[data-mi-view="card"] .mi-table { display: none; }
+
+.mi-card-grid {
+  display: grid; gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+  list-style: none; margin: 0; padding: 0;
+}
+.mi-card .card-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--space-2); margin-bottom: var(--space-1);
+}
+.mi-card .chip-goal, .mi-card .chip-priority { margin-right: var(--space-1); }

@@ -149,6 +149,49 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
   <script>
+    // List / card presentation for the register (CR-003 / FR-007 / AC-007).
+    //
+    // The server already rendered a default from the row count, so this script
+    // only ever (a) applies a preference stored in THIS browser, and (b) handles
+    // an explicit click. It never re-derives the default, because a view that
+    // changes under a reader as they filter is worse than one that is merely
+    // suboptimal.
+    //
+    // Clicking writes the URL as well as the preference: the meeting record
+    // makes the URL the demonstrable artefact (AC-009), so a presenter who
+    // switches view must be able to hand someone a link in that view.
+    (function () {
+      const KEY = "cll.miView";
+      const root = document.querySelector(".index-table-wrap[data-mi-view]");
+      if (!root) return;
+
+      function apply(view) {
+        root.setAttribute("data-mi-view", view);
+        document.querySelectorAll("[data-view-choice]").forEach(function (b) {
+          b.setAttribute("aria-pressed", String(b.dataset.viewChoice === view));
+        });
+      }
+
+      // A stored preference only applies when the URL expresses no preference.
+      const inUrl = /[?&]view=(list|card)\b/.test(window.location.search);
+      let stored = null;
+      try { stored = window.localStorage.getItem(KEY); } catch (e) { /* private mode */ }
+      if (!inUrl && (stored === "list" || stored === "card")) apply(stored);
+
+      document.addEventListener("click", function (evt) {
+        const btn = evt.target.closest && evt.target.closest("[data-view-choice]");
+        if (!btn) return;
+        const view = btn.dataset.viewChoice;
+        apply(view);
+        try { window.localStorage.setItem(KEY, view); } catch (e) { /* ignore */ }
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", view);
+        window.history.replaceState({}, "", url);
+      });
+    })();
+  </script>
+
+  <script>
     // Rows carry hx-get onto #card-modal (task 4.4). Show the dialog once
     // htmx has swapped a card in, and close on Escape or a close button.
     (function () {

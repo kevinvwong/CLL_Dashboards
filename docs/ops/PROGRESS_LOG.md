@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **5** days of work recorded, **188** changes in total.
+- **5** days of work recorded, **189** changes in total.
 - Most recent day: **Friday 09 October 2026**.
-- Across all days: 66 what we added; 37 what we fixed; 5 appearance and design; 24 behind the scenes; 13 quality and testing; 26 documentation; 17 more changes.
+- Across all days: 66 what we added; 37 what we fixed; 5 appearance and design; 24 behind the scenes; 13 quality and testing; 27 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -40,6 +40,10 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 - Remove the per-person PIN; refactor(copy): one term per thing
 - Stop the landing page repeating itself
+
+**Documentation**
+
+- Bring the Dean+COO meeting record into the repo, in full
 
 
 ## Thursday 08 October 2026

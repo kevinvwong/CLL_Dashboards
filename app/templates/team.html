@@ -16,12 +16,9 @@
 
 {% if team.Description %}<p class="entry-description">{{ team.Description }}</p>{% endif %}
 
-{% if team.source_areas %}
-<p class="team-areas">
-  <span class="toggle-label">Source areas</span>
-  {% for a in team.source_areas %}<span class="chip">{{ a }}</span>{% endfor %}
-</p>
-{% endif %}
+{# D-009 / FR-009: the source-area chip row was removed with the rest of the
+     field. `team.source_areas` is still queried and still in the store; it is
+     simply no longer shown. #}
 
 <section aria-labelledby="team-mis-heading">
   <h2 id="team-mis-heading" class="list-group-label">This team's Team Initiatives</h2>
@@ -31,7 +28,7 @@
         <tr>
           <th scope="col">ID</th>
           <th scope="col">Team Initiative</th>
-          <th scope="col">Source area</th>
+          {# D-009 / FR-009: hidden from standard views, retained in the store. #}
           <th scope="col">Strategy alignment</th>
           <th scope="col">Target</th>
           <th scope="col">Target status</th>
@@ -42,7 +39,6 @@
         <tr class="mi-row">
           <td class="code"><a href="/team-initiatives/{{ k.MIId or k.Code }}">{{ k.MIId or k.Code }}</a></td>
           <td><a href="/team-initiatives/{{ k.MIId or k.Code }}">{{ k.Title }}</a></td>
-          <td>{{ k.SourceArea or "—" }}</td>
           <td class="muted-cell">{{ k.StrategyAlign or "—" }}</td>
           <td class="target-cell">{{ k.ProposedTarget or "—" }}</td>
           <td>

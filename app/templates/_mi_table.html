@@ -26,14 +26,30 @@
   {% endfor %}
 </nav>
 
-<div class="index-table-wrap">
+{# A card view of the same rows, for the low-volume case (CR-003 / FR-007 /
+   AC-007). 29 rows want a table; a team-filtered subset of four wants cards.
+   The server renders neither unless the view is chosen: `mi_view` is resolved in
+   main.py as URL ?view= > persisted preference > density-aware default. Both
+   markups are emitted so the choice needs no round-trip, and CSS decides which
+   is shown - see the `data-mi-view` rules in style.css. #}
+<div class="mi-view-switch" role="group" aria-label="Presentation">
+  <button type="button" class="view-toggle" data-view-choice="list"
+          aria-pressed="{{ 'true' if mi_view != 'card' else 'false' }}">List</button>
+  <button type="button" class="view-toggle" data-view-choice="card"
+          aria-pressed="{{ 'true' if mi_view == 'card' else 'false' }}">Cards</button>
+</div>
+
+<div class="index-table-wrap" data-mi-view="{{ mi_view }}">
   <table class="index-table mi-table">
     <thead>
       <tr>
         <th scope="col">ID</th>
         <th scope="col">Team Initiative</th>
         <th scope="col">Team</th>
-        <th scope="col">Source area</th>
+        {# D-009 / FR-009: Source Area is retained in the store for lineage but
+             hidden from standard views. The column is gone from the header, the
+             cell, and the group-row colspan, which all moved together - leaving
+             one of them would misalign the table. #}
         <th scope="col">Strategy alignment</th>
         <th scope="col">Initiatives</th>
         <th scope="col">Target</th>
@@ -44,16 +60,17 @@
     <tbody>
       {% for k in team_initiatives %}
       {% if mi_group and k._GroupLabel %}
-      <tr class="group-row"><th colspan="9" scope="colgroup">{{ k._GroupLabel }}</th></tr>
+      <tr class="group-row"><th colspan="8" scope="colgroup">{{ k._GroupLabel }}</th></tr>
       {% endif %}
       <tr class="mi-row">
         <td class="code"><a href="/team-initiatives/{{ k.MIId or k.Code }}">{{ k.MIId or k.Code }}</a></td>
         <td><a href="/team-initiatives/{{ k.MIId or k.Code }}">{{ k.Title }}</a>{% if k.Note %} <span class="note-mark" title="{{ k.Note }}">ⓘ</span>{% endif %}</td>
         <td>{% if k.Team %}<a href="/teams/{{ k.TeamID }}">{{ k.Team }}</a>{% else %}—{% endif %}</td>
-        <td>{{ k.SourceArea or "—" }}</td>
         <td class="muted-cell">
           {% for g in k.goals %}
-          <a class="chip chip-goal" href="/goals/{{ g.GoalNumber }}" title="Goal {{ g.GoalNumber }}{% if g.ShortName %}: {{ g.ShortName }}{% endif %}">Goal {{ g.GoalNumber }}</a>
+          {# A chip cannot hold a sentence, so the compact label stays visible and the
+         full Strategy 2035 language rides the title attribute (FR-003). #}
+          <a class="chip chip-goal" href="/goals/{{ g.GoalNumber }}" title="Goal {{ g.GoalNumber }}{% if g.FullName %}: {{ g.FullName }}{% endif %}">Goal {{ g.GoalNumber }}</a>
           {% endfor %}
           {% if not k.goals %}{{ k.StrategyAlign or "—" }}{% endif %}
         </td>
@@ -76,6 +93,34 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {# The same rows as cards. hx-get matches the list row so the drawer opens
+     identically from either presentation - one drill-down rule, two renderings. #}
+  <ul class="mi-card-grid" data-mi-view="card">
+    {% for k in team_initiatives %}
+    <li class="mi-card card">
+      <a class="card-link" href="/team-initiatives/{{ k.MIId or k.Code }}"
+         hx-get="/team-initiatives/{{ k.MIId or k.Code }}"
+         hx-target="#card-modal" hx-swap="innerHTML">
+        <span class="card-head">
+          <span class="card-id">{{ k.MIId or k.Code }}</span>
+          {% if k.TargetStatus == 'needs_review' %}
+          <span class="chip chip-warn">needs review</span>
+          {% endif %}
+        </span>
+        <span class="card-title">{{ k.Title }}</span>
+        {% if k.Team %}<span class="card-sub">{{ k.Team }}</span>{% endif %}
+        {% for g in k.goals %}
+        <span class="chip chip-goal" title="Goal {{ g.GoalNumber }}{% if g.FullName %}: {{ g.FullName }}{% endif %}">Goal {{ g.GoalNumber }}</span>
+        {% endfor %}
+        {% for pr in k.priorities %}
+        <span class="chip chip-priority" style="--priority: var({{ pr.Code | priority_colour_token }});"
+              title="{{ pr.PriorityName | priority_label }}">{{ pr.Code }}</span>
+        {% endfor %}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
 </div>
 {% if not team_initiatives %}
 <p class="empty">No Team Initiatives match this filter.</p>

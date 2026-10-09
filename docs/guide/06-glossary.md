@@ -21,8 +21,10 @@ priorities, and contributes to one or more Dean Initiatives.
 Experiences, Learning Ecosystems, Learning Infrastructure, Learning Futures. A
 team is an accountability axis, distinct from a source area.
 
-**Source Area** — the register area a Team Initiative was filed under. Where
-something was *recorded*; a team is who is *accountable*. Different axes.
+**Source Area** — the register area a Team Initiative was filed under. **No
+longer shown on screen** (D-009): it is retained in the data for lineage, but it
+is not something a reader acts on, so it has come out of the standard views.
+A team remains the accountability axis.
 
 **Dean Initiative** — one of the 11 workstreams at the top of the model, owned by
 the Dean, split FY26 (3, complete) and FY27 (8, in flight). A Team Initiative rolls

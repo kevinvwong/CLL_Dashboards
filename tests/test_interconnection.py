@@ -174,10 +174,21 @@ def test_group_by_team_renders_group_labels(page):
     assert 'class="group-row"' in r.text
 
 
-def test_group_by_source_area_renders_group_labels(page):
+def test_group_by_source_area_is_no_longer_offered(page):
+    """D-009 / FR-009 retired the Source Area axis on 2026-10-09.
+
+    A "Group by: Source area" control presents the axis to a reader, which is the
+    thing that decision was about. The field stays on the row and in the store; a
+    stale ?group=source_area link now falls through to the default order rather
+    than erroring, exactly like any other unknown group value.
+    """
     r = page.get("/team-initiatives?group=source_area")
     assert r.status_code == 200
-    assert 'class="group-row"' in r.text
+    assert 'class="group-row"' not in r.text, "Source Area grouping is retired"
+    assert ">Source area<" not in r.text, "no Source area grouping chip"
+    # The field is still carried, so a future restoration is a query change only.
+    from app import queries
+    assert all(k["SourceArea"] is not None for k in queries.team_initiative_cards())
 
 
 def test_an_unknown_filter_is_ignored_not_errored(page):
