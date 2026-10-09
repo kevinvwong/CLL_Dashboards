@@ -13,6 +13,7 @@ in `2026-10-06-interconnection-redesign-design.md`.
 """
 import os
 import re
+import sys
 
 APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSS = os.path.join(APP, "app", "static", "style.css")
@@ -115,3 +116,30 @@ def test_print_css_exists_and_targets_chrome():
     assert os.path.exists(PRINT_CSS)
     t = open(PRINT_CSS, encoding="utf-8").read()
     assert ".site-header" in t and ".site-nav" in t
+
+
+# --- the authoritative meeting record stays out of the app -------------------
+#
+# docs/record/ holds the Dean+COO meeting record. It is a repository audit
+# artefact, not content: it names participants, discusses capacity concerns and
+# contains unreleased plans. `app/docs.py` renders ONLY files listed in
+# docs/guide.yaml, so the guarantee is the absence of a manifest entry - this
+# test holds that line, because "we forgot to add it" is the exact way it would
+# be breached.
+
+
+def test_the_meeting_record_is_not_in_the_in_app_guide():
+    manifest = open(os.path.join(APP, "docs", "guide.yaml"), encoding="utf-8").read()
+    assert not re.search(r"path:\s*(record|plan)/", manifest), (
+        "docs/record or docs/plan is listed in guide.yaml, so the meeting "
+        "record would be served inside the app")
+
+
+def test_the_meeting_record_transcription_is_current():
+    """The .md is generated; --check proves it still matches the .docx."""
+    import subprocess
+    root = APP
+    r = subprocess.run(
+        [sys.executable, os.path.join(root, "scripts", "transcribe_record.py"), "--check"],
+        capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, (r.stdout + r.stderr).strip()
