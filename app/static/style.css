@@ -720,7 +720,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 }
 .people button:hover { border-color: var(--accent); }
 .people .name { font-weight: 600; display: block; }
-.people .title { color: var(--ink-muted); font-size: var(--text-sm); }
+.people .team { color: var(--ink-muted); font-size: var(--text-sm); }
 
 .error { color: var(--error); margin: 0.75rem 0 0; }
 /* The reason an initiative is on the meeting agenda (meeting-view spec,
@@ -1049,7 +1049,7 @@ h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--text-x
 }
 .person-link { text-decoration: none; color: var(--ink); }
 .person-link .person-name { font-weight: 600; }
-.person-link .person-title { color: var(--ink-muted); margin-left: 0.5rem; font-size: var(--text-sm); }
+.person-link .person-team { color: var(--ink-muted); margin-left: 0.5rem; font-size: var(--text-sm); }
 .person-counts { font-size: var(--text-sm); color: var(--ink-muted); display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
 
 .error-page { text-align: center; padding: var(--space-8) var(--space-4); }

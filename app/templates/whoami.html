@@ -8,7 +8,7 @@
     <li>
       <button type="submit" name="person_id" value="{{ p.PersonID }}">
         <span class="name">{{ p.Name }}</span>
-        {% if p.Title %}<span class="title">{{ p.Title }}</span>{% endif %}
+        {% if p.Team %}<span class="team">{{ p.Team }}</span>{% endif %}
       </button>
     </li>
     {% endfor %}

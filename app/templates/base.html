@@ -47,7 +47,7 @@
       <details class="user-menu">
         <summary class="person-name" aria-label="User menu for {{ person.Name }}">{{ person.Name }}</summary>
         <div class="user-menu-panel">
-          <p class="user-menu-name">{{ person.Name }}{% if person.Title %} <span class="user-menu-role">{{ person.Title }}</span>{% endif %}</p>
+          <p class="user-menu-name">{{ person.Name }}{% if person.Team %} <span class="user-menu-role">{{ person.Team }}</span>{% endif %}</p>
           {% if may_admin %}
           <a href="/team-initiatives/new">New initiative</a>
           <a class="nav-admin" href="/checks">Checks{% if failing_checks %} <span class="badge badge-warn">{{ failing_checks }}</span>{% endif %}</a>

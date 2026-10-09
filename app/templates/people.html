@@ -11,7 +11,7 @@
   <li class="person-card card">
     <a class="person-link card-link" href="/people/{{ p.PersonID }}">
       <span class="person-name card-title">{{ p.Name }}</span>
-      {% if p.Title %}<span class="person-title card-sub">{{ p.Title }}</span>{% endif %}
+      {% if p.Team %}<span class="person-team card-sub">{{ p.Team }}</span>{% endif %}
     </a>
     <span class="person-counts card-foot">
       {{ p.InitiativeCount }} initiative{{ '' if p.InitiativeCount == 1 else 's' }}

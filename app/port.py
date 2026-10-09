@@ -429,10 +429,14 @@ def all_people(conn):
             "('PlatformAdmin','admin')")}
         people = []
         for r in conn.execute(
-                "SELECT person_id AS raw, display_name AS Name, working_title AS Title "
-                "FROM dbo.person WHERE active_flag = 1 ORDER BY display_name"):
+                "SELECT p.person_id AS raw, p.display_name AS Name, "
+                "       p.working_title AS Title, t.team_name AS Team "
+                "FROM dbo.person p "
+                "LEFT JOIN dbo.team t ON t.team_id = p.team_id "
+                "WHERE p.active_flag = 1 ORDER BY p.display_name"):
             p = {"PersonID": _pid_int(r["raw"]), "Name": r["Name"],
-                 "Title": r["Title"], "IsAdmin": 1 if r["raw"] in admins else 0}
+                 "Title": r["Title"], "Team": r["Team"],
+                 "IsAdmin": 1 if r["raw"] in admins else 0}
             people.append(p)
         stats = []
         for r in conn.execute(
@@ -446,8 +450,10 @@ def all_people(conn):
             stats.append({"PersonID": _pid_int(r["raw"]), "Status": r["Status"]})
         return people, stats
     people = _dicts(conn.execute(
-        "SELECT PersonID, Name, Title, IsAdmin FROM People "
-        "WHERE IsActive = 1 ORDER BY Name").fetchall())
+        "SELECT p.PersonID, p.Name, p.Title, p.IsAdmin, t.Name AS Team "
+        "FROM People p "
+        "LEFT JOIN Teams t ON t.TeamID = p.TeamID "
+        "WHERE p.IsActive = 1 ORDER BY p.Name").fetchall())
     stats = _dicts(conn.execute(
         "SELECT k.OwnerID AS PersonID, COALESCE(lp.Status, 'Not started') AS Status "
         "FROM TeamInitiatives k "
@@ -952,12 +958,15 @@ def person_card(conn, person_id):
     if engine(conn) == "mssql":
         rid = "PERS-%d" % person_id
         person = conn.execute(
-            "SELECT person_id, display_name AS Name, working_title AS Title, active_flag "
-            "FROM dbo.person WHERE person_id = %s AND active_flag = 1", (rid,)).fetchone()
+            "SELECT p.person_id, p.display_name AS Name, p.working_title AS Title, "
+            "       t.team_name AS Team, p.active_flag "
+            "FROM dbo.person p LEFT JOIN dbo.team t ON t.team_id = p.team_id "
+            "WHERE p.person_id = %s AND p.active_flag = 1", (rid,)).fetchone()
         if person is None:
             return None
         p = {"PersonID": person_id, "Name": person["Name"], "Title": person["Title"],
-             "ReportsToID": None, "IsAdmin": 1 if person_id in _admin_pids(conn) else 0}
+             "Team": person["Team"], "ReportsToID": None,
+             "IsAdmin": 1 if person_id in _admin_pids(conn) else 0}
         rows = []
         for r in conn.execute(
                 "SELECT s.initiative_id AS InitiativeID, 'Team Initiative' AS Level, "
@@ -974,8 +983,9 @@ def person_card(conn, person_id):
             rows.append(_d(r))
         return {"person": p, "initiatives": rows}
     person = conn.execute(
-        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin FROM People "
-        "WHERE PersonID = ? AND IsActive = 1", (person_id,)).fetchone()
+        "SELECT p.PersonID, p.Name, p.Title, p.ReportsToID, p.IsAdmin, t.Name AS Team "
+        "FROM People p LEFT JOIN Teams t ON t.TeamID = p.TeamID "
+        "WHERE p.PersonID = ? AND p.IsActive = 1", (person_id,)).fetchone()
     if person is None:
         return None
     rows = [dict(r) for r in conn.execute(
@@ -1590,12 +1600,14 @@ def recent_changes(conn, limit=100):
 
 def _person_row_mssql(conn, person_id):
     row = conn.execute(
-        "SELECT person_id, display_name, working_title FROM dbo.person "
-        "WHERE person_id = %s AND active_flag = 1", ("PERS-%d" % person_id,)).fetchone()
+        "SELECT p.person_id, p.display_name, p.working_title, t.team_name "
+        "FROM dbo.person p LEFT JOIN dbo.team t ON t.team_id = p.team_id "
+        "WHERE p.person_id = %s AND p.active_flag = 1", ("PERS-%d" % person_id,)).fetchone()
     if row is None:
         return None
     return {"PersonID": person_id, "Name": row["display_name"],
-            "Title": row["working_title"], "ReportsToID": None, "IsAdmin": None}
+            "Title": row["working_title"], "Team": row["team_name"],
+            "ReportsToID": None, "IsAdmin": None}
 
 
 def auth_person(conn, person_id):
@@ -1603,8 +1615,9 @@ def auth_person(conn, person_id):
     if engine(conn) == "mssql":
         return _person_row_mssql(conn, person_id)
     row = conn.execute(
-        "SELECT PersonID, Name, Title, ReportsToID, IsAdmin "
-        "FROM People WHERE PersonID = ? AND IsActive = 1", (person_id,)).fetchone()
+        "SELECT p.PersonID, p.Name, p.Title, p.ReportsToID, p.IsAdmin, t.Name AS Team "
+        "FROM People p LEFT JOIN Teams t ON t.TeamID = p.TeamID "
+        "WHERE p.PersonID = ? AND p.IsActive = 1", (person_id,)).fetchone()
     return dict(row) if row else None
 
 
@@ -1612,13 +1625,16 @@ def auth_active_people(conn):
     if engine(conn) == "mssql":
         out = []
         for r in conn.execute(
-                "SELECT person_id, display_name, working_title FROM dbo.person "
-                "WHERE active_flag = 1 ORDER BY display_name"):
+                "SELECT p.person_id, p.display_name, p.working_title, t.team_name "
+                "FROM dbo.person p LEFT JOIN dbo.team t ON t.team_id = p.team_id "
+                "WHERE p.active_flag = 1 ORDER BY p.display_name"):
             out.append({"PersonID": _pid_int(r["person_id"]), "Name": r["display_name"],
-                        "Title": r["working_title"]})
+                        "Title": r["working_title"], "Team": r["team_name"]})
         return out
     return [_d(r) for r in conn.execute(
-        "SELECT PersonID, Name, Title FROM People WHERE IsActive = 1 ORDER BY Name").fetchall()]
+        "SELECT p.PersonID, p.Name, p.Title, t.Name AS Team "
+        "FROM People p LEFT JOIN Teams t ON t.TeamID = p.TeamID "
+        "WHERE p.IsActive = 1 ORDER BY p.Name").fetchall()]
 
 
 def auth_get_initiative(conn, mi_id):

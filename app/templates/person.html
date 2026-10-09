@@ -3,7 +3,7 @@
 {% block content %}
 {# Person card (task 5.4), fed by vw_PersonInitiatives. #}
 <h1>{{ profile.Name }}</h1>
-{% if profile.Title %}<p class="person-title">{{ profile.Title }}</p>{% endif %}
+{% if profile.Team %}<p class="person-team">{{ profile.Team }}</p>{% endif %}
 
 {% if card.initiatives %}
 <ul class="initiative-list person-initiatives">
