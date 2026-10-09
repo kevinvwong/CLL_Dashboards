@@ -39,12 +39,37 @@ was seeded from the app's data; `db/rev2/inventory-absent.md` records that no
 approved inventory exists yet). Do not set `DB_PROVIDER=mssql` in production just
 to try it; that changes which store production reads.
 
-**Identity on Rev2:** production identity is Clerk (`AUTH_PROVIDER=clerk`). The
-local PIN stopgap is a development seam and is deliberately **not** available on
-Rev2 — no credential is stored there (see `db/mssql/DEVIATIONS.md`, entry 010).
-If `DB_PROVIDER=mssql` is set with `AUTH_PROVIDER=local`, the PIN gate is skipped
+**Identity (2026-10-08):** every deployed environment runs `AUTH_PROVIDER=local`
+— the shared passcode, the admin-only person picker, and per-person PINs.
+**No Clerk production instance is being purchased:** Clerk's free tier does not
+cover production users, and Entra is the destination once the project is
+provisioned into the GT tenant. Clerk is a development-only adapter. See
+ADR-0006. Do not set `AUTH_PROVIDER=clerk` on a deployed host.
+
+> **Clean up the Clerk keys at the first rotation.** The VPS host carried
+> `CLERK_SECRET_KEY` and `CLERK_PUBLISHABLE_KEY` at `target=all` while running
+> `AUTH_PROVIDER=local`. That is inert — `config.py` reads them with empty
+> defaults and the local path never imports `clerk_auth` — but a live Clerk
+> *development* key sitting in a production host is blast radius we do not need,
+> and it is the thing that would silently take effect if `AUTH_PROVIDER` were
+> ever flipped. Remove them with the credential rotation; do not remove them in
+> isolation, since the rotation already re-creates the container.
+
+> **Correction.** This paragraph previously read "production identity is Clerk
+> (`AUTH_PROVIDER=clerk`)". That was never true of Azure — its app settings
+> carry `APP_PASSCODE`/`APP_SECRET` and no `CLERK_*` keys, and it has always run
+> the passcode. It is not true of the VPS host either, which points at a Clerk
+> **development** instance where sign-in never completes (its `AuditLog` and
+> `TeamInitiativeUpdates` are both empty). That false claim is recorded here
+> rather than deleted, because it is exactly what would otherwise lead someone
+> to the Clerk upgrade page.
+
+The PIN gate is deliberately **not** available on the Rev2/Azure SQL store — no
+credential is stored there (see `db/mssql/DEVIATIONS.md`, entry 010). If
+`DB_PROVIDER=mssql` is set with `AUTH_PROVIDER=local`, the PIN gate is skipped
 and the passcode picker is the sign-in path; per-person PINs will refuse with a
-clear message.
+clear message. Staying on SQLite for now is therefore also what keeps PINs
+available.
 
 **Latest production checkpoint:** marker `rev2-store-20261008T194551Z` at commit
 `97484a1` — the Rev2 store port (four openspec changes: `adopt-rev2-store`,
@@ -74,7 +99,7 @@ fields). Verified live 2026-10-07 19:52 UTC: the header stamp reads
 `bae40b7 · deployed 2026-10-07 19:52 UTC`, and the gate and the new visuals were
 walked.
 
-### Two runbook notes that cost time this session
+### Runbook notes that cost time
 
 - **`az webapp deploy` blocks the shell while it polls** — but the deploy
   succeeds. Run it as a background process and poll `/healthz` for the marker,
@@ -82,6 +107,37 @@ walked.
 - **Stop the local dev server before running the test suite.** A running
   `uvicorn` holds `cll_initiatives.db`, so `test_build_is_reproducible` fails
   spuriously — the build cannot replace a file another process has open.
+- **`docker restart` does NOT apply new environment variables** (VPS/container
+  hosts, 2026-10-09). Env is passed **once** at `/containers/create` and baked
+  into the container's stored config, so a restart re-uses that config and
+  **silently replays the old values** — exiting 0, looking like success. This is
+  indistinguishable from a write that never landed, so the reflex is to keep
+  rewriting the variable, which changes nothing. **Fix: `docker rm -f <c>` and
+  let the deploy path re-create it.** A re-create re-reads env; a restart never
+  will.
+
+### Verifying env reached the app, not just the config
+
+A stored value and a running value are different facts. Confirm at the
+**destination**:
+
+```
+docker exec <c> printenv <VAR>          # what the app actually receives
+```
+
+When a secret is stored encrypted, decrypt it with the container's own
+`ENV_SECRET` and hash the plaintext, then compare against a hash computed
+locally. That proves the bytes the app gets, independent of every channel the
+value crossed. Comparing what you sent proves only that you can read your own
+message.
+
+Note the app compares credentials **byte-exact** — `auth.py` uses
+`secrets.compare_digest` and `config.py` applies no `.strip()`/`.upper()`/
+`.lower()`. Case is therefore significant end to end, so a value that is
+mangled in transit fails in a way that looks like a wrong password rather than a
+corrupted one. Prefer credential material that no plausible transport can alter:
+**digits only** (no case to transform), no braces or brackets (a web KVM console
+was observed turning `{{.Names}}` into `[[.nAMES]]`), and short.
 
 ---
 

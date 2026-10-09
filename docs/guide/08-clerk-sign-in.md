@@ -3,6 +3,12 @@
 The dashboard can sign people in two ways. Which one is in use is a server
 setting; a reader does not choose.
 
+> **Right now the deployed version uses the local sign-in.** Clerk sign-in is
+> available for development only, and will be replaced by Georgia Tech
+> single sign-on once the project is provisioned. If you were sent here to set up
+> a Clerk account, you do not need one — you will be asked for the shared
+> passcode, then to pick your name and possibly enter a PIN.
+
 ## The two ways
 
 - **Local (the stopgap).** A shared passcode, then you pick your name, and — if

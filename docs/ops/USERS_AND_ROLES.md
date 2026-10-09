@@ -52,8 +52,13 @@ adds assigned-update capabilities rather than replacing read access.
 
 ## Clerk provisioning
 
-- **Identity provider:** Clerk, application `app_3KPot74L7qbEcADeZzaSQerlWfg`,
-  dev instance, Microsoft (Entra) SSO.
+> **This roster is for development only.** Deployed environments sign in with the
+> local passcode; no Clerk production instance is being purchased (ADR-0006).
+> Roles and capabilities below are real in every environment — only the sign-in
+> *mechanism* differs.
+
+- **Identity provider (development only):** Clerk, application
+  `app_3KPot74L7qbEcADeZzaSQerlWfg`, dev instance, Microsoft (Entra) SSO.
 - **Users:** all 11 exist in Clerk with username + email. Sign-in is via
   Microsoft SSO, which Clerk matches to a user **by email** — so the roster's GT
   email is the identity key. Kevin signs in as

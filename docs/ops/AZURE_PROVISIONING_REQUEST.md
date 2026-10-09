@@ -28,13 +28,17 @@ development** — on the Georgia Tech tenant.
 
 **Shared across both:** a Log Analytics workspace and an Azure Monitor Action Group.
 
-**Identity and access:** an Entra ID App Registration + Enterprise Application
-with **capability-oriented app roles** (`PlatformAdmin`, `ExecutiveSponsor`,
-`DataOwner`, `Operator`, `Contributor`, `Viewer`, `TechnicalAdmin`). The
-**application consumes the `roles` claim**; finer-grained assignments (which
-initiative, approvals) remain application data. A system-assigned Managed
-Identity per Web App; the Entra ID admin and app identity on Azure SQL (AAD-only
-auth); RBAC assignments for the CLL team.
+**Identity and access:** an Entra ID App Registration + Enterprise Application.
+**Entra is the identity provider and answers "who are you" only** — the
+registration, the service principal, and sign-in permission for the named CLL
+staff. **Application roles are the application's own**, not Entra app roles: the
+seven capability-oriented roles (`PlatformAdmin`, `ExecutiveSponsor`,
+`DataOwner`, `Operator`, `Contributor`, `Viewer`, `TechnicalAdmin`) are rows in
+the application's database, granted by a PlatformAdmin inside the app. The
+application does **not** read an identity-provider `roles` claim, so **nothing
+needs to be defined or assigned in the registration** for access control to
+work. A system-assigned Managed Identity per Web App; the Entra ID admin and app
+identity on Azure SQL (AAD-only auth); RBAC assignments for the CLL team.
 
 **Networking:** a custom domain with a managed certificate for production (DNS
 via GT OIT), and a managed database reachable privately if the data
@@ -60,14 +64,20 @@ agreement.
 4. **RBAC** — confirm the roles and CLL principals for the team's assignments.
 5. **Identity** — confirm the App Registration and each app's managed identity
    can be created under the chosen subscription.
-6. **Role ownership** — who owns **role membership**: GT Identity in Entra, or
-   the application? The design has Entra hold the six coarse roles (consumed via
-   the `roles` claim) and the application hold the finer-grained assignments;
-   confirm this split before build.
-7. **Role-assignment licensing** — does the GT tenant require a **premium tier to
-   assign groups to app roles**? Defining app roles is free; group-based
-   assignment depends on tenant policy (direct user assignment does not raise
-   the question).
+6. **Role ownership — resolved, no longer a question.** Roles are **application-side
+   rows**, granted by a PlatformAdmin in the app (ADR-0005); Entra supplies
+   identity only. This is recorded so it is not reopened during the build.
+   Practical consequence: a fresh deployment has **no** PlatformAdmin, because
+   granting roles is itself admin-only. We seed the first one out of band at
+   deploy time — not a GT task.
+7. ~~Role-assignment licensing~~ — **no longer applies.** It only arose if app
+   roles were defined in Entra. They are not, so there is no group-to-app-role
+   assignment and nothing to license.
+
+**Highest-lead item:** the **Entra App Registration** (item 5). It needs GT
+tenant action and gates institutional sign-in; everything downstream can follow
+quickly once it exists. The DNS record for the custom domain (item 3) is the
+other external lead-time item.
 
 The attached provisioning document (`AZURE_PROVISIONING.md`) has the full
 technical detail needed for your review. Happy to schedule a scoping call with

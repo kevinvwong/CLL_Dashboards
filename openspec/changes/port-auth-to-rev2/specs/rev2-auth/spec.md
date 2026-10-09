@@ -58,9 +58,18 @@ and no credential material SHALL be stored in Rev2.
 - **THEN** it raises a clear error explaining the stopgap is local-only, and no
   credential is written to Rev2.
 
-#### Scenario: Clerk remains the production identity
+#### Scenario: Clerk remains available as a development-only adapter
 
 - **GIVEN** `DB_PROVIDER=mssql` and `AUTH_PROVIDER=clerk`
 - **WHEN** a request is authenticated
 - **THEN** identity comes from the verified Clerk session and the person is
   resolved from Rev2 — the PIN stopgap is not involved.
+
+> **Renamed and re-scoped 2026-10-08** (ADR-0006). This scenario previously read
+> "Clerk remains the **production** identity", which recorded a decision that has
+> since been reversed on cost grounds: no Clerk production instance is being
+> purchased, and every deployed environment runs `AUTH_PROVIDER=local` until
+> Entra is provisioned into the GT tenant. The *behaviour* above is unchanged and
+> still correct — Clerk remains a supported adapter, used for development. What
+> changed is the claim about which provider production runs, so the requirement
+> now says what is true: available, and not production.

@@ -205,10 +205,20 @@ present via a filtered index (`WHERE clerk_user_id IS NOT NULL`), the same
 NULL-not-equal trap 004 fixed for the nullable business email.
 
 **Deliberately NOT added: a credential column.** The local PIN stopgap
-(`People.Credential`) is a development-only seam; production identity is Clerk
-(ADR-0004). Its PBKDF2 hash is secret material and stays out of the production
-store, so under `DB_PROVIDER=mssql` the PIN set/verify paths raise a clear error
-instead of storing anything. This is a recorded decision, not an omission.
+(`People.Credential`) is the **production** sign-in path from now until Entra is
+provisioned — no Clerk production instance is being purchased (ADR-0006). Its
+PBKDF2 hash is secret material and stays out of the Rev2 store, so under
+`DB_PROVIDER=mssql` the PIN set/verify paths raise a clear error instead of
+storing anything. This is a recorded decision, not an omission.
+
+> **Correction 2026-10-08.** This paragraph previously read "production identity
+> is Clerk (ADR-0004)". That was inference from the seam being built, not a
+> measured fact: Azure's app settings carry `APP_PASSCODE`/`APP_SECRET` and no
+> `CLERK_*` keys, so it has always run the passcode. The **operative** half of
+> this entry — that a credential column is deliberately absent from Rev2 — is
+> unchanged and still stands. See `db/mssql/DEVIATIONS.md` entry 010 and
+> ADR-0006 for why the store still holds no PIN while the PIN is nonetheless the
+> production sign-in mechanism.
 
 None of these is claimed to be a port of a reference mechanism. They are new
 tables that let the whole app surface run on Rev2. `milestone` keyed to the
