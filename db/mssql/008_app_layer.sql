@@ -78,10 +78,15 @@ CREATE TABLE dbo.source_area (
 GO
 
 -- ---------------------------------------------------------------------------
--- milestone: a checkable event on a plan-year priority (mirrors SQLite
--- Milestones). Keyed to the ANNUAL PRIORITY INSTANCE so P01's milestones never
--- attach to another year's P01 (design R1). ADR-0002 vocabulary preserved.
+-- milestone: a checkable event with a status (mirrors SQLite Milestones).
 -- INT IDENTITY so the app appends without generating a string id.
+--
+-- SUPERSEDED BY 011_milestone_initiative.sql. It was created keyed to
+-- annual_priority, which put milestones one level too high in the cascade: the
+-- source register's column F lives on the Team Initiative row. 011 adds
+-- initiative_id (NOT NULL, FK to dbo.initiative), drops the priority key, and
+-- moves UNIQUE to (initiative_id, name). This table is left as-is for a fresh
+-- install, which 011 then re-points; the two files must be applied in order.
 -- ---------------------------------------------------------------------------
 IF OBJECT_ID('dbo.milestone', 'U') IS NULL
 CREATE TABLE dbo.milestone (

@@ -188,7 +188,7 @@ deliberate, not drift.
 | `audit_log` | append-only change-management record every write emits; deliberately NOT `validation_event` (design R2) | `audit_id INT IDENTITY`; `person_id` a string ref, no FK (an audit may outlive the person) |
 | `role` / `person_role` | the application's role vocabulary (`Roles`/`PeopleRoles`); `People.IsAdmin` derives from these | mirrored by NAME (role_id is IDENTITY) |
 | `source_area` | the five source areas the team screens carry (`SourceAreas`) | `name` UNIQUE |
-| `milestone` | per-year priority milestones (`Milestones`); the priorities screen + meeting agenda | keyed to `annual_priority` `(code, period)`, ADR-0002 vocabulary preserved, `UNIQUE(priority_id, name)` |
+| `milestone` | per-year milestones owned by a Team Initiative (`Milestones`); the priorities screen + meeting agenda | keyed to `initiative`, ADR-0002 vocabulary preserved, `UNIQUE(initiative_id, name)`, plus the `weight`/`weight_basis`/`weight_source`/`needs_rewrite` columns the rollup reads |
 
 **009 additions (team layer).** The `initiative` row gains the register's richer
 columns the team screens read 29/29: `team_id` (FK `dbo.team`), `source_area_id`
@@ -224,9 +224,21 @@ is retained because "no credential column" is now an invariant rather than a
 deviation, and that is worth stating in one place.
 
 None of these is claimed to be a port of a reference mechanism. They are new
-tables that let the whole app surface run on Rev2. `milestone` keyed to the
-annual instance preserves the 2026-10-08 multi-year fix (P01 recurs each year;
-its milestones belong to one year's priority row).
+tables that let the whole app surface run on Rev2.
+
+**011 change (2026-10-09): `milestone` moved from `annual_priority` to
+`initiative`.** The original keying put milestones one level too high in the
+cascade. The source register's column F ("FY2027 Target / Achievement Marks")
+lives on the register ROW, which maps to a Team Initiative, not to an annual
+priority — so an initiative's own milestones were being displayed under the
+priority it feeds, and the priority it feeds was being shown a count of them.
+The migration deletes the 18 priority-scoped mock rows rather than re-parenting
+them (a priority is fed by many initiatives, so "which initiative owns this mock
+milestone" has no answer the data supplies) and the corrected seed re-emits the
+84 real clauses against their initiative. `weight`/`weight_basis`/
+`weight_source`/`needs_rewrite` travel with them because the attainment rollup is
+weighted and the weights are machine-inferred, not board-supplied — the
+`weight_source` column is what lets the UI say so.
 
 
 ## A deploy note that cost a live outage

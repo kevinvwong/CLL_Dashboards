@@ -18,11 +18,17 @@ copy:
     TeamInitiativeCoOwners    -> initiative_owner (Contributor)
     TeamInitiativeDeanLinks   -> initiative_relationship (Supports, D-1 -> Dean)
     TeamInitiativeUpdates     -> initiative_update (append-only)
+    Milestones (84 clauses)   -> milestone, keyed to the INITIATIVE (011)
 
 Order matters for the cardinality triggers (003): a mapping must exist before an
 initiative is Activated. This seed inserts everything as Proposed/Active in an
 order that satisfies K1/K2, and keeps the app's "no progress yet" semantics
 (Proposed == the app's "Not started").
+
+Milestones require 011_milestone_initiative.sql to have been applied first:
+dbo.milestone.initiative_id is NOT NULL and FKs to dbo.initiative there, and
+priority_id is GONE. Running this seed against an un-migrated store fails on the
+foreign key, which is the intended signal rather than a silent mis-parenting.
 """
 import io
 import os
@@ -58,6 +64,18 @@ def _s(v):
 
 def _d(v):
     return "NULL" if not v else "'" + str(v) + "'"
+
+
+def _f(v):
+    """A REAL literal for dbo.milestone.weight (DECIMAL(6,5)).
+
+    `None` cannot occur - the column is NOT NULL with a default - but a NULL here
+    would emit NULL and violate the CHECK, which is a confusing way to fail.
+    """
+    if v is None:
+        raise SystemExit("Milestones.Weight is NULL; the schema requires > 0 "
+                         "(DEFAULT 1.0). Re-run db/build_milestone_clauses_seed.py.")
+    return repr(float(v))
 
 
 def build(out=OUT):
@@ -144,8 +162,10 @@ def build(out=OUT):
     L.append("GO")
 
     # D-1 (Team Initiatives): insert as Proposed FIRST (so no K1/K2 yet), map, then Activate.
+    # No stored Status is read here - it was deleted when status became derived from
+    # the milestone rollup; the activation step below reads it from the view.
     L.append("\n-- Team Initiatives (initiative_level='D-1'). Inserted Proposed; mappings below; then activated.")
-    for k in con.execute("SELECT MIId, Code, Title, Description, Status FROM TeamInitiatives "
+    for k in con.execute("SELECT MIId, Code, Title, Description FROM TeamInitiatives "
                          "WHERE IsActive = 1 ORDER BY MIId"):
         iid = "INI-" + (k["MIId"] or k["Code"])
         L.append("IF NOT EXISTS (SELECT 1 FROM dbo.initiative WHERE initiative_id = %s)" % _s(iid))
@@ -256,9 +276,17 @@ def build(out=OUT):
     L.append("GO")
 
     # Now activate the D-1 initiatives whose app status is progress-bearing.
+    # Status is DERIVED from the milestone rollup (vw_TeamInitiativeStatus), so it
+    # is read from there rather than from a stored column - which no longer exists.
+    # An initiative with no milestones reads NULL, i.e. 'Not started', i.e. Proposed.
     L.append("\n-- Activate the D-1 initiatives that the app reports as started (K1/K2 satisfied above).")
-    for k in con.execute("SELECT MIId, Code, Status FROM TeamInitiatives WHERE IsActive = 1"):
-        st = lifecycle(k["Status"])
+    for k in con.execute(
+            "SELECT k.MIId, k.Code, s.Status "
+            "FROM TeamInitiatives k "
+            "LEFT JOIN vw_TeamInitiativeStatus s "
+            "  ON s.TeamInitiativeID = k.TeamInitiativeID AND s.PlanYear = k.PlanYear "
+            "WHERE k.IsActive = 1"):
+        st = lifecycle(k["Status"] or "Not started")
         if st == "Proposed":
             continue
         iid = "INI-" + (k["MIId"] or k["Code"])
@@ -313,30 +341,35 @@ def build(out=OUT):
         L.append("INSERT INTO dbo.source_area (name) VALUES (%s);" % _s(s["Name"]))
     L.append("GO")
 
-    # milestone: REFUSES until Rev2 carries an initiative keyed milestone.
+    # milestone: initiative-scoped since 011_milestone_initiative.sql.
     #
-    # Milestones used to hang off Priorities, and Rev2's 008_app_layer.sql matches
-    # that: dbo.milestone.priority_id is NOT NULL and FKs to dbo.annual_priority.
-    # They now hang off Team Initiatives (2026-10-09), because column F of the
-    # register lives on the register ROW, and six of the seeded milestones traced by
-    # name to one of its clauses while rendering under a Dean priority.
+    # The old shape keyed milestones to annual_priority (PRI-<Code>-FY<year>),
+    # which put them one level too high: column F of the register lives on the
+    # Team Initiative row. A milestone is now emitted against the initiative's
+    # Rev2 id (INI-<MIId>), carrying the weight columns the app's rollup reads.
     #
-    # Emitting the old shape here would silently translate an initiative-owned
-    # milestone into a priority-owned one - restoring the mis-parenting on Rev2
-    # while sqlite is correct, which is exactly the drift the parity tests exist to
-    # catch. So this generator stops instead. The repair is an additive 008
-    # follow-up (initiative_id + weight columns, UNIQUE (initiative_id, name)) and a
-    # re-run of this seed; it is NOT part of the sqlite-side change and touches a
-    # live store, so it needs an explicit go-ahead rather than being bundled in.
-    n_milestones = con.execute("SELECT COUNT(*) FROM Milestones").fetchone()[0]
-    if n_milestones:
-        raise SystemExit(
-            "REFUSING: the app now has %d milestones keyed to Team Initiatives, but "
-            "dbo.milestone.priority_id is NOT NULL REFERENCES dbo.annual_priority.\n"
-            "Add an initiative-scoped milestone table (or nullable priority_id plus "
-            "initiative_id, weight, weight_basis, weight_source, needs_rewrite) in a "
-            "008-level migration, then re-run." % n_milestones)
-    L.append("\n-- milestone: no rows (refused, see the note in build_rev2_seed.py).")
+    # An initiative that feeds two priorities is seeded ONCE - its milestone set
+    # belongs to the initiative, not to either priority. The priority-level
+    # rollup is computed at read time by joining initiative_priority.
+    L.append("\n-- milestone: the 84 clauses of register column F, per initiative.")
+    for m in con.execute(
+            "SELECT m.Name, m.Status, m.PlannedDate, m.DateMet, m.OwnerLabel, "
+            "       m.EvidenceURL, m.SortOrder, m.IsActive, m.Weight, m.WeightBasis, "
+            "       m.WeightSource, m.NeedsRewrite, ti.MIId, ti.Code, m.PlanYear "
+            "FROM Milestones m JOIN TeamInitiatives ti "
+            "  ON ti.TeamInitiativeID = m.TeamInitiativeID AND ti.PlanYear = m.PlanYear "
+            "ORDER BY ti.MIId, m.SortOrder, m.MilestoneID"):
+        iid = "INI-" + (m["MIId"] or m["Code"])
+        L.append("IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE initiative_id = %s AND name = %s)"
+                 % (_s(iid), _s(m["Name"])))
+        L.append("INSERT INTO dbo.milestone (initiative_id, name, status, planned_date, date_met, "
+                 "owner_label, evidence_url, sort_order, active_flag, weight, weight_basis, "
+                 "weight_source, needs_rewrite) VALUES "
+                 "(%s, %s, %s, %s, %s, %s, %s, %d, %d, %s, %s, %s, %d);"
+                 % (_s(iid), _s(m["Name"]), _s(m["Status"]), _d(m["PlannedDate"]),
+                    _d(m["DateMet"]), _s(m["OwnerLabel"]), _s(m["EvidenceURL"]),
+                    m["SortOrder"], m["IsActive"], _f(m["Weight"]), _s(m["WeightBasis"]),
+                    _s(m["WeightSource"]), 1 if m["NeedsRewrite"] else 0))
     L.append("GO")
 
     # -----------------------------------------------------------------------

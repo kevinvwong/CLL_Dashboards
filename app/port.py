@@ -214,8 +214,9 @@ def dataset_provenance(conn):
 def milestones_for_year(conn, year: int):
     """The milestones for one plan year's priorities, keyed by priority code.
 
-    Rev2's milestone.priority_id is PRI-<Code>-FY<year>; sqlite joins Milestones
-    to the year-scoped Priorities row. Returns {code: [milestone dict,...]}.
+    Milestones hang off the TEAM INITIATIVE (both stores, since 011_milestone_
+    initiative.sql), so a priority's milestones are those of the initiatives that
+    feed it. Returns {code: [milestone dict,...]}.
     (change `rev2-full-reconciliation` task 3.x / adopt-rev2-store Open issue 1.)
     """
     if engine(conn) == "mssql":
@@ -224,13 +225,23 @@ def milestones_for_year(conn, year: int):
             "       CONVERT(VARCHAR(10), m.planned_date, 23) AS PlannedDate, "
             "       CONVERT(VARCHAR(10), m.date_met, 23) AS DateMet, "
             "       m.owner_label AS OwnerLabel, m.evidence_url AS EvidenceURL "
-            "FROM dbo.milestone m JOIN dbo.annual_priority ap ON ap.priority_id = m.priority_id "
-            "WHERE m.active_flag = 1 AND ap.planning_period = %s "
+            "FROM dbo.milestone m "
+            "JOIN dbo.initiative i ON i.initiative_id = m.initiative_id "
+            "JOIN dbo.initiative_priority ip ON ip.initiative_id = i.initiative_id "
+            "JOIN dbo.annual_priority ap ON ap.priority_id = ip.priority_id "
+            "WHERE m.active_flag = 1 AND i.active_flag = 1 "
+            "  AND i.initiative_level = 'D-1' AND ap.planning_period = %s "
             "ORDER BY ap.priority_code, m.sort_order, m.milestone_id",
             ("FY%d" % year,)).fetchall())
         by_code: dict = {}
         for r in rows:
-            by_code.setdefault(r.pop("Code"), []).append(r)
+            key = r["Code"]
+            rec = {k: v for k, v in r.items() if k != "Code"}
+            # An initiative feeding both its primary and its secondary priority
+            # would otherwise repeat its milestones under both. That is a READ
+            # artefact, not a data duplicate, so it is de-duplicated here.
+            if rec not in by_code.setdefault(key, []):
+                by_code[key].append(rec)
         return by_code
     rows = _dicts(conn.execute(
         "SELECT p.Code, m.Name, m.Status, m.PlannedDate, m.DateMet, "
@@ -245,7 +256,10 @@ def milestones_for_year(conn, year: int):
         (year,)).fetchall())
     by_code = {}
     for r in rows:
-        by_code.setdefault(r.pop("Code"), []).append(r)
+        key = r.pop("Code")
+        rec = {k: v for k, v in r.items()}
+        if rec not in by_code.setdefault(key, []):
+            by_code[key].append(rec)
     return by_code
 
 
@@ -1095,8 +1109,17 @@ def priority_outcomes(conn, year):
         for r in conn.execute(
                 "SELECT ap.priority_id, ap.priority_code AS Code, ap.priority_name AS FullTitle, "
                 "       ap.planning_period, ap.description AS Description, "
-                "       (SELECT COUNT(*) FROM dbo.milestone m WHERE m.priority_id = ap.priority_id AND m.active_flag = 1) AS Planned, "
-                "       (SELECT COUNT(*) FROM dbo.milestone m WHERE m.priority_id = ap.priority_id AND m.active_flag = 1 AND m.status = 'Met') AS Reached "
+                "       (SELECT COUNT(*) FROM dbo.milestone m "
+                "          JOIN dbo.initiative i ON i.initiative_id = m.initiative_id "
+                "          JOIN dbo.initiative_priority ip ON ip.initiative_id = i.initiative_id "
+                "         WHERE ip.priority_id = ap.priority_id AND m.active_flag = 1 "
+                "           AND i.active_flag = 1 AND i.initiative_level = 'D-1') AS Planned, "
+                "       (SELECT COUNT(*) FROM dbo.milestone m "
+                "          JOIN dbo.initiative i ON i.initiative_id = m.initiative_id "
+                "          JOIN dbo.initiative_priority ip ON ip.initiative_id = i.initiative_id "
+                "         WHERE ip.priority_id = ap.priority_id AND m.active_flag = 1 "
+                "           AND i.active_flag = 1 AND i.initiative_level = 'D-1' "
+                "           AND m.status = 'Met') AS Reached "
                 "FROM dbo.annual_priority ap "
                 "WHERE ap.priority_code IS NOT NULL AND ap.planning_period = %s "
                 "ORDER BY ap.priority_code",
@@ -1758,6 +1781,9 @@ def telemetry(conn):
         ms = conn.execute(
             "SELECT status, COUNT(*) AS n FROM dbo.milestone "
             "WHERE active_flag = 1 GROUP BY status").fetchall()
+        ms_flagged = conn.execute(
+            "SELECT COUNT(*) FROM dbo.milestone "
+            "WHERE active_flag = 1 AND needs_rewrite = 1").fetchone()[0]
         ti_total, ti_covered = conn.execute(
             "SELECT COUNT(*), SUM(CASE WHEN EXISTS ("
             "  SELECT 1 FROM dbo.initiative_update iu WHERE iu.initiative_id = i.initiative_id"
@@ -1770,6 +1796,9 @@ def telemetry(conn):
         ms = conn.execute(
             "SELECT Status, COUNT(*) AS n FROM Milestones WHERE IsActive = 1 "
             "GROUP BY Status").fetchall()
+        ms_flagged = conn.execute(
+            "SELECT COUNT(*) FROM Milestones WHERE IsActive = 1 AND NeedsRewrite = 1"
+        ).fetchone()[0]
         ti_total, ti_covered = conn.execute(
             "SELECT COUNT(*), SUM(CASE WHEN EXISTS ("
             "  SELECT 1 FROM TeamInitiativeUpdates u"
