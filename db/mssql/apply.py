@@ -1,6 +1,6 @@
 """Apply the Rev2 T-SQL port to the Azure SQL target, batch by batch on GO.
 
-    python db/mssql/apply.py            # apply 001..007 in order
+    python db/mssql/apply.py            # apply 001..011 in order
     python db/mssql/apply.py --check    # report which objects exist, apply nothing
 
 `GO` is a client-side batch separator, not a server statement, so a naive
@@ -19,7 +19,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CREDS = os.path.join(os.environ.get("TEMP", "/tmp"), "opencode", "rev2sql.txt")
 # Order matters: tables, constraints, cardinality, conformance, canonical
 # protection, read models, integrity report; the app-layer additions last (they
-# only reference tables 001 created).
+# only reference tables 001 created). 011 must run last: it drops the priority
+# key 008 created, so anything earlier that still reads milestone.priority_id
+# would fail if it ran after.
 ORDER = [
     "001_rev2_tables.sql",
     "002_constraints.sql",
@@ -31,6 +33,7 @@ ORDER = [
     "008_app_layer.sql",
     "009_team_layer.sql",
     "010_auth.sql",
+    "011_milestone_initiative.sql",
 ]
 
 
@@ -100,7 +103,7 @@ def check():
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true", help="report object counts, apply nothing")
-    ap.add_argument("files", nargs="*", help="SQL files to apply, relative to this dir (default: 001..007)")
+    ap.add_argument("files", nargs="*", help="SQL files to apply, relative to this dir (default: 001..011)")
     args = ap.parse_args(argv)
     if args.check:
         return check()
