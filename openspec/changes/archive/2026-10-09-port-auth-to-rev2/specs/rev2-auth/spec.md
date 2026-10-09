@@ -46,24 +46,52 @@ present.
 - **THEN** the filtered unique index permits it, as it does for the nullable
   business email (004 pattern).
 
-### Requirement: the local PIN stopgap does not run against the production store
+### Requirement: the shared passcode is the stopgap, and it stores no per-person secret
 
-The local PIN stopgap is a development-only seam. Under mssql its credential
-read/write SHALL fail loudly and actionably rather than silently appear to work,
-and no credential material SHALL be stored in Rev2.
+Identity in every deployed environment is a single shared passcode followed by a
+person picker. It SHALL NOT store, hash, or compare any per-person credential, and
+no credential material SHALL be stored in Rev2.
 
-#### Scenario: PIN set/verify on mssql is refused, not ignored
+> **Re-scoped 2026-10-09.** This requirement previously read "the local PIN
+> stopgap does not run against the production store" and specified
+> `set_person_pin` / `verify_person_pin` refusing under mssql. That behaviour was
+> **deleted outright** rather than disabled: the per-person PIN, its schema
+> column, its hashing helpers, its routes and its tests are all gone.
+>
+> The requirement is retained, not deleted, because the *property* it protects is
+> still the reason this auth design is acceptable for a governing board: **the
+> app holds no per-person secret at all.** Under the old shape the safety
+> argument was "the PIN never reaches the production store." Under the current
+> shape it is stronger and simpler — there is nothing to leak, anywhere. Losing
+> the requirement would lose that argument.
+>
+> Keeping the refusal scenario would have published a requirement describing
+> functions that no longer exist; it is dropped rather than left to mislead a
+> future reader about the auth surface.
 
-- **WHEN** `set_person_pin` or `verify_person_pin` is called under mssql
-- **THEN** it raises a clear error explaining the stopgap is local-only, and no
-  credential is written to Rev2.
+#### Scenario: no per-person credential is stored anywhere
+
+- **GIVEN** the schema for either provider
+- **THEN** the `People` table carries no credential column, and the store exposes
+  no set-or-verify-per-person credential function.
+
+#### Scenario: anyone with the shared passcode may select any person
+
+- **GIVEN** a session authenticated by the shared passcode
+- **WHEN** the user selects a person from the picker
+- **THEN** any active person may be selected, including `PlatformAdmin`.
+
+> This is an **accepted interim risk**, not a designed property. It is recorded
+> in ADR-0006 and is why GT Entra provisioning is the actual destination for
+> production identity. Recorded here so that a future reader does not mistake it
+> for intended behaviour and preserve it on purpose.
 
 #### Scenario: Clerk remains available as a development-only adapter
 
 - **GIVEN** `DB_PROVIDER=mssql` and `AUTH_PROVIDER=clerk`
 - **WHEN** a request is authenticated
 - **THEN** identity comes from the verified Clerk session and the person is
-  resolved from Rev2 — the PIN stopgap is not involved.
+  resolved from Rev2 — the shared passcode is not involved.
 
 > **Renamed and re-scoped 2026-10-08** (ADR-0006). This scenario previously read
 > "Clerk remains the **production** identity", which recorded a decision that has

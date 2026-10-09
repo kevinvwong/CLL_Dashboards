@@ -38,7 +38,7 @@ That gap is raised with the Data Owner before rehearsal, not at it.
 | CR-001 percent-complete capture | `TeamInitiativeUpdates` model + write path (no data yet) |
 | CR-012 crosswalk validated | Leadership praised it in the transcript |
 
-## Phase A — Record into the repository
+## Phase A — Record into the repository — **delivered** (4a8d164)
 
 Store the authoritative record in full, and keep it out of the app.
 
@@ -52,7 +52,7 @@ Store the authoritative record in full, and keep it out of the app.
 - Repoint the glossary, ADR-0006 and the deploy runbook at it where they
   currently assert things the record supersedes.
 
-## Phase B — Board UX (CO-001, Change Order 1)
+## Phase B — Board UX (CO-001, Change Order 1) — **delivered** (837571e)
 
 **CR-005 / FR-003 — full Strategy 2035 goal language.** The register, card and
 goal pages render `Goals.ShortName` ("Academic", "Learner"). D-003 and the
@@ -95,7 +95,7 @@ the choice is announced; the reduced-motion path applies when card view animates
 **AC-002 — regression evidence** that the Consult GT routing defect and the
 "unexpected side panel" defect stay closed.
 
-## Phase C — Interim measurement (CO-002)
+## Phase C — Interim measurement (CO-002) — **delivered** (5a11480)
 
 **AC-004 / NFR-005 — percent-complete must be clearly identified.** Per the
 record's own Progress Update entity, which carries *percent complete, narrative,
