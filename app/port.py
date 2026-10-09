@@ -1698,6 +1698,126 @@ def auth_link_person_to_clerk(conn, person_id, clerk_user_id):
                  ((clerk_user_id or None), int(person_id)))
 
 
+"""Telemetry: the three indicators on the landing page.
+
+CO-004 / FR-008 / CR-004 / CR-016. The record asks for "a compact summary or
+telemetry row... above detailed content so leaders can acquire status quickly",
+and CR-016 separately asks to REPLACE the static homepage counts.
+
+Three indicators, and every one is computed from data that is actually loaded. A
+telemetry row that overstates is worse than no telemetry row, so the third
+indicator deliberately reports the gap in the data rather than a number that
+looks like performance.
+
+Each returns a small dict with `value`, `label`, and a `detail` sentence the
+template shows underneath, so no indicator is a bare number with no context.
+"""
+
+
+def _mean(values):
+    vals = [v for v in values if v is not None]
+    return round(sum(vals) / len(vals)) if vals else None
+
+
+def telemetry(conn):
+    """The landing-page indicators, identical on both stores.
+
+    Deliberately three, not six. NFR-003 asks a leader to understand the
+    portfolio within seconds, and a row that needs reading is a row that is not
+    read.
+    """
+    if engine(conn) == "mssql":
+        dean_rows = conn.execute(
+            "SELECT fiscal_year, progress_value FROM dbo.dean_initiative "
+            "WHERE active_flag = 1 ORDER BY fiscal_year").fetchall()
+        ms = conn.execute(
+            "SELECT status, COUNT(*) AS n FROM dbo.milestone "
+            "WHERE active_flag = 1 GROUP BY status").fetchall()
+        ti_total, ti_covered = conn.execute(
+            "SELECT COUNT(*), SUM(CASE WHEN EXISTS ("
+            "  SELECT 1 FROM dbo.initiative_update iu WHERE iu.initiative_id = i.initiative_id"
+            ") THEN 1 ELSE 0 END) FROM dbo.initiative i "
+            "WHERE i.active_flag = 1 AND i.initiative_level = 'D-1'").fetchone()
+    else:
+        dean_rows = conn.execute(
+            "SELECT FiscalYear, PercentComplete FROM DeanInitiatives "
+            "ORDER BY FiscalYear").fetchall()
+        ms = conn.execute(
+            "SELECT Status, COUNT(*) AS n FROM Milestones WHERE IsActive = 1 "
+            "GROUP BY Status").fetchall()
+        ti_total, ti_covered = conn.execute(
+            "SELECT COUNT(*), SUM(CASE WHEN EXISTS ("
+            "  SELECT 1 FROM TeamInitiativeUpdates u"
+            "  WHERE u.TeamInitiativeID = k.TeamInitiativeID"
+            ") THEN 1 ELSE 0 END) FROM TeamInitiatives k "
+            "WHERE k.IsActive = 1").fetchone()
+
+    # 1. The Dean layer - the only place with real progress loaded today.
+    complete = sum(1 for r in dean_rows if r[1] is not None and r[1] >= 100)
+    years = sorted({r[0] for r in dean_rows})
+    latest = years[-1] if years else None
+    in_flight = [r[1] for r in dean_rows if r[0] == latest and r[1] is not None and r[1] < 100]
+    # The years come from the data. Hard-coding FY26/FY27 here would make this
+    # quietly wrong the moment a plan year rolls over, which is precisely the
+    # recurring-entity trap the priority model already documents.
+    done_years = [y for y in years
+                  if all(r[1] is not None and r[1] >= 100 for r in dean_rows if r[0] == y)]
+    parts = []
+    if done_years:
+        parts.append("FY%s complete" % "/".join(str(y)[-2:] for y in done_years))
+    if latest is not None and in_flight:
+        parts.append("FY%s in flight (mean %s%%)" % (str(latest)[-2:], _mean(in_flight) or 0))
+    dean = {
+        "value": f"{complete}/{len(dean_rows)}",
+        "label": "Dean Initiatives complete",
+        "detail": "; ".join(parts) or "no progress reported yet",
+        "href": "/dean-initiatives",
+    }
+
+    # 2. Milestones - the only other layer with a status distribution loaded.
+    counts = {r["Status"]: r["n"] for r in ms}
+    ms_total = sum(counts.values())
+    ms_met = counts.get("Met", 0)
+    milestones = {
+        "value": f"{ms_met}/{ms_total}",
+        "label": "Milestones met",
+        "detail": "exemplars only, per D-006",
+        "href": "/outcomes",
+    }
+
+    # 3. Needs review - the one indicator that is ACTIONABLE. It carries a
+    # proportion bar and a deep link into the filtered register, which is the
+    # affordance the old stat band's alarm tile provided; retiring that band
+    # without it would have quietly removed a route into the work queue.
+    needs = sum(1 for r in conn.execute(
+        "SELECT TargetStatus FROM TeamInitiatives WHERE IsActive = 1"
+    ).fetchall() if r["TargetStatus"] == "needs_review")
+    review = {
+        "value": str(needs),
+        "label": "Need review",
+        "detail": "of %d Team Initiatives" % (ti_total or 0),
+        "href": "/team-initiatives?target=needs_review",
+        "fill": (100 * needs // ti_total) if ti_total else 0,
+    }
+
+    # 4. The gap itself. AC-008 says indicators must "reflect real loaded data
+    # and avoid overstating"; AC-005 forbids showing undefined progress as zero.
+    # With an empty diary, every Team Initiative reads "Not started", which looks
+    # like failure rather than absence. Naming the gap is the honest report, and
+    # it is also the standing prompt for AI-001.
+    missing = (ti_total or 0) - (ti_covered or 0)
+    estimates = {
+        "value": f"{ti_covered or 0}/{ti_total or 0}",
+        "label": "Owner estimates supplied",
+        "detail": ("%d awaiting an owner estimate (AI-001)" % missing) if missing
+                  else "every owner has reported",
+        "href": "/team-initiatives",
+        "pending": bool(missing),
+    }
+
+    return [dean, milestones, review, estimates]
+
+
 def auth_role_ids(conn):
     """role name -> role id, read once. Empty if the store predates roles."""
     if engine(conn) == "mssql":

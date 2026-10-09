@@ -372,25 +372,14 @@
       });
     })();
 
-    /* The stat numbers count up (blueprint Global: motion). Suppressed under
-       prefers-reduced-motion, and the final value is already in the markup, so
-       a reader with no JS or reduced motion simply sees the number. */
-    (function () {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      document.querySelectorAll(".stat-value").forEach(function (el) {
-        const target = parseInt(el.textContent, 10);
-        if (isNaN(target) || target <= 0) return;
-        const icon = el.querySelector(".stat-icon");
-        let n = 0;
-        const step = Math.max(1, Math.round(target / 20));
-        const t = setInterval(function () {
-          n = Math.min(target, n + step);
-          el.textContent = n;
-          if (icon) el.prepend(icon);
-          if (n >= target) clearInterval(t);
-        }, 30);
-      });
-    })();
+    /* The stat-band count-up is retired with the band (CR-016, 2026-10-09).
+
+       It parsed the value as an integer and rewrote the text, so it cannot
+       render "3/11" or "0/29" - it would replace the fraction with its
+       numerator. Beyond the arithmetic, animating a number upward is the wrong
+       signal for a row whose third indicator reports a GAP in the data:
+       motion implies progress being made, and here the honest message is that
+       no owner has reported yet. */
   </script>
 </body>
 </html>

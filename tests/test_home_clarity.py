@@ -10,9 +10,12 @@ scorecard, because the register ships an empty diary.
 
 def test_home_does_not_count_team_initiatives_twice(logged_in):
     body = logged_in("Bill Gaudelli").get("/").text
-    # the stat band must not carry both an "Initiatives" and a "Team Initiatives"
-    # tile at 29
-    assert body.count('class="stat-value">29<') == 1, "29 is still printed twice"
+    # The taxonomy must not be counted twice in the header region. This used to
+    # assert `class="stat-value">29<` appeared once; the stat band is retired
+    # (CR-016), so the assertion follows the markup that replaced it.
+    assert body.count('class="telemetry-value">') >= 1, "no telemetry row on the landing"
+    # 29 must not appear as a bare tile value next to a second 29.
+    assert body.count('class="stat-value">29<') == 0
 
 
 def test_goal_tile_prints_one_count(logged_in):

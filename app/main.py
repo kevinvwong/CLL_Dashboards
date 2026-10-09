@@ -1149,6 +1149,9 @@ async def root(request: Request):
             goals=goals,
             stats=stats,
             health=health,
+            # CO-004 / FR-008 / CR-004: the executive telemetry row. Three
+            # indicators, all computed from loaded data - see app/port.py.
+            telemetry=queries.telemetry(),
             plan_year=plan_year,
             # The landing hero: the six 2027 priorities, compact (multi-year,
             # 2026-10-08).

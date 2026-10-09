@@ -834,3 +834,14 @@ def recent_changes(limit: int = 100) -> list[dict]:
     """The change log, newest first, with who made each change."""
     with _conn() as conn:
         return port.recent_changes(conn, limit)
+
+
+def telemetry() -> list[dict]:
+    """The landing-page executive telemetry row (CO-004 / FR-008 / CR-004).
+
+    A pass-through: the indicator logic lives in port.py so both stores compute
+    it identically. Its docstring explains why there are three and what the third
+    one is for.
+    """
+    with _conn() as conn:
+        return port.telemetry(conn)

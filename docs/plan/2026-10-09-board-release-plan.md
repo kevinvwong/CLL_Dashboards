@@ -108,7 +108,7 @@ update date, and source*:
 A static label alone cannot satisfy "clearly identified"; the doc requires the
 source to be identifiable.
 
-## Phase D — Telemetry (CO-004) and CR-016
+## Phase D — Telemetry (CO-004) and CR-016 — **delivered**
 
 Replaces the static homepage counts. Three indicators, all backed by loaded data:
 
@@ -122,6 +122,15 @@ failure when it only means the diary is empty.
 
 This completes the 2026-10-09 landing-page pass, which removed duplicated counts
 but added nothing.
+
+> **Amended 2026-10-09 after implementation: it is FOUR indicators, not three.**
+> Removing the static band deleted the "need review" affordance with it — its
+> proportion bar and its deep link into the filtered register — and three tests
+> failed saying so. That route into the work queue is load-bearing, so it is
+> restored as a fourth indicator. The plan's own reasoning for keeping the row
+> short ("a row that needs reading is a row that is not read") still holds at
+> four; it did not hold at three, because three meant losing a capability rather
+> than gaining tidiness.
 
 ## Phase H — Hosting (CO-009), separate track
 

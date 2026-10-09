@@ -45,10 +45,22 @@ def test_the_home_is_a_landing_not_a_stage(logged_in):
     assert "priority-map" not in body, "the prototype's priority map still renders"
 
 
-def test_the_stat_band_reports_the_portfolio(logged_in):
+def test_the_telemetry_row_reports_the_portfolio(logged_in):
+    """CO-004 / CR-016: the static stat band is replaced, not re-added.
+
+    The old band asserted five labels including the raw taxonomy counts. The
+    telemetry row reports four indicators instead, each with a detail line.
+    """
     body = _home(logged_in)
-    for label in ("Initiatives", "Priorities", "Teams", "Team Initiatives", "Need review"):
-        assert label in body, "missing stat %s" % label
+    for label in ("Dean Initiatives complete", "Milestones met",
+                  "Need review", "Owner estimates supplied"):
+        assert label in body, "missing telemetry indicator %s" % label
+    # CR-016 asked for the static counts to be REPLACED. Assert on the ELEMENT,
+    # not the phrase: base.html carries a comment explaining the retirement, and
+    # a substring check for "stat-band" would match that comment rather than a
+    # resurrected band.
+    assert '<section class="stat-band"' not in body, "the retired stat band is back"
+    assert 'class="stat-value"' not in body
 
 
 # --- every field the prototype carries --------------------------------------

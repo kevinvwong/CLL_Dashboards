@@ -2008,3 +2008,51 @@ body.presenting .no-print { display: none; }
 }
 .estimate::before { content: ""; }
 .estimate-pending { font-style: normal; }
+
+/* ---- telemetry row (CO-004 / FR-008 / CR-004 / CR-016) -------------------- */
+/* Three indicators, not a band of counts. Each carries a detail line, because a
+   bare "3/11" with no context is the thing AC-008 warns against: a number that
+   looks like performance without saying what it measures. */
+.telemetry {
+  display: grid; gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  margin-bottom: var(--space-6);
+}
+.telemetry-tile {
+  display: block; padding: var(--space-4);
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--ink); text-decoration: none;
+}
+.telemetry-tile:hover { border-color: var(--accent); background: var(--surface-hover); }
+.telemetry-value {
+  display: block; font-size: var(--text-2xl); font-weight: 700;
+  font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.telemetry-label {
+  display: block; margin-top: var(--space-1);
+  font-size: var(--text-xs); color: var(--ink-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.telemetry-detail {
+  display: block; margin-top: var(--space-2);
+  font-size: var(--text-sm); color: var(--ink-muted);
+}
+/* The pending indicator is a gap in the data, not a failure - so it is marked
+   with the accent's quiet tone rather than the warn colour the old "Need review"
+   tile used. Naming it plainly is the point; alarming about it would be the
+   same misreading in a different colour. */
+.telemetry-tile.is-pending .telemetry-value { color: var(--ink); }
+.telemetry-tile.is-pending { border-style: dashed; }
+
+/* The proportion bar on the actionable indicator. Carried over from the old
+   alarm tile so the affordance survives the band. */
+.telemetry-fill {
+  display: block; height: 4px; margin-top: var(--space-2);
+  border-radius: 2px; background: var(--surface-sunken);
+  overflow: hidden;
+}
+.telemetry-fill::after {
+  content: "; display: block; height: 100%;
+  width: var(--fill, 0%); background: var(--warn-ink);
+}
+.telemetry-tile.is-warn .telemetry-value { color: var(--warn-ink); }

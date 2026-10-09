@@ -19,12 +19,20 @@ def test_nav_renders_an_icon_for_each_primary_item(logged_in):
         assert label in body
 
 
-def test_the_alarm_tile_shows_a_fill_bar_and_an_icon(logged_in):
+def test_the_need_review_indicator_shows_a_proportion(logged_in):
+    """The actionable indicator kept its proportion bar across the band removal.
+
+    Three tests failed when the stat band was retired, all pointing at the same
+    thing: the 'need review' affordance - the proportion bar and the deep link
+    into the filtered register - is load-bearing. A telemetry row that dropped it
+    would have quietly removed a route into the work queue.
+    """
     body = logged_in("Bill Gaudelli").get("/").text
-    assert "stat-fill" in body, "the 'need review' tile has no proportion bar"
-    assert "stat-icon" in body, "the alarm tile has no icon"
-    # The bar is labelled for a screen reader rather than colour alone.
-    assert re.search(r'aria-label="\d+ of \d+ Team Initiatives need review"', body)
+    assert "telemetry-fill" in body, "the 'need review' tile has no proportion bar"
+    assert 'href="/team-initiatives?target=needs_review"' in body, (
+        "the 'need review' tile must still deep-link into the filtered register")
+    # The bar is labelled for a screen reader rather than by colour alone.
+    assert re.search(r'aria-label="\d+ of \d+ Team Initiatives"', body)
 
 
 def test_the_dean_timeline_renders_as_a_bar(logged_in):
@@ -37,7 +45,7 @@ def test_the_dean_timeline_renders_as_a_bar(logged_in):
 
 def test_the_new_components_have_styles_and_no_colour_literal():
     css = open(os.path.join(APP, "app", "static", "style.css"), encoding="utf-8").read()
-    for cls in (".stat-fill", ".fy-timeline", ".nav-icon", ".identity-legend"):
+    for cls in (".telemetry-fill", ".fy-timeline", ".nav-icon", ".identity-legend"):
         assert cls in css, "no style for %s" % cls
 
 
@@ -75,10 +83,18 @@ def test_all_motion_is_suppressed_by_reduced_motion():
         assert kf in css, "missing %s" % kf
 
 
-def test_the_count_up_script_respects_reduced_motion(logged_in):
+def test_the_stat_count_up_is_retired(logged_in):
+    """The count-up is gone, deliberately rather than by oversight.
+
+    It parsed the value as an integer and rewrote the text, so it cannot render
+    "3/11" or "0/29" - it would replace the fraction with its numerator. More
+    importantly, animating a number upward is the wrong signal for a row whose
+    last indicator reports a GAP: motion implies progress, and the honest
+    message is that no owner has reported yet.
+    """
     body = logged_in("Bill Gaudelli").get("/").text
-    assert "prefers-reduced-motion" in body, "the count-up does not check the setting"
-    assert "stat-value" in body
+    assert "stat-value" not in body, "the retired count-up target is still referenced"
+    assert "telemetry-value" in body, "the telemetry row should carry the values"
 
 
 def test_a_priority_chip_carries_its_colour_without_losing_contrast():

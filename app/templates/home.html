@@ -36,28 +36,28 @@
   {% endif %}
 </p>
 
-{# The stat band: counts, not a performance score. #}
-<section class="stat-band" aria-label="Portfolio summary">
-  <a class="stat-tile" href="/team-initiatives">
-    <span class="stat-value">{{ stats.team_initiatives }}</span>
-    <span class="stat-label">Team Initiatives</span>
-  </a>
-  <a class="stat-tile" href="/outcomes">
-    <span class="stat-value">{{ stats.priorities }}</span>
-    <span class="stat-label">Priorities</span>
-  </a>
-  <a class="stat-tile" href="/teams">
-    <span class="stat-value">{{ stats.teams }}</span>
-    <span class="stat-label">Teams</span>
-  </a>
-  <a class="stat-tile stat-warn" href="/team-initiatives?target=needs_review">
-    <span class="stat-value"><span class="stat-icon" aria-hidden="true">&#9888;</span>{{ stats.needs_review }}</span>
-    <span class="stat-label">Need review</span>
-    <span class="stat-fill"
-          style="--fill: {{ (100 * stats.needs_review // stats.team_initiatives) if stats.team_initiatives else 0 }}%"
+{# The telemetry row (CO-004 / FR-008 / CR-004 / CR-016). This REPLACES the
+   static stat band rather than sitting beside it: CR-016 asks for the counts to
+   be replaced by meaningful timing/status indicators, and a row of
+   "29 / 6 / 4 / 21" told a leader nothing they could not read off the four lens
+   cards further down. Each indicator is computed from loaded data - app/port.py
+   telemetry() - and carries a detail line, so no tile is a bare number. #}
+<section class="telemetry" aria-label="Portfolio at a glance">
+  {% for t in telemetry %}
+  <a class="telemetry-tile{% if t.pending %} is-pending{% endif %}{% if t.fill is defined %} is-warn{% endif %}" href="{{ t.href }}">
+    <span class="telemetry-value">{{ t.value }}</span>
+    <span class="telemetry-label">{{ t.label }}</span>
+    <span class="telemetry-detail">{{ t.detail }}</span>
+    {% if t.fill is defined %}
+    {# The proportion bar the old alarm tile carried. It survived the band: the
+       affordance - a route into the filtered work queue - is the point, and three
+       separate tests failed when it went. #}
+    <span class="telemetry-fill" style="--fill: {{ t.fill }}%"
           role="img"
-          aria-label="{{ stats.needs_review }} of {{ stats.team_initiatives }} Team Initiatives need review"></span>
+          aria-label="{{ t.value }} {{ t.detail }}"></span>
+    {% endif %}
   </a>
+  {% endfor %}
 </section>
 
 {# The landing hero (multi-year, 2026-10-08): the six 2027 priorities, compact.
