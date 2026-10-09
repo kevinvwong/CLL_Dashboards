@@ -19,19 +19,21 @@
     <p class="eyebrow">{{ plan_year }} Strategy Portfolio</p>
     <h1>How the College's work is organized</h1>
   </div>
-  <p class="section-note">Six priorities · four teams · 29 Team Initiatives</p>
 </div>
 
 {# The health read (#8): the first question on opening a dashboard is "how are we
    doing?". Counts by status, not a score. When no update has been logged yet, say
    so plainly - "29 not started" reads as a scorecard of failure when it only means
-   the diary is empty. #}
+   the diary is empty. The total is NOT restated here: the stat tile below carries
+   it, and saying it in both places made the landing repeat each number twice
+   before the reader had scrolled (content pass, 2026-10-09). #}
 <p class="health-line">
-  <strong>{{ health.total }}</strong> Team Initiatives{% if not health.has_progress %} · no progress reported yet{% else %}:
+  {% if not health.has_progress %}No progress reported yet.{% else %}
   <span class="badge status-on-track">{{ health.on_track }} on track</span>
   <span class="badge status-at-risk">{{ health.at_risk }} at risk</span>
   {% if health.off_track %}<span class="badge status-off-track">{{ health.off_track }} off track</span>{% endif %}
-  {% if health.not_started %}<span class="badge status-not-started">{{ health.not_started }} not started</span>{% endif %}{% endif %}
+  {% if health.not_started %}<span class="badge status-not-started">{{ health.not_started }} not started</span>{% endif %}
+  {% endif %}
 </p>
 
 {# The stat band: counts, not a performance score. #}
@@ -65,7 +67,7 @@
   <div class="section-heading">
     <div>
       <p class="eyebrow">Annual priorities · {{ plan_year }}</p>
-      <h2 id="hero-heading">The six {{ plan_year }} priorities at a glance</h2>
+      <h2 id="hero-heading">Priorities at a glance</h2>
     </div>
     <p class="section-note"><a href="/outcomes">Full view →</a></p>
   </div>
@@ -90,43 +92,43 @@
   </ul>
 </section>
 
-{# The four lenses: the same 29 Team Initiatives viewed four ways. Each is its own
-   page; this block is the only place the overview shows them, so the four views
-   read as one set of doors rather than four lists. #}
+{# The four lenses: the same Team Initiatives viewed four ways. Each is its own
+   page; this block is the only place the overview links them, so the four views
+   read as one set of doors rather than four lists.
+
+   These cards deliberately carry NO counts. The stat band above is where the
+   landing counts things, and the lens grid sat directly beneath it repeating 6
+   and 4 on its own tiles - two sets of numbers a scroll apart, saying the same
+   thing (content pass, 2026-10-09). Each page states its own count. #}
 <section id="explore" aria-labelledby="explore-heading">
   <div class="section-heading">
     <div>
       <p class="eyebrow">Explore</p>
       <h2 id="explore-heading">Four views of the same work</h2>
     </div>
-    <p class="section-note">The same {{ stats.team_initiatives }} Team Initiatives, grouped four ways</p>
   </div>
 
   <ul class="lens-grid">
     <li class="lens-card card">
       <a class="lens-link card-link" href="/goals">
-        <span class="lens-count">{{ stats.goals }}</span>
         <span class="lens-name card-title">Strategy 2035 Goals</span>
-        <span class="lens-desc card-sub">The five goals the work aligns to</span>
+        <span class="lens-desc card-sub">The goals the work aligns to</span>
       </a>
     </li>
     <li class="lens-card card">
       <a class="lens-link card-link" href="/outcomes">
-        <span class="lens-count">{{ stats.priorities }}</span>
         <span class="lens-name card-title">Annual Priorities</span>
-        <span class="lens-desc card-sub">The six execution lenses for {{ plan_year }}</span>
+        <span class="lens-desc card-sub">The execution lenses for {{ plan_year }}</span>
       </a>
     </li>
     <li class="lens-card card">
       <a class="lens-link card-link" href="/teams">
-        <span class="lens-count">{{ stats.teams }}</span>
         <span class="lens-name card-title">Teams</span>
-        <span class="lens-desc card-sub">The four teams accountable for the work</span>
+        <span class="lens-desc card-sub">The teams accountable for the work</span>
       </a>
     </li>
     <li class="lens-card card">
       <a class="lens-link card-link" href="/dean-initiatives">
-        <span class="lens-count">{{ dean_initiatives | length }}</span>
         <span class="lens-name card-title">Dean Initiatives</span>
         <span class="lens-desc card-sub">The Dean's own priorities above the work</span>
       </a>

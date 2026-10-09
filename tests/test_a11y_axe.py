@@ -16,8 +16,30 @@ import urllib.request
 import pytest
 
 BASE = os.environ.get("CLL_BASE_URL", "http://127.0.0.1:8000")
-PASSCODE = os.environ.get("APP_PASSCODE", "devpass")
 AXE = os.path.join(os.environ.get("TEMP", "/tmp"), "opencode", "axe.min.js")
+
+
+def _passcode_from_env_file():
+    """APP_PASSCODE out of the repo .env, so the test matches the server.
+
+    This used to be `os.environ.get("APP_PASSCODE", "devpass")` - a hardcoded
+    guess. Any developer who changed their own .env passcode got a 401 here, and
+    the failure surfaced 30s later as a Page.click timeout on the NEXT step,
+    pointing at the wrong thing entirely. Read what the server actually loaded.
+    """
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if line.startswith("APP_PASSCODE="):
+                    return line.split("=", 1)[1].strip().strip("\"'")
+    except OSError:
+        pass
+    return None
+
+
+PASSCODE = os.environ.get("APP_PASSCODE") or _passcode_from_env_file() or "devpass"
 
 
 def _server_up():

@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **5** days of work recorded, **185** changes in total.
+- **5** days of work recorded, **186** changes in total.
 - Most recent day: **Friday 09 October 2026**.
-- Across all days: 65 what we added; 37 what we fixed; 5 appearance and design; 22 behind the scenes; 13 quality and testing; 26 documentation; 17 more changes.
+- Across all days: 65 what we added; 37 what we fixed; 5 appearance and design; 23 behind the scenes; 13 quality and testing; 26 documentation; 17 more changes.
 
 ## Words used on this page
 
@@ -31,6 +31,10 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 **What we fixed**
 
 - Chown /app after the copies, so the app can write its database
+
+**Behind the scenes**
+
+- Remove the per-person PIN; refactor(copy): one term per thing
 
 
 ## Thursday 08 October 2026
