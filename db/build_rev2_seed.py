@@ -352,13 +352,23 @@ def build(out=OUT):
     # belongs to the initiative, not to either priority. The priority-level
     # rollup is computed at read time by joining initiative_priority.
     L.append("\n-- milestone: the 84 clauses of register column F, per initiative.")
+    # INSERTED IN THE APP'S OWN MilestoneID ORDER, NOT BY INITIATIVE. The stores
+    # tie-break a priority's milestones differently - SQLite's ORDER BY is
+    # (Code, SortOrder, MilestoneID) and mssql's is (priority_code, sort_order,
+    # milestone_id) - so the read only agrees if the two id sequences order the
+    # same rows the same way. mssql's milestone_id is an IDENTITY, so it is
+    # assigned by INSERT order; seeding by m.MilestoneID makes that assignment
+    # follow the register clause order and the two ORDER BYs then coincide.
+    # Sorting by (MIId, SortOrder) instead reordered every tie and parity failed
+    # on P01 with identical data on both stores - the ordering was the defect,
+    # not the migration.
     for m in con.execute(
             "SELECT m.Name, m.Status, m.PlannedDate, m.DateMet, m.OwnerLabel, "
             "       m.EvidenceURL, m.SortOrder, m.IsActive, m.Weight, m.WeightBasis, "
             "       m.WeightSource, m.NeedsRewrite, ti.MIId, ti.Code, m.PlanYear "
             "FROM Milestones m JOIN TeamInitiatives ti "
             "  ON ti.TeamInitiativeID = m.TeamInitiativeID AND ti.PlanYear = m.PlanYear "
-            "ORDER BY ti.MIId, m.SortOrder, m.MilestoneID"):
+            "ORDER BY m.MilestoneID"):
         iid = "INI-" + (m["MIId"] or m["Code"])
         L.append("IF NOT EXISTS (SELECT 1 FROM dbo.milestone WHERE initiative_id = %s AND name = %s)"
                  % (_s(iid), _s(m["Name"])))
