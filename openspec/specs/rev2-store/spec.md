@@ -65,6 +65,25 @@ schemas name a field differently.
 - **THEN** it is taken from the latest update (`vw_latest_update` /
   `vw_initiative_current`), never from a stored cache column.
 
+#### Scenario: the full-page card renders its header once
+
+- **GIVEN** the full-page team-initiative route requested directly (not as an
+  HTMX fragment)
+- **WHEN** the page renders
+- **THEN** the initiative's code, level, name and description each appear
+  **exactly once**, the page's `h1` precedes the content it titles, and the Dean
+  initiatives it contributes to are listed once — sourced from the shared card
+  fragment, which carries the linkable codes, rather than a second names-only
+  copy appended below.
+
+#### Scenario: the drawer fragment keeps its own header
+
+- **GIVEN** the same route requested with `HX-Request` so the bare fragment is
+  returned for the drawer
+- **WHEN** the fragment renders
+- **THEN** it still carries its own code, title and close control, because the
+  drawer has no page heading to inherit.
+
 ### Requirement: the current owner is the primary Reporting Owner
 
 Where a read needs an initiative's owner, the mssql formulation SHALL use
