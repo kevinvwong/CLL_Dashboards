@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **6** days of work recorded, **201** changes in total.
+- **6** days of work recorded, **202** changes in total.
 - Most recent day: **Saturday 10 October 2026**.
-- Across all days: 71 what we added; 38 what we fixed; 5 appearance and design; 25 behind the scenes; 13 quality and testing; 31 documentation; 18 more changes.
+- Across all days: 71 what we added; 38 what we fixed; 5 appearance and design; 25 behind the scenes; 13 quality and testing; 32 documentation; 18 more changes.
 
 ## Words used on this page
 
@@ -33,6 +33,7 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - Key the Rev2 milestone contract to the initiative, and archive it
 - Record the milestone-keying deploy
 - Retire the Rev2 gap requirement the reconciliation already closed
+- Specify the passcode person resolution under mssql
 
 
 ## Friday 09 October 2026
