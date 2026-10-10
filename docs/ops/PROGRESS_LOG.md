@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **6** days of work recorded, **202** changes in total.
+- **6** days of work recorded, **203** changes in total.
 - Most recent day: **Saturday 10 October 2026**.
-- Across all days: 71 what we added; 38 what we fixed; 5 appearance and design; 25 behind the scenes; 13 quality and testing; 32 documentation; 18 more changes.
+- Across all days: 71 what we added; 39 what we fixed; 5 appearance and design; 25 behind the scenes; 13 quality and testing; 32 documentation; 18 more changes.
 
 ## Words used on this page
 
@@ -27,6 +27,10 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 ---
 
 ## Saturday 10 October 2026
+
+**What we fixed**
+
+- Render the full-page card's header once, ahead of its content
 
 **Documentation**
 
