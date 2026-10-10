@@ -10,9 +10,9 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 
 ## At a glance
 
-- **5** days of work recorded, **198** changes in total.
-- Most recent day: **Friday 09 October 2026**.
-- Across all days: 71 what we added; 38 what we fixed; 5 appearance and design; 25 behind the scenes; 13 quality and testing; 28 documentation; 18 more changes.
+- **6** days of work recorded, **199** changes in total.
+- Most recent day: **Saturday 10 October 2026**.
+- Across all days: 71 what we added; 38 what we fixed; 5 appearance and design; 25 behind the scenes; 13 quality and testing; 29 documentation; 18 more changes.
 
 ## Words used on this page
 
@@ -25,6 +25,13 @@ Each line is one change to the dashboard, under a plain heading. The wording is 
 - **Prototype** — an early, non-final version used to agree the design
 
 ---
+
+## Saturday 10 October 2026
+
+**Documentation**
+
+- Key the Rev2 milestone contract to the initiative, and archive it
+
 
 ## Friday 09 October 2026
 
