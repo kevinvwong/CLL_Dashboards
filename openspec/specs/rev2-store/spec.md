@@ -30,8 +30,7 @@ and accept every write identically under either provider.
 
 - **GIVEN** `DB_PROVIDER=mssql` and `MSSQL_*` point at the live `cllrev2`
 - **WHEN** every screen is requested
-- **THEN** each renders successfully with the same logical content as sqlite
-  (subject to the Open issues in design.md).
+- **THEN** each renders successfully with the same logical content as sqlite.
 
 #### Scenario: a single, named dialect seam
 
@@ -101,25 +100,6 @@ messages on both engines.
 
 - **WHEN** a write violates a rule under mssql (e.g. percent out of range)
 - **THEN** the raised `RuleError` carries the same message as under sqlite.
-
-### Requirement: gaps are explicit, never silent
-
-Where a screen depends on an SQLite construct with no Rev2 equivalent
-(milestones, AppMeta, audit), the change SHALL record the gap and give the screen
-a defined interim behaviour, rather than failing silently or guessing.
-
-#### Scenario: priorities screen under mssql
-
-- **GIVEN** milestones have no Rev2 table
-- **WHEN** `DB_PROVIDER=mssql`
-- **THEN** the milestone-dependent read keeps its defined interim behaviour
-  (sqlite-backed) and the gap is recorded in design.md and the change's tasks.
-
-#### Scenario: audit write under mssql before an audit table exists
-
-- **WHEN** a write runs under mssql while no audit target exists
-- **THEN** it raises a clear error at the write seam rather than dropping the
-  audit row silently.
 
 ### Requirement: every active read surface runs on the selected store
 
