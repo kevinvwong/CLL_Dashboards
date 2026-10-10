@@ -9,13 +9,10 @@
   drawer fragment via _card_body.html; the register-only edges (team, source
   area, target, the source-register initiatives, note) follow below.
 #}
-<div class="card-body card-fullpage">
-  <p><a href="/team-initiatives">&larr; Back</a></p>
-  {% with modal=False %}
-  {% include "_card_body.html" %}
-  {% endwith %}
-</div>
-
+{# The page heading LEADS the content it titles. It used to sit below the card
+   body, which left the page's only h1 rendered ~950px after every h2 it should
+   have introduced - an inverted document outline, and a second copy of the
+   code/level/name the fragment already renders. #}
 <div class="section-heading">
   <div>
     <p class="eyebrow">{{ mi.MIId or mi.Code }} · Team Initiative</p>
@@ -30,6 +27,15 @@
   </p>
 </div>
 
+<div class="card-body card-fullpage">
+  <p><a href="/team-initiatives">&larr; Back</a></p>
+  {# page_header=True: this page has its own h1 above, so the fragment must not
+     render its code/name header again. #}
+  {% with modal=False, page_header=True %}
+  {% include "_card_body.html" %}
+  {% endwith %}
+</div>
+
 <dl class="field-list mi-fields">
   {% if mi.Team %}<dt>Team</dt><dd><a href="/teams/{{ mi.TeamID }}">{{ mi.Team }}</a></dd>{% endif %}
   {# D-009 / FR-009: Source Area is retained on the row (TeamInitiatives.SourceAreaID)
@@ -39,19 +45,14 @@
   {% if mi.ProposedTarget %}<dt>Proposed target</dt><dd>{{ mi.ProposedTarget }}</dd>{% endif %}
 </dl>
 
-{% if mi.Description %}<p class="mi-description">{{ mi.Description }}</p>{% endif %}
+{# The description is rendered by the shared fragment above (card.Description,
+   verified identical to mi.Description for all 29 active initiatives), so it is
+   not repeated here. #}
 
-{# Which FY27 Dean Initiatives this initiative contributes to (register, 2026-10-07). #}
-{% if dean_links %}
-<section aria-labelledby="mi-dean-heading">
-  <h2 id="mi-dean-heading" class="list-group-label">Contributes to</h2>
-  <ul class="mi-chip-list">
-    {% for l in dean_links %}
-    <li class="mi-chip"><span class="mi-chip-title">{{ l.dean_title }}</span></li>
-    {% endfor %}
-  </ul>
-</section>
-{% endif %}
+{# The Dean Initiatives this Team Initiative contributes to are also rendered by
+   the fragment (card.connections) - the same set, but with the linkable codes
+   D27-n and owner/status slots. This names-only copy was a strictly weaker
+   duplicate, so it is gone; the fragment's list above is the one place. #}
 
 {# The goals this Team Initiative aligns to (the new edge, from its side). #}
 <section aria-labelledby="mi-goals-heading">

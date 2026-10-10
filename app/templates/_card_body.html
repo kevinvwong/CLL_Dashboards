@@ -7,8 +7,16 @@
   <button class="card-close" data-close aria-label="Close">&times;</button>
   {% endif %}
 
+  {# The code and name are this fragment's own header, which the DRAWER needs -
+     it has no page heading to inherit. A full page supplies its own header
+     (eyebrow + h1) and passes page_header=True, so rendering these again would
+     repeat the code, the level and the name a second time. Kept off `modal`
+     deliberately: `modal` answers "is this the drawer", which is a different
+     question from "does the page supply its own header". #}
+  {% if page_header is not defined %}
   <p class="card-code">{{ card.Code }} <span class="level">{{ card.Level }}</span></p>
   <h2 class="card-title">{{ card.InitiativeName }}</h2>
+  {% endif %}
   <p class="card-owner">Owner:
     <a href="/people/{{ card.OwnerID }}">{{ card.Owner }}</a>
   </p>
