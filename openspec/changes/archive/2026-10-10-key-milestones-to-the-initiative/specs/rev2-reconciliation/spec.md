@@ -1,18 +1,6 @@
-# rev2-reconciliation Specification
+# Capability: rev2-reconciliation
 
-## Purpose
-
-Rev2's own vocabulary was built for a legacy register, not for this app. This
-capability is the translation layer: it requires Rev2 to carry the app's shape -
-the milestone layer, initiative relationships, the change log - so the reporting
-the board asked for can be served from the production store rather than
-recomputed from a spreadsheet.
-
-It exists because "the data exists somewhere" and "the data is shaped so the app
-can read it" are different facts, and only the second one makes the migration
-real.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Rev2 carries the app's milestone layer
 
@@ -51,35 +39,6 @@ joining `initiative_priority`.
   happens at read time by joining `initiative_priority`, de-duplicated so a
   milestone is not counted into both priorities twice.
 
-### Requirement: Rev2 carries the app's config and audit layers
-
-The Rev2 store SHALL hold `app_meta` (the engine-agnostic config the app reads)
-and a real append-only `audit_log` (the change-management record every write
-emits), so no read or write falls back to SQLite for these.
-
-#### Scenario: AppMeta served from Rev2
-
-- **WHEN** `DB_PROVIDER=mssql` and `current_plan_year()` /
-  `dataset_provenance()` run
-- **THEN** they read from Rev2 `app_meta`, with no sqlite fallback.
-
-#### Scenario: audited write persists an audit row
-
-- **WHEN** any audited write runs under `DB_PROVIDER=mssql`
-- **THEN** a row is inserted into `audit_log` in the same transaction, and the
-  prior `adopt-rev2-store` "error at the seam" behaviour is retired.
-
-### Requirement: Rev2 carries the role and team metadata the app surfaces
-
-The Rev2 store SHALL hold `role`, `person_role` and `source_area` mirroring the
-app's `Roles`/`PeopleRoles`/`SourceAreas`, FK to Rev2 `person`.
-
-#### Scenario: role membership resolvable
-
-- **WHEN** the app asks whether a person is an admin under mssql
-- **THEN** the answer comes from `person_role`+`role` for that person's Rev2 id,
-  matching what SQLite's `PeopleRoles`+`Roles` return.
-
 ### Requirement: re-seed is reproducible and leaves the store consistent
 
 Applying `008` + `011` and the extended seed SHALL be idempotent, reproducible
@@ -98,6 +57,8 @@ stores, which constrains the seed's insert order.
   same plan year
 - **THEN** each priority's milestone list is identical in name, status **and
   order**, not merely as a set.
+
+## ADDED Requirements
 
 ### Requirement: Milestone ordering parity does not depend on a store-local id
 

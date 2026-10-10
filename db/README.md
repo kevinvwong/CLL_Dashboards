@@ -87,7 +87,9 @@ table-for-table and view-for-view: 9 tables, 7 views, every column matched.
 - Keep both schema files in sync. A change present in one and not the other is a build failure.
 - `vw_DataChecks` becomes the first Power BI page.
 
-Still missing: a T-SQL equivalent of `seed_sample.sql`, so the views cannot yet be verified
-against real rows.
+The T-SQL seed exists: `db/seed_rev2.sql` (generated, do not hand-edit, by
+`db/build_rev2_seed.py` with a `--check` mode). It translates the app's SQLite
+data into Rev2's shape rather than copying it, and the views are verified
+against those rows on the live store (`vw_integrity_report` clean).
 
 Superseded 2026-10-05: this section previously named SharePoint/Dataverse as the migration target.
