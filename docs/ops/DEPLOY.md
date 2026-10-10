@@ -69,7 +69,18 @@ name picker. No per-person secret is stored in either store — the PIN was
 removed 2026-10-09, so switching between SQLite and Rev2 changes nothing about
 authentication.
 
-**Latest production checkpoint:** marker `rev2-store-20261008T194551Z` at commit
+**Latest production checkpoint:** marker `milestone-keying-20261010T110136Z` at
+commit `e30a394` — the milestone re-keying to the team initiative (`460b827`,
+`011` on the Rev2 store) plus the spec change that records it
+(`key-milestones-to-the-initiative`, archived). Production still runs
+`DB_PROVIDER=sqlite`, so this promotes the SQLite-side rollup; the Rev2
+correction reached the parallel store, not this service. Verified live
+2026-10-10 11:01 UTC: header stamp reads `e30a394 · deployed 2026-10-10 11:01 UTC`,
+`/healthz` 200 with the marker, `/robots.txt` 200, `/login` 200 with the app's own
+passcode rejection on a wrong value, and `/` + `/guide` + `/oct16` all rendering
+the sign-in surface unauthenticated. WP stop requests after the deploy: 0/15.
+
+**Previous checkpoint:** marker `rev2-store-20261008T194551Z` at commit
 `97484a1` — the Rev2 store port (four openspec changes: `adopt-rev2-store`,
 `rev2-full-reconciliation`, `rev2-remaining-surfaces`, `port-auth-to-rev2`).
 Every screen, write and the authentication layer are ported and parity-tested on
@@ -145,7 +156,7 @@ was observed turning `{{.Names}}` into `[[.nAMES]]`), and short.
 |---|---|
 | `az` wrapper | `C:\Users\kwong318\aztools\azure-cli\python.exe` |
 | Python | `C:\Users\kwong318\AppData\Local\Programs\Python\Python312\python.exe` |
-| Passcode for the live site | `%TEMP%\cll-creds2.txt`, key `APP_PASSCODE` |
+| Passcode for the live site | `%TEMP%\cll-creds2.txt`, key `APP_PASSCODE` — **stale as of 2026-10-10:** its SHA-256 no longer matches the production `APP_PASSCODE` app setting, so an authenticated walk of the gate fails with "That passcode is not right". That is the credential, not the deploy — compare by hash rather than re-reading the value, and refresh the file before signing in. |
 | App Service settings | `DEPLOY_MARKER`, `APP_ENV=live`, `DB_PATH=./cll_initiatives.db`, `DOCS_PATH=./docs`, `APP_PASSCODE`, `APP_SECRET` |
 | Clerk (only when `AUTH_PROVIDER=clerk`) | `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `CLERK_AUTHORIZED_PARTY` (the live origin) |
 
