@@ -42,6 +42,16 @@ from the configured store, so an authenticated request works under either
 - **THEN** `active_people` returns the Rev2 active people, and `person_exists`
   resolves an id on the store in use.
 
+#### Scenario: a passcode-selected person resolves under mssql
+
+- **GIVEN** `DB_PROVIDER=mssql`, `AUTH_PROVIDER=local` (the deployed
+  configuration), and a session authenticated by the shared passcode with a
+  person selected from the picker
+- **WHEN** the request resolves the current person
+- **THEN** it reads `dbo.person` through the store seam for the selected
+  `PersonID` and returns the app's key shape, with no sqlite fallback — the
+  same resolution the Clerk path performs, from the store in use.
+
 ### Requirement: the Clerk link is carried on the Rev2 person row
 
 `person_by_clerk_id` and `link_person_to_clerk` SHALL resolve and set the Clerk
